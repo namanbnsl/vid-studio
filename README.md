@@ -4,13 +4,9 @@ Vid Studio is one skill for an AI agent. It sets up a local research studio and 
 
 ## Install
 
-Push this repository to GitHub. Then run:
-
 ```sh
-npx skills add YOUR_USER/YOUR_REPO --skill vid-studio --agent codex claude-code
+npx skills add namanbnsl/vid-studio
 ```
-
-For local installation, use `./` instead of the repository. Add `--global` for an installation for your user account.
 
 ## Start
 
