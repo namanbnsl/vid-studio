@@ -1,0 +1,10 @@
+# Local production data and credentials should not enter the skill repository.
+studio/
+workspaces/
+.env
+.env.*
+!.env.example
+__pycache__/
+*.pyc
+.DS_Store
+node_modules/

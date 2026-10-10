@@ -1,0 +1,21 @@
+{
+  "schema_version": 1,
+  "status": "draft",
+  "scene_id": null,
+  "claim_ids": [],
+  "source_ids": [],
+  "dataset": {"path": null, "sha256": null},
+  "chart_type": null,
+  "measure": null,
+  "units": null,
+  "population_or_denominator": null,
+  "time_period": null,
+  "transformations": [],
+  "rounding": null,
+  "domain": {"min": null, "max": null, "zero_baseline": null},
+  "missing_data": null,
+  "uncertainty_or_forecast": null,
+  "series_labels": [],
+  "source_note": null,
+  "reveal_semantics": "visual reveal only; not new observations"
+}

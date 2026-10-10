@@ -1,0 +1,51 @@
+<!doctype html>
+<html lang="en"><body><template>
+<style>
+    #mechanism-root { --paper: #f5f2ea; --ink: #101923; --muted: #b4bfca; --accent: #b9f36b; }
+    * { box-sizing: border-box; }
+    #mechanism-root { margin: 0; background: var(--ink); color: var(--paper); font-family: sans-serif; }
+    #mechanism-root { position: relative; width: 100%; height: 100%; overflow: hidden; }
+    .background { position: absolute; inset: 0; background: var(--ink); }
+    #mechanism-root { position: absolute; inset: 0; padding: 130px 90px 180px; }
+    .scene-inner { height: 100%; display: flex; flex-direction: column; justify-content: center; gap: 60px; }
+    .eyebrow { color: var(--accent); font-size: 32px; font-weight: 700; letter-spacing: 4px; text-transform: uppercase; }
+    h1, h2, p { margin: 0; }
+    h1 { font-size: 126px; line-height: 1.03; letter-spacing: -5px; max-width: 860px; }
+    h2 { font-size: 92px; line-height: 1.08; letter-spacing: -3px; max-width: 860px; }
+    .accent { color: var(--accent); }
+    .description { font-size: 44px; line-height: 1.35; color: var(--muted); max-width: 800px; }
+    .rule { width: 180px; height: 8px; background: var(--accent); transform-origin: left center; }
+    .flow { display: flex; flex-direction: column; gap: 0; }
+    .step { border-top: 2px solid #435361; padding: 30px 0; display: grid; grid-template-columns: 100px 1fr; gap: 22px; align-items: center; }
+    .step-number { color: var(--accent); font-size: 36px; }
+    .step-label { font-size: 62px; font-weight: 700; letter-spacing: -1px; }
+    .connector { height: 62px; width: 4px; margin-left: 134px; background: var(--accent); transform-origin: top center; }
+    .footer { position: absolute; left: 90px; right: 90px; bottom: 115px; font-size: 27px; color: var(--muted); }
+    .stamp { display: inline-block; padding-top: 28px; border-top: 2px solid var(--accent); font-size: 36px; color: var(--accent); }
+  </style>
+<div id="mechanism-root" data-composition-id="mechanism" data-width="1080" data-height="1920" data-duration="3">
+      <div class="scene-inner" id="mechanism-inner">
+        <p class="eyebrow" id="mechanism-kicker">ONE CONNECTED EXPLANATION</p>
+        <h2 id="mechanism-title">Build understanding,<br>step by step.</h2>
+        <div class="flow" id="process">
+          <div class="step" id="step-research"><span class="step-number">01</span><span class="step-label">Research</span></div>
+          <div class="connector" id="connector-one"></div>
+          <div class="step" id="step-script"><span class="step-number">02</span><span class="step-label">Script</span></div>
+          <div class="connector" id="connector-two"></div>
+          <div class="step" id="step-motion"><span class="step-number">03</span><span class="step-label">Motion</span></div>
+        </div>
+      </div>
+      <p class="footer">Reveal relationships. Hold the resolved idea.</p>
+    </div>
+<script>
+const tl = gsap.timeline({ paused: true });
+    tl.fromTo('#mechanism-kicker, #mechanism-title', { opacity: 0, y: 24 }, { opacity: 1, y: 0, duration: 0.45 }, 0.03);
+    tl.fromTo('#step-research', { opacity: 0, x: -32 }, { opacity: 1, x: 0, duration: 0.4 }, 0.3);
+    tl.fromTo('#connector-one', { scaleY: 0 }, { scaleY: 1, duration: 0.3 }, 0.65);
+    tl.fromTo('#step-script', { opacity: 0, x: -32 }, { opacity: 1, x: 0, duration: 0.4 }, 0.95);
+    tl.fromTo('#connector-two', { scaleY: 0 }, { scaleY: 1, duration: 0.3 }, 1.3);
+    tl.fromTo('#step-motion', { opacity: 0, x: -32 }, { opacity: 1, x: 0, duration: 0.4 }, 1.6);
+    tl.to('#mechanism-inner', { opacity: 0, y: -24, duration: 0.25 }, 2.75);
+window.__timelines["mechanism"] = tl;
+</script>
+</template></body></html>

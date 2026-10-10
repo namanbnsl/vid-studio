@@ -1,0 +1,4 @@
+interface:
+  display_name: "Vid Studio"
+  short_description: "Custom research, scripts, monitors, and vertical videos"
+  default_prompt: "Use $vid-studio to onboard my local studio, learn my research and creative tastes, and set up monitors with approval at every stage."

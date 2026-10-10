@@ -1,0 +1,43 @@
+<!doctype html>
+<html lang="en"><body><template>
+<style>
+    #takeaway-root { --paper: #f5f2ea; --ink: #101923; --muted: #b4bfca; --accent: #b9f36b; }
+    * { box-sizing: border-box; }
+    #takeaway-root { margin: 0; background: var(--ink); color: var(--paper); font-family: sans-serif; }
+    #takeaway-root { position: relative; width: 100%; height: 100%; overflow: hidden; }
+    .background { position: absolute; inset: 0; background: var(--ink); }
+    #takeaway-root { position: absolute; inset: 0; padding: 130px 90px 180px; }
+    .scene-inner { height: 100%; display: flex; flex-direction: column; justify-content: center; gap: 60px; }
+    .eyebrow { color: var(--accent); font-size: 32px; font-weight: 700; letter-spacing: 4px; text-transform: uppercase; }
+    h1, h2, p { margin: 0; }
+    h1 { font-size: 126px; line-height: 1.03; letter-spacing: -5px; max-width: 860px; }
+    h2 { font-size: 92px; line-height: 1.08; letter-spacing: -3px; max-width: 860px; }
+    .accent { color: var(--accent); }
+    .description { font-size: 44px; line-height: 1.35; color: var(--muted); max-width: 800px; }
+    .rule { width: 180px; height: 8px; background: var(--accent); transform-origin: left center; }
+    .flow { display: flex; flex-direction: column; gap: 0; }
+    .step { border-top: 2px solid #435361; padding: 30px 0; display: grid; grid-template-columns: 100px 1fr; gap: 22px; align-items: center; }
+    .step-number { color: var(--accent); font-size: 36px; }
+    .step-label { font-size: 62px; font-weight: 700; letter-spacing: -1px; }
+    .connector { height: 62px; width: 4px; margin-left: 134px; background: var(--accent); transform-origin: top center; }
+    .footer { position: absolute; left: 90px; right: 90px; bottom: 115px; font-size: 27px; color: var(--muted); }
+    .stamp { display: inline-block; padding-top: 28px; border-top: 2px solid var(--accent); font-size: 36px; color: var(--accent); }
+  </style>
+<div id="takeaway-root" data-composition-id="takeaway" data-width="1080" data-height="1920" data-duration="3">
+      <div class="scene-inner" id="takeaway-inner">
+        <p class="eyebrow" id="takeaway-kicker">THE TAKEAWAY</p>
+        <h1 id="takeaway-title">Make the<br><span class="accent">idea visible.</span></h1>
+        <p class="description" id="takeaway-description">Clear evidence. Deliberate design. Motion with a purpose.</p>
+        <p class="stamp" id="takeaway-stamp">Review every stage.</p>
+      </div>
+      <p class="footer">Replace this study with your approved story and brand.</p>
+    </div>
+<script>
+const tl = gsap.timeline({ paused: true });
+    tl.fromTo('#takeaway-kicker', { opacity: 0, y: 16 }, { opacity: 1, y: 0, duration: 0.35 }, 0.05);
+    tl.fromTo('#takeaway-title', { opacity: 0, y: 44 }, { opacity: 1, y: 0, duration: 0.6, ease: 'power2.out' }, 0.12);
+    tl.fromTo('#takeaway-description', { opacity: 0, y: 20 }, { opacity: 1, y: 0, duration: 0.45 }, 0.55);
+    tl.fromTo('#takeaway-stamp', { opacity: 0 }, { opacity: 1, duration: 0.4 }, 1);
+window.__timelines["takeaway"] = tl;
+</script>
+</template></body></html>
