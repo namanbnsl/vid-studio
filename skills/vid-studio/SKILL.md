@@ -1,39 +1,38 @@
 ---
 name: vid-studio
-description: Set up and operate a local explainer studio with user preferences, source monitors, research, scripts, posts, and approved Hyperframes vertical videos.
+description: Set up a research studio with user preferences, source discovery, topic monitors, verified research, WhatsApp posts, and video scripts.
 ---
 
 # Vid Studio
 
-Operate the studio through conversation. Save the user's preferences locally. Use the available agent tools. Use Hyperframes for video production. Keep videos vertical, with a 9:16 aspect ratio.
+Start onboarding on the first invocation. Then discover sources and topics, configure approved monitors, research topics, and prepare posts and scripts.
 
-## Select the guide
+The workflow ends at approved scripts and posts. Visual and asset proposals remain written notes. Do not produce videos, send messages, or publish.
 
-Read studio.json and STATUS.md if these files exist. Select the guide for the request:
+## Start or resume
 
-- Setup, preferences, brands, monitors, inbox, or schedules: [studio.md](references/studio.md).
-- Topics, research, scripts, or posts: [research.md](references/research.md).
-- Storyboards, assets, preview, render, or quality review: [production.md](references/production.md).
-- Hyperframes setup, technical requirements, or advanced functions: [hyperframes.md](references/hyperframes.md).
+Read studio.json and STATUS.md if they exist. If setup is absent or incomplete, follow [studio.md](references/studio.md). Continue from the first incomplete setup step. Do not restart completed onboarding.
 
-Do not start a video from a management request. Stop when the user approves the requested outputs. WhatsApp posts, narration, captions, music, and generated images are optional.
+For research, verification, posts, and scripts, follow [research.md](references/research.md). Management requests use studio.md. Keep local files as the source of state.
+
+## Work proactively
+
+Ask about the user's name, taste, language, audience, branding, and research interests in short groups. Use those answers to discover sources and topics. Recommend one-time or daily schedules from context. Do not wait for the user to request each setup task.
+
+Prepare concrete proposals and outputs before review. Wait for approval before each applicable next stage. Use this sequence: onboarding → sources → topics → monitors → topic → plan → research → script/post.
+
+Record the current stage, approved versions, and next action in STATUS.md. Record project approvals in approvals.md. A precise user instruction authorizes that exact local edit. A general request does not approve future outputs.
+
+## Preferences and evidence
+
+Save shared preferences in studio.json. Add profiles only when useful. Copy effective preferences and applicable references into each new project. Resume from that copy. Apply later preferences only when requested.
+
+Support factual claims and proposed charts with sources. Keep contradictory evidence visible. Cross-model review is initially disabled. Keep user edits. Report unavailable tools and failed operations.
+
+Use only approved services, downloads, and costs. Keep research and outputs local. Local storage does not mean local processing. Schedules do not approve project outputs.
 
 ## Write clearly
 
-Use [ASD-STE100](https://www.asd-ste100.org/faq.html) for technical instructions and status reports. Use short sentences with one topic. Use the imperative for instructions. Use a maximum of 20 words per instruction and 25 words per description. Use consistent technical names. Keep commands and code identifiers unchanged. For creative content, use the user's approved language and style.
+Use [ASD-STE100](https://www.asd-ste100.org/faq.html) for technical instructions and status reports. Use short sentences with one topic. Use the imperative for instructions. Use a maximum of 20 words per instruction and 25 words per description. Keep technical names, commands, and code identifiers consistent. For creative content, use the approved language and style.
 
-## Operate the studio
-
-- Ask setup questions in short groups. Save preferences in studio.json. Use instructions and local examples instead of unnecessary fields. Add profiles only when useful.
-- Copy the effective preferences and applicable references into each new project. Use that copy when you resume the project. Apply later preferences only when requested.
-- Prepare each applicable stage. Show the actual output. Wait for approval before the next stage.
-- Use this sequence: setup → topic → plan → research → script/post → storyboard → assets → preview → rendered draft → final export.
-- Record the current stage, approved versions, and next action in STATUS.md and the project's approvals.md.
-- If an approved output changes, reopen the affected stage and later stages. Keep earlier approved work.
-- Keep settings, evidence, and outputs in local files. Use only approved services, downloads, and costs. Get separate approval to send or publish outputs.
-- Support factual claims and charts with evidence. Cross-model review is optional and initially disabled.
-- Keep user edits. Report tools that are unavailable and operations that fail.
-
-A request for production does not approve later stages. A schedule does not approve project outputs. Local storage does not mean local processing.
-
-The Python helpers create missing files, resolve preferences, and inspect exports. The helpers do not approve work or provide external services.
+The Python helpers create missing files and resolve preferences. They do not approve work, supply research services, or create schedules.

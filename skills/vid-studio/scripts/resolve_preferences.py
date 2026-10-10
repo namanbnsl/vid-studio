@@ -5,13 +5,11 @@ import argparse
 import copy
 import hashlib
 import json
-import math
 import re
-from fractions import Fraction
 from pathlib import Path
 
 ID_PATTERN = re.compile(r"[a-z0-9][a-z0-9-]{0,63}\Z")
-OPERATIONAL_KEYS = {"tools", "workflow", "data_policy", "budget", "renderer", "policy", "approval_required_at_every_stage"}
+OPERATIONAL_KEYS = {"tools", "workflow", "data_policy", "budget", "policy", "approval_required_at_every_stage"}
 
 
 def merge(base, override):
@@ -88,7 +86,7 @@ def resolve(workspace, profile_id=None, topic_id=None, source_id=None, project_i
         effective = copy.deepcopy(preferences(studio["defaults"], "studio defaults"))
     else:
         # Preserve original settings; newly added draft profile files are not selected implicitly.
-        effective = {key: copy.deepcopy(studio[key]) for key in ("audience", "duration_seconds", "video", "destinations") if key in studio}
+        effective = {key: copy.deepcopy(studio[key]) for key in ("audience", "destinations") if key in studio}
         if "topic_domain" in studio:
             effective["research"] = {"topic_domain": studio["topic_domain"]}
         if "languages" in studio:
@@ -125,48 +123,17 @@ def resolve(workspace, profile_id=None, topic_id=None, source_id=None, project_i
     if project:
         effective = merge(effective, preferences(project.get("overrides", {}), "project overrides"))
         layers.append(f"project:{project_id}")
-    video = effective.get("video")
-    unresolved = []
-    if video is None:
-        unresolved.append("video")
-    elif not isinstance(video, dict):
-        raise ValueError("video must be an object or null for deferred configuration")
-    else:
-        if video.get("aspect_ratio", "9:16") != "9:16":
-            raise ValueError("This studio contract requires vertical 9:16 video")
-        if video.get("renderer", "hyperframes") != "hyperframes" or video.get("framework", "hyperframes") != "hyperframes":
-            raise ValueError("This studio contract requires Hyperframes")
-        for key in ("width", "height"):
-            value = video.get(key)
-            if value is None:
-                unresolved.append(f"video.{key}")
-            elif isinstance(value, bool) or not isinstance(value, int) or value <= 0:
-                raise ValueError(f"video.{key} must be a positive integer")
-        width, height = video.get("width"), video.get("height")
-        if width is not None and height is not None and width * 16 != height * 9:
-            raise ValueError("Video dimensions must have a 9:16 aspect ratio")
-        rate = video.get("fps")
-        if rate is None:
-            unresolved.append("video.fps")
-        else:
-            try:
-                numeric_rate = float(Fraction(str(rate)))
-            except (ValueError, ZeroDivisionError):
-                raise ValueError("video.fps must be a valid frame rate") from None
-            if isinstance(rate, bool) or not math.isfinite(numeric_rate) or not 1 <= numeric_rate <= 240:
-                raise ValueError("video.fps must be between 1 and 240")
     return {
         "schema_version": 1,
         "context": {"profile_id": selected, "topic_id": topic_id, "source_id": source_id, "project_id": project_id},
         "layers": layers, "inputs": inputs, "draft_profiles": drafts,
-        "unresolved_preferences": unresolved,
         "preferences": effective,
         "note": "Resolution is not approval. For approved projects use the reviewed snapshot, not newly resolved live settings.",
     }
 
 
 def load_snapshot(workspace, project_id):
-    """Read the selected immutable snapshot; approval hashes are checked by the agent."""
+    """Read saved project preferences without changing live settings."""
     workspace = Path(workspace).expanduser().resolve()
     project_dir = workspace / "projects" / identifier(project_id)
     if not project_dir.resolve().is_relative_to(workspace):

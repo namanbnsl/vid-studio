@@ -1,4 +1,4 @@
 interface:
   display_name: "Vid Studio"
-  short_description: "Custom research, scripts, monitors, and vertical videos"
-  default_prompt: "Use $vid-studio to onboard my local studio, learn my research and creative tastes, and set up monitors with approval at every stage."
+  short_description: "Research, monitors, WhatsApp posts, and video scripts"
+  default_prompt: "Use $vid-studio to onboard my research studio, discover websites and topics, configure approved monitors, and prepare sourced WhatsApp posts and video scripts."

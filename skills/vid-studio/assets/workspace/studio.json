@@ -11,54 +11,36 @@
     "paid_calls_authorized": false
   },
   "tools": {
-    "renderer": "hyperframes",
     "search": null,
-    "scheduler": null,
-    "narration": null
+    "scheduler": null
   },
   "defaults": {
     "deliverables": [
-      "video",
-      "whatsapp"
+      "whatsapp",
+      "script"
     ],
     "audience": null,
     "research": {
       "interests": [],
       "preferred_sources": [],
-      "instructions": ""
+      "instructions": "",
+      "exclude_topics": []
     },
     "script": {
       "languages": [],
       "structure": [],
-      "instructions": ""
+      "instructions": "",
+      "template_path": null,
+      "title_rules": [],
+      "visual_strategy": ""
     },
     "whatsapp": {
       "instructions": ""
     },
     "brand": {
-      "frame_path": "brand/frame.md",
-      "instructions": ""
-    },
-    "video": {
-      "aspect_ratio": "9:16",
-      "width": 1080,
-      "height": 1920,
-      "fps": 30,
-      "instructions": ""
-    },
-    "narration": {
-      "enabled": true,
-      "voice": null,
-      "instructions": ""
-    },
-    "captions": {
-      "enabled": true,
-      "instructions": ""
-    },
-    "audio": {
-      "music": false,
-      "sound_effects": false,
-      "instructions": ""
+      "instructions": "",
+      "name": null
     }
-  }
+  },
+  "owner_name": null
 }

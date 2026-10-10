@@ -1,75 +1,81 @@
-# Set up and manage the studio
+# Set up the research studio
 
-## Set up
+Complete this sequence on the first invocation. Prepare the next setup proposal after each approval. Do not require a separate request for each task.
 
-Ask about the user's purpose and audience first. Then ask about these items in short groups:
+## 1. Onboard
 
-- Topics, sources, research depth, and freshness.
-- Script and post language, tone, structure, and templates.
-- Brand, visuals, motion, voice, and captions.
-- Outputs, workspace, tools, services, costs, monitors, cadence, and timezone.
+Ask the user's name and preferred studio name. Ask about audience, languages, topic interests, and research purpose. Then ask about taste, script examples, branding, and post format.
 
-Use supplied examples and templates. Record choices that remain open. Research and monitors can start before video setup.
+Discuss preferred sources, exclusions, depth, freshness, tone, and exact script structure. Ask about available tools, permitted external processing, costs, and timezone. Use short groups of questions. Leave nonessential choices open.
 
-Show one setup proposal. Include preferences, initial monitors, immediate actions, and tools for later setup. After approval, run the initializer:
+Define a reusable content theme and structure from the answers. Include title style, script sections, WhatsApp format, visual approach, and chart preferences. Use supplied examples and templates. A hook and CTA are optional.
+
+Show the preferences for approval. Do not configure video tools or request production assets.
+
+After approval, initialize missing files:
 
 ```sh
 python3 <skill-directory>/scripts/init_workspace.py --workspace <path>
 ```
 
-Enter the approved choices. Configure only the selected tools. Show the completed setup for approval before activation. Keep existing agent configuration.
+Fill studio.json with approved choices. Keep existing files and agent configuration. Record completed onboarding in STATUS.md. The initializer does not approve setup or create schedules.
 
-The initializer keeps existing files. It does not install tools, create schedules, or approve work.
+## 2. Find websites
 
-## Workspace files
+Use the approved research interests to find relevant websites, feeds, and primary sources. Use available search, browser, and LLM tools. Use Google Alerts as an optional discovery input.
 
-- studio.json contains shared preferences, tools, and permissions.
-- brand/frame.md contains video design instructions. Add reference files and templates as necessary.
-- monitoring/sources.json and topics.json contain monitor definitions.
-- monitoring/state.json contains collection checkpoints. inbox/ contains findings.
-- STATUS.md contains decisions, active projects, and the next action.
-- projects/<id>/ contains project settings, evidence, scripts, production files, and approval notes.
+Retrieve actual source pages. An LLM suggestion is a lead until verified. Propose source URLs, purpose, coverage, filters, and monitoring method. Explain why each source fits the user.
 
-Create only necessary files. Record decisions in STATUS.md. Keep earlier versions of reviewed files. Keep existing workspace conventions. Do not migrate an existing workspace without approval.
+Add proposed sources as disabled records. After approval, mark them approved for monitor setup. Do not invent an Alerts connection or create an account without authorization. If integration is unavailable, support imported alerts, feeds, or ordinary search.
 
-## Preferences
+## 3. Find topics
 
-Start with the supplied defaults. Add fields only when necessary. Use text instructions for detailed preferences. Preserve custom fields.
+Find topic suggestions from approved websites and available LLM/search tools. Use Google Trends when accessible and useful. Verify observed trend data before describing a topic as trending.
 
-A user template takes precedence over example content. A script can have an exact structure without a hook. Research, posts, design, motion, audio, captions, and review format are editable.
+Propose topics with source leads, audience value, questions, and freshness. Classify each as one-time or daily from context. A fixed explanation is usually one-time. A changing policy or recurring update can need daily research.
 
-A precise user instruction authorizes that exact local edit. If the scope is unclear, ask which project, profile, or default to change. Keep project feedback local unless the user requests a persistent rule. Get approval before you activate suggested preferences or sources.
+Explain each recommendation. Let the user approve, edit, or remove topics before monitor activation. Do not fabricate Trends data. If access fails, report it and use verified source findings.
 
-For multiple brands or audiences, create optional profiles/<id>.json files. Each profile contains id and preferences. Select the profile on a project or monitor.
+## 4. Configure monitors
 
-The helper merges defaults, the selected profile, topic preferences, and project overrides, in that order. Nested objects merge. Lists replace earlier lists. An empty list or null clears a value. Existing profiles can use extends for inheritance. Do not add inheritance without a useful purpose.
+Prepare the schedule proposal from approved sources and topics. Use the user's cadence when specified. Otherwise recommend one-time or daily from the approved context.
 
-Create project.json from the template. Then resolve the project preferences:
+A one-time topic has no recurring task. A daily topic needs a time, timezone, scope, and scheduler. Ask only for essential missing values. Show exact schedules and actions for approval.
+
+After approval, configure the available host scheduler. Save actual task IDs and confirmation. Configure approved source filters and topic routing. Keep records disabled until setup completes. Show completed monitors for approval before activation.
+
+If no scheduler is available, report that limitation. Support manual collection. Do not claim that a saved cadence is a running monitor.
+
+Scheduled instructions name the workspace and read current approved monitors. They collect evidence, remove duplicates, update the inbox, and report pending reviews. They do not approve topics, research, or scripts. They stop at the next unapproved stage.
+
+An approved research schedule can resume an already approved topic and plan within their scope. New topics or changed plans need review. Research findings still need approval before script generation.
+
+## Local files
+
+studio.json contains identity, shared preferences, tools, and permissions. STATUS.md contains completed setup steps, decisions, projects, and next actions. monitoring/sources.json and topics.json contain definitions. monitoring/state.json contains checkpoints and confirmed scheduler details. monitoring/inbox/ contains findings.
+
+Source records contain id, name, URL or query, kind, and enabled state. Optional fields include filters, cadence, timezone, and profile_id. Topic records contain id, title, mode, source_ids, and enabled state. Use mode one_off or recurring. For recurring work, record the daily cadence explicitly.
+
+Keep project settings, evidence, scripts, posts, and approvals under projects/<id>/. Create only necessary files. Profiles are optional for multiple brands or audiences. Existing workspace conventions can remain.
+
+## Edit and resume
+
+Add, edit, pause, resume, or archive monitors through conversation. Keep stable IDs and saved evidence. Apply cadence and pause changes to actual scheduler tasks. A failed retrieval does not advance its success checkpoint.
+
+Show findings by relevance and novelty. If nothing is new, report that result. Select the next research topic with the user.
+
+Use text instructions for detailed preferences. Preserve custom fields. User templates take precedence over examples. Project feedback stays local unless the user requests a persistent rule.
+
+For optional profiles, the helper merges defaults, profile, topic preferences, and project overrides. Nested objects merge. Lists replace. Empty lists and null clear values. Existing profiles can use inheritance when useful.
+
+Create project.json from the supplied template. Save resolved preferences as preferences.json. Copy relevant references into context/. Include them in topic review.
 
 ```sh
 python3 <skill-directory>/scripts/resolve_preferences.py --workspace <path> --project <id>
 ```
 
-Save the report as preferences.json. Copy applicable templates and brand references into context/. Include these files in topic review.
+On resume, use --project <id> --frozen. Read approvals.md separately. The helper reads saved settings; it does not enforce approval.
 
-When you resume reviewed work, use --project <id> --frozen. Read approvals.md separately. The helper reads saved settings. It does not enforce approval.
+Future preference changes leave reviewed projects unchanged. Apply them to active work only when requested. Show differences and preserve the reviewed copy. Update preferences_path after approval. Reopen the earliest affected stage and later stages.
 
-Changes to studio preferences apply to future work. Apply them to an active project only when requested. Show the differences. Save a new settings copy. Keep the reviewed copy. After approval, update preferences_path. Reopen the earliest affected stage and later stages.
-
-Script style affects editorial review. Visual style affects storyboard review. Topic or output scope affects topic review. Earlier approved stages keep their original settings. Reduced service permissions or cost limits apply immediately to all projects.
-
-## Monitors and inbox
-
-Find source and topic suggestions from the user's research preferences. Include reasons and actual source links. Add, edit, pause, resume, or archive monitors through conversation. Keep stable IDs. Keep findings when you archive a monitor.
-
-Source records contain id, name, URL or query, kind, and enabled state. Optional fields include profile_id, filters, cadence, and timezone. Topic records contain id, title, mode, source_ids, and enabled state. Optional fields include profile_id, preferences, cadence, and timezone. Add detailed watch conditions only when necessary.
-
-Collect from enabled records that are not archived. Stay within the approved scope. Save URLs, dates, evidence, and relevance notes locally. Remove duplicate findings. If retrieval fails, do not advance the success checkpoint.
-
-Show findings in order of relevance and novelty. Let the user select the next topic. If no evidence is new, report that result. Do not start production automatically.
-
-Use available feeds, search tools, and browser tools. Alerts and Trends are optional inputs. Do not invent integration status or trend data.
-
-Use the host scheduler only within approved scope. Save the actual task ID and confirmation. Apply cadence and pause changes to the actual task. A saved cadence is not a running schedule. If no scheduler is available, support manual collection.
-
-Scheduled instructions name the workspace and read the current monitors and permissions. The agent collects findings, removes duplicates, and updates STATUS.md. The agent stops at project approval stages. Collection can continue while a project waits for approval. It cannot change reviewed content or publish without authorization.
+Reduced service permissions and cost limits apply immediately to all work. Do not add policy registries or unnecessary configuration files.

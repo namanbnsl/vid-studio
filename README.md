@@ -1,44 +1,43 @@
 # Vid Studio
 
-Vid Studio is one skill for an AI agent. The agent sets up a local studio for explainer content.
-
-The agent saves your preferences, monitors sources and topics, does research, and writes scripts and posts. Hyperframes produces vertical videos. You approve each applicable stage before the agent starts the next stage.
+Vid Studio is one skill for an AI agent. It sets up a local research studio and prepares content for approval.
 
 ## Install
 
-Push this repository to GitHub. Then run this command:
+Push this repository to GitHub. Then run:
 
 ```sh
 npx skills add YOUR_USER/YOUR_REPO --skill vid-studio --agent codex claude-code
 ```
 
-For a local installation, use `./` instead of the GitHub repository. Add `--global` for an installation that applies to your user account.
+For local installation, use `./` instead of the repository. Add `--global` for an installation for your user account.
 
 ## Start
 
-> Use vid-studio. Set up my studio at /path/to/studio. Ask me about my research and script preferences.
+> Use vid-studio. Set up my research studio at /path/to/studio.
 
-You can then give these instructions:
+The first invocation starts this sequence:
 
-- “Monitor these websites each week. Research battery policy each day.”
-- “Use this script template exactly. Do not add a hook or CTA.”
-- “Create another brand profile. Use these reference examples.”
-- “Pause this topic. Show my inbox. Put the most relevant findings first.”
-- “Research this topic. Produce a brief only.”
-- “Make a vertical video from this approved script. Use slow motion and simple transitions.”
+1. Learn your name, taste, language, audience, branding, and research interests.
+2. Find and propose websites to monitor. Use available search, LLM tools, and optional Google Alerts inputs.
+3. Find and propose topics from websites, LLM tools, and optional Google Trends data.
+4. Recommend one-time or daily monitors from context. Configure approved schedules through the available host scheduler.
+5. Break approved topics into questions and research them.
+6. Verify claims with sources. Save research and evidence locally.
+7. Generate a WhatsApp post and video script from approved research.
+8. Include title, structure, script, visual strategy, charts, data, and proposed real assets.
+9. Apply your edits and obtain approval. Stop at the approved post and script.
 
-You can change the research, script structure, visuals, motion, voice, captions, and outputs. The studio saves shared preferences in studio.json. Profiles are optional. Each project saves its own preferences. Research can start before video setup.
+The agent prepares each next task proactively. You approve applicable stages before advancement. Preferences and monitors remain editable. Research-only output is also supported.
 
-## Files
+## Files and tools
 
-- [SKILL.md](skills/vid-studio/SKILL.md) gives the entry instructions and approval rules.
-- The [studio guide](skills/vid-studio/references/studio.md) gives instructions for setup, preferences, monitors, and schedules.
-- The [research guide](skills/vid-studio/references/research.md) gives instructions for evidence, scripts, and posts.
-- The [production guide](skills/vid-studio/references/production.md) gives instructions for design, assets, and quality reviews.
-- The [Hyperframes guide](skills/vid-studio/references/hyperframes.md) gives renderer instructions and technical requirements.
-- scripts/ contains helpers for setup, preferences, and export checks.
-- assets/ contains templates and an editable example video.
+[SKILL.md](skills/vid-studio/SKILL.md) is the entry point. The [studio guide](skills/vid-studio/references/studio.md) covers setup and monitors. The [research guide](skills/vid-studio/references/research.md) covers research, verification, posts, and scripts.
 
-The [setup outline](docs/SETUP.md) gives the full sequence. The [Hyperframes review](docs/HYPERFRAMES.md) gives the available functions. The [example video](examples/portrait-motion-study.mp4) shows motion. The [test report](docs/VALIDATION.md) gives results and limits.
+Shared settings live in studio.json. STATUS.md records progress. monitoring/ contains definitions, checkpoints, and findings. Each project keeps its preferences, evidence, outputs, and approval notes.
 
-The agent uses your available research tools, scheduler, and services. The pack does not include these services. Files stay local. External services process data only with your approval. Approval notes guide the agent. They do not enforce the rules through software.
+The agent uses your available tools and services. Alerts and Trends integrations are optional. A saved cadence is not a running schedule. Files stay local; external processing needs approval.
+
+The workflow ends at approved posts and scripts. It does not produce videos, send posts, or publish content.
+
+The two Python helpers create missing workspace files and resolve project preferences. They use the Python standard library.
