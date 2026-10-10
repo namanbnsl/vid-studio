@@ -1,41 +1,80 @@
-# Assets, video, and export
+# Produce and review video
 
-## Production assets gate
+Read the saved project preferences, approved script, and copied design references. Use Hyperframes only. Follow hyperframes.md for setup, technical requirements, and advanced functions.
 
-Read the approved project preference snapshot for narration/voice/pronunciation, music/SFX, captions, visual assets, motion, format and deliverables. Use the approved storyboard and scoped tool/service authorization. Read [hyperframes.md](hyperframes.md), [data-media.md](data-media.md), and [quality.md](quality.md). Hyperframes is the sole framework. Prefer local editable charts/diagrams and real assets when they support the explanation. Generated imagery is optional. Check the approved version's official tool instructions before invoking unfamiliar features.
+The default format is 1080×1920 at 30 fps. Apply the approved 9:16 dimensions, frame rate, and duration.
 
-Produce only selected assets: narration when narration.enabled is true, caption timing when captions.enabled is true, and the approved imagery, charts, fonts, music or effects. An intentionally silent profile can set narration.enabled false and disable music/SFX; captions can be disabled independently. Unresolved selections need review before production. Preserve editable chart sources and raw data. Narration must match the approved script; pronunciation or timing corrections that change wording need editorial reapproval. Material storyboard changes return to its gate.
+## Storyboard
 
-`06-assets/manifest.json` records each asset's id, scene_ids, local_path, sha256, kind, source URL or generation provenance, license/usage terms, attribution, and any hosted service used. Generated assets include model/service and prompt where available. Never invent licenses. Unresolved rights or factual issues are blockers, not implicit approval.
+Save the storyboard under 05-storyboard/. Show a portrait keyframe for each scene. Show a static final state and specification for each data graphic.
 
-Provide applicable asset contact sheets/keyframes, playable audio when selected, chart review, timing estimate, and manifest for approval before assembling the video.
+Include scene ID, estimated times, claim IDs, visible text, selected audio and captions, layout, motion, and reading holds. Include the asset plan, costs, and services. Review the design at phone size. Include destination interface overlays.
 
-## Composition preview gate
+Apply the user's visual references, fonts, colors, and motion preferences. Keep one clear explanatory focus for each beat. Use motion to explain mechanisms, comparisons, or relationships. Then hold the image for sufficient reading time.
 
-After assets approval, scaffold/edit Hyperframes sources under `07-video/hyperframes/`, using the approved frame.md and [design-motion.md](design-motion.md). Build portrait-native HTML scenes with local media, approved narration timing or silent reading holds, and seekable motion. Start with 9:16, 1080×1920, 30 fps only if setup approved those settings. Keep titles/captions away from target-platform UI overlays; validate safe areas against the intended destination. Do not claim one universal safe margin for all platforms.
+Do not animate chart values beyond their correct positions. Do not imply chronology without time data. Keep object identity and continuity. Avoid effects that distract from the explanation.
 
-Run applicable Hyperframes lint/check/keyframe diagnostics, inspect scene and boundary snapshots, and present the persistent reachable Studio preview with a source manifest and QA evidence. Do not encode merely because checks pass. Await explicit approval of the checked composition version before making a video draft. Studio edits invalidate the affected source approval.
+Charts need correct scales, units, labels, caveats, source notes, and approved values. Keep calculations reproducible. Show missing values as missing. Identify illustrative samples. Identify generated images if users could mistake them for evidence.
 
-## Video draft gate
+Select editable diagrams, charts, licensed assets, or generated images for their explanatory purpose. Get storyboard approval before final narration, paid assets, or generated production assets.
 
-After preview approval, encode the approved Hyperframes composition with the approved fps and `--quality looks`, preserving the output as a versioned draft. Record command/settings, environment, source hashes and render logs. This gate reviews the actual encoded output.
+## Assets
 
-Review the actual render, including representative frames and full playback/audio where available. Check:
+Create selected components under 06-assets/. Narration, captions, music, sound effects, and generated images are optional. For silent video, use reading holds. If captions are disabled, transcription is not required.
 
-- Correct aspect ratio, resolution, fps, duration, and complete audio/video streams.
-- No clipped text, missing fonts/media, layout collisions, misleading chart scales, or broken transitions.
-- When selected: readable captions with correct names/numbers and synchronized narration. Always check sufficient reading time for displayed information.
-- Clear voice, balanced music, no clipping, and appropriate loudness for the destination.
-- Match to selected approved audio, scene order, evidence, brand, and asset manifest. Mark audio/caption checks not applicable only for intentionally disabled components; failed selected services remain blockers.
+If a selected service fails, report the failure. Do not disable the component or change providers without approval.
 
-Use ffprobe or renderer metadata for technical checks if available. Record which checks were actually run in `07-video/qa.md`; visual/audio checks unavailable to the agent must be completed by user review. Do not mark an unperformed check as passed. Fix defects within the approved creative scope; changes to upstream content require reapproval. Present a playable draft, QA report, and revision notes. Await approval before creating final delivery outputs.
+For narration, use approved recordings, local TTS, or authorized external services. Review a voice sample, pronunciations, and number reading. Keep the approved meaning and words. If the words change, return to editorial review.
 
-## Final export gate
+Measure narration duration. Derive scene, word, and phrase times from the actual audio. Select the correct transcription language and model when necessary. Correct transcription errors against the approved script. Word count does not give final alignment.
 
-After draft approval, use Hyperframes `--quality delivery` to produce the final video, plus captions where applicable, thumbnail/cover if approved, WhatsApp draft copy if requested, and `08-export/delivery.json` with paths, hashes, format, duration, attribution, and source-project revision. Use a broadly playable export profile appropriate to the approved destination (commonly MP4 with H.264/AAC); decode/inspect the final file, not just the preview. Follow quality.md for final playback/audio/technical verification.
+Keep narration, music, effects, and source audio separate. Mute source audio when you replace it. Use documented Hyperframes audio groups, gain, envelopes, effects, and ducking. Local fonts need usage rights, correct weights, styles, and glyphs.
 
-Present the final delivery package for approval. Mark complete only after its explicit approval. Sending WhatsApp messages, uploading, or publishing is a separate scoped action requiring authorization; it is not included in export approval.
+Review captions for names, numbers, phrase groups, timing, and phone readability. Save an asset manifest. Record paths, scene IDs, hashes, sources, usage rights, and attribution. For generated assets, record the service, model, and prompt when available.
 
-## Recovery
+Keep editable chart sources and raw data. Do not invent licenses. Show applicable asset previews, charts, audio, timing, and manifest for approval. Wait for approval before assembly.
 
-Cache successful artifacts and resume from the failed operation. Retry transient failures a small bounded number of times (normally at most two retries). Before retrying an external job, check whether it already exists/completed and whether repeating it would duplicate cost or uploads. On persistent failure, record the tool, error, preserved outputs, and available alternatives; stop dependent work.
+## Composition preview
+
+Build the composition under 07-video/hyperframes/. Use local dependencies and motion that supports seeking. Copy the approved frame.md into the composition. Use actual audio timing or approved silent reading holds. Keep selected captions clear of destination overlays. Preserve correct chart final states.
+
+Run the pinned Hyperframes checks. Inspect scene, transition, and final-frame images. Require successful lint, browserSkipped: false, sufficient sample coverage, and no unresolved errors. Record warnings and their resolution.
+
+Add focused timing and keyframe checks where necessary. Empty assertions do not prove motion quality. Use hyperframes.md for commands and motion sidecars.
+
+Show the reachable Studio preview, proof frames, and review notes. Keep the preview available during review. Save a sorted path/hash manifest for source files, dependencies, and assets. Exclude caches and temporary files.
+
+Get approval for the checked source version before draft encoding. If Studio edits change files, repeat the checks and affected review. On resume, compare actual files with the manifest. A manifest hash alone does not prove that its files are unchanged.
+
+## Rendered draft
+
+After preview approval, render with quality looks. Review the actual MP4 for these items:
+
+- Facts, chart geometry, labels, and glyphs.
+- Phone readability, brand, motion continuity, and reading holds.
+- Unexplained black frames or reset frames.
+- Selected narration, captions, pronunciation, and audio balance.
+- Dimensions, frame rate, codecs, pixel format, duration, and audio coverage.
+- Complete FFmpeg decode, boundary frames, and the final frame.
+
+Do a full visual playback review. When audio is present, listen for clipping and intelligibility. Measure loudness and true peak against the approved target. Audio measurements do not replace listening.
+
+```sh
+python3 <skill-directory>/scripts/verify_export.py <video.mp4> --width 1080 --height 1920 --fps 30 --duration <approved-seconds> --require-audio --decode
+```
+
+Use the approved settings. For intentional silence, omit --require-audio. For an approved shorter or offset audio interval, use --audio-start and --audio-duration.
+
+The helper measures video and audio coverage separately. Container duration cannot hide a truncated stream. Mixed audio coverage does not prove complete narration. Inspect the narration source and listen to the output.
+
+Use qa.md to record completed, failed, user-pending, or inapplicable checks. Record tools, versions, and actual outputs. If playback is unavailable, ask the user to review the file. Do not report an unperformed check as passed.
+
+Unverified facts, unresolved rights, missing files, illegible text, broken seeking, or missing approval prevent advancement. Get draft approval before final export.
+
+## Final export
+
+Render quality delivery to a new final path. Inspect the final file too. Supply selected caption, cover, and post files. Include attribution and delivery.json. Record paths, hashes, format, duration, and source version.
+
+MP4 with H.264/AAC is a common delivery format. Use the format for the approved destination. Present the package for final approval. Get separate approval to publish or send it.
+
+Revisions reopen the earliest affected stage and later stages. Keep earlier reviewed files and approved evidence. Approval notes guide the agent. They are not a software enforcement service.

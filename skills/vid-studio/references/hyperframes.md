@@ -1,65 +1,91 @@
-# Hyperframes production contract
+# Hyperframes technical requirements
 
-Hyperframes is the only composition and video-rendering framework in vid-studio. FFmpeg/ffprobe may prepare or inspect assets and exports. A missing browser or failed Hyperframes render is a blocker; preserve the project rather than silently switching frameworks.
+Use Hyperframes for composition and video render. FFmpeg/ffprobe can prepare assets and inspect exports. If the browser or render fails, preserve the project. Do not change frameworks.
 
-This guide was reviewed against published CLI **0.8.144** and official source commit **affa4d53cf86334c18d0476955fce3f4f73f6a06**. Versions are a validated baseline, not a promise about future releases. Check the chosen version's help/source when behavior differs. Do not mix an older CLI with instructions from an unreviewed newer skill.
+The reviewed baseline is CLI **0.8.144** and source commit **affa4d53cf86334c18d0476955fce3f4f73f6a06**. Later releases can differ. Use the selected version's help and source. Do not combine an older CLI with unreviewed newer instructions.
 
-## Approved setup and dependencies
+## Dependencies
 
-Require Node.js 22+, FFmpeg/ffprobe, and a Chromium browser that Hyperframes can launch. Inspect `doctor --json` and its actual checks; an exit code of zero does not mean readiness. Optional Docker/transcription/TTS/music failures do not block local silent/recorded-narration rendering when those capabilities are not selected. Verify browser launch through `check` before declaring readiness.
+Use Node.js 22+, FFmpeg/ffprobe, and Chromium that Hyperframes can launch. Inspect doctor --json and its actual results. A zero exit code does not prove readiness. Verify browser launch with check.
 
-Install into the selected workspace, after setup approval, with exact versions and a lockfile. Example from its `tools/` directory:
+Missing optional tools do not prevent work that does not use them. Examples include Docker, transcription, TTS, and music services.
+
+After setup approval, install exact versions in the workspace tools/ directory:
 
 ```sh
 npm install --save-exact hyperframes@0.8.144 gsap@3.14.2
 ```
 
-Resolve the installed binary absolutely (`<workspace>/tools/node_modules/.bin/hyperframes`). In the commands below `HF` means that resolved binary, not a shell variable the user must configure. A project-local wrapper can invoke it consistently. Record versions and lockfile hashes in `tools/toolchain.json`, including the browser and FFmpeg actually used. Do not auto-upgrade an active production project.
+Keep the lockfile. Resolve the binary at <workspace>/tools/node_modules/.bin/hyperframes. In these examples, HF means that absolute binary path. Record actual tool, browser, and encoder versions in tools/toolchain.json. Include the lockfile hash. Do not upgrade an active project automatically.
 
-Our references and starter are sufficient for the basic path. For advanced features, read the matching official domain skill/source at the reviewed commit. Optional upstream skill installation belongs in approved setup. Standalone upstream skill updates track `main` separately from the pinned npm CLI; record their commit/hashes too. Do not install all upstream workflows just to make one explainer.
+The supplied guide and starter support basic production. For advanced functions, read the applicable official source at the reviewed commit. Install upstream skills only within approved setup scope. Record their commit and hashes separately. The npm version does not pin independently updated skills.
 
-For local-first operation, set `HYPERFRAMES_NO_TELEMETRY=1` on CLI invocations and `HYPERFRAMES_SKIP_SKILLS=1` when initializing. At the reviewed version `--skip-skills` is ignored; the environment variable prevents init's automatic skill update. Do not run feedback/events/publish or upload research as an implicit part of rendering. Cloud render, external media providers, model downloads, and registry downloads remain governed by setup authorization. Never fall through from a selected local provider to a hosted one without consent.
+Set HYPERFRAMES_NO_TELEMETRY=1 for CLI operations. Set HYPERFRAMES_SKIP_SKILLS=1 during initialization. At this version, --skip-skills does not prevent the automatic skill update. The environment variable does.
 
-## Scaffold at the composition stage
+Do not send feedback, publish, or upload research as part of an implicit render action. Get approval for external processing and downloads. Do not change a local provider to an external provider without approval.
 
-Use a new `07-video/hyperframes/` directory; do not initialize over existing work:
+## Create the composition
+
+Use a new 07-video/hyperframes/ directory at the composition stage. Do not initialize over existing work.
 
 ```sh
 HYPERFRAMES_SKIP_SKILLS=1 HYPERFRAMES_NO_TELEMETRY=1 HF init <project>/07-video/hyperframes --non-interactive --resolution portrait --skip-transcribe
 ```
 
-`HF` is explanatory notation: replace it with the resolved executable path and quote paths containing spaces. Supplying audio/video to init can trigger transcription; keep media staging deliberate. Apply the approved dimensions, static root duration, fps, brand and scene timings. The bundled [portrait starter](../assets/hyperframes-starter/index.html) is a tested, silent three-scene authoring example, not an approved episode or a complete visual style for every topic. Copy local GSAP from `tools/node_modules/gsap/dist/gsap.min.js` to the composition's `assets/gsap.min.js`; do not rely on a CDN at render time.
+Replace HF with the absolute executable path. Put quotation marks around paths that contain spaces. Supplied media can trigger transcription during init. Stage media deliberately.
 
-**Init also copies AGENTS.md and CLAUDE.md regardless of the skip-skills setting.** Immediately inspect these newly generated files before another agent enters the composition directory. In this new scaffold, replace only those generated files with the bundled [agent policy](../assets/hyperframes-starter/agent-policy.md), adding the resolved installed skill path, workspace path, and project path. Save the original generated versions in a toolchain audit directory outside the active instruction tree. This is part of approved vid-studio setup, not permission to replace pre-existing user guidance. Never init over an existing project; preserve and reconcile user-owned instructions explicitly.
+Apply approved dimensions, duration, frame rate, design, and scene times. The [portrait starter](../assets/hyperframes-starter/index.html) is a silent example with three scenes. It is not an approved episode or a required visual style.
 
-## Composition invariants
+Copy tools/node_modules/gsap/dist/gsap.min.js to the composition's assets/gsap.min.js. Do not use a CDN at render time.
 
-- Top-level index.html: visible root in the body, no template wrapper. Declare `data-composition-id`, `data-width`, `data-height`, and finite static `data-duration`. Size root CSS to 100%; the runtime applies canvas pixels.
-- Each timed scene: stable unique IDs, `data-start`, `data-duration`, and `.clip` by convention. Track index is an editor lane; CSS z-index determines stacking. End states must resolve before a clip's half-open end boundary.
-- GSAP: one paused timeline per composition, registered at `window.__timelines[compositionId]` after all tweens are constructed. Registration can follow `document.fonts.ready`. Never call play for render-critical animation.
-- Animate inner visual wrappers. Framework-owned clip visibility must not be driven by display/visibility/autoAlpha tweens. Avoid CSS transform centering on the same element whose transforms GSAP animates; use layout containers or explicit fromTo states.
-- State must derive from composition time. No clocks, event/scroll/hover triggers, uncontrolled timers, unseeded randomness, or live API data. Precompute visual/audio analyses and freeze every dependency locally.
-- Sub-compositions: styles, markup, and scripts belong inside the template transport; match host composition ID, inner ID, and timeline registration key. Give descendants globally unique prefixed IDs. Do not manually nest child timelines that Hyperframes already drives.
-- Give every audio/video a unique ID. Let the framework own seeking and playback. Avoid timing both a video and a plain timed ancestor. Scene-local media timing within sub-compositions is supported. Use baseline data-volume and documented data-automation envelopes for sound.
-- Ship licensed fonts with explicit local @font-face weights/styles and required glyphs. A system alias is acceptable for a technical fixture; it is not a reproducible brand font. Local font lookup alone is machine-dependent.
-- Root duration is read before scripts run. If approved narration changes the length, update the authored root duration and dependent scene timings; a variable cannot rewrite an explicit root duration after load.
+Init copies AGENTS.md and CLAUDE.md even when the skip-skills environment variable is set. Inspect these generated files immediately. In the new scaffold, replace only generated guidance with the supplied [agent policy](../assets/hyperframes-starter/agent-policy.md). Add the actual skill, workspace, and project paths.
 
-## Registry and advanced capabilities
+Save original generated files outside the active instruction tree. Do not replace existing user guidance. This replacement applies only to files from the new approved scaffold.
 
-Before rebuilding a named chart, caption treatment, map, mask, or transition, search the catalog by visual intent in English:
+## Composition rules
+
+- Put a visible root in the index.html body. Do not wrap the root in a template.
+- Declare data-composition-id, data-width, data-height, and a finite static data-duration. Size root CSS to 100%. The runtime applies canvas pixels.
+- Give each scene a stable unique ID, data-start, and data-duration. Use .clip by convention.
+- Use track index for editor lanes. Use CSS z-index for stacking. Complete final states before the clip's half-open end boundary.
+- Create one paused GSAP timeline per composition. Register it at window.__timelines[compositionId] after you construct the tweens.
+- Registration can occur after document.fonts.ready. Do not call play for animation that controls the render.
+- Animate inner visual wrappers. Do not control framework clip visibility with display, visibility, or autoAlpha tweens.
+- Do not center with CSS transforms on an element whose transforms GSAP animates. Use layout containers or explicit fromTo states.
+- Derive each state from composition time. Do not use clocks, interaction triggers, uncontrolled timers, unseeded randomness, or live API data.
+- Calculate visual and audio analyses before render. Save every dependency locally.
+- Put sub-composition styles, markup, and scripts inside the template transport. Match host ID, inner ID, and timeline registration key.
+- Give descendants globally unique IDs with prefixes. Do not manually nest child timelines that Hyperframes already drives.
+- Give each audio and video element a unique ID. Let the framework control seeking and playback.
+- Do not apply timing to both a video and its plain timed ancestor. Sub-compositions support scene-local media timing.
+- Use baseline data-volume and documented data-automation envelopes for audio.
+- Supply licensed local fonts with explicit @font-face weights, styles, and required glyphs. System aliases are suitable only for technical examples.
+- Do not depend on local font lookup for reproducible production. It varies between machines.
+- Set root duration before script execution. If narration changes duration, update the authored root and dependent scene times.
+- A variable cannot rewrite an explicit root duration after load.
+
+## Registry and advanced functions
+
+Search the catalog before you rebuild a named visual element. Use an English query for the visual purpose:
 
 ```sh
 HF catalog --query "reveal a process diagram step by step" --json
 HF add <chosen-name> --no-clipboard --json
 ```
 
-Search/install only within approved download scope. Inspect installed source, sample content, dimensions, dependencies, sounds, and licensing. Reflow landscape blocks for portrait, replace demo figures with approved local data, freeze map geometry, and verify mounted scenes. Blocks are sub-compositions; components merge into the host's markup/style/timeline. Persist downloaded source and hashes, rather than depending on a mutable registry URL during render.
+Stay within approved download scope. Inspect source, sample content, dimensions, dependencies, sounds, and licenses. Reflow landscape blocks for portrait. Replace sample values with approved data. Save map geometry locally. Verify mounted scenes.
 
-GSAP is the default motion runtime for simplicity. CSS/WAAPI/Anime.js/Lottie/Three.js and shader transitions can be used through the supported seek adapters when their benefit is clear; read the relevant official adapter and prove arbitrary-time seeking first. 3D/WebGL increases GPU requirements. Do not add it merely to claim quality. With shaders or HDR layered compositing, use a full-bleed child for the background instead of depending on a composition-root fill.
+Blocks are sub-compositions. Components become part of the host markup, styles, and timeline. Keep downloaded source and hashes. Do not depend on a mutable registry URL during render.
 
-Other optional Hyperframes capabilities: website capture for actual site walkthroughs; caption styling; precomputed audio-reactive animation; variable-driven batch rendering; Figma/design imports; transparent overlays; Docker and approved cloud/Lambda/Cloud Run rendering. They are not required for an evidence-based explainer. A blocked capture is unusable; a batch must not bypass per-episode approvals; hosted paths require transfer/cost approval. Consult the capability review in the repository docs when choosing scope.
+GSAP is the default motion runtime. Supported adapters can use CSS, WAAPI, Anime.js, Lottie, Three.js, and shaders. Select these only for a useful purpose. Read the official adapter instructions. Prove seeking at arbitrary times before production.
 
-## Validate, preview, approve, encode
+3D/WebGL requires suitable GPU support. Do not add it only to claim quality. For shaders or layered HDR, use a child element that covers the full frame. Do not depend on the composition root background.
+
+Optional functions include website capture, caption styles, calculated audio-reactive motion, batch render, design import, transparent overlays, and hosted render. Docker, Lambda, and Cloud Run are optional execution methods.
+
+Select functions for the approved purpose. Reject unusable website captures. Keep approval for each batch output. Get approval for external transfers and costs. Read the repository capability review when you select advanced scope.
+
+## Validate and preview
 
 ```sh
 HF lint <composition-dir> --json
@@ -69,17 +95,31 @@ HF snapshot <composition-dir> --at 0.5,3.5,6.5
 HF preview <composition-dir> --background
 ```
 
-Use lint while authoring; check includes lint, so omit redundant lint immediately before the final check. Snapshot timestamps above are examples: inspect each scene's entrance, middle, settled state, boundaries, and last frame at the project's actual proof times. Require `ok: true`, `browserSkipped: false`, and meaningful nonzero sampling. Empty browser audits are not passes. Record warnings and fixes/justified intent; use narrow documented allowances rather than muting audits on scene roots.
+Use lint during authoring. Check includes lint, so a second lint immediately before check is unnecessary.
 
-Add `*.motion.json` sidecars where they express storyboard intent (ordering, appearsBy, staysInFrame). `keepsMoving` is optional: a readable hold is valid; do not introduce decorative jitter to satisfy a liveness test. Focused keyframes `--shot` checks plus actual images prove important pose transitions. See [quality.md](quality.md).
+Snapshot times are examples. Inspect entrances, intermediate states, settled states, boundaries, and the last frame at actual project times. Require ok: true, browserSkipped: false, and sufficient nonzero sampling. An empty browser audit does not pass.
 
-Verify the persistent Studio URL is reachable, use its printed project route, and keep it alive during review. Studio edits alter source files; recheck hashes before rendering. **Composition/preview approval authorizes the draft encode; no encode before it.** Then:
+Record warnings, fixes, and justified exceptions. Use narrow documented allowances. Do not disable audits on scene roots.
+
+Add *.motion.json sidecars for useful assertions such as ordering, appearsBy, and staysInFrame. KeepsMoving is optional. A static reading hold is valid. Do not add motion only to satisfy a liveness test.
+
+Use focused keyframe --shot checks and actual images to verify important transitions. Follow [production.md](production.md) for quality review.
+
+Verify the persistent Studio URL. Use its printed project route. Keep the preview available during review. Studio edits change source files. Compare hashes before render.
+
+## Encode after approval
+
+Get composition preview approval before draft encoding. Then render the approved version:
 
 ```sh
 HF render <composition-dir> --fps 30 --quality looks --output <project>/07-video/draft-v1.mp4
 ```
 
-Use approved fps, not necessarily the example's 30. After rendered-draft approval, export with `--quality delivery` to a new final path. `draft` quality is only for explicitly authorized low-cost iteration; never call it delivery quality. Inspect encoded streams, decode/playback, sound, and final frames. Save render logs and source/environment hashes. Same source/time should produce the same scene state; byte-identical output across arbitrary machines is not guaranteed. Pin container digest and actual browser/encoder environment when strict reproducibility matters.
+Use approved fps. The example value is 30. After draft approval, use --quality delivery and a new final path.
+
+Use draft quality only for approved low-cost iteration. Do not call draft quality delivery quality. Inspect streams, decode results, playback, audio, and final frames. Save logs and source/environment hashes.
+
+The same composition time must give the same scene state. Output bytes can differ between machines. If strict reproducibility is required, pin the container digest, browser, and encoder environment.
 
 ## Official references
 

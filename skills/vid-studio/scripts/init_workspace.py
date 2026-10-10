@@ -28,7 +28,7 @@ def initialize(destination: Path) -> dict:
             created.append(str(relative))
         except FileExistsError:
             preserved.append(str(relative))
-    for relative in ("projects", "monitoring/inbox", "settings/history"):
+    for relative in ("projects", "monitoring/inbox"):
         target = destination / relative
         if not target.resolve().is_relative_to(destination):
             raise ValueError(f"Directory escapes workspace: {relative}")

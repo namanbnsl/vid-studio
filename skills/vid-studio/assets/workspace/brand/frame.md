@@ -23,10 +23,10 @@ safe_areas:
   overlay_template: undecided
 ---
 
-# Portrait frame direction — proposed starting sample
+# Portrait design sample
 
-These tokens need user review; they are not approved branding. Replace with the approved visual direction and locally supplied font paths/licenses.
+These values require user review. They are not approved brand settings. Replace them with the approved design and licensed local fonts.
 
-Use one explanatory focus per beat, a quiet background, clear labels, and progressive disclosure. Prefer portrait-native diagrams and aligned comparisons. Keep chart scales truthful and final values stable. Motion introduces relationships and directs attention, then yields to a readable hold.
+Use one explanatory focus per beat. Use a quiet background, clear labels, and sequential reveals. Use portrait diagrams and aligned comparisons. Keep chart scales correct. Hold final values long enough for reading.
 
-Define before approval: source-note size/placement, caption band, platform overlay safe areas, series colors, line/shape rules, allowed transitions, voice/audio targets, and language glyph coverage. Test representative title, mechanism, and real-data chart style frames at phone size.
+Before approval, define source notes, caption area, destination overlays, series colors, shape rules, and transitions. Define audio targets and required glyphs. Review title, mechanism, and real-data chart samples at phone size.

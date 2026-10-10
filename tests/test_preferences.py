@@ -106,7 +106,7 @@ class PreferenceTests(unittest.TestCase):
 
     def test_frozen_resume_and_explicit_snapshot_revision(self):
         self.profile("default", {"script": {"structure": ["finding", "evidence"]}, "narration": {"enabled": False}, "captions": {"enabled": False}})
-        state = {"id": "episode", "preferences_path": "preferences.json", "overrides": {}}
+        state = {"id": "episode", "profile_id": "default", "preferences_path": "preferences.json", "overrides": {}}
         self.write("projects/episode/project.json", state)
         original = self.resolve(self.workspace, project_id="episode")
         self.write("projects/episode/preferences.json", original)
@@ -130,6 +130,7 @@ class PreferenceTests(unittest.TestCase):
         with tempfile.TemporaryDirectory() as outside:
             target = Path(outside) / "external.json"
             target.write_text(json.dumps({"id": "external", "preferences": {}}))
+            (self.workspace / "profiles").mkdir(exist_ok=True)
             (self.workspace / "profiles/external.json").symlink_to(target)
             with self.assertRaises(ValueError):
                 self.resolve(self.workspace, profile_id="external")

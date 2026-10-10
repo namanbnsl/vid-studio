@@ -1,9 +1,11 @@
-# Vid Studio composition policy
+# Vid Studio composition rules
 
-This directory contains a Hyperframes composition belonging to a local vid-studio project. Read the installed vid-studio SKILL.md, the workspace's studio.json and STATUS.md, and the project's approvals.json, selected immutable preference snapshot (project.json preferences_path) and context references before acting. Use the workspace and skill paths recorded by setup; if missing, find/ask for them before changing reviewed artifacts.
+This directory contains a Hyperframes composition for a local Vid Studio project.
 
-Hyperframes is the sole video framework. Use the approved pinned binary/toolchain and local data, media, fonts, and seekable animation. Technical Hyperframes domain references are useful; upstream creation workflows do not authorize stage advancement.
+Read the installed SKILL.md, workspace studio.json, and STATUS.md. Read the project's approvals.md and saved preferences at project.json preferences_path. Read the copied reference files. Use the recorded workspace and skill paths. If paths are unavailable, locate them or ask the user before you change reviewed files.
 
-Every stage requires explicit user approval. Do not generate narration before storyboard approval, assemble before assets approval, encode before composition-preview approval, or export delivery before draft approval. Changes to reviewed artifacts invalidate affected downstream approvals.
+Use Hyperframes only. Use the approved binary and tool versions. Use local data, media, fonts, and motion that supports seeking. Upstream instructions do not authorize the next stage.
 
-Do not auto-update skills/runtime, switch media providers, send feedback/events, upload, deploy, publish, or spend outside the approved setup policy. Preserve user edits and local provenance. Studio edits must be reconciled with source hashes before rendering. Report missing capabilities; do not mark skipped checks as passes.
+Get approval for each applicable stage. Get storyboard approval before narration, asset approval before assembly, and preview approval before encoding. Get draft approval before final export. If reviewed files change, reopen affected stages.
+
+Do not update tools, change providers, upload, deploy, publish, or spend outside approved scope. Do not send feedback or events implicitly. Preserve user edits and source records. After Studio edits, compare source hashes before render. Report unavailable functions. Do not report skipped checks as passed.

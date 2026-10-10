@@ -1,21 +1,11 @@
 # Studio status
 
-Setup: draft. No project or future stage is approved by initialization.
+Setup: draft. No stage is approved.
 
-Next action: fill the templates/profiles with the approved onboarding proposal, configure only selected capabilities and monitors, and present completed setup for approval. Video setup may be deferred.
+Preferences, services, and costs: awaiting setup discussion.
+Monitors: none enabled.
+Projects: none.
 
-## Active projects
+Next action: discuss preferences and approve setup. Then select an activity.
 
-None yet.
-
-## Pending approvals
-
-Completed setup.
-
-## Blockers
-
-Record missing capabilities and unresolved settings here.
-
-## Studio profiles and monitors
-
-Default profile: draft. No monitors active. Show approved preferences, active/paused monitors and new findings here after onboarding.
+Record approvals, decisions, and pending actions here. Video setup can occur later.

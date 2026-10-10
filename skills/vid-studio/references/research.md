@@ -1,37 +1,39 @@
-# Monitoring and research
+# Research and write content
 
-## Source and topic management
+Use the project's saved preferences and templates. Create only necessary directories. Get approval at each applicable stage.
 
-Use [manage-studio.md](manage-studio.md) for conversational discovery/add/edit/pause/archive actions and [profiles.md](profiles.md) for research tastes. Apply selected interests/exclusions, source priorities, geography, freshness, depth, novelty and ranking rules. Suggestions remain proposals; avoid substituting the agent's own editorial taste.
+## Topic
 
-`monitoring/sources.json` contains a sources array. Each source has id, name, url, kind (website/feed/search/alert), rationale, cadence, and enabled. `monitoring/topics.json` contains a topics array with id, title, keywords, mode (one_off/recurring), cadence, and source_ids. These files are approved configuration; do not store run checkpoints in them.
+Propose the audience, angle, value, source leads, and outputs. Create project.json, preferences.json, and copied reference files. Save the topic proposal under 01-topic/. Get approval for the topic and settings together.
 
-Store mutable checkpoints in `monitoring/state.json`, keyed by source/topic ID: last_attempt_at, last_success_at, last_researched_at, previous_project_ids, and deduplication keys. Normal collection updates state/inbox/status without changing approved configuration hashes. Changing cadence, source lists, keywords or scope still requires configuration approval.
+## Plan
 
-A precise user command authorizes its exact local source/topic change; propose ambiguous or agent-discovered changes for approval before enabling them. An approved setup list counts as approval of that initial list. Record subsequent configuration approvals in a settings/changes.json with exact changed files and hashes. Config approval does not approve candidate topics or research.
+Define the central question, subquestions, boundaries, source strategy, disputed points, date window, and data needs. Use the approved research depth and time limit. Save the plan under 02-plan/. Wait for approval before full research.
 
-Use feeds and available search tools where practical; use browser retrieval for sites that need it. Google Alerts/Trends are optional inputs, not assumed installed integrations. If unavailable, propose manual alert/feed import or ordinary search; do not fabricate trends or create accounts without authorization.
+## Research
 
-Save signals with URL, retrieved_at, publication date when available, short relevance note, and a deduplication key. Track successful checks individually; a failed fetch must not advance that source's success checkpoint. Recurring research compares against previous briefs and identifies what changed. No meaningful new evidence can yield a “no new episode recommended” review report.
+Deliver a brief, claim ledger, and locally saved evidence under 03-research/. Use primary or authoritative sources where possible. Find independent evidence for disputed or consequential claims. Separate facts, interpretation, and unknown information. Record contradictory findings and inaccessible sources.
 
-## Topic selection gate
+Claim records contain IDs, text, source IDs, excerpts, dates, caveats, and status. The status is supported, disputed, or unverified. Source records contain URLs, publisher, title, dates, and relevant excerpts or permitted snapshots. A URL alone is not saved evidence.
 
-Create the draft project using assets/project/project.json. Resolve preferences with the helper, save preferences.json and copied context references, and include the selected profile/overrides/deliverables in topic review.
+For charts, save original data and reproducible calculations locally. Include units, dates, rounding, and source metadata. Do not invent missing data. Make sure that chart geometry, scales, and labels agree with the evidence. Identify forecasts and illustrative values clearly. Use production.md for visual review.
 
-Deliver `01-topic/topic.md`: candidate topic, audience, angle, timeliness, one-off/recurring mode, likely value, and initial source leads. Offer a few alternatives only when needed. Await approval of the chosen topic and angle.
+Get approval for the research package. For research-only work, this approval completes the project. Cross-model review is not required.
 
-## Research plan gate
+## Script or post
 
-Read the approved project preference snapshot. Respect its research interests, angle, source priorities, exclusions, freshness, depth, brief format and time budget.
+Save requested content under 04-editorial/. Use the exact approved template, language, tone, sections, pacing, examples, and ending. Apply title and hook rules. Do not add a hook to a script that excludes it.
 
-Deliver `02-plan/research-plan.md`: central question, subquestions, scope exclusions, primary-source targets, disputed points, time window, expected data/charts, and research limits. Await approval before collecting the full research package.
+WhatsApp is optional. Use its approved format and source-link preferences. Approval does not authorize sending.
 
-## Research brief gate
+For video, keep production notes beside the exact script. Include scene IDs, claim IDs, visible text, visual purpose, and estimated times. Include selected narration or silent reading holds. Do not add annotations inside a template that excludes them. Measure actual narration times during production.
 
-For numerical evidence, follow [data-media.md](data-media.md): preserve original and derived datasets locally, with source metadata and reproducible transformations.
+Review facts, uncertainty, audience fit, and agreement with the template. Wait for approval. Script-only or post-only work finishes at this stage. For video, continue to the storyboard in production.md.
 
-Research with the approved plan and available browsing tools. Prefer original publications, first-party data, and authoritative sources; seek corroboration for consequential or disputed statements. Distinguish evidence, interpretation, and unknowns. Save enough retrieved evidence locally to support handoff: URL, publisher/title, dates, relevant excerpts or permitted snapshots, and extraction notes. Respect access and usage restrictions; a link alone is not a local evidence record.
+If the angle or research changes materially, return to the affected approval stage.
 
-`03-research/claims.json` contains claims with id, text, source_ids, supporting excerpts, as_of, status (supported/disputed/unverified), caveats, and optional data_path. Store corresponding source metadata in `03-research/sources/`. Cite claim IDs in the brief. Document contradictory findings, inaccessible sources, date sensitivity, and excluded unsupported claims. No second-model review is required.
+## Approval notes
 
-Deliver the brief, claim ledger, sources, and proposed story takeaway. Await approval before writing publishable content. For a research-only scope, this approval completes the requested deliverable; do not generate posts/scripts/videos automatically. If research changes the approved angle materially, return to topic/plan review.
+Keep approvals.md short. Record the stage, reviewed file and version, user approval, and date. Record the reason when a stage reopens. In STATUS.md, record the current stage and next action.
+
+Use versioned filenames or history copies for reviewed files. Do not replace reviewed content without notice. Use manifests and hashes to identify checked compositions and exports. A document dependency graph is not required.

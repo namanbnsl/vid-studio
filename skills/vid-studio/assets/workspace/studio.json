@@ -8,181 +8,57 @@
     "allowed_services": []
   },
   "budget": {
-    "currency": null,
-    "per_video_limit": null,
     "paid_calls_authorized": false
   },
-  "workflow": {
-    "approval_required_at_every_stage": true,
-    "stages": [
-      "topic",
-      "plan",
-      "research",
-      "editorial",
-      "storyboard",
-      "assets",
-      "preview",
-      "video",
-      "export"
-    ],
-    "cross_model_review": false,
-    "auto_publish": false
-  },
-  "monitoring": {
-    "enabled": false,
-    "timezone": null,
-    "cadence": null
-  },
   "tools": {
+    "renderer": "hyperframes",
     "search": null,
     "scheduler": null,
-    "narration": null,
-    "renderer": "hyperframes",
-    "media_generation": null,
-    "hyperframes": {
-      "version": "0.8.144",
-      "gsap_version": "3.14.2",
-      "telemetry": false,
-      "upstream_review_commit": "affa4d53cf86334c18d0476955fce3f4f73f6a06",
-      "install_status": "not_installed"
-    }
+    "narration": null
   },
-  "settings_revision": 1,
-  "default_profile_id": "default",
   "defaults": {
     "deliverables": [
       "video",
       "whatsapp"
     ],
-    "audience": {
-      "description": null,
-      "knowledge_level": null,
-      "geography": []
-    },
+    "audience": null,
     "research": {
       "interests": [],
-      "exclude_topics": [],
       "preferred_sources": [],
-      "avoid_sources": [],
-      "source_priorities": {},
-      "angles": [],
-      "geography": [],
-      "languages": [],
-      "depth": null,
-      "freshness_days": null,
-      "time_budget_minutes": null,
-      "evidence": {
-        "corroboration": null,
-        "uncertainty": null
-      },
-      "brief_structure": [],
-      "discovery": {
-        "ranking_weights": {},
-        "minimum_novelty": null
-      },
-      "instructions": null
+      "instructions": ""
     },
     "script": {
       "languages": [],
-      "tone": null,
-      "persona": null,
-      "complexity": null,
       "structure": [],
-      "template_path": null,
-      "title_rules": [],
-      "hook_rules": [],
-      "example_preferences": [],
-      "jargon": null,
-      "glossary": {},
-      "pacing": null,
-      "duration_seconds": {
-        "min": null,
-        "max": null
-      },
-      "number_pronunciation": null,
-      "ending": null,
-      "cta": null,
-      "instructions": null
+      "instructions": ""
     },
     "whatsapp": {
-      "structure": [],
-      "template_path": null,
-      "tone": null,
-      "max_words": null,
-      "emojis": null,
-      "bullets": null,
-      "source_links": true,
-      "cta": null,
-      "instructions": null
+      "instructions": ""
     },
     "brand": {
-      "name": null,
-      "brief_path": "brand/brand.md",
       "frame_path": "brand/frame.md",
-      "reference_paths": [],
-      "colors": {},
-      "fonts": {},
-      "instructions": null
+      "instructions": ""
     },
     "video": {
       "aspect_ratio": "9:16",
       "width": 1080,
       "height": 1920,
       "fps": 30,
-      "visual_style": null,
-      "preferred_assets": [],
-      "chart_rules": [],
-      "layout_rules": [],
-      "motion": {
-        "intensity": null,
-        "eases": [],
-        "transitions": [],
-        "holds": null,
-        "avoid": []
-      },
-      "instructions": null
+      "instructions": ""
     },
     "narration": {
-      "provider": null,
+      "enabled": true,
       "voice": null,
-      "style": null,
-      "pronunciations": {},
-      "instructions": null,
-      "enabled": true
-    },
-    "audio": {
-      "music": null,
-      "sound_effects": null,
-      "loudness_target": null,
-      "instructions": null
+      "instructions": ""
     },
     "captions": {
       "enabled": true,
-      "style": null,
-      "phrase_grouping": null,
-      "emphasis": null,
-      "safe_areas": {},
-      "instructions": null
+      "instructions": ""
     },
-    "destinations": [],
-    "review": {
-      "presentation": null,
-      "feedback_format": null,
-      "notes": null
-    }
-  },
-  "capabilities": {
-    "monitoring": {
-      "status": "not_configured",
-      "notes": null
-    },
-    "research": {
-      "status": "not_configured",
-      "notes": null
-    },
-    "video": {
-      "status": "not_configured",
-      "notes": null
+    "audio": {
+      "music": false,
+      "sound_effects": false,
+      "instructions": ""
     }
   }
 }

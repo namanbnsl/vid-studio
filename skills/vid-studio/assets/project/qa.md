@@ -9,7 +9,7 @@ Format, duration, fps, destination:
 ## Automated evidence
 
 - Hyperframes check command, JSON/report path, ok, browserSkipped, sample count:
-- Warnings and disposition:
+- Warnings and resolution:
 - Motion assertions and focused proof shots:
 - Scene/boundary/final-frame snapshot paths:
 - ffprobe stream/duration/format result:
@@ -21,11 +21,11 @@ Format, duration, fps, destination:
 - Claim/data/chart-spec consistency:
 - Scales, units, caveats, and source notes:
 - Brand, phone readability, glyphs, caption collisions, platform overlays:
-- Motion continuity, readable holds, and tail:
+- Motion continuity, reading holds, and final frames:
 
 ## Perceptual review
 
-Record performed, failed, pending user review, or not applicable for intentionally disabled components for each; do not prefill passes.
+Record each result as completed, failed, awaiting user review, or not applicable. Use not applicable only for intentionally disabled components. Do not enter a pass before review.
 
 - Normal playback with sound:
 - Muted playback:
@@ -36,4 +36,4 @@ Record performed, failed, pending user review, or not applicable for intentional
 
 Reviewed deliverable paths and hashes:
 Remaining issues or unperformed checks:
-Requested transition:
+Requested next stage:
