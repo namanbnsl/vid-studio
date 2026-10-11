@@ -1,4 +1,4 @@
 interface:
   display_name: "Vid Studio"
-  short_description: "Research news for your channel's topics and draft video scripts and WhatsApp posts"
+  short_description: "Research news for your topics, then write scripts for each channel: videos and WhatsApp posts"
   default_prompt: "Use $vid-studio to research now."

@@ -1,5 +1,5 @@
 #!/usr/bin/env python3
-"""Vid Studio helper: one channel's topics, sources, findings, scripts, and the local web UI.
+"""Vid Studio helper: one project's topics, sources, findings, scripts, and the local web UI.
 
 Standard library only. The workspace is --workspace, else $VID_STUDIO_HOME, else ~/vid-studio.
 Every command prints what it did so the calling agent can continue from the output.
@@ -34,7 +34,7 @@ FIRST_RUN_LOOKBACK = dt.timedelta(days=7)
 RUN_OVERLAP = dt.timedelta(hours=6)
 MAX_FINDING_TITLE = 110
 MAX_FINDING_SUMMARY = 240
-SCRIPT_TEXTS = {"script": "script.md", "post": "post.md", "notes": "notes.md"}
+STAGES = ["script", "ready", "published"]
 
 
 # ---------------------------------------------------------------- basics
@@ -252,8 +252,7 @@ def discover_feed(url: str) -> tuple[str | None, str]:
 
 # ---------------------------------------------------------------- studio model (shared by CLI and web UI)
 
-SETTING_KEYS = {"name", "description", "audience", "language", "timezone", "research_notes",
-                "script_format", "post_format", "schedule"}
+SETTING_KEYS = {"name", "description", "audience", "timezone", "research_notes", "schedule"}
 
 
 DAYS = ["mon", "tue", "wed", "thu", "fri", "sat", "sun"]
@@ -284,7 +283,7 @@ class Studio:
     """All reads and writes of the workspace files. Raises ValueError for bad input."""
 
     def __init__(self, ws: Path, root: Path | None = None):
-        self.ws = ws  # this channel's folder
+        self.ws = ws  # this project's folder
         self.root = root or ws.parent.parent
 
     def path(self, *parts: str) -> Path:
@@ -306,7 +305,7 @@ class Studio:
                 raise ValueError(f"{key} must be text")
             settings[key] = value
         if not settings.get("name", "").strip():
-            raise ValueError("The channel needs a name")
+            raise ValueError("The project needs a name")
         save(self.path("studio.json"), settings)
         return settings
 
@@ -351,8 +350,8 @@ class Studio:
         for finding in findings["findings"]:
             finding["topics"] = [t for t in finding.get("topics", []) if t != topic_id]
         save(self.path("findings.json"), findings)
-        for script_id in self.script_ids():
-            meta_path = self.path("scripts", script_id, "script.json")
+        for story_id in self.story_ids():
+            meta_path = self.path("stories", story_id, "story.json")
             meta = load(meta_path)
             if topic_id in meta.get("topics", []):
                 meta["topics"] = [t for t in meta["topics"] if t != topic_id]
@@ -542,7 +541,64 @@ class Studio:
         save(self.path("findings.json"), data)
         return finding
 
-    # scripts: linked to findings (news), topics (explainers), or both
+    # stories (research): an angle built from findings (news), topics (explainers), or both, with research notes
+
+    def story_ids(self) -> list[str]:
+        return sorted(p.parent.name for p in self.path("stories").glob("*/story.json"))
+
+    def story(self, story_id: str) -> dict:
+        folder = self.path("stories", story_id)
+        if not re.fullmatch(r"[a-z0-9-]+", story_id or "") or not (folder / "story.json").is_file():
+            raise KeyError(f"Unknown story: {story_id}")
+        meta = {"findings": [], "topics": []} | load(folder / "story.json")
+        notes = (folder / "notes.md").read_text(encoding="utf-8") if (folder / "notes.md").is_file() else ""
+        version = hashlib.sha1(json.dumps([meta, notes], sort_keys=True).encode()).hexdigest()[:16]
+        return {**meta, "notes": notes, "version": version}
+
+    def stories(self) -> list[dict]:
+        listed = []
+        for story_id in self.story_ids():
+            item = self.story(story_id)
+            listed.append({key: item[key] for key in ("id", "title", "findings", "topics", "created", "updated", "version")}
+                          | {"researched": bool(item["notes"].strip())})
+        return sorted(listed, key=lambda s: s.get("updated", ""), reverse=True)
+
+    def create_story(self, title: str, finding_ids: list[str] | None = None, topic_ids: list[str] | None = None) -> dict:
+        title = (title or "").strip() or "Untitled story"
+        finding_ids, topic_ids = self._check_findings(finding_ids or []), self._check_topics(topic_ids or [])
+        story_id = unique_id(dt.date.today().isoformat() + "-" + slugify(title, 40), set(self.story_ids()))
+        folder = self.path("stories", story_id)
+        folder.mkdir(parents=True)
+        save(folder / "story.json", {"id": story_id, "title": title, "findings": finding_ids, "topics": topic_ids,
+                                     "created": now(), "updated": now()})
+        (folder / "notes.md").write_text("", encoding="utf-8")
+        return self.story(story_id)
+
+    def update_story(self, story_id: str, changes: dict, version: str | None = None) -> dict:
+        current = self.story(story_id)
+        if version is not None and version != current["version"]:
+            raise RuntimeError("This story changed since you opened it (probably your agent wrote notes). Reload to see it.")
+        folder = self.path("stories", story_id)
+        meta = {"findings": [], "topics": []} | load(folder / "story.json")
+        if "title" in changes:
+            meta["title"] = str(changes["title"]).strip() or "Untitled story"
+        if "findings" in changes:
+            meta["findings"] = self._check_findings(changes["findings"])
+        if "add_findings" in changes:
+            meta["findings"] = list(dict.fromkeys(meta["findings"] + self._check_findings(changes["add_findings"])))
+        if "topics" in changes:
+            meta["topics"] = self._check_topics(changes["topics"])
+        if "notes" in changes:
+            write_text(folder / "notes.md", str(changes["notes"]))
+        meta["updated"] = now()
+        save(folder / "story.json", meta)
+        return self.story(story_id)
+
+    def delete_story(self, story_id: str) -> None:
+        self.story(story_id)
+        self._trash("stories", story_id)
+
+    # scripts (production): one per story and channel; the text follows the channel's language and format
 
     def script_ids(self) -> list[str]:
         return sorted(p.parent.name for p in self.path("scripts").glob("*/script.json"))
@@ -551,30 +607,31 @@ class Studio:
         folder = self.path("scripts", script_id)
         if not re.fullmatch(r"[a-z0-9-]+", script_id or "") or not (folder / "script.json").is_file():
             raise KeyError(f"Unknown script: {script_id}")
-        meta = {"findings": [], "topics": []} | load(folder / "script.json")
-        texts = {key: (folder / name).read_text(encoding="utf-8") if (folder / name).is_file() else ""
-                 for key, name in SCRIPT_TEXTS.items()}
-        version = hashlib.sha1(json.dumps([meta, texts], sort_keys=True).encode()).hexdigest()[:16]
-        return {**meta, **texts, "version": version}
+        meta = {"stage": "script", "published_url": ""} | load(folder / "script.json")
+        text = (folder / "script.md").read_text(encoding="utf-8") if (folder / "script.md").is_file() else ""
+        # Comments are not part of the version, so adding or resolving one never looks like a conflicting edit.
+        version = hashlib.sha1(json.dumps([meta, text], sort_keys=True).encode()).hexdigest()[:16]
+        return {**meta, "text": text, "comments": self.comments(script_id, text), "version": version}
 
     def scripts(self) -> list[dict]:
         listed = []
         for script_id in self.script_ids():
             item = self.script(script_id)
-            listed.append({key: item[key] for key in ("id", "title", "findings", "topics", "created", "updated", "version")}
-                          | {"drafted": bool(item["script"].strip()), "has_post": bool(item["post"].strip())})
+            listed.append({key: item[key] for key in ("id", "title", "story", "channel", "stage", "published_url", "created", "updated", "version")}
+                          | {"drafted": bool(item["text"].strip()), "open_comments": sum(1 for c in item["comments"] if not c.get("resolved_at"))})
         return sorted(listed, key=lambda s: s.get("updated", ""), reverse=True)
 
-    def create_script(self, title: str, finding_ids: list[str] | None = None, topic_ids: list[str] | None = None) -> dict:
-        title = (title or "").strip() or "Untitled script"
-        finding_ids, topic_ids = self._check_findings(finding_ids or []), self._check_topics(topic_ids or [])
-        script_id = unique_id(dt.date.today().isoformat() + "-" + slugify(title, 40), set(self.script_ids()))
+    def create_script(self, story_id: str, channel_id: str, title: str = "") -> dict:
+        story, channel = self.story(story_id), find_channel(self.root, channel_id)
+        if any(s["story"] == story_id and s["channel"] == channel["id"] for s in self.scripts()):
+            raise ValueError(f"The story already has a script for {channel['name']}")
+        title = (title or "").strip() or story["title"]
+        script_id = unique_id(slugify(story_id, 48) + "-" + channel["id"], set(self.script_ids()))
         folder = self.path("scripts", script_id)
         folder.mkdir(parents=True)
-        save(folder / "script.json", {"id": script_id, "title": title, "findings": finding_ids, "topics": topic_ids,
-                                      "created": now(), "updated": now()})
-        for name in SCRIPT_TEXTS.values():
-            (folder / name).write_text("", encoding="utf-8")
+        save(folder / "script.json", {"id": script_id, "title": title, "story": story_id, "channel": channel["id"],
+                                      "stage": "script", "published_url": "", "created": now(), "updated": now()})
+        (folder / "script.md").write_text("", encoding="utf-8")
         return self.script(script_id)
 
     def update_script(self, script_id: str, changes: dict, version: str | None = None) -> dict:
@@ -582,35 +639,84 @@ class Studio:
         if version is not None and version != current["version"]:
             raise RuntimeError("This script changed since you opened it (probably your agent wrote a draft). Reload to see it.")
         folder = self.path("scripts", script_id)
-        meta = {"findings": [], "topics": []} | load(folder / "script.json")
+        meta = {"stage": "script", "published_url": ""} | load(folder / "script.json")
         if "title" in changes:
             meta["title"] = str(changes["title"]).strip() or "Untitled script"
-        if "findings" in changes:
-            meta["findings"] = self._check_findings(changes["findings"])
-        if "add_findings" in changes:
-            meta["findings"] = list(dict.fromkeys(meta["findings"] + self._check_findings(changes["add_findings"])))
-        if "topics" in changes:
-            meta["topics"] = self._check_topics(changes["topics"])
-        for key, name in SCRIPT_TEXTS.items():
-            if key in changes:
-                write_text(folder / name, str(changes[key]))
+        if "stage" in changes:
+            if changes["stage"] not in STAGES:
+                raise ValueError(f"Stage must be one of: {', '.join(STAGES)}")
+            meta["stage"] = changes["stage"]
+        if "published_url" in changes:
+            url = str(changes["published_url"] or "").strip()
+            meta["published_url"] = normalize_url(url) if url else ""
+        if "text" in changes:
+            write_text(folder / "script.md", str(changes["text"]))
         meta["updated"] = now()
         save(folder / "script.json", meta)
         return self.script(script_id)
 
     def delete_script(self, script_id: str) -> None:
         self.script(script_id)
-        trash = self.path("scripts", ".trash")
-        trash.mkdir(exist_ok=True)
-        self.path("scripts", script_id).rename(trash / f"{script_id}-{int(time.time())}")
+        self._trash("scripts", script_id)
+
+    # comments: anchored to a quote in the script text; open ones are read in the order they appear
+
+    def comments(self, script_id: str, text: str | None = None) -> list[dict]:
+        listed = load(self.path("scripts", script_id, "comments.json"), {"comments": []})["comments"]
+        text = self.path("scripts", script_id, "script.md").read_text(encoding="utf-8") if text is None else text
+        for comment in listed:
+            comment["position"] = comment_position(text, comment)
+        # Comments on the whole script (no quote) and ones whose quote was rewritten away come last.
+        return sorted(listed, key=lambda c: (c["position"] < 0, c["position"] if c["position"] >= 0 else 0, c.get("created", "")))
+
+    def add_comment(self, script_id: str, body: str, quote: str = "", offset: int | None = None) -> dict:
+        self.script(script_id)
+        body, quote = (body or "").strip(), (quote or "").strip()
+        if not body:
+            raise ValueError("A comment needs some text")
+        path = self.path("scripts", script_id, "comments.json")
+        data = load(path, {"comments": []})
+        comment = {"id": unique_id("c-" + dt.datetime.now().strftime("%m%d%H%M%S"), {c["id"] for c in data["comments"]}),
+                   "quote": quote, "offset": offset if isinstance(offset, int) and offset >= 0 else None,
+                   "body": body, "created": now()}
+        data["comments"].append(comment)
+        save(path, data)
+        return comment
+
+    def update_comment(self, script_id: str, comment_id: str, changes: dict) -> dict:
+        path = self.path("scripts", script_id, "comments.json")
+        data = load(path, {"comments": []})
+        comment = self._find(data["comments"], comment_id, "comment")
+        if "body" in changes:
+            if not str(changes["body"]).strip():
+                raise ValueError("A comment needs some text")
+            comment["body"] = str(changes["body"]).strip()
+        if "resolved" in changes:
+            if changes["resolved"]:
+                comment["resolved_at"] = now()
+                if changes.get("reply"):
+                    comment["reply"] = str(changes["reply"]).strip()
+            else:
+                comment.pop("resolved_at", None)
+                comment.pop("reply", None)
+        save(path, data)
+        return comment
+
+    def delete_comment(self, script_id: str, comment_id: str) -> None:
+        path = self.path("scripts", script_id, "comments.json")
+        data = load(path, {"comments": []})
+        self._find(data["comments"], comment_id, "comment")
+        data["comments"] = [c for c in data["comments"] if c["id"] != comment_id]
+        save(path, data)
 
     # whole state for the UI
 
     def state(self) -> dict:
         runs = self.runs()
         return {"workspace": str(self.root), "default_workspace": self.root == workspace_path(None) and not os.environ.get("VID_STUDIO_HOME"),
-                "channel": self.ws.name, "settings": self.settings(), "topics": self.topics(), "sources": self.sources(),
-                "findings": self.findings(), "runs": runs[-20:], "scripts": self.scripts()}
+                "project": self.ws.name, "settings": self.settings(), "topics": self.topics(), "sources": self.sources(),
+                "findings": self.findings(), "runs": runs[-20:], "stories": self.stories(), "scripts": self.scripts(),
+                "channels": channels(self.root)}
 
     # helpers
 
@@ -619,6 +725,11 @@ class Studio:
             if record.get("id") == record_id:
                 return record
         raise KeyError(f"Unknown {label}: {record_id}")
+
+    def _trash(self, kind: str, item_id: str) -> None:
+        trash = self.path(kind, ".trash")
+        trash.mkdir(exist_ok=True)
+        self.path(kind, item_id).rename(trash / f"{item_id}-{int(time.time())}")
 
     def _check_findings(self, finding_ids) -> list[str]:
         known = {f["id"] for f in self.findings()}
@@ -637,136 +748,192 @@ class Studio:
         return list(dict.fromkeys(topic_ids))
 
 
-# ---------------------------------------------------------------- channels: <root>/channels/<id>/
+# ---------------------------------------------------------------- channels: <root>/channels.json, shared by every project
 
-CHANNEL_FILES = ["studio.json", "topics.json", "sources.json", "findings.json", "runs.json", "scripts", ".cache"]
+LANGUAGES = ["English", "Hindi", "Hinglish"]
+CHANNEL_KINDS = ["video", "post"]
+CHANNEL_KEYS = {"name", "platform", "kind", "language", "audience", "format"}
+DEFAULT_FORMATS = load(ASSETS / "channel-formats.json")  # a new channel starts with the format for its kind
 
 
-def channel_dirs(root: Path) -> list[Path]:
-    return sorted(p.parent for p in (root / "channels").glob("*/studio.json"))
+def channels(root: Path) -> list[dict]:
+    return load(root / "channels.json", {"channels": []})["channels"]
 
 
-def channels_overview(root: Path) -> list[dict]:
+def find_channel(root: Path, value: str) -> dict:
+    wanted = str(value or "").strip().casefold()
+    for channel in channels(root):
+        if wanted in (channel["id"], channel["name"].casefold()):
+            return channel
+    raise KeyError(f"No channel {value!r}. Channels: {', '.join(c['name'] for c in channels(root)) or 'none yet'}")
+
+
+def clean_channel(channel: dict, changes: dict) -> dict:
+    for key, value in changes.items():
+        if key not in CHANNEL_KEYS:
+            raise ValueError(f"Unknown channel setting: {key}")
+        channel[key] = str(value or "").strip()
+    if not channel.get("name"):
+        raise ValueError("A channel needs a name")
+    if channel.get("kind") not in CHANNEL_KINDS:
+        raise ValueError("Kind must be video (a script for a video) or post (a text post, like WhatsApp)")
+    return channel
+
+
+def add_channel(root: Path, changes: dict) -> dict:
+    data = load(root / "channels.json", {"channels": []})
+    kind = changes.get("kind") or "video"
+    changes = {key: value for key, value in changes.items() if key != "format" or str(value or "").strip()}  # empty: the default
+    channel = clean_channel({"platform": "", "language": "English", "audience": "", "format": DEFAULT_FORMATS.get(kind, "")},
+                            {"kind": kind} | changes)
+    if any(c["name"].casefold() == channel["name"].casefold() for c in data["channels"]):
+        raise ValueError(f"A channel called {channel['name']!r} already exists")
+    channel = {"id": unique_id(slugify(channel["name"], 40), {c["id"] for c in data["channels"]})} | channel | {"created": now()}
+    data["channels"].append(channel)
+    save(root / "channels.json", data)
+    return channel
+
+
+def update_channel(root: Path, channel_id: str, changes: dict) -> dict:
+    data = load(root / "channels.json", {"channels": []})
+    channel = next((c for c in data["channels"] if c["id"] == channel_id), None)
+    if not channel:
+        raise KeyError(f"Unknown channel: {channel_id}")
+    clean_channel(channel, changes)
+    if any(c["name"].casefold() == channel["name"].casefold() and c["id"] != channel_id for c in data["channels"]):
+        raise ValueError(f"A channel called {channel['name']!r} already exists")
+    save(root / "channels.json", data)
+    return channel
+
+
+def delete_channel(root: Path, channel_id: str) -> None:
+    find_channel(root, channel_id)
+    used = [f"{Studio(folder, root).settings().get('name')}: {s['title']}" for folder in project_dirs(root)
+            for s in Studio(folder, root).scripts() if s["channel"] == channel_id]
+    if used:
+        raise ValueError("Scripts still use this channel (" + "; ".join(used[:3]) + ("…" if len(used) > 3 else "") + "). Delete them first.")
+    data = load(root / "channels.json", {"channels": []})
+    data["channels"] = [c for c in data["channels"] if c["id"] != channel_id]
+    save(root / "channels.json", data)
+
+
+def comment_position(text: str, comment: dict) -> int:
+    """Where a comment's quote is in the text: the occurrence nearest its saved offset, or -1."""
+    quote = comment.get("quote") or ""
+    if not quote:
+        return -1
+    found, start = [], text.find(quote)
+    while start >= 0:
+        found.append(start)
+        start = text.find(quote, start + 1)
+    if not found:
+        return -1
+    offset = comment.get("offset")
+    return min(found, key=lambda i: abs(i - offset)) if isinstance(offset, int) else found[0]
+
+
+# ---------------------------------------------------------------- projects: <root>/projects/<id>/
+
+def project_dirs(root: Path) -> list[Path]:
+    return sorted(p.parent for p in (root / "projects").glob("*/studio.json"))
+
+
+def projects_overview(root: Path) -> list[dict]:
     listed = []
-    for folder in channel_dirs(root):
+    for folder in project_dirs(root):
         studio = Studio(folder, root)
         settings = studio.settings()
         listed.append({"id": folder.name, "name": settings.get("name") or folder.name,
-                       "description": settings.get("description", ""), "language": settings.get("language", ""),
+                       "description": settings.get("description", ""),
                        "findings": sum(1 for f in studio.findings() if not f.get("dismissed_at")),
                        "suggested_sources": sum(1 for x in studio.sources() if x["status"] == "suggested")})
     return listed
 
 
-def find_channel(root: Path, value: str | None) -> Path:
-    """A channel by ID or name; with no value, the only channel there is."""
-    value = value or os.environ.get("VID_STUDIO_CHANNEL")
-    folders = channel_dirs(root)
+def find_project(root: Path, value: str | None) -> Path:
+    """A project by ID or name; with no value, the only project there is."""
+    value = value or os.environ.get("VID_STUDIO_PROJECT")
+    folders = project_dirs(root)
     if not folders:
-        raise KeyError("No channels yet. Create one with `studio.py new-channel --name NAME`.")
+        raise KeyError("No projects yet. Create one with `studio.py new-project --name NAME`.")
     if value:
         wanted = value.strip().casefold()
         for folder in folders:
             if wanted in (folder.name, str(load(folder / "studio.json").get("name", "")).strip().casefold()):
                 return folder
-        raise KeyError(f"No channel {value!r}. Channels: {', '.join(c['name'] for c in channels_overview(root))}")
+        raise KeyError(f"No project {value!r}. Projects: {', '.join(c['name'] for c in projects_overview(root))}")
     if len(folders) == 1:
         return folders[0]
-    raise KeyError("Several channels exist; pass --channel with one of: " + ", ".join(c["name"] for c in channels_overview(root)))
+    raise KeyError("Several projects exist; pass --project with one of: " + ", ".join(c["name"] for c in projects_overview(root)))
 
 
 def fill_templates(folder: Path) -> None:
-    templates = ASSETS / "channel"
+    templates = ASSETS / "project"
     for source in sorted(templates.iterdir()):
         target = folder / source.name
         if source.is_file() and not target.exists():
             shutil.copyfile(source, target)
-    (folder / "scripts").mkdir(parents=True, exist_ok=True)
+    for kind in ("stories", "scripts"):
+        (folder / kind).mkdir(parents=True, exist_ok=True)
 
 
-def create_channel(root: Path, name: str, description: str = "", language: str = "") -> Path:
+def create_project(root: Path, name: str, description: str = "") -> Path:
     name = (name or "").strip()
     if not name:
-        raise ValueError("A channel needs a name")
-    if any(c["name"].casefold() == name.casefold() for c in channels_overview(root)):
-        raise ValueError(f"A channel called {name!r} already exists")
-    existing = {p.name for p in (root / "channels").glob("*")}
-    folder = root / "channels" / unique_id(slugify(name, 40), existing)
+        raise ValueError("A project needs a name")
+    if any(c["name"].casefold() == name.casefold() for c in projects_overview(root)):
+        raise ValueError(f"A project called {name!r} already exists")
+    existing = {p.name for p in (root / "projects").glob("*")}
+    folder = root / "projects" / unique_id(slugify(name, 40), existing)
     folder.mkdir(parents=True)
     fill_templates(folder)
     settings = load(folder / "studio.json")
     settings.update(name=name, description=(description or "").strip())
-    if language:
-        settings["language"] = language
     save(folder / "studio.json", settings)
     return folder
-
-
-def migrate_single_channel(root: Path) -> None:
-    """Move a workspace from the one-channel layout (files at the root) into channels/<id>/."""
-    if not (root / "studio.json").is_file():
-        return
-    name = str(load(root / "studio.json").get("name") or "").strip() or "Main"
-    existing = {p.name for p in (root / "channels").glob("*")}
-    folder = root / "channels" / unique_id(slugify(name, 40), existing)
-    folder.mkdir(parents=True)
-    (root / "studio.db").unlink(missing_ok=True)  # an old derived query index; the JSON files are the data
-    for item in CHANNEL_FILES:
-        if item == ".cache":
-            seen = root / ".cache" / "seen.json"
-            if seen.is_file():
-                (folder / ".cache").mkdir(exist_ok=True)
-                seen.rename(folder / ".cache" / "seen.json")
-        elif (root / item).exists():
-            (root / item).rename(folder / item)
-    fill_templates(folder)
-    readme = root / "README.md"
-    if readme.is_file() and readme.read_text(encoding="utf-8").startswith("# Vid Studio workspace"):
-        shutil.copyfile(ASSETS / "README.md", readme)  # the old one-channel README no longer applies
-    print(f"Moved your channel into {folder} (the studio now supports several channels).", file=sys.stderr)
 
 
 # ---------------------------------------------------------------- commands
 
 def cmd_init(root: Path, args) -> None:
-    (root / "channels").mkdir(parents=True, exist_ok=True)
+    (root / "projects").mkdir(parents=True, exist_ok=True)
     if not (root / "README.md").exists():
         shutil.copyfile(ASSETS / "README.md", root / "README.md")
     print(f"Studio: {root}")
-    channels = channels_overview(root)
-    print(f"Channels: {', '.join(c['name'] for c in channels) or 'none yet (studio.py new-channel --name NAME)'}")
+    projects = projects_overview(root)
+    print(f"Projects: {', '.join(c['name'] for c in projects) or 'none yet (studio.py new-project --name NAME)'}")
 
 
-def cmd_channels(root: Path, args) -> None:
-    channels = channels_overview(root)
-    if not channels:
-        print("No channels yet. Create one with `studio.py new-channel --name NAME`.")
-    for channel in channels:
-        extra = f", {channel['suggested_sources']} suggested sources" if channel["suggested_sources"] else ""
-        print(f"{channel['id']} · {channel['name']} · {channel['findings']} findings{extra}")
+def cmd_projects(root: Path, args) -> None:
+    projects = projects_overview(root)
+    if not projects:
+        print("No projects yet. Create one with `studio.py new-project --name NAME`.")
+    for project in projects:
+        extra = f", {project['suggested_sources']} suggested sources" if project["suggested_sources"] else ""
+        print(f"{project['id']} · {project['name']} · {project['findings']} findings{extra}")
 
 
-def cmd_new_channel(root: Path, args) -> None:
-    folder = create_channel(root, args.name, args.description or "", args.language or "")
-    print(f"Channel {folder.name}: {folder}")
+def cmd_new_project(root: Path, args) -> None:
+    folder = create_project(root, args.name, args.description or "")
+    print(f"Project {folder.name}: {folder}")
 
 
 def cmd_status(root: Path, args) -> None:
-    if not channel_dirs(root):
-        print(f"No channels in {root}. Run `studio.py init`, then set up a channel (references/setup.md).")
+    if not project_dirs(root):
+        print(f"No projects in {root}. Run `studio.py init`, then set up a project (references/setup.md).")
         return
     try:
-        ws = find_channel(root, args.channel)
+        ws = find_project(root, args.project)
     except KeyError as error:
         print(error.args[0])
         print(f"UI: {(running_server(root) or {}).get('url') or 'not running (studio.py serve --background)'}")
         return
     studio = Studio(ws, root)
-    settings, topics, sources, scripts = studio.settings(), studio.topics(), studio.sources(), studio.scripts()
+    settings, topics, sources, stories, scripts = studio.settings(), studio.topics(), studio.sources(), studio.stories(), studio.scripts()
     runs = studio.runs()
     last = next((r for r in reversed(runs) if r.get("status") in ("completed", "failed")), None)
-    others = [c["name"] for c in channels_overview(root) if c["id"] != ws.name]
-    print(f"Channel: {settings.get('name') or '(unnamed)'} ({ws.name}) · studio {root}" + (f" · other channels: {', '.join(others)}" if others else ""))
+    others = [c["name"] for c in projects_overview(root) if c["id"] != ws.name]
+    print(f"Project: {settings.get('name') or '(unnamed)'} ({ws.name}) · studio {root}" + (f" · other projects: {', '.join(others)}" if others else ""))
     print(f"Topics: {', '.join(t['name'] for t in topics) or 'none'}")
     approved = [s for s in sources if s["status"] == "approved"]
     suggested = [s for s in sources if s["status"] == "suggested"]
@@ -776,23 +943,29 @@ def cmd_status(root: Path, args) -> None:
           + (f"{last['finished']} ({last['status']}, {last.get('findings', 0)} findings)" if last else "never"))
     print(f"Schedule: {describe_schedule(settings.get('schedule', {}))}"
           + (f" ({settings['timezone']})" if settings.get("timezone") and settings.get("schedule", {}).get("times") else ""))
+    print("Stories:" + ("" if stories else " none"))
+    for story in stories:
+        links = [f"{len(story['findings'])} findings"] + [f"topic {t}" for t in story["topics"]]
+        print(f"  {story['id']} · {story['title']} · {', '.join(links)} · {'researched' if story['researched'] else 'not researched'}")
+    names = {c["id"]: c["name"] for c in channels(root)}
     print("Scripts:" + ("" if scripts else " none"))
     for script in scripts:
-        state = "drafted" if script["drafted"] else "not drafted"
-        links = [f"{len(script['findings'])} findings"] + [f"topic {t}" for t in script["topics"]]
-        print(f"  {script['id']} · {script['title']} · {', '.join(links)} · {state}")
+        state = (script["stage"] if script["drafted"] else "not drafted") + (f", {script['open_comments']} open comment{'s' * (script['open_comments'] != 1)}" if script["open_comments"] else "")
+        print(f"  {script['id']} · {script['title']} · for {names.get(script['channel'], script['channel'])} · story {script['story']} · {state}")
+    print(f"Channels: {', '.join(c['name'] + ' (' + c['language'] + ', ' + c['kind'] + ')' for c in channels(root)) or 'none'}")
     server = running_server(root)
     print(f"UI: {server['url'] + '#/' + ws.name if server else 'not running (studio.py serve --background)'}")
     hints = []
     if not settings.get("name") or not topics:
-        hints.append("Set up the channel: name, topics, sources (references/setup.md).")
+        hints.append("Set up the project: name, topics, sources (references/setup.md).")
     elif not last:
         hints.append("Run research (references/research.md).")
     running = next((r for r in reversed(runs) if r.get("status") == "running"), None)
     if running:
         hints.append(f"Run {running['id']} is unfinished; sources not checked yet: {', '.join(studio.unchecked_sources(running)) or 'none'}.")
-    hints += [f"Script '{s['title']}' has material but no draft (references/write.md)." for s in scripts
-              if (s["findings"] or s["topics"]) and not s["drafted"]]
+    hints += [f"Script '{s['title']}' has no draft yet (references/write.md)." for s in scripts if not s["drafted"]]
+    hints += [f"Script '{s['title']}' has {s['open_comments']} open comment{'s' * (s['open_comments'] != 1)} to address (references/write.md)." for s in scripts
+              if s["drafted"] and s["open_comments"]]
     if hints:
         print("Suggestions:\n" + "\n".join(f"- {h}" for h in hints))
 
@@ -901,9 +1074,43 @@ def cmd_finish_run(ws: Path, args) -> None:
           + (f", {run['suggested_sources']} sources suggested" if run.get("suggested_sources") else ""))
 
 
+def cmd_new_story(ws: Path, args) -> None:
+    story = Studio(ws).create_story(args.title, args.finding or [], args.topic or [])
+    print(f"Story: {ws / 'stories' / story['id']}")
+
+
 def cmd_new_script(ws: Path, args) -> None:
-    script = Studio(ws).create_script(args.title, args.finding or [], args.topic or [])
+    script = Studio(ws).create_script(args.story, args.channel, args.title or "")
     print(f"Script: {ws / 'scripts' / script['id']}")
+
+
+def cmd_channels(root: Path, args) -> None:
+    listed = channels(root)
+    if not listed:
+        print("No channels yet. Create one with `studio.py add-channel --name NAME --kind video --language English`.")
+    for channel in listed:
+        print(f"{channel['id']} · {channel['name']} · {channel['platform'] or 'no platform'} · {channel['kind']} · {channel['language']}")
+
+
+def cmd_add_channel(root: Path, args) -> None:
+    changes = {key: value for key, value in vars(args).items() if key in CHANNEL_KEYS and value is not None}
+    channel = add_channel(root, changes)
+    print(f"Channel {channel['id']}: {channel['name']} ({channel['kind']}, {channel['language']})")
+
+
+def cmd_comments(ws: Path, args) -> None:
+    studio = Studio(ws)
+    script = studio.script(args.script)
+    open_comments = [c for c in script["comments"] if not c.get("resolved_at")]
+    print(f"{len(open_comments)} open comment{'s' * (len(open_comments) != 1)} on {script['title']}, in the order they appear in the text:" if open_comments else "No open comments.")
+    for comment in open_comments:
+        where = f'on "{comment["quote"]}"' if comment["position"] >= 0 else (f'on "{comment["quote"]}" (no longer in the text)' if comment["quote"] else "on the whole script")
+        print(f"- {comment['id']} {where}: {comment['body']}")
+
+
+def cmd_resolve(ws: Path, args) -> None:
+    comment = Studio(ws).update_comment(args.script, args.comment, {"resolved": True, "reply": args.reply or ""})
+    print(f"Resolved {comment['id']}")
 
 
 # ---------------------------------------------------------------- web UI server
@@ -972,14 +1179,20 @@ def make_handler(ws: Path):
                 if parts == ["api", "health"]:
                     return self.reply(200, str(ws).encode(), "text/plain; charset=utf-8")
                 with lock:
-                    if parts == ["api", "channels"] and method == "GET":
+                    if parts == ["api", "projects"] and method == "GET":
                         result = {"workspace": str(ws), "default_workspace": ws == workspace_path(None) and not os.environ.get("VID_STUDIO_HOME"),
-                                  "channels": channels_overview(ws)}
-                    elif parts == ["api", "channels"] and method == "POST":
-                        folder = create_channel(ws, body.get("name", ""), body.get("description", ""), body.get("language", ""))
+                                  "projects": projects_overview(ws)}
+                    elif parts == ["api", "projects"] and method == "POST":
+                        folder = create_project(ws, body.get("name", ""), body.get("description", ""))
                         result = {"id": folder.name}
-                    elif parts[:2] == ["api", "c"] and len(parts) >= 3:
-                        result = self.api(method, parts[3:], body, Studio(find_channel(ws, parts[2]), ws))
+                    elif parts == ["api", "channels"] and method == "POST":
+                        result = add_channel(ws, body)
+                    elif parts[:2] == ["api", "channels"] and len(parts) == 3 and method == "PUT":
+                        result = update_channel(ws, parts[2], body)
+                    elif parts[:2] == ["api", "channels"] and len(parts) == 3 and method == "DELETE":
+                        result = delete_channel(ws, parts[2]) or {"ok": True}
+                    elif parts[:2] == ["api", "p"] and len(parts) >= 3:
+                        result = self.api(method, parts[3:], body, Studio(find_project(ws, parts[2]), ws))
                     else:
                         return self.reply(404, {"error": "Not found"})
                 return self.reply(200, result)
@@ -1014,11 +1227,29 @@ def make_handler(ws: Path):
                     return studio.delete_source(item) or {"ok": True}
             if resource == "findings" and method == "PUT" and item and "dismissed" in body:
                 return studio.set_dismissed(item, bool(body["dismissed"]))
-            if resource == "scripts":
+            if resource == "stories":
+                if method == "GET" and item:
+                    return studio.story(item)
+                if method == "POST":
+                    return studio.create_story(body.get("title", ""), body.get("findings", []), body.get("topics", []))
+                if method == "PUT" and item:
+                    version = body.pop("version", None)
+                    return studio.update_story(item, body, version)
+                if method == "DELETE" and item:
+                    return studio.delete_story(item) or {"ok": True}
+            if resource == "scripts" and len(parts) >= 3 and parts[2] == "comments":
+                comment = parts[3] if len(parts) > 3 else None
+                if method == "POST" and not comment:
+                    return studio.add_comment(item, body.get("body", ""), body.get("quote", ""), body.get("offset"))
+                if method == "PUT" and comment:
+                    return studio.update_comment(item, comment, body)
+                if method == "DELETE" and comment:
+                    return studio.delete_comment(item, comment) or {"ok": True}
+            elif resource == "scripts":
                 if method == "GET" and item:
                     return studio.script(item)
                 if method == "POST":
-                    return studio.create_script(body.get("title", ""), body.get("findings", []), body.get("topics", []))
+                    return studio.create_script(body.get("story", ""), body.get("channel", ""), body.get("title", ""))
                 if method == "PUT" and item:
                     version = body.pop("version", None)
                     return studio.update_script(item, body, version)
@@ -1097,12 +1328,12 @@ def main(argv=None) -> None:
     workspace_help = "Workspace directory (default: $VID_STUDIO_HOME or ~/vid-studio)"
     parser = argparse.ArgumentParser(description=__doc__)
     parser.add_argument("--workspace", help=workspace_help)
-    parser.add_argument("--channel", help="Channel ID or name (default: $VID_STUDIO_CHANNEL, or the only channel)")
+    parser.add_argument("--project", help="Project ID or name (default: $VID_STUDIO_PROJECT, or the only project)")
     # Accept --workspace after the subcommand too, without clobbering one given before it.
     common = argparse.ArgumentParser(add_help=False)
     common.add_argument("--workspace", default=argparse.SUPPRESS, help=workspace_help)
-    common.add_argument("--channel", default=argparse.SUPPRESS,
-                        help="Channel ID or name (default: $VID_STUDIO_CHANNEL, or the only channel)")
+    common.add_argument("--project", default=argparse.SUPPRESS,
+                        help="Project ID or name (default: $VID_STUDIO_PROJECT, or the only project)")
     commands = parser.add_subparsers(dest="command", required=True)
 
     def command(name, handler, help_text):
@@ -1111,12 +1342,11 @@ def main(argv=None) -> None:
         return sub
 
     command("init", cmd_init, "Create the studio folder; never overwrites files")
-    command("channels", cmd_channels, "List channels")
-    sub = command("new-channel", cmd_new_channel, "Create a channel")
+    command("projects", cmd_projects, "List projects")
+    sub = command("new-project", cmd_new_project, "Create a project")
     sub.add_argument("--name", required=True)
     sub.add_argument("--description")
-    sub.add_argument("--language", choices=["English", "Hindi", "Hinglish"])
-    command("status", cmd_status, "Show the channel, research runs, scripts, and suggestions")
+    command("status", cmd_status, "Show the project, research runs, scripts, and suggestions")
 
     sub = command("serve", cmd_serve, "Run the studio web UI at http://localhost")
     sub.add_argument("--port", type=int, default=8765)
@@ -1163,19 +1393,40 @@ def main(argv=None) -> None:
     sub.add_argument("--note")
     sub.add_argument("--failed", metavar="REASON")
 
-    sub = command("new-script", cmd_new_script, "Create a script, optionally with findings attached")
+    sub = command("new-story", cmd_new_story, "Create a story, optionally with findings or topics attached")
     sub.add_argument("--title", required=True)
     sub.add_argument("--finding", action="append", help="Finding ID; repeatable")
     sub.add_argument("--topic", action="append", help="Topic ID, for explainers; repeatable")
 
+    sub = command("new-script", cmd_new_script, "Send a story to production: a script for one channel")
+    sub.add_argument("--story", required=True, help="Story ID")
+    sub.add_argument("--channel", required=True, help="Channel ID or name")
+    sub.add_argument("--title", help="Defaults to the story's title")
+
+    command("channels", cmd_channels, "List channels (shared by every project)")
+    sub = command("add-channel", cmd_add_channel, "Add a channel: where scripts get published")
+    sub.add_argument("--name", required=True)
+    sub.add_argument("--kind", choices=CHANNEL_KINDS, default="video", help="video (a video script) or post (a text post, like WhatsApp)")
+    sub.add_argument("--platform", help="e.g. YouTube Shorts, Instagram Reels, WhatsApp channel")
+    sub.add_argument("--language", choices=LANGUAGES)
+    sub.add_argument("--audience")
+    sub.add_argument("--format", help="Length, structure, tone; defaults to a format for the kind")
+
+    sub = command("comments", cmd_comments, "List a script's open comments in the order they appear")
+    sub.add_argument("--script", required=True)
+
+    sub = command("resolve", cmd_resolve, "Resolve a comment after addressing it")
+    sub.add_argument("--script", required=True)
+    sub.add_argument("--comment", required=True)
+    sub.add_argument("--reply", help="One line on what you changed")
+
     args = parser.parse_args(argv)
     root = workspace_path(args.workspace)
     try:
-        migrate_single_channel(root)
-        if args.command in ("init", "channels", "new-channel", "status", "serve"):
+        if args.command in ("init", "projects", "new-project", "status", "serve", "channels", "add-channel"):
             args.handler(root, args)
         else:
-            args.handler(find_channel(root, args.channel), args)
+            args.handler(find_project(root, args.project), args)
     except (ValueError, KeyError, RuntimeError) as error:
         raise SystemExit(f"Error: {error.args[0] if error.args else error}")
 

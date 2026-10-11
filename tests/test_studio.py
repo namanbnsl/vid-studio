@@ -23,8 +23,8 @@ class StudioTest(unittest.TestCase):
         self.root = Path(self.tmp.name)
         self.home = self.root / "ws"
         self.cli("init")
-        self.cli("new-channel", "--name", "Test Channel")
-        self.ws = self.home / "channels" / "test-channel"
+        self.cli("new-project", "--name", "Test Project")
+        self.ws = self.home / "projects" / "test-project"
         self.studio = studio.Studio(self.ws)
 
     def tearDown(self):
@@ -93,27 +93,80 @@ class StudioTest(unittest.TestCase):
                 self.cli("add-findings", "--run", run_id, "-", stdin=json.dumps(bad))
         self.assertEqual(self.studio.findings(), [])
 
-    def test_scripts_attach_and_detect_conflicts(self):
+    def test_stories_attach_and_detect_conflicts(self):
         self.cli("add-topic", "--name", "UPI")
         self.run_with_findings([{"title": "F", "topics": ["UPI"], "sources": ["https://a.com/1"]}])
         finding_id = self.studio.findings()[0]["id"]
-        self.cli("new-script", "--title", "Will UPI stay free?", "--finding", finding_id)
-        script = self.studio.scripts()[0]
-        self.assertEqual(script["findings"], [finding_id])
-        self.assertFalse(script["drafted"])
+        self.cli("new-story", "--title", "Will UPI stay free?", "--finding", finding_id)
+        story = self.studio.stories()[0]
+        self.assertEqual(story["findings"], [finding_id])
+        self.assertFalse(story["researched"])
+
+        opened = self.studio.story(story["id"])
+        (self.ws / "stories" / story["id"] / "notes.md").write_text("Agent notes")  # agent writes meanwhile
+        with self.assertRaises(RuntimeError):
+            self.studio.update_story(story["id"], {"notes": "user text"}, opened["version"])
+        fresh = self.studio.story(story["id"])
+        saved = self.studio.update_story(story["id"], {"title": "Renamed"}, fresh["version"])
+        self.assertEqual((saved["notes"], saved["title"]), ("Agent notes", "Renamed"))
+        self.assertIn("researched", self.cli("status"))
+
+        self.studio.delete_story(story["id"])
+        self.assertEqual(self.studio.stories(), [])
+        self.assertTrue(any((self.ws / "stories" / ".trash").iterdir()))
+
+    def test_production_scripts_per_channel(self):
+        self.cli("add-channel", "--name", "Explained", "--platform", "YouTube Shorts", "--language", "English")
+        self.cli("add-channel", "--name", "Paisa WhatsApp", "--kind", "post", "--language", "Hindi")
+        self.assertIn("Paisa WhatsApp", self.cli("channels"))
+        story = self.studio.create_story("UPI Lite limit")
+        self.cli("new-script", "--story", story["id"], "--channel", "explained")
+        self.cli("new-script", "--story", story["id"], "--channel", "Paisa WhatsApp")  # by name
+        with self.assertRaises(SystemExit):
+            self.cli("new-script", "--story", story["id"], "--channel", "explained")  # one script per channel
+        scripts = {s["channel"]: s for s in self.studio.scripts()}
+        self.assertEqual(set(scripts), {"explained", "paisa-whatsapp"})
+        script = scripts["explained"]
+        self.assertEqual((script["title"], script["story"], script["stage"]), ("UPI Lite limit", story["id"], "script"))
+        self.assertIn("no draft yet", self.cli("status"))
 
         opened = self.studio.script(script["id"])
-        (self.ws / "scripts" / script["id"] / "script.md").write_text("Agent draft")  # agent writes meanwhile
+        (self.ws / "scripts" / script["id"] / "script.md").write_text("Agent draft")
         with self.assertRaises(RuntimeError):
-            self.studio.update_script(script["id"], {"script": "user text"}, opened["version"])
-        fresh = self.studio.script(script["id"])
-        saved = self.studio.update_script(script["id"], {"post": "*Post*"}, fresh["version"])
-        self.assertEqual((saved["script"], saved["post"]), ("Agent draft", "*Post*"))
-        self.assertIn("drafted", self.cli("status"))
-
+            self.studio.update_script(script["id"], {"text": "user text"}, opened["version"])
+        saved = self.studio.update_script(script["id"], {"stage": "published", "published_url": "youtube.com/shorts/x"})
+        self.assertEqual((saved["text"], saved["published_url"]), ("Agent draft", "https://youtube.com/shorts/x"))
+        with self.assertRaises(ValueError):
+            self.studio.update_script(script["id"], {"stage": "nope"})
+        with self.assertRaises(SystemExit):
+            self.cli("add-channel", "--name", "explained")  # names are unique
+        with self.assertRaises(ValueError):
+            studio.delete_channel(self.home, "explained")  # still used by a script
         self.studio.delete_script(script["id"])
-        self.assertEqual(self.studio.scripts(), [])
-        self.assertTrue(any((self.ws / "scripts" / ".trash").iterdir()))
+        studio.delete_channel(self.home, "explained")
+        self.assertEqual([c["id"] for c in studio.channels(self.home)], ["paisa-whatsapp"])
+
+    def test_comments_are_read_in_text_order(self):
+        studio.add_channel(self.home, {"name": "Shorts"})
+        script = self.studio.create_script(self.studio.create_story("S")["id"], "shorts")
+        text = "Hook line.\nThe middle.\nHook line.\nThe end."
+        self.studio.update_script(script["id"], {"text": text})
+        last = self.studio.add_comment(script["id"], "Punchier ending", "The end.")
+        whole = self.studio.add_comment(script["id"], "Too long overall")
+        second_hook = self.studio.add_comment(script["id"], "Cut the repeat", "Hook line.", text.rindex("Hook line."))
+        first = self.studio.add_comment(script["id"], "Start with a number", "Hook line.", 0)
+        order = [c["id"] for c in self.studio.script(script["id"])["comments"]]
+        self.assertEqual(order, [first["id"], second_hook["id"], last["id"], whole["id"]])
+        listed = self.cli("comments", "--script", script["id"])
+        self.assertLess(listed.index("Start with a number"), listed.index("Punchier ending"))
+        self.assertIn("on the whole script", listed)
+        self.cli("resolve", "--script", script["id"], "--comment", first["id"], "--reply", "Opened with ₹5,000")
+        self.assertNotIn("Start with a number", self.cli("comments", "--script", script["id"]))
+        version = self.studio.script(script["id"])["version"]
+        self.studio.add_comment(script["id"], "More")
+        self.assertEqual(self.studio.script(script["id"])["version"], version)  # comments never conflict with edits
+        with self.assertRaises(ValueError):
+            self.studio.add_comment(script["id"], " ")
 
     def test_deleting_topic_untags_findings(self):
         self.cli("add-topic", "--name", "UPI")
@@ -176,47 +229,29 @@ class StudioTest(unittest.TestCase):
         self.studio.set_dismissed(finding["id"], False)
         self.assertNotIn("dismissed_at", self.studio.findings()[0])
 
-    def test_explainer_scripts_link_topics(self):
+    def test_explainer_stories_link_topics(self):
         self.cli("add-topic", "--name", "Chips")
-        self.cli("new-script", "--title", "How do chip fabs work?", "--topic", "chips")
-        script = self.studio.scripts()[0]
-        self.assertEqual((script["topics"], script["findings"]), (["chips"], []))
-        self.assertIn("material but no draft", self.cli("status"))
+        self.cli("new-story", "--title", "How do chip fabs work?", "--topic", "chips")
+        story = self.studio.stories()[0]
+        self.assertEqual((story["topics"], story["findings"]), (["chips"], []))
         with self.assertRaises(SystemExit):
-            self.cli("new-script", "--title", "x", "--topic", "nope")
+            self.cli("new-story", "--title", "x", "--topic", "nope")
         self.studio.delete_topic("chips")
-        self.assertEqual(self.studio.scripts()[0]["topics"], [])
+        self.assertEqual(self.studio.stories()[0]["topics"], [])
 
-    def test_channels(self):
-        self.cli("new-channel", "--name", "Pipe Gyaan", "--language", "Hinglish")
+    def test_projects(self):
+        self.cli("new-project", "--name", "Pipe Gyaan")
         with self.assertRaises(SystemExit):
-            self.cli("add-topic", "--name", "Pipes")  # two channels now: which one?
-        self.cli("add-topic", "--name", "Pipes", "--channel", "pipe gyaan")  # by name, any case
-        self.cli("add-topic", "--name", "Other", "--channel", "test-channel")  # by ID
-        pipe = studio.Studio(self.home / "channels" / "pipe-gyaan")
+            self.cli("add-topic", "--name", "Pipes")  # two projects now: which one?
+        self.cli("add-topic", "--name", "Pipes", "--project", "pipe gyaan")  # by name, any case
+        self.cli("add-topic", "--name", "Other", "--project", "test-project")  # by ID
+        pipe = studio.Studio(self.home / "projects" / "pipe-gyaan")
         self.assertEqual([t["name"] for t in pipe.topics()], ["Pipes"])
         self.assertEqual([t["name"] for t in self.studio.topics()], ["Other"])
-        self.assertEqual(pipe.settings()["language"], "Hinglish")
-        self.assertIn("Pipe Gyaan", self.cli("channels"))
-        self.assertIn("Several channels", self.cli("status"))
+        self.assertIn("Pipe Gyaan", self.cli("projects"))
+        self.assertIn("Several projects", self.cli("status"))
         with self.assertRaises(SystemExit):
-            self.cli("new-channel", "--name", "pipe gyaan")
-
-    def test_single_channel_workspace_is_migrated(self):
-        old = self.root / "old"
-        old.mkdir()
-        (old / "studio.json").write_text(json.dumps({"name": "Old Channel"}))
-        (old / "topics.json").write_text(json.dumps({"topics": [{"id": "a", "name": "A", "description": ""}]}))
-        (old / "scripts" / "s1").mkdir(parents=True)
-        output = io.StringIO()
-        with contextlib.redirect_stdout(output), contextlib.redirect_stderr(io.StringIO()):
-            studio.main(["--workspace", str(old), "status"])
-        folder = old / "channels" / "old-channel"
-        self.assertFalse((old / "studio.json").exists())
-        self.assertEqual(studio.Studio(folder).topics()[0]["name"], "A")
-        self.assertTrue((folder / "scripts" / "s1").is_dir())
-        self.assertTrue((folder / "findings.json").is_file())  # missing files filled from templates
-        self.assertIn("Old Channel", output.getvalue())
+            self.cli("new-project", "--name", "pipe gyaan")
 
     def test_settings_validation(self):
         self.studio.update_settings({"name": "Explained", "schedule": {"times": ["19:00", "07:00", "07:00"]}})
@@ -246,29 +281,45 @@ class StudioTest(unittest.TestCase):
             return response.status, (json.loads(raw) if raw.startswith(("{", "[")) else raw)
 
         self.assertEqual(call("GET", "/")[0], 200)
-        channels = call("GET", "/api/channels")[1]
-        self.assertEqual([c["name"] for c in channels["channels"]], ["Test Channel"])
-        self.assertEqual(call("POST", "/api/channels", {"name": "Second"})[1]["id"], "second")
-        self.assertEqual(call("GET", "/api/c/nope/state")[0], 404)
+        projects = call("GET", "/api/projects")[1]
+        self.assertEqual([c["name"] for c in projects["projects"]], ["Test Project"])
+        self.assertEqual(call("POST", "/api/projects", {"name": "Second"})[1]["id"], "second")
+        self.assertEqual(call("GET", "/api/p/nope/state")[0], 404)
         self.assertEqual(call("GET", "/api/health")[1], str(self.home))
-        status, topic = call("POST", "/api/c/test-channel/topics", {"name": "UPI", "description": "d"})
+        status, topic = call("POST", "/api/p/test-project/topics", {"name": "UPI", "description": "d"})
         self.assertEqual((status, topic["name"]), (200, "UPI"))
-        self.assertEqual(call("POST", "/api/c/test-channel/topics", {"name": ""})[0], 400)
-        self.assertEqual(call("PUT", "/api/c/test-channel/topics/nope", {"name": "x"})[0], 404)
-        status, script = call("POST", "/api/c/test-channel/scripts", {"title": "S"})
-        status, saved = call("PUT", f"/api/c/test-channel/scripts/{script['id']}", {"script": "hi", "version": script["version"]})
-        self.assertEqual((status, saved["script"]), (200, "hi"))
-        self.assertEqual(call("PUT", f"/api/c/test-channel/scripts/{script['id']}", {"script": "x", "version": script["version"]})[0], 409)
-        self.assertEqual(call("GET", "/api/c/test-channel/scripts/..%2f..%2fetc")[0], 404)
-        status, linked = call("POST", "/api/c/test-channel/scripts", {"title": "E", "topics": [topic["id"]]})
+        self.assertEqual(call("POST", "/api/p/test-project/topics", {"name": ""})[0], 400)
+        self.assertEqual(call("PUT", "/api/p/test-project/topics/nope", {"name": "x"})[0], 404)
+        status, story = call("POST", "/api/p/test-project/stories", {"title": "S"})
+        status, saved = call("PUT", f"/api/p/test-project/stories/{story['id']}", {"notes": "hi", "version": story["version"]})
+        self.assertEqual((status, saved["notes"]), (200, "hi"))
+        self.assertEqual(call("PUT", f"/api/p/test-project/stories/{story['id']}", {"notes": "x", "version": story["version"]})[0], 409)
+        self.assertEqual(call("GET", "/api/p/test-project/stories/..%2f..%2fetc")[0], 404)
+        status, linked = call("POST", "/api/p/test-project/stories", {"title": "E", "topics": [topic["id"]]})
         self.assertEqual(linked["topics"], [topic["id"]])
-        self.assertEqual(call("PUT", "/api/c/test-channel/findings/nope", {"dismissed": True})[0], 404)
-        self.assertEqual(call("PUT", "/api/c/test-channel/sources/nope", {"status": "approved"})[0], 404)
-        state = call("GET", "/api/c/test-channel/state")[1]
+        status, channel = call("POST", "/api/channels", {"name": "Shorts", "language": "Hindi"})
+        self.assertEqual((status, channel["kind"]), (200, "video"))
+        self.assertEqual(call("PUT", "/api/channels/shorts", {"language": "Hinglish"})[1]["language"], "Hinglish")
+        self.assertEqual(call("POST", "/api/channels", {"name": "X", "kind": "film"})[0], 400)
+        status, script = call("POST", "/api/p/test-project/scripts", {"story": story["id"], "channel": "shorts"})
+        self.assertEqual((status, script["title"]), (200, "S"))
+        status, saved = call("PUT", f"/api/p/test-project/scripts/{script['id']}", {"text": "hi", "version": script["version"]})
+        self.assertEqual((status, saved["text"]), (200, "hi"))
+        status, comment = call("POST", f"/api/p/test-project/scripts/{script['id']}/comments", {"body": "Why?", "quote": "hi", "offset": 0})
+        self.assertEqual(call("PUT", f"/api/p/test-project/scripts/{script['id']}/comments/{comment['id']}", {"resolved": True})[0], 200)
+        self.assertEqual(call("DELETE", f"/api/p/test-project/scripts/{script['id']}/comments/{comment['id']}")[0], 200)
+        self.assertEqual(call("DELETE", "/api/channels/shorts")[0], 400)  # in use
+        # The UI sends deletes with an empty JSON body.
+        temp = call("POST", "/api/p/test-project/topics", {"name": "Temp"})[1]
+        self.assertEqual(call("DELETE", f"/api/p/test-project/topics/{temp['id']}", {})[0], 200)
+        self.assertEqual(call("PUT", "/api/p/test-project/findings/nope", {"dismissed": True})[0], 404)
+        self.assertEqual(call("PUT", "/api/p/test-project/sources/nope", {"status": "approved"})[0], 404)
+        state = call("GET", "/api/p/test-project/state")[1]
         self.assertEqual([t["name"] for t in state["topics"]], ["UPI"])
+        self.assertEqual([c["name"] for c in state["channels"]], ["Shorts"])
         # Requests from other sites, or writes without the custom header, are refused.
-        self.assertEqual(call("GET", "/api/c/test-channel/state", host="evil.example")[0], 403)
-        self.assertEqual(call("POST", "/api/c/test-channel/topics", {"name": "Y"}, headers={"Content-Type": "text/plain"})[0], 403)
+        self.assertEqual(call("GET", "/api/p/test-project/state", host="evil.example")[0], 403)
+        self.assertEqual(call("POST", "/api/p/test-project/topics", {"name": "Y"}, headers={"Content-Type": "text/plain"})[0], 403)
 
 
 if __name__ == "__main__":

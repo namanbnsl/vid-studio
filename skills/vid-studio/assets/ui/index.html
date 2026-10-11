@@ -172,12 +172,10 @@ textarea.doc:focus { outline: none; border-color: #c9c7c2; box-shadow: 0 0 0 4px
 .doc-tools { display: flex; align-items: center; gap: 8px; }
 .doc-tools .btn.small { height: 32px; }
 .doc-tools .btn.ghost:last-child { margin-right: -10px; }
-#save-area { display: inline-flex; align-items: center; gap: 10px; }
-.save-state { display: inline-flex; align-items: center; gap: 5px; font-size: 12.5px; color: var(--ink-3); }
-.save-state.dirty { color: var(--ink-2); }
 .banner { display: flex; gap: 12px; align-items: center; justify-content: space-between; flex-wrap: wrap; border: 1px solid #f1d8a8; background: #fff8eb; border-radius: 10px; padding: 10px 14px; margin-bottom: 14px; font-size: 13px; }
 .side { position: sticky; top: 24px; }
-.draft-btn { width: 100%; height: 40px; margin: 6px 0 28px; }
+.side-actions { display: grid; gap: 8px; margin: 6px 0 28px; }
+.side-actions .btn { height: 40px; }
 .side section + section { margin-top: 22px; }
 .side h4 { font-size: 13px; font-weight: 600; color: var(--ink-2); margin: 0 0 8px; display: flex; justify-content: space-between; align-items: center; }
 .side h4 .btn { margin-right: -10px; }
@@ -274,7 +272,50 @@ dialog .sub { margin: 0 0 20px; color: var(--ink-2); font-size: 13.5px; }
 .loading { color: var(--ink-3); padding: 80px 0; text-align: center; }
 code { font: 12.5px var(--mono); background: var(--surface-2); border-radius: 5px; padding: 1px 5px; }
 
+/* research / production */
+.modes { display: inline-flex; gap: 2px; background: var(--surface-2); border-radius: 10px; padding: 3px; margin-bottom: 14px; }
+.modes:has(+ .tabs[hidden]) { margin-bottom: 32px; }
+.modes a { display: inline-flex; align-items: center; gap: 7px; height: 32px; padding: 0 16px; border-radius: 7px; font-weight: 600; font-size: 13.5px; color: var(--ink-3); text-decoration: none; }
+.modes a:hover { color: var(--ink); }
+.modes a.on { background: var(--bg); color: var(--ink); box-shadow: 0 1px 2px rgba(17,17,16,.1); }
+.modes .count { font: 500 11px/1 var(--mono); color: var(--ink-3); }
+.board { display: grid; grid-template-columns: repeat(3, minmax(0, 1fr)); gap: 14px; align-items: start; }
+.column { background: var(--surface); border: 1px solid var(--line); border-radius: 12px; padding: 10px; display: grid; gap: 8px; }
+.column .label-row { margin: 4px 6px 2px; }
+.item.card { padding: 12px 14px; }
+.item.card h3 { font-size: 14px; }
+.item.card .meta { margin-top: 4px; }
+.col-empty { margin: 0; padding: 4px 6px 8px; }
+.script-meta { display: flex; flex-wrap: wrap; gap: 4px 18px; font-size: 13px; color: var(--ink-2); margin: -8px 0 20px; }
+.script-meta a { color: inherit; text-underline-offset: 3px; }
+.doc-label { font-size: 13px; font-weight: 600; color: var(--ink-2); }
+a.ref-link { display: flex; justify-content: space-between; align-items: center; gap: 8px; text-decoration: none; font-size: 13.5px; }
+a.ref-link:hover { border-color: #cfcdc8; }
+.stage-seg { display: flex; }
+.stage-seg button { flex: 1; }
+.published { display: flex; gap: 6px; margin-top: 10px; }
+.url-input { flex: 1; min-width: 0; height: 30px; border: 1px solid var(--line-2); border-radius: 8px; padding: 0 10px; font-size: 12.5px; background: var(--bg); }
+.small-link { display: inline-flex; align-items: center; gap: 4px; margin-top: 8px; font-size: 12.5px; color: var(--ink-2); overflow-wrap: anywhere; }
+.small-link svg { width: 12px; height: 12px; flex: none; }
+.comment { border: 1px solid var(--line); border-radius: 10px; padding: 10px 12px; margin-bottom: 8px; font-size: 13px; transition: border-color .2s, box-shadow .2s; }
+.comment.flash { border-color: #e9b949; box-shadow: 0 0 0 3px #fdf3d7; }
+.comment .quote { display: block; width: 100%; text-align: left; border: 0; border-left: 3px solid #e9b949; background: #fff7dc; border-radius: 4px; padding: 4px 8px; font-size: 12.5px; color: var(--ink-2); cursor: pointer; overflow: hidden; text-overflow: ellipsis; white-space: nowrap; }
+.comment .quote.whole { background: var(--surface-2); border-left-color: var(--line-2); cursor: default; }
+.comment.orphan .quote { text-decoration: line-through; color: var(--ink-3); }
+.comment p { margin: 8px 0 4px; white-space: pre-wrap; overflow-wrap: anywhere; }
+.comment p.reply { color: var(--ink-3); font-size: 12.5px; margin-top: 0; }
+.comment-tools { display: flex; align-items: center; gap: 2px; font-size: 12px; margin: 0 -6px -4px 0; }
+.comment-tools .muted { margin-right: auto; }
+.comment-tools .btn.small { height: 26px; }
+.comment-tools .icon-btn { width: 26px; height: 26px; }
+.dismissed .comment { opacity: .7; }
+.md mark { background: #fff1bf; box-shadow: inset 0 -2px 0 #e9b949; color: inherit; border-radius: 2px; cursor: pointer; }
+.md mark.flash { background: #ffe58a; }
+.quote-box { border-left: 3px solid #e9b949; background: #fff7dc; border-radius: 4px; padding: 8px 12px; font-size: 13px; margin-bottom: 16px; white-space: pre-wrap; max-height: 120px; overflow: auto; }
+.danger-text:hover { color: var(--danger); }
+
 @media (max-width: 820px) {
+  .board { grid-template-columns: 1fr; }
   .wrap { padding: 0 18px 140px; }
   .topbar { margin-bottom: 32px; }
   .editor { grid-template-columns: 1fr; gap: 28px; }
@@ -294,7 +335,8 @@ code { font: 12.5px var(--mono); background: var(--surface-2); border-radius: 5p
     <div class="topbar-left"><a class="brand" href="#/" aria-label="Vid Studio home"><svg viewBox="0 0 24 24" aria-hidden="true"><rect width="24" height="24" rx="7" fill="#111110"/><path d="M9.5 7.8v8.4a.6.6 0 0 0 .9.5l6.7-4.2a.6.6 0 0 0 0-1l-6.7-4.2a.6.6 0 0 0-.9.5Z" fill="#fff"/></svg>Vid Studio</a>
       <span class="slash">/</span>
       <div class="switcher" id="switcher"></div></div>
-    <button class="btn ghost small" data-action="settings" id="settings-btn">Settings</button>
+    <div class="inline"><button class="btn ghost small" data-action="open-channels" id="channels-btn">Channels</button>
+      <button class="btn ghost small" data-action="settings" id="settings-btn">Settings</button></div>
   </header>
   <main id="app"><div class="loading">Loading…</div></main>
 </div>
@@ -320,6 +362,8 @@ const ICONS = {
   check: '<path d="M20 6 9 17l-5-5"/>',
   chevron: '<path d="m6 9 6 6 6-6"/>',
   external: '<path d="M7 17 17 7M8 7h9v9"/>',
+  comment: '<path d="M21 15a2 2 0 0 1-2 2H7l-4 4V5a2 2 0 0 1 2-2h14a2 2 0 0 1 2 2Z"/>',
+  send: '<path d="M22 2 11 13M22 2l-7 20-4-9-9-4Z"/>',
   copy: '<rect x="9" y="9" width="12" height="12" rx="2"/><path d="M5 15V5a2 2 0 0 1 2-2h10"/>',
 };
 const icon = name => `<svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.8" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true">${ICONS[name]}</svg>`;
@@ -340,18 +384,19 @@ function when(iso) {
 
 async function api(method, path, body) {
   const options = { method, headers: { "X-Vid-Studio": "1" } };
-  if (body !== undefined) { options.headers["Content-Type"] = "application/json"; options.body = JSON.stringify(body); }
+  // Every write is JSON, deletes included: the server refuses writes without this content type.
+  if (method !== "GET") { options.headers["Content-Type"] = "application/json"; options.body = JSON.stringify(body ?? {}); }
   const response = await fetch("/api/" + path, options);
   const data = await response.json().catch(() => ({}));
   if (!response.ok) { const error = new Error(data.error || `Request failed (${response.status})`); error.status = response.status; throw error; }
   return data;
 }
 
-let CHANNELS = [];
-let CH = null;  // current channel ID
-const base = (channel = CH) => "#/" + encodeURIComponent(channel);
-const capi = (method, path, body) => api(method, `c/${encodeURIComponent(CH)}/${path}`, body);
-const channelName = () => (CHANNELS.find(c => c.id === CH) || {}).name || CH;
+let PROJECTS = [];
+let PROJECT = null;  // current project ID
+const base = (project = PROJECT) => "#/" + encodeURIComponent(project);
+const papi = (method, path, body) => api(method, `p/${encodeURIComponent(PROJECT)}/${path}`, body);
+const projectName = () => (PROJECTS.find(c => c.id === PROJECT) || {}).name || PROJECT;
 
 function toast(message, kind = "") {
   const el = document.createElement("div");
@@ -413,10 +458,22 @@ let S = null;               // studio state from the server
 let lastStateJson = "";
 let selected = new Set();   // selected finding IDs
 let topicFilter = "all";
-let editor = null;          // open script: { data, tab, dirty, remoteChanged }
+let channelFilter = "all";
+let editor = null;          // open story or script: { kind, data, view, dirty, remoteChanged }
+const lastTab = { research: "", production: "scripts", any: "" };
 
 const topicName = id => (S.topics.find(t => t.id === id) || {}).name || id;
 const findingById = id => S.findings.find(f => f.id === id);
+const storyById = id => S.stories.find(s => s.id === id);
+const channelById = id => S.channels.find(c => c.id === id);
+const channelLabel = id => (channelById(id) || {}).name || id;
+const enc = encodeURIComponent;
+const plural = (n, word) => `${n} ${word}${n === 1 ? "" : "s"}`;
+const RESEARCH_TABS = [["topics", "Topics"], ["sources", "Sources"], ["findings", "Findings"], ["stories", "Stories"]];
+const PRODUCTION_TABS = [["scripts", "Scripts"]];
+const STAGES = [["script", "Script"], ["ready", "Ready"], ["published", "Published"]];
+const LANGUAGES = ["English", "Hindi", "Hinglish"];
+const openComments = s => (s.comments || []).filter(c => !c.resolved_at);
 const lastRun = () => [...S.runs].reverse().find(r => r.status !== "running");
 const suggestedCount = () => S.sources.filter(s => s.status === "suggested").length;
 const runningRun = () => [...S.runs].reverse().find(r => r.status === "running");
@@ -432,10 +489,16 @@ function describeSchedule(schedule = {}) {
   return `${when} at ${times.join(" and ")}`;
 }
 const PROMPTS = {
-  research: () => `Use the vid-studio skill to research now for the channel "${channelName()}".${workspaceSuffix()}`,
-  setSchedule: (schedule, timezone) => `Use the vid-studio skill to set up scheduled research for the channel "${channelName()}": ${describeSchedule(schedule)}${timezone ? ` (${timezone})` : ""}. Create the scheduled task now, replacing any earlier one for this channel. Don't run research now.${workspaceSuffix()}`,
-  stopSchedule: () => `Use the vid-studio skill to turn off scheduled research for the channel "${channelName()}". Delete its scheduled task. Don't run research now.${workspaceSuffix()}`,
-  draft: s => `Use the vid-studio skill to write the draft for the script "${s.title}" (${s.id}) in the channel "${channelName()}".${workspaceSuffix()}`,
+  research: () => `Use the vid-studio skill to research now for the project "${projectName()}".${workspaceSuffix()}`,
+  setSchedule: (schedule, timezone) => `Use the vid-studio skill to set up scheduled research for the project "${projectName()}": ${describeSchedule(schedule)}${timezone ? ` (${timezone})` : ""}. Create the scheduled task now, replacing any earlier one for this project. Don't run research now.${workspaceSuffix()}`,
+  stopSchedule: () => `Use the vid-studio skill to turn off scheduled research for the project "${projectName()}". Delete its scheduled task. Don't run research now.${workspaceSuffix()}`,
+  researchStory: s => `Use the vid-studio skill to research the story "${s.title}" (${s.id}) in the project "${projectName()}".${workspaceSuffix()}`,
+  draftScripts: (story, ids) => `Use the vid-studio skill to write the scripts for the story "${story.title}" (${story.id}) in the project "${projectName()}": ${ids.join(", ")}.${workspaceSuffix()}`,
+  draft: s => {
+    const n = openComments(s).length;
+    return n ? `Use the vid-studio skill to revise the script "${s.title}" (${s.id}) in the project "${projectName()}": address its ${plural(n, "open comment")}.${workspaceSuffix()}`
+      : `Use the vid-studio skill to write the script "${s.title}" (${s.id}) in the project "${projectName()}".${workspaceSuffix()}`;
+  },
 };
 
 function showPrompt(title, text, explain) {
@@ -449,7 +512,7 @@ function showPrompt(title, text, explain) {
 }
 
 async function refresh(force = false) {
-  const next = await capi("GET", "state");
+  const next = await papi("GET", "state");
   const json = JSON.stringify(next);
   if (!force && json === lastStateJson) return false;
   lastStateJson = json; S = next;
@@ -459,51 +522,60 @@ async function refresh(force = false) {
 }
 
 // ------------------------------------------------------------------ render
-const route = () => { const [channel = "", tab = "", id = ""] = location.hash.replace(/^#\/?/, "").split("/").map(decodeURIComponent); return { channel, tab, id }; };
+const route = () => { const [project = "", tab = "", id = ""] = location.hash.replace(/^#\/?/, "").split("/").map(decodeURIComponent); return { project, tab, id }; };
 
 function render() {
-  if (!CH || !S) return renderNoChannels();
+  if (!PROJECT || !S) return renderNoProjects();
   const { tab: rawTab, id } = route();
-  const tab = ["topics", "sources", "findings", "scripts"].includes(rawTab) ? rawTab : (S.findings.length ? "findings" : "topics");
+  if (rawTab === "channels") return renderChannels();
+  const known = [...RESEARCH_TABS, ...PRODUCTION_TABS].map(t => t[0]);
+  const tab = known.includes(rawTab) ? rawTab : (S.findings.length ? "findings" : "topics");
+  const mode = PRODUCTION_TABS.some(t => t[0] === tab) ? "production" : "research";
+  lastTab[mode] = tab; lastTab.any = tab;
   document.title = (S.settings.name || "Vid Studio") + " · Vid Studio";
-  if (tab === "scripts" && id) return renderEditor(id);
+  if (tab === "stories" && id) return renderEditor("story", id);
+  if (tab === "scripts" && id) return renderEditor("script", id);
   editor = null;
   const app = document.getElementById("app");
   const run = lastRun(), active = runningRun();
   const scheduleText = describeSchedule(S.settings.schedule);
+  const counts = { topics: S.topics.length, sources: S.sources.filter(s => s.status === "approved").length,
+    findings: S.findings.filter(f => !f.dismissed_at).length, stories: S.stories.length, scripts: S.scripts.length };
   app.innerHTML = `
     <section class="head">
       <div>
-        <h1>${esc(S.settings.name || "Untitled channel")}</h1>
-        <p class="lede">${esc(S.settings.description || "Follow the subjects that matter, collect strong evidence, and shape it into scripts.")}</p>
+        <h1>${esc(S.settings.name || "Untitled project")}</h1>
+        <p class="lede">${esc(S.settings.description || "Follow the subjects that matter, collect strong evidence, and shape it into stories.")}</p>
       </div>
-      <div class="head-actions">
+      ${mode === "research" ? `<div class="head-actions">
         <button class="btn primary" data-action="research">${icon("refresh")}Research now</button>
         <div class="run-status"><span class="dot ${active ? "running" : run ? "" : "idle"}"></span>${active ? `Running since ${when(active.started)}…`
           : run ? `Last run completed: ${when(run.finished)}${run.status === "failed" ? " · failed" : ` · ${run.findings || 0} new`}` : "No research yet"}
           · <button class="link-btn" data-action="schedule" title="Change the research schedule">${scheduleText ? esc(scheduleText[0].toUpperCase() + scheduleText.slice(1)) : "Set a schedule"}</button></div>
-      </div>
+      </div>` : ""}
     </section>
-    <nav class="tabs" aria-label="Sections">
-      ${[["topics", "Topics", S.topics.length], ["sources", "Sources", S.sources.filter(s => s.status === "approved").length],
-         ["findings", "Findings", S.findings.filter(f => !f.dismissed_at).length], ["scripts", "Scripts", S.scripts.length]]
-        .map(([key, label, count]) => `<a href="${base()}/${key}" class="${tab === key ? "on" : ""}" ${tab === key ? 'aria-current="page"' : ""}>${label}<span class="count">${count || ""}</span>${
+    <nav class="modes" aria-label="Research or production">
+      <a href="${base()}/${lastTab.research || (S.findings.length ? "findings" : "topics")}" class="${mode === "research" ? "on" : ""}">Research</a>
+      <a href="${base()}/${lastTab.production}" class="${mode === "production" ? "on" : ""}">Production<span class="count">${S.scripts.length || ""}</span></a>
+    </nav>
+    <nav class="tabs" aria-label="Sections" ${mode === "production" && PRODUCTION_TABS.length === 1 ? "hidden" : ""}>
+      ${(mode === "research" ? RESEARCH_TABS : PRODUCTION_TABS).map(([key, label]) => `<a href="${base()}/${key}" class="${tab === key ? "on" : ""}" ${tab === key ? 'aria-current="page"' : ""}>${label}<span class="count">${counts[key] || ""}</span>${
           key === "sources" && suggestedCount() ? `<span class="badge" title="Suggested sources waiting for you">${suggestedCount()} new</span>` : ""}</a>`).join("")}
     </nav>
-    <section id="panel">${({ topics: topicsPanel, sources: sourcesPanel, findings: findingsPanel, scripts: scriptsPanel })[tab]()}</section>
+    <section id="panel">${({ topics: topicsPanel, sources: sourcesPanel, findings: findingsPanel, stories: storiesPanel, scripts: scriptsPanel })[tab]()}</section>
     ${tab === "findings" && selected.size ? `<div class="selection-bar"><span>${selected.size} selected</span>
-      <span class="inline"><button class="btn ghost" data-action="clear-selection">Clear</button><button class="btn" data-action="add-to-script">Add to script…</button></span></div>` : ""}`;
+      <span class="inline"><button class="btn ghost" data-action="clear-selection">Clear</button><button class="btn" data-action="add-to-story">Add to story…</button></span></div>` : ""}`;
 }
 
 function topicsPanel() {
   const findingCount = id => S.findings.filter(f => !f.dismissed_at && (f.topics || []).includes(id)).length;
-  const scriptCount = id => S.scripts.filter(s => s.topics.includes(id) || s.findings.some(fid => (findingById(fid)?.topics || []).includes(id))).length;
+  const storyCount = id => S.stories.filter(s => s.topics.includes(id) || s.findings.some(fid => (findingById(fid)?.topics || []).includes(id))).length;
   return `<div class="section-head"><div><h2>Topics</h2><p>What you make videos about. Descriptions guide what research considers relevant.</p></div>
       <button class="btn" data-action="new-topic">${icon("plus")}New topic</button></div>
     ${S.topics.length ? `<div class="list">${S.topics.map(t => `
       <article class="item" data-card="edit-topic" data-id="${esc(t.id)}" tabindex="0">
         <div class="body"><h3>${esc(t.name)}</h3><p>${esc(t.description) || '<span class="muted">No description</span>'}</p>
-          <div class="meta"><a href="${base()}/findings" data-action="filter" data-id="${esc(t.id)}" class="meta-link">${findingCount(t.id)} finding${findingCount(t.id) === 1 ? "" : "s"}</a> · ${scriptCount(t.id)} script${scriptCount(t.id) === 1 ? "" : "s"}</div></div>
+          <div class="meta"><a href="${base()}/findings" data-action="filter" data-id="${esc(t.id)}" class="meta-link">${findingCount(t.id)} finding${findingCount(t.id) === 1 ? "" : "s"}</a> · ${plural(storyCount(t.id), "story").replace("storys", "stories")}</div></div>
         <div class="tools"><button class="icon-btn delete" data-action="delete-topic" data-id="${esc(t.id)}" aria-label="Delete ${esc(t.name)}" title="Delete">${icon("trash")}</button></div>
       </article>`).join("")}</div>`
     : empty("Name what you want videos about", "Add a topic with a short description of what matters and what to ignore.", "new-topic", "New topic")}`;
@@ -572,87 +644,225 @@ function findingsPanel() {
     ${dismissedCount ? `<button class="text-btn" data-action="toggle-dismissed">${showDismissed ? "Hide" : "Show"} ${dismissedCount} dismissed</button>` : ""}`;
 }
 
-function scriptsPanel() {
-  return `<div class="section-head"><div><h2>Scripts</h2><p>Each script holds the video script, a WhatsApp post, and research notes, built from its findings and topics.</p></div>
-      <button class="btn" data-action="new-script">${icon("plus")}New script</button></div>
-    ${S.scripts.length ? `<div class="list">${S.scripts.map(s => `
-      <article class="item" data-card="open-script" data-id="${esc(s.id)}">
+function storiesPanel() {
+  return `<div class="section-head"><div><h2>Stories</h2><p>An angle for a video, built from findings, topics, or both. Research a story once, then send it to production for each channel.</p></div>
+      <button class="btn" data-action="new-story">${icon("plus")}New story</button></div>
+    ${S.stories.length ? `<div class="list">${S.stories.map(s => {
+      const made = S.scripts.filter(x => x.story === s.id);
+      return `<article class="item" data-card="open-story" data-id="${esc(s.id)}">
         <div class="body">
-          <h3><a href="${base()}/scripts/${encodeURIComponent(s.id)}">${esc(s.title)}</a></h3>
-          <div class="meta">${s.drafted ? "Drafted" : "No draft yet"}${s.has_post ? " · post ready" : ""} · ${s.topics.length ? esc(s.topics.map(topicName).join(", ")) + " · " : ""}${s.findings.length} finding${s.findings.length === 1 ? "" : "s"} · updated ${esc(when(s.updated))}</div></div>
-        <div class="tools"><button class="icon-btn delete" data-action="delete-script" data-id="${esc(s.id)}" aria-label="Delete ${esc(s.title)}" title="Delete">${icon("trash")}</button></div>
+          <h3><a href="${base()}/stories/${enc(s.id)}">${esc(s.title)}</a></h3>
+          <div class="meta">${s.researched ? "Researched" : "Not researched yet"} · ${s.topics.length ? esc(s.topics.map(topicName).join(", ")) + " · " : ""}${plural(s.findings.length, "finding")} · ${
+            made.length ? `in production for ${esc(made.map(x => channelLabel(x.channel)).join(", "))}` : "not in production"} · updated ${esc(when(s.updated))}</div></div>
+        <div class="tools"><button class="icon-btn delete" data-action="delete-story" data-id="${esc(s.id)}" aria-label="Delete ${esc(s.title)}" title="Delete">${icon("trash")}</button></div>
+      </article>`; }).join("")}</div>`
+    : empty("Start a story", "Select findings and choose Add to story, or start a story here and link a topic for an explainer.", "new-story", "New story")}`;
+}
+
+function scriptsPanel() {
+  const head = (extra = "") => `<div class="section-head"><div><h2>Scripts</h2><p>One per story and channel, written in that channel's language and format. Send stories here from Research → Stories.</p></div>${extra}</div>`;
+  if (!S.channels.length) return head() + empty("Add a channel first", "A channel is where scripts get published: a YouTube channel, an Instagram account, or a WhatsApp channel. Each has its own language and format.", "new-channel", "New channel");
+  if (!S.scripts.length) return head() + empty("Nothing in production yet", "Open a story in Research and choose Send to production.", "go-stories", "Go to stories", "back");
+  const shown = S.scripts.filter(s => channelFilter === "all" || s.channel === channelFilter);
+  const card = s => {
+    const c = channelById(s.channel) || {};
+    return `<article class="item card" data-card="open-script" data-id="${esc(s.id)}">
+      <div class="body"><h3><a href="${base()}/scripts/${enc(s.id)}">${esc(s.title)}</a></h3>
+        <div class="meta">${esc(c.name || s.channel)}${c.language ? " · " + esc(c.language) : ""}${s.drafted ? "" : " · no draft yet"}${s.open_comments ? ` · ${plural(s.open_comments, "comment")}` : ""}</div></div>
+    </article>`;
+  };
+  return head(`<select class="topic-select" data-action="filter-channel" aria-label="Filter by channel">
+        <option value="all">All channels (${S.scripts.length})</option>
+        ${S.channels.map(c => `<option value="${esc(c.id)}" ${channelFilter === c.id ? "selected" : ""}>${esc(c.name)} (${S.scripts.filter(s => s.channel === c.id).length})</option>`).join("")}
+      </select>`)
+    + `<div class="board">${STAGES.map(([key, label]) => {
+      const items = shown.filter(s => s.stage === key);
+      return `<div class="column"><div class="label-row">${label} <span class="pill">${items.length}</span></div>${items.map(card).join("") || `<p class="muted small col-empty">None</p>`}</div>`;
+    }).join("")}</div>`;
+}
+
+function renderChannels() {
+  editor = null;
+  document.title = "Channels · Vid Studio";
+  const kindLabel = c => c.kind === "post" ? "Text post" : "Video script";
+  document.getElementById("app").innerHTML = `
+    <a class="back" href="${base()}/${lastTab.any || ""}">${icon("back")}${esc(projectName())}</a>
+    <section class="head"><div><h1>Channels</h1><p class="lede">Where scripts get published. Each channel has its own language and format, and every project can use it.</p></div>
+      <div class="head-actions"><button class="btn primary" data-action="new-channel">${icon("plus")}New channel</button></div></section>
+    ${S.channels.length ? `<div class="list">${S.channels.map(c => `
+      <article class="item" data-card="edit-channel" data-id="${esc(c.id)}" tabindex="0">
+        <div class="body"><h3>${esc(c.name)}</h3><p>${esc([c.platform, kindLabel(c), c.language].filter(Boolean).join(" · "))}</p>
+          <div class="meta">${esc((c.format || "").split("\n")[0]) || "No format yet"}</div></div>
+        <div class="tools"><button class="icon-btn delete" data-action="delete-channel" data-id="${esc(c.id)}" aria-label="Delete ${esc(c.name)}" title="Delete">${icon("trash")}</button></div>
       </article>`).join("")}</div>`
-    : empty("Start a script", "Select findings and choose Add to script, or start a script here and link a topic.", "new-script", "New script")}`;
+    : empty("Add your first channel", "A YouTube channel, an Instagram account, or a WhatsApp channel. One story can become a script for each of them.", "new-channel", "New channel")}`;
 }
 
-function empty(title, text, action, label) {
-  return `<div class="empty"><h3>${esc(title)}</h3><p>${esc(text)}</p><button class="btn primary" data-action="${action}">${icon(action === "research" ? "refresh" : "plus")}${esc(label)}</button></div>`;
+function empty(title, text, action, label, iconName = action === "research" ? "refresh" : "plus") {
+  return `<div class="empty"><h3>${esc(title)}</h3><p>${esc(text)}</p><button class="btn primary" data-action="${action}">${icon(iconName)}${esc(label)}</button></div>`;
 }
 
-// ------------------------------------------------------------------ script editor
-const EDITOR_TABS = [["script", "Video script"], ["post", "WhatsApp post"], ["notes", "Research notes"]];
-const PLACEHOLDERS = {
-  script: "Write the script here, or click Write draft to have your agent research this script's topics and findings and draft it.",
-  post: "The WhatsApp post. Write draft fills this in too.",
-  notes: "Research notes and numbered sources. Your agent keeps these when it drafts.",
+// ------------------------------------------------------------------ story and script editor
+const EDITORS = {
+  story: { path: id => "stories/" + enc(id), key: "notes", back: "stories", backLabel: "Stories", label: "Research notes",
+    placeholder: "Research notes and numbered sources. Click Research story to have your agent research the findings and topics in depth and write them here." },
+  script: { path: id => "scripts/" + enc(id), key: "text", back: "scripts", backLabel: "Scripts", label: "Script",
+    placeholder: "The script. Click Write draft to have your agent write it from the story's research, in this channel's language and format." },
 };
+const docKey = () => EDITORS[editor.kind].key;
+const docText = () => editor.data[docKey()];
+const isPost = () => editor.kind === "script" && (channelById(editor.data.channel) || {}).kind === "post";
+const canPreview = () => !isPost() && docText().trim();
+const rerender = () => renderEditor(editor.kind, editor.data.id);
 
-async function renderEditor(id) {
+async function renderEditor(kind, id) {
   const app = document.getElementById("app");
-  if (!editor || editor.data.id !== id) {
-    try { editor = { data: await capi("GET", "scripts/" + encodeURIComponent(id)), tab: "script", dirty: false, remoteChanged: false }; editor.view = defaultView(); }
-    catch (e) { app.innerHTML = `<a class="back" href="${base()}/scripts">${icon("back")}Scripts</a><div class="empty"><h3>Script not found</h3><p>${esc(e.message)}</p></div>`; return; }
+  const E = EDITORS[kind];
+  if (!editor || editor.kind !== kind || editor.data.id !== id) {
+    try { editor = { kind, data: await papi("GET", E.path(id)), dirty: false, remoteChanged: false }; editor.view = canPreview() ? "preview" : "edit"; }
+    catch (e) { app.innerHTML = `<a class="back" href="${base()}/${E.back}">${icon("back")}${E.backLabel}</a><div class="empty"><h3>Not found</h3><p>${esc(e.message)}</p></div>`; return; }
   }
-  const s = editor.data;
-  const attached = s.findings.map(findingById).filter(Boolean);
-  const hasPreview = editor.tab !== "post", preview = hasPreview && editor.view === "preview";
+  const d = editor.data, preview = canPreview() && editor.view === "preview";
   app.innerHTML = `
-    <a class="back" href="${base()}/scripts">${icon("back")}Scripts</a>
+    <a class="back" href="${base()}/${E.back}">${icon("back")}${E.backLabel}</a>
     <div class="editor">
       <div>
-        ${editor.remoteChanged ? `<div class="banner"><span>Your agent changed this script while you were editing.</span>
-          <span class="inline"><button class="btn" data-action="reload-script">Load their version</button><button class="btn ghost" data-action="keep-mine">Keep mine</button></span></div>` : ""}
-        <input class="title-input" id="script-title" value="${esc(s.title)}" aria-label="Script title">
-        <div class="subtabs"><div role="tablist">${EDITOR_TABS.map(([key, label]) => `<button class="chip ${editor.tab === key ? "on" : ""}" role="tab" aria-selected="${editor.tab === key}" data-action="editor-tab" data-id="${key}">${label}</button>`).join("")}</div>
-          <div class="doc-tools"><span id="save-area">${saveArea()}</span>${hasPreview && s[editor.tab].trim() ? (preview
-            ? `<button class="btn ghost small" data-action="editor-view" data-id="edit">${icon("edit")}Edit</button>`
-            : `<button class="btn ghost small" data-action="editor-view" data-id="preview">${icon("check")}Done</button>`) : ""}</div></div>
-        ${preview ? `<div class="md" id="md-preview" title="Double-click to edit">${s[editor.tab].trim() ? markdown(s[editor.tab]) : `<p class="md-empty">${esc(PLACEHOLDERS[editor.tab])}</p>`}</div>` : ""}
-        <textarea class="doc ${editor.tab === "post" ? "short" : ""}" id="script-text" ${preview ? "hidden" : ""} aria-label="${esc(EDITOR_TABS.find(t => t[0] === editor.tab)[1])}" placeholder="${esc(PLACEHOLDERS[editor.tab])}">${esc(s[editor.tab])}</textarea>
-        ${editor.tab === "post" ? `<div class="preview-label">WhatsApp preview</div><div class="phone"><div class="bubble" id="post-preview"></div></div>` : ""}
+        ${editor.remoteChanged ? `<div class="banner"><span>Your agent changed this ${kind} while you were editing.</span>
+          <span class="inline"><button class="btn" data-action="reload-doc">Load their version</button><button class="btn ghost" data-action="keep-mine">Keep mine</button></span></div>` : ""}
+        <input class="title-input" id="doc-title" value="${esc(d.title)}" aria-label="Title">
+        ${kind === "script" ? scriptHeader() : ""}
+        <div class="subtabs"><div class="doc-label">${isPost() ? "Post" : E.label}</div>
+          <div class="doc-tools" id="doc-tools">${docTools()}</div></div>
+        ${preview ? `<div class="md" id="md-preview" title="Double-click to edit">${markdown(docText())}</div>` : ""}
+        <textarea class="doc ${isPost() ? "short" : ""}" id="doc-text" ${preview ? "hidden" : ""} aria-label="${esc(E.label)}" placeholder="${esc(E.placeholder)}">${esc(docText())}</textarea>
+        ${isPost() ? `<div class="preview-label">WhatsApp preview</div><div class="phone"><div class="bubble" id="post-preview"></div></div>` : ""}
       </div>
-      <aside class="side">
-        <button class="btn primary draft-btn" data-action="write-draft">${icon("spark")}Write draft</button>
-        <section><h4>Topics <button class="btn ghost small" data-action="link-topic">${icon("plus")}Add</button></h4>
-        ${s.topics.length ? `<div class="topic-links">${s.topics.map(t => `<span class="tag removable">${esc(topicName(t))}<button class="icon-btn" data-action="unlink-topic" data-id="${esc(t)}" aria-label="Unlink ${esc(topicName(t))}" title="Unlink">${icon("x")}</button></span>`).join("")}</div>` : ""}</section>
-        <section><h4>Findings <button class="btn ghost small" data-action="attach">${icon("plus")}Add</button></h4>
-        ${attached.map(f => `<div class="ref">
-            <div class="ref-top"><b>${esc(f.title)}</b><button class="icon-btn" data-action="detach" data-id="${esc(f.id)}" aria-label="Detach ${esc(f.title)}" title="Detach">${icon("x")}</button></div>
-            ${f.summary ? `<p>${esc(f.summary)}</p>` : ""}
-            <ul>${f.sources.map(src => `<li><a href="${safeUrl(src.url)}" target="_blank" rel="noopener noreferrer">${esc(src.publisher || host(src.url))}${src.title ? ": " + esc(src.title) : ""}</a></li>`).join("")}</ul>
-          </div>`).join("")}</section>
-      </aside>
+      <aside class="side">${kind === "story" ? storySide() : scriptSide()}</aside>
     </div>`;
-  const text = document.getElementById("script-text");
-  const title = document.getElementById("script-title");
+  const text = document.getElementById("doc-text");
+  const title = document.getElementById("doc-title");
   const postPreview = () => { const p = document.getElementById("post-preview"); if (p) p.innerHTML = whatsapp(text.value); };
   const markDirty = () => {
     const wasDirty = editor.dirty;
-    editor.data[editor.tab] = text.value; editor.data.title = title.value; editor.dirty = true;
-    if (!wasDirty) document.getElementById("save-area").innerHTML = saveArea();
+    editor.data[docKey()] = text.value; editor.data.title = title.value; editor.dirty = true;
+    if (!wasDirty) document.getElementById("doc-tools").innerHTML = docTools();
     postPreview();
   };
   text.addEventListener("input", markDirty);
   title.addEventListener("input", markDirty);
-  document.getElementById("md-preview")?.addEventListener("dblclick", () => actions["editor-view"]("edit"));
+  const md = document.getElementById("md-preview");
+  md?.addEventListener("dblclick", event => { if (!event.target.closest("mark")) actions["editor-view"]("edit"); });
+  md?.addEventListener("click", event => { const mark = event.target.closest("mark[data-comment]"); if (mark) flashComment(mark.dataset.comment); });
+  if (md && kind === "script") highlightComments(md);
   postPreview();
 }
 
-const saveArea = () => editor.dirty
-  ? `<span class="save-state dirty">Unsaved</span><button class="btn small" data-action="save-script">Save</button>`
-  : "";
+// One button finishes editing: Save when there are changes (then shows the preview), Done when there are none.
+// Ctrl+S saves without leaving the editor.
+function docTools() {
+  const comment = editor.kind === "script" ? `<button class="btn ghost small" data-action="add-comment" data-keep-selection title="Select text first to comment on it">${icon("comment")}Comment</button>` : "";
+  const save = `<button class="btn small" data-action="save-doc">${icon("check")}Save</button>`;
+  if (editor.view === "preview" && canPreview()) return comment + (editor.dirty ? save : "") + `<button class="btn ghost small" data-action="editor-view" data-id="edit">${icon("edit")}Edit</button>`;
+  if (editor.dirty) return comment + save;
+  return comment + (canPreview() ? `<button class="btn ghost small" data-action="editor-view" data-id="preview">${icon("check")}Done</button>` : "");
+}
 
-const defaultView = () => editor.data[editor.tab].trim() ? "preview" : "edit";
+function scriptHeader() {
+  const d = editor.data, c = channelById(d.channel) || { name: d.channel }, story = storyById(d.story);
+  return `<div class="script-meta"><span>For <b>${esc(c.name)}</b>${[c.platform, c.language].filter(Boolean).map(x => " · " + esc(x)).join("")}</span>
+    <span>From ${story ? `<a href="${base()}/stories/${enc(story.id)}">${esc(story.title)}</a>` : "a deleted story"}</span></div>`;
+}
+
+function storySide() {
+  const d = editor.data;
+  const attached = d.findings.map(findingById).filter(Boolean);
+  const made = S.scripts.filter(x => x.story === d.id);
+  return `<div class="side-actions">
+      <button class="btn primary" data-action="research-story">${icon("spark")}Research story</button>
+      <button class="btn" data-action="send-to-production">${icon("send")}Send to production…</button></div>
+    <section><h4>In production</h4>
+      ${made.map(x => `<a class="ref ref-link" href="${base()}/scripts/${enc(x.id)}"><b>${esc(channelLabel(x.channel))}</b><span class="pill">${esc(STAGES.find(st => st[0] === x.stage)?.[1] || x.stage)}</span></a>`).join("")
+        || `<p class="muted small">Not yet. Research the story, then send it to production for each channel.</p>`}</section>
+    <section><h4>Topics <button class="btn ghost small" data-action="link-topic">${icon("plus")}Add</button></h4>
+    ${d.topics.length ? `<div class="topic-links">${d.topics.map(t => `<span class="tag removable">${esc(topicName(t))}<button class="icon-btn" data-action="unlink-topic" data-id="${esc(t)}" aria-label="Unlink ${esc(topicName(t))}" title="Unlink">${icon("x")}</button></span>`).join("")}</div>` : ""}</section>
+    <section><h4>Findings <button class="btn ghost small" data-action="attach">${icon("plus")}Add</button></h4>
+    ${attached.map(f => `<div class="ref">
+        <div class="ref-top"><b>${esc(f.title)}</b><button class="icon-btn" data-action="detach" data-id="${esc(f.id)}" aria-label="Detach ${esc(f.title)}" title="Detach">${icon("x")}</button></div>
+        ${f.summary ? `<p>${esc(f.summary)}</p>` : ""}
+        <ul>${f.sources.map(src => `<li><a href="${safeUrl(src.url)}" target="_blank" rel="noopener noreferrer">${esc(src.publisher || host(src.url))}${src.title ? ": " + esc(src.title) : ""}</a></li>`).join("")}</ul>
+      </div>`).join("")}</section>`;
+}
+
+function scriptSide() {
+  const d = editor.data, open = openComments(d), resolved = d.comments.filter(c => c.resolved_at);
+  const commentCard = c => `<div class="comment ${c.quote && c.position < 0 ? "orphan" : ""}" data-comment="${esc(c.id)}">
+      ${c.quote ? `<button class="quote" data-action="goto-comment" data-id="${esc(c.id)}" title="${c.position < 0 ? "This text is no longer in the script" : "Show in the script"}">${esc(c.quote)}</button>`
+        : `<span class="quote whole">Whole ${isPost() ? "post" : "script"}</span>`}
+      <p>${esc(c.body)}</p>
+      ${c.reply ? `<p class="reply">↳ ${esc(c.reply)}</p>` : ""}
+      <div class="comment-tools"><span class="muted">${esc(when(c.resolved_at || c.created))}</span>
+        ${c.resolved_at ? `<button class="btn ghost small" data-action="reopen-comment" data-id="${esc(c.id)}">Reopen</button>`
+          : `<button class="btn ghost small" data-action="resolve-comment" data-id="${esc(c.id)}">${icon("check")}Resolve</button>`}
+        <button class="icon-btn delete" data-action="delete-comment" data-id="${esc(c.id)}" aria-label="Delete comment" title="Delete">${icon("trash")}</button></div>
+    </div>`;
+  return `<div class="side-actions"><button class="btn primary" data-action="write-draft">${icon("spark")}${open.length ? `Revise with ${plural(open.length, "comment")}` : "Write draft"}</button></div>
+    <section><h4>Stage</h4>
+      <div class="seg stage-seg">${STAGES.map(([key, label]) => `<button type="button" class="${d.stage === key ? "on" : ""}" data-action="set-stage" data-id="${key}">${label}</button>`).join("")}</div>
+      ${d.stage === "published" ? `<div class="published"><input class="url-input" id="published-url" value="${esc(d.published_url)}" placeholder="Paste the published link" inputmode="url">
+        <button class="btn small" data-action="save-url">Save</button></div>
+        ${d.published_url ? `<a class="small-link" href="${safeUrl(d.published_url)}" target="_blank" rel="noopener noreferrer">${esc(shortUrl(d.published_url))}${icon("external")}</a>` : ""}` : ""}</section>
+    <section><h4>Comments <button class="btn ghost small" data-action="add-comment" data-keep-selection>${icon("plus")}Add</button></h4>
+      ${open.map(commentCard).join("") || `<p class="muted small">Select text in the ${isPost() ? "post" : "script"} and click Comment. Your agent addresses open comments in order when it revises.</p>`}
+      ${resolved.length ? `<details class="dismissed"><summary>Resolved (${resolved.length})</summary>${resolved.map(commentCard).join("")}</details>` : ""}</section>
+    <section><button class="text-btn danger-text" data-action="delete-script" data-id="${esc(d.id)}">Delete script</button></section>`;
+}
+
+// Marks each open comment's quote in the rendered preview. Quotes spanning formatting are listed but not marked.
+function highlightComments(md) {
+  for (const c of openComments(editor.data)) {
+    if (!c.quote || c.position < 0) continue;
+    const plain = c.quote.replace(/[*_~`]/g, "").replace(/^#+\s*/gm, "").split("\n").map(x => x.trim()).find(Boolean);
+    if (!plain) continue;
+    const walker = document.createTreeWalker(md, NodeFilter.SHOW_TEXT);
+    for (let node = walker.nextNode(); node; node = walker.nextNode()) {
+      const at = node.data.indexOf(plain);
+      if (at < 0 || node.parentElement.closest("mark")) continue;
+      const range = document.createRange();
+      range.setStart(node, at); range.setEnd(node, at + plain.length);
+      const mark = Object.assign(document.createElement("mark"), { title: c.body });
+      mark.dataset.comment = c.id;
+      range.surroundContents(mark);
+      break;
+    }
+  }
+}
+
+function flashComment(id) {
+  const card = document.querySelector(`.comment[data-comment="${CSS.escape(id)}"]`);
+  if (!card) return;
+  card.scrollIntoView({ block: "nearest", behavior: "smooth" });
+  card.classList.remove("flash"); void card.offsetWidth; card.classList.add("flash");
+}
+
+// The selected passage as it is in the saved text: from the editor directly, or matched back from the preview.
+function selectedQuote() {
+  const raw = docText(), area = document.getElementById("doc-text");
+  if (area && !area.hidden && area.selectionStart !== area.selectionEnd) {
+    const picked = raw.slice(area.selectionStart, area.selectionEnd), lead = picked.length - picked.trimStart().length;
+    return picked.trim() ? { quote: picked.trim(), offset: area.selectionStart + lead } : null;
+  }
+  const selection = getSelection(), md = document.getElementById("md-preview");
+  if (!md || !selection.rangeCount || selection.isCollapsed || !md.contains(selection.anchorNode)) return null;
+  const picked = selection.toString().trim();
+  if (!picked) return null;
+  const exact = raw.indexOf(picked);
+  if (exact >= 0) return { quote: picked, offset: exact };
+  // The preview hides markdown, so allow formatting characters between the selected words.
+  const reEsc = c => c.replace(/[.*+?^${}()|[\]\\]/g, "\\$&");
+  const pattern = picked.split(/\s+/).map(word => [...word].map(reEsc).join("[*_~`]*")).join("[\\s*_~`#>\\-]+");
+  const match = new RegExp(pattern).exec(raw);
+  return match ? { quote: match[0], offset: match.index } : { quote: picked, offset: null };
+}
 
 // Enough markdown for scripts and notes. Single newlines stay line breaks, and [1]-style citations are set small.
 function markdown(src) {
@@ -727,25 +937,33 @@ function whatsapp(text) {
     .replace(/(https?:\/\/[^\s<]+)/g, '<a href="$1" target="_blank" rel="noopener noreferrer">$1</a>');
 }
 
-async function saveScript() {
-  if (!editor || !editor.dirty) return;
-  const { id, title, script, post, notes, version } = editor.data;
+async function saveDoc(finish = false) {
+  if (!editor || !editor.dirty) return true;
+  const { id, title, version } = editor.data;
   try {
-    editor.data = await capi("PUT", "scripts/" + encodeURIComponent(id), { title, script, post, notes, version });
+    editor.data = await papi("PUT", EDITORS[editor.kind].path(id), { title, [docKey()]: docText(), version });
     editor.dirty = false; editor.remoteChanged = false;
-    await refresh(true); renderEditor(id); toast("Saved");
+    if (finish && canPreview()) editor.view = "preview";
+    await refresh(true); rerender(); toast("Saved");
+    return true;
   } catch (e) {
-    if (e.status === 409) { editor.remoteChanged = true; renderEditor(id); }
+    if (e.status === 409) { editor.remoteChanged = true; rerender(); }
     toast(e.message, "error");
+    return false;
   }
 }
 
-async function updateAttachments(changes) {
-  const s = editor.data;
-  const fresh = await capi("PUT", "scripts/" + encodeURIComponent(s.id), changes);
-  // Keep unsaved text; links change only script.json, so the new version is safe to adopt.
-  editor.data = editor.dirty ? { ...editor.data, findings: fresh.findings, topics: fresh.topics, version: fresh.version } : fresh;
-  await refresh(true); renderEditor(s.id);
+// Changes that don't touch the text (links, stage, URL): keep unsaved text and adopt the new version.
+async function updateMeta(changes) {
+  const fresh = await papi("PUT", EDITORS[editor.kind].path(editor.data.id), changes);
+  editor.data = editor.dirty ? { ...fresh, title: editor.data.title, [docKey()]: docText() } : fresh;
+  await refresh(true); rerender();
+}
+
+async function reloadComments() {
+  const fresh = await papi("GET", EDITORS.script.path(editor.data.id));
+  editor.data.comments = fresh.comments;
+  await refresh(true); rerender();
 }
 
 // ------------------------------------------------------------------ actions
@@ -753,19 +971,14 @@ const actions = {
   settings() {
     const st = S.settings;
     openDialog({
-      title: "Channel settings", sub: `Research and drafting follow these settings. Workspace: <code>${esc(S.workspace)}</code>`,
-      body: field("Channel name", `<input name="name" value="${esc(st.name)}" required>`)
-        + field("Description", `<input name="description" value="${esc(st.description)}" placeholder="What the channel is about">`)
-        + field("Audience", `<input name="audience" value="${esc(st.audience)}" placeholder="Who watches, and what they already know">`)
-        + field("Language", `<select name="language">${["English", "Hindi", "Hinglish"].map(l => `<option ${st.language === l ? "selected" : ""}>${l}</option>`).join("")}${
-            ["English", "Hindi", "Hinglish"].includes(st.language) ? "" : `<option selected>${esc(st.language)}</option>`}</select>`,
-            "Hindi is always written in Devanagari. Hinglish mixes Hindi (Devanagari) with English terms, e.g. “HDPE resin के rates बढ़े”.")
-        + field("Script format", `<textarea name="script_format" rows="7">${esc(st.script_format)}</textarea>`, "Length, structure, tone. The agent follows this when drafting.")
-        + field("WhatsApp post format", `<textarea name="post_format" rows="3">${esc(st.post_format)}</textarea>`)
+      title: "Project settings", sub: `Research follows these settings. Language and script formats belong to each channel. Workspace: <code>${esc(S.workspace)}</code>`,
+      body: field("Project name", `<input name="name" value="${esc(st.name)}" required>`)
+        + field("Description", `<input name="description" value="${esc(st.description)}" placeholder="What the project is about">`)
+        + field("Audience", `<input name="audience" value="${esc(st.audience)}" placeholder="Who it's for, and what they already know">`, "Guides what research considers relevant.")
         + field("Research notes", `<textarea name="research_notes" rows="3" placeholder="Anything research should always do or avoid">${esc(st.research_notes)}</textarea>`),
       onSubmit: async form => {
         const values = Object.fromEntries(new FormData(form));
-        await capi("PUT", "settings", values); await loadChannels(); await refresh(true); render(); toast("Settings saved");
+        await papi("PUT", "settings", values); await loadProjects(); await refresh(true); render(); toast("Settings saved");
       },
     });
   },
@@ -823,7 +1036,7 @@ const actions = {
         if (pending && !times.includes(pending)) times = [...times, pending].sort();
         const timezone = form.timezone.value.trim(), schedule = { days, times };
         const wasOn = (saved.times || []).length > 0;
-        await capi("PUT", "settings", { schedule, timezone });
+        await papi("PUT", "settings", { schedule, timezone });
         await refresh(true); render();
         if (times.length) setTimeout(() => showPrompt("Create the schedule", PROMPTS.setSchedule(schedule, timezone),
           "Paste this into Claude or ChatGPT, in the project that has this workspace. Your agent creates the scheduled task. It doesn't run research now."));
@@ -834,16 +1047,16 @@ const actions = {
     });
   },
   "new-topic"() { topicDialog(); },
-  "new-channel"() { document.getElementById("channel-menu")?.setAttribute("hidden", ""); newChannelDialog(); },
+  "new-project"() { document.getElementById("project-menu")?.setAttribute("hidden", ""); newProjectDialog(); },
   async "toggle-switcher"() {
-    if (document.getElementById("channel-menu").hidden) { await loadChannels(); document.getElementById("channel-menu").hidden = false; }
-    else document.getElementById("channel-menu").hidden = true;
+    if (document.getElementById("project-menu").hidden) { await loadProjects(); document.getElementById("project-menu").hidden = false; }
+    else document.getElementById("project-menu").hidden = true;
   },
   "edit-topic"(id) { topicDialog(S.topics.find(t => t.id === id)); },
   "delete-topic"(id) {
     const t = S.topics.find(x => x.id === id);
     openDialog({ title: `Delete “${t.name}”?`, sub: "Findings stay; they just lose this topic tag.", body: "", submit: "Delete", danger: true,
-      onSubmit: async () => { await capi("DELETE", "topics/" + encodeURIComponent(id)); if (topicFilter === id) topicFilter = "all"; await refresh(true); render(); } });
+      onSubmit: async () => { await papi("DELETE", "topics/" + encodeURIComponent(id)); if (topicFilter === id) topicFilter = "all"; await refresh(true); render(); } });
   },
   "new-source"() {
     openDialog({
@@ -851,68 +1064,142 @@ const actions = {
       body: field("Website URL", `<input name="url" placeholder="https://example.com/news" inputmode="url" required>`)
         + field("Note", `<input name="note" placeholder="Optional, e.g. press releases">`),
       submit: "Add source",
-      onSubmit: async form => { await capi("POST", "sources", { url: form.url.value, note: form.note.value }); await refresh(true); render(); },
+      onSubmit: async form => { await papi("POST", "sources", { url: form.url.value, note: form.note.value }); await refresh(true); render(); },
     });
   },
   "edit-source"(id) {
     const s = S.sources.find(x => x.id === id);
     openDialog({ title: shortUrl(s.url), body: field("Note", `<input name="note" value="${esc(s.note)}">`),
-      onSubmit: async form => { await capi("PUT", "sources/" + encodeURIComponent(id), { note: form.note.value }); await refresh(true); render(); } });
+      onSubmit: async form => { await papi("PUT", "sources/" + encodeURIComponent(id), { note: form.note.value }); await refresh(true); render(); } });
   },
   "delete-source"(id) {
     const s = S.sources.find(x => x.id === id);
     openDialog({ title: `Remove ${shortUrl(s.url)}?`, body: "", submit: "Remove", danger: true,
-      onSubmit: async () => { await capi("DELETE", "sources/" + encodeURIComponent(id)); await refresh(true); render(); } });
+      onSubmit: async () => { await papi("DELETE", "sources/" + encodeURIComponent(id)); await refresh(true); render(); } });
   },
   filter(id) { topicFilter = id; if (route().tab !== "findings") location.hash = base() + "/findings"; else render(); },
   select(id, el) { el.checked ? selected.add(id) : selected.delete(id); render(); },
   "clear-selection"() { selected.clear(); render(); },
-  "add-to-script"() {
+  "add-to-story"() {
     const ids = [...selected];
     const first = findingById(ids[0]);
     openDialog({
-      title: "Add to script", sub: `${ids.length} finding${ids.length === 1 ? "" : "s"} will be attached as reference material. Script text is not changed.`,
-      body: `${S.scripts.length ? `<div class="choices"><label class="choice"><input type="radio" name="mode" value="new" checked>New script</label>
-          <label class="choice"><input type="radio" name="mode" value="existing">Existing script</label></div>` : `<input type="hidden" name="mode" value="new">`}
+      title: "Add to story", sub: `${plural(ids.length, "finding")} will be attached as research material.`,
+      body: `${S.stories.length ? `<div class="choices"><label class="choice"><input type="radio" name="mode" value="new" checked>New story</label>
+          <label class="choice"><input type="radio" name="mode" value="existing">Existing story</label></div>` : `<input type="hidden" name="mode" value="new">`}
         <div data-mode="new">${field("Title", `<input name="title" value="${esc(first ? first.title : "")}">`)}</div>
-        ${S.scripts.length ? `<div data-mode="existing" hidden>${field("Script", `<select name="script">${S.scripts.map(s => `<option value="${esc(s.id)}">${esc(s.title)}</option>`).join("")}</select>`)}</div>` : ""}`,
+        ${S.stories.length ? `<div data-mode="existing" hidden>${field("Story", `<select name="story">${S.stories.map(s => `<option value="${esc(s.id)}">${esc(s.title)}</option>`).join("")}</select>`)}</div>` : ""}`,
       submit: "Add",
       onOpen: form => form.querySelectorAll('input[name="mode"][type="radio"]').forEach(radio => radio.onchange = () =>
         form.querySelectorAll("[data-mode]").forEach(block => block.hidden = block.dataset.mode !== radio.value)),
       onSubmit: async form => {
         const mode = (form.querySelector('input[name="mode"]:checked') || form.querySelector('input[name="mode"]')).value;
-        const script = mode === "new" ? await capi("POST", "scripts", { title: form.title.value, findings: ids })
-          : await capi("PUT", "scripts/" + encodeURIComponent(form.script.value), { add_findings: ids });
-        selected.clear(); await refresh(true); location.hash = base() + "/scripts/" + encodeURIComponent(script.id);
+        const story = mode === "new" ? await papi("POST", "stories", { title: form.title.value, findings: ids })
+          : await papi("PUT", "stories/" + enc(form.story.value), { add_findings: ids });
+        selected.clear(); await refresh(true); location.hash = base() + "/stories/" + enc(story.id);
       },
     });
   },
-  "new-script"() {
-    openDialog({ title: "New script", body: field("Title", `<input name="title" placeholder="Untitled script">`), submit: "Create",
-      onSubmit: async form => { const s = await capi("POST", "scripts", { title: form.title.value }); await refresh(true); location.hash = base() + "/scripts/" + encodeURIComponent(s.id); } });
+  "new-story"() {
+    openDialog({ title: "New story", body: field("Title", `<input name="title" placeholder="Untitled story">`), submit: "Create",
+      onSubmit: async form => { const s = await papi("POST", "stories", { title: form.title.value }); await refresh(true); location.hash = base() + "/stories/" + enc(s.id); } });
+  },
+  "delete-story"(id) {
+    const s = S.stories.find(x => x.id === id), made = S.scripts.filter(x => x.story === id).length;
+    openDialog({ title: `Delete “${s.title}”?`, sub: "The story moves to stories/.trash in your workspace." + (made ? ` Its ${plural(made, "script")} stay in production.` : ""),
+      body: "", submit: "Delete", danger: true,
+      onSubmit: async () => { await papi("DELETE", "stories/" + enc(id)); await refresh(true); if (editor) location.hash = base() + "/stories"; else render(); } });
   },
   "delete-script"(id) {
     const s = S.scripts.find(x => x.id === id);
-    openDialog({ title: `Delete “${s.title}”?`, sub: "The script moves to scripts/.trash in your workspace.", body: "", submit: "Delete", danger: true,
-      onSubmit: async () => { await capi("DELETE", "scripts/" + encodeURIComponent(id)); await refresh(true); render(); } });
+    openDialog({ title: `Delete the ${channelLabel(s.channel)} script?`, sub: "It moves to scripts/.trash in your workspace. The story stays.", body: "", submit: "Delete", danger: true,
+      onSubmit: async () => { await papi("DELETE", "scripts/" + enc(id)); editor = null; await refresh(true); location.hash = base() + "/scripts"; } });
   },
-  "editor-tab"(id) { editor.tab = id; editor.view = defaultView(); renderEditor(editor.data.id); },
   "editor-view"(id) {
-    editor.view = id; renderEditor(editor.data.id);
-    if (id === "edit") document.getElementById("script-text").focus();
+    editor.view = id; rerender();
+    if (id === "edit") document.getElementById("doc-text").focus();
   },
-  "open-script"(id) { location.hash = base() + "/scripts/" + encodeURIComponent(id); },
+  "open-story"(id) { location.hash = base() + "/stories/" + enc(id); },
+  "open-script"(id) { location.hash = base() + "/scripts/" + enc(id); },
+  "go-stories"() { location.hash = base() + "/stories"; },
   "toggle-finding"(id) { selected.has(id) ? selected.delete(id) : selected.add(id); render(); },
-  "save-script"() { saveScript(); },
-  async "reload-script"() { editor = null; render(); },
-  "keep-mine"() { editor.remoteChanged = false; editor.data.version = undefined; renderEditor(editor.data.id); toast("Saving will overwrite your agent's version"); },
-  "write-draft"() {
+  "save-doc"() { saveDoc(true); },
+  "reload-doc"() { const kind = editor.kind; editor = null; renderEditor(kind, route().id); },
+  "keep-mine"() { editor.remoteChanged = false; editor.data.version = undefined; rerender(); toast("Saving will overwrite your agent's version"); },
+  async "research-story"() {
     const s = editor.data;
-    if (editor.dirty) saveScript();
-    showPrompt("Write draft", PROMPTS.draft(s), s.findings.length
-      ? "Paste this into Claude or ChatGPT. Your agent researches the attached findings in depth, then writes the video script, the WhatsApp post, and research notes. They appear here when it's done."
-      : "Tip: attach findings first so the draft has material. Paste this into Claude or ChatGPT and your agent will draft from the title alone.");
+    if (editor.dirty && !(await saveDoc())) return;
+    showPrompt("Research story", PROMPTS.researchStory(s), s.findings.length || s.topics.length
+      ? "Paste this into Claude or ChatGPT. Your agent researches the attached findings and topics in depth and writes the research notes. They appear here when it's done."
+      : "Tip: attach findings or link a topic first so research has material. Paste this into Claude or ChatGPT and your agent will research from the title alone.");
   },
+  "send-to-production"() {
+    const story = editor.data, taken = new Set(S.scripts.filter(x => x.story === story.id).map(x => x.channel));
+    if (!S.channels.length) return actions["new-channel"]();
+    openDialog({
+      title: "Send to production", sub: "Creates a script for each channel you pick, written in that channel's language and format.",
+      body: `<div class="pick-list">${S.channels.map(c => `<label><input type="checkbox" name="c" value="${esc(c.id)}" ${taken.has(c.id) ? "checked disabled" : ""}>
+          <span><b>${esc(c.name)}</b><br><span class="muted">${esc([c.platform, c.kind === "post" ? "Text post" : "Video script", c.language].filter(Boolean).join(" · "))}${taken.has(c.id) ? " · already in production" : ""}</span></span></label>`).join("")}</div>
+        <p class="muted small" style="margin:10px 0 0">Need another? <button type="button" class="link-btn" data-action="new-channel">Add a channel</button></p>`,
+      submit: "Create scripts",
+      onSubmit: async form => {
+        const ids = [...form.querySelectorAll('input[name="c"]:checked:not(:disabled)')].map(i => i.value);
+        if (!ids.length) throw new Error("Pick at least one channel");
+        const made = [];
+        for (const channel of ids) made.push((await papi("POST", "scripts", { story: story.id, channel })).id);
+        await refresh(true);
+        setTimeout(() => showPrompt("Write the drafts", PROMPTS.draftScripts(story, made),
+          "Paste this into Claude or ChatGPT. Your agent writes each script from the story's research, in each channel's language and format. They appear in Production when it's done."));
+        location.hash = base() + "/scripts";
+      },
+    });
+  },
+  async "write-draft"() {
+    if (editor.dirty && !(await saveDoc())) return;
+    const s = editor.data, n = openComments(s).length;
+    showPrompt(n ? "Revise the script" : "Write draft", PROMPTS.draft(s), n
+      ? `Paste this into Claude or ChatGPT. Your agent works through the ${plural(n, "open comment")} in order, edits the script, and resolves each one.`
+      : (storyById(s.story)?.researched ? "Paste this into Claude or ChatGPT. Your agent writes the script from the story's research notes, in this channel's language and format. It appears here when it's done."
+        : "The story has no research notes yet, so your agent researches it first, then writes the script. Paste this into Claude or ChatGPT."));
+  },
+  async "set-stage"(stage) { if (stage !== editor.data.stage) await updateMeta({ stage }); },
+  async "save-url"() { await updateMeta({ published_url: document.getElementById("published-url").value }); toast("Link saved"); },
+  async "add-comment"() {
+    const picked = selectedQuote();
+    if (editor.dirty && !(await saveDoc())) return;
+    const scriptId = editor.data.id;
+    openDialog({
+      title: "Comment", sub: picked ? "" : `Nothing is selected, so this comment is on the whole ${isPost() ? "post" : "script"}. To comment on a passage, select it first.`,
+      body: (picked ? `<div class="quote-box">${esc(picked.quote)}</div>` : "") + field("Comment", `<textarea name="body" rows="3" placeholder="What should change here?" required></textarea>`),
+      submit: "Add comment",
+      onOpen: form => form.body.onkeydown = e => { if (e.key === "Enter" && (e.metaKey || e.ctrlKey)) form.requestSubmit(); },
+      onSubmit: async form => {
+        await papi("POST", `scripts/${enc(scriptId)}/comments`, { body: form.body.value, quote: picked?.quote || "", offset: picked?.offset ?? null });
+        await reloadComments();
+      },
+    });
+  },
+  "goto-comment"(id) {
+    const c = editor.data.comments.find(x => x.id === id);
+    if (c.position < 0) return toast(`That text is no longer in the ${isPost() ? "post" : "script"}`);
+    const mark = document.querySelector(`#md-preview mark[data-comment="${CSS.escape(id)}"]`);
+    if (mark) { mark.scrollIntoView({ block: "center", behavior: "smooth" }); mark.classList.remove("flash"); void mark.offsetWidth; mark.classList.add("flash"); return; }
+    if (editor.view === "preview") { editor.view = "edit"; rerender(); }
+    const area = document.getElementById("doc-text");
+    area.focus(); area.setSelectionRange(c.position, c.position + c.quote.length);
+  },
+  async "resolve-comment"(id) { await papi("PUT", `scripts/${enc(editor.data.id)}/comments/${enc(id)}`, { resolved: true }); await reloadComments(); },
+  async "reopen-comment"(id) { await papi("PUT", `scripts/${enc(editor.data.id)}/comments/${enc(id)}`, { resolved: false }); await reloadComments(); },
+  async "delete-comment"(id) { await papi("DELETE", `scripts/${enc(editor.data.id)}/comments/${enc(id)}`); await reloadComments(); },
+  "new-channel"() { channelDialog(); },
+  "open-channels"() { if (PROJECT) location.hash = base() + "/channels"; },
+  "edit-channel"(id) { channelDialog(channelById(id)); },
+  "delete-channel"(id) {
+    const c = channelById(id);
+    openDialog({ title: `Delete “${c.name}”?`, sub: "Every project shares this channel.", body: "", submit: "Delete", danger: true,
+      onSubmit: async () => { await api("DELETE", "channels/" + enc(id)); await refresh(true); render(); } });
+  },
+  "filter-channel"(_, el) { channelFilter = el.value; render(); },
   attach() {
     const s = editor.data;
     const available = S.findings.filter(f => !s.findings.includes(f.id) && !f.dismissed_at);
@@ -922,36 +1209,59 @@ const actions = {
       body: `<div class="pick-list">${available.map(f => `<label><input type="checkbox" name="f" value="${esc(f.id)}"><span><b>${esc(f.title)}</b><br><span class="muted">${(f.topics || []).map(topicName).map(esc).join(", ")} · found ${esc(when(f.found_at))}</span></span></label>`).join("")}</div>`,
       onSubmit: async form => {
         const ids = [...form.querySelectorAll('input[name="f"]:checked')].map(i => i.value);
-        if (ids.length) await updateAttachments({ findings: [...s.findings, ...ids] });
+        if (ids.length) await updateMeta({ findings: [...s.findings, ...ids] });
       },
     });
   },
-  detach(id) { updateAttachments({ findings: editor.data.findings.filter(f => f !== id) }); },
-  "unlink-topic"(id) { updateAttachments({ topics: editor.data.topics.filter(t => t !== id) }); },
+  detach(id) { updateMeta({ findings: editor.data.findings.filter(f => f !== id) }); },
+  "unlink-topic"(id) { updateMeta({ topics: editor.data.topics.filter(t => t !== id) }); },
   "link-topic"() {
     const s = editor.data;
     const available = S.topics.filter(t => !s.topics.includes(t.id));
     if (!available.length) return toast(S.topics.length ? "All topics are already linked" : "Add a topic first");
     openDialog({
-      title: "Link topics", sub: "Write draft researches linked topics directly, which is how explainers work.", submit: "Link",
+      title: "Link topics", sub: "Research story covers linked topics directly, which is how explainers work.", submit: "Link",
       body: `<div class="pick-list">${available.map(t => `<label><input type="checkbox" name="t" value="${esc(t.id)}"><span><b>${esc(t.name)}</b><br><span class="muted">${esc(t.description)}</span></span></label>`).join("")}</div>`,
       onSubmit: async form => {
         const ids = [...form.querySelectorAll('input[name="t"]:checked')].map(i => i.value);
-        if (ids.length) await updateAttachments({ topics: [...s.topics, ...ids] });
+        if (ids.length) await updateMeta({ topics: [...s.topics, ...ids] });
       },
     });
   },
-  async "approve-source"(id) { await capi("PUT", "sources/" + encodeURIComponent(id), { status: "approved" }); await refresh(true); render(); toast("Source approved. Research will check it every run"); },
-  async "dismiss-source"(id) { await capi("PUT", "sources/" + encodeURIComponent(id), { status: "dismissed" }); await refresh(true); render(); },
+  async "approve-source"(id) { await papi("PUT", "sources/" + encodeURIComponent(id), { status: "approved" }); await refresh(true); render(); toast("Source approved. Research will check it every run"); },
+  async "dismiss-source"(id) { await papi("PUT", "sources/" + encodeURIComponent(id), { status: "dismissed" }); await refresh(true); render(); },
   async "dismiss-finding"(id) {
-    await capi("PUT", "findings/" + encodeURIComponent(id), { dismissed: true });
+    await papi("PUT", "findings/" + encodeURIComponent(id), { dismissed: true });
     selected.delete(id); await refresh(true); render();
-    undoToast("Finding dismissed", async () => { await capi("PUT", "findings/" + encodeURIComponent(id), { dismissed: false }); await refresh(true); render(); });
+    undoToast("Finding dismissed", async () => { await papi("PUT", "findings/" + encodeURIComponent(id), { dismissed: false }); await refresh(true); render(); });
   },
-  async "restore-finding"(id) { await capi("PUT", "findings/" + encodeURIComponent(id), { dismissed: false }); await refresh(true); render(); },
+  async "restore-finding"(id) { await papi("PUT", "findings/" + encodeURIComponent(id), { dismissed: false }); await refresh(true); render(); },
   "toggle-dismissed"() { showDismissed = !showDismissed; render(); },
   "filter-select"(_, el) { topicFilter = el.value; render(); },
 };
+
+const PLATFORMS = ["YouTube", "YouTube Shorts", "Instagram Reels", "TikTok", "WhatsApp channel", "LinkedIn", "X"];
+function channelDialog(channel) {
+  const c = channel || { kind: "video", language: "English", platform: "", audience: "", format: "" };
+  openDialog({
+    title: channel ? "Edit channel" : "New channel", sub: "Every project can send scripts here. Scripts follow the channel's language and format.",
+    body: field("Name", `<input name="name" value="${esc(c.name || "")}" placeholder="e.g. Explained in 90s" required>`)
+      + field("Platform", `<input name="platform" value="${esc(c.platform)}" list="platforms" placeholder="e.g. YouTube Shorts"><datalist id="platforms">${PLATFORMS.map(x => `<option value="${x}">`).join("")}</datalist>`)
+      + field("Type", `<select name="kind"><option value="video" ${c.kind === "video" ? "selected" : ""}>Video script</option><option value="post" ${c.kind === "post" ? "selected" : ""}>Text post (WhatsApp, LinkedIn, X)</option></select>`)
+      + field("Language", `<select name="language">${LANGUAGES.map(l => `<option ${c.language === l ? "selected" : ""}>${l}</option>`).join("")}${LANGUAGES.includes(c.language) ? "" : `<option selected>${esc(c.language)}</option>`}</select>`,
+          "Hindi is always written in Devanagari. Hinglish mixes Hindi (Devanagari) with English terms, e.g. “HDPE resin के rates बढ़े”.")
+      + field("Audience", `<input name="audience" value="${esc(c.audience)}" placeholder="Who watches, and what they already know">`)
+      + field("Format", `<textarea name="format" rows="7" placeholder="${channel ? "" : "Leave empty to start from the default format for this type"}">${esc(c.format)}</textarea>`, "Length, structure, tone, visuals. Your agent follows this when writing."),
+    submit: channel ? "Save" : "Create channel",
+    onOpen: form => form.platform.oninput = () => { if (/whatsapp|linkedin|^x$/i.test(form.platform.value.trim())) form.kind.value = "post"; },
+    onSubmit: async form => {
+      const values = Object.fromEntries(new FormData(form));
+      channel ? await api("PUT", "channels/" + enc(channel.id), values) : await api("POST", "channels", values);
+      await refresh(true);
+      if (editor?.kind === "story") rerender(); else render();
+    },
+  });
+}
 
 function topicDialog(topic) {
   openDialog({
@@ -961,7 +1271,7 @@ function topicDialog(topic) {
     submit: topic ? "Save" : "Add topic",
     onSubmit: async form => {
       const body = { name: form.name.value, description: form.description.value };
-      topic ? await capi("PUT", "topics/" + encodeURIComponent(topic.id), body) : await capi("POST", "topics", body);
+      topic ? await papi("PUT", "topics/" + encodeURIComponent(topic.id), body) : await papi("POST", "topics", body);
       await refresh(true); render();
     },
   });
@@ -986,60 +1296,62 @@ document.addEventListener("change", event => {
   const el = event.target.closest('select[data-action]');
   if (el && actions[el.dataset.action]) actions[el.dataset.action](el.dataset.id, el);
 });
+// Clicking Comment must not clear the text the user selected in the preview.
+document.addEventListener("mousedown", event => { if (event.target.closest("[data-keep-selection]")) event.preventDefault(); });
 document.addEventListener("keydown", event => {
-  if ((event.ctrlKey || event.metaKey) && event.key === "s" && editor) { event.preventDefault(); saveScript(); }
+  if ((event.ctrlKey || event.metaKey) && event.key === "s" && editor) { event.preventDefault(); saveDoc(); }
 });
-async function loadChannels() {
-  CHANNELS = (await api("GET", "channels")).channels;
+async function loadProjects() {
+  PROJECTS = (await api("GET", "projects")).projects;
   renderSwitcher();
 }
 
 function renderSwitcher() {
   const el = document.getElementById("switcher");
-  if (!CHANNELS.length) { el.innerHTML = ""; return; }
-  el.innerHTML = `<button class="switch-btn" data-action="toggle-switcher" aria-haspopup="true">${esc(channelName() || "Choose channel")}${icon("chevron")}</button>
-    <div class="menu" id="channel-menu" hidden>
-      <div class="menu-label">Channels</div>
-      ${CHANNELS.map(c => `<a class="menu-item ${c.id === CH ? "on" : ""}" href="${base(c.id)}/findings"><span>${esc(c.name)}</span>
+  if (!PROJECTS.length) { el.innerHTML = ""; return; }
+  el.innerHTML = `<button class="switch-btn" data-action="toggle-switcher" aria-haspopup="true">${esc(projectName() || "Choose project")}${icon("chevron")}</button>
+    <div class="menu" id="project-menu" hidden>
+      <div class="menu-label">Projects</div>
+      ${PROJECTS.map(c => `<a class="menu-item ${c.id === PROJECT ? "on" : ""}" href="${base(c.id)}/findings"><span>${esc(c.name)}</span>
         <span class="muted">${c.suggested_sources ? `${c.suggested_sources} new source${c.suggested_sources === 1 ? "" : "s"}` : ""}</span></a>`).join("")}
-      <button class="menu-item" data-action="new-channel">${icon("plus")}<span>New channel</span></button>
+      <button class="menu-item" data-action="new-project">${icon("plus")}<span>New project</span></button>
     </div>`;
 }
 document.addEventListener("click", event => {
-  const menu = document.getElementById("channel-menu");
+  const menu = document.getElementById("project-menu");
   if (menu && !menu.hidden && !event.target.closest("#switcher")) menu.hidden = true;
 });
 
-function newChannelDialog() {
+function newProjectDialog() {
   openDialog({
-    title: "New channel", sub: "Each channel has its own topics, sources, findings, scripts, and schedule.",
-    body: field("Channel name", `<input name="name" placeholder="e.g. Pipe Gyaan" required>`)
+    title: "New project", sub: "Each project has its own topics, sources, findings, scripts, and schedule.",
+    body: field("Project name", `<input name="name" placeholder="e.g. Plumbing &amp; bathrooms" required>`)
       + field("What it covers", `<input name="description" placeholder="Optional">`)
-      + field("Language", `<select name="language">${["English", "Hindi", "Hinglish"].map(l => `<option>${l}</option>`).join("")}</select>`),
-    submit: "Create channel",
+,
+    submit: "Create project",
     onSubmit: async form => {
-      const created = await api("POST", "channels", { name: form.name.value, description: form.description.value, language: form.language.value });
-      await loadChannels(); location.hash = base(created.id) + "/topics";
+      const created = await api("POST", "projects", { name: form.name.value, description: form.description.value });
+      await loadProjects(); location.hash = base(created.id) + "/topics";
     },
   });
 }
 
-function renderNoChannels() {
-  document.getElementById("app").innerHTML = `<div class="empty" style="margin-top:40px"><h3>Create your first channel</h3>
-    <p>A channel is one YouTube channel, Instagram account, or WhatsApp channel, with its own topics, sources, findings, and scripts.</p>
-    <button class="btn primary" data-action="new-channel">${icon("plus")}New channel</button></div>`;
+function renderNoProjects() {
+  document.getElementById("app").innerHTML = `<div class="empty" style="margin-top:40px"><h3>Create your first project</h3>
+    <p>A project is one subject area you research, such as plumbing products or Indian tech news, with its own topics, sources, findings, and scripts.</p>
+    <button class="btn primary" data-action="new-project">${icon("plus")}New project</button></div>`;
 }
 
-// Pick the channel from the URL, else the last one used, else the first.
-async function enterChannel() {
-  if (!CHANNELS.length) { CH = null; renderSwitcher(); renderNoChannels(); return false; }
-  if (!CHANNELS.some(c => c.id === route().channel)) {
-    const last = localStorage.getItem("vid-studio-channel");
-    const next = CHANNELS.some(c => c.id === last) ? last : CHANNELS[0].id;
+// Pick the project from the URL, else the last one used, else the first.
+async function enterProject() {
+  if (!PROJECTS.length) { PROJECT = null; renderSwitcher(); renderNoProjects(); return false; }
+  if (!PROJECTS.some(c => c.id === route().project)) {
+    const last = localStorage.getItem("vid-studio-project");
+    const next = PROJECTS.some(c => c.id === last) ? last : PROJECTS[0].id;
     history.replaceState(null, "", base(next) + "/" + (route().tab || ""));
   }
-  if (CH !== route().channel) {
-    CH = route().channel; localStorage.setItem("vid-studio-channel", CH);
+  if (PROJECT !== route().project) {
+    PROJECT = route().project; localStorage.setItem("vid-studio-project", PROJECT);
     S = null; lastStateJson = ""; selected.clear(); topicFilter = "all"; showDismissed = false; editor = null;
     renderSwitcher();
     await refresh(true);
@@ -1049,22 +1361,26 @@ async function enterChannel() {
 
 let lastHash = location.hash;
 window.addEventListener("hashchange", async () => {
-  if (editor && editor.dirty && !confirm("You have unsaved changes in this script. Leave anyway?")) { history.replaceState(null, "", lastHash); return; }
+  if (editor && editor.dirty && !confirm(`You have unsaved changes in this ${editor.kind}. Leave anyway?`)) { history.replaceState(null, "", lastHash); return; }
   lastHash = location.hash; editor = null;
-  if (await enterChannel()) render();
+  if (await enterProject()) render();
 });
 
 window.addEventListener("beforeunload", event => { if (editor && editor.dirty) { event.preventDefault(); event.returnValue = ""; } });
 
 // Pick up changes your agent makes to the files while the page is open.
 async function poll() {
-  if (document.visibilityState === "visible" && !dialog.open && CH) {
+  if (document.visibilityState === "visible" && !dialog.open && PROJECT) {
     try {
       if (editor) {
-        const remote = await capi("GET", "scripts/" + encodeURIComponent(editor.data.id));
+        const remote = await papi("GET", EDITORS[editor.kind].path(editor.data.id));
+        const typing = ["doc-text", "doc-title", "published-url"].includes(document.activeElement?.id);
         if (editor.data.version && remote.version !== editor.data.version) {
-          if (editor.dirty) { if (!editor.remoteChanged) { editor.remoteChanged = true; renderEditor(editor.data.id); } }
-          else { editor.data = remote; renderEditor(remote.id); toast("Updated by your agent"); }
+          if (editor.dirty) { if (!editor.remoteChanged) { editor.remoteChanged = true; rerender(); } }
+          else { editor.data = remote; rerender(); toast("Updated by your agent"); }
+        } else if (editor.kind === "script" && JSON.stringify(remote.comments) !== JSON.stringify(editor.data.comments)) {
+          editor.data.comments = remote.comments;  // your agent resolved some
+          if (!typing) rerender();
         }
         await refresh();
       } else if (await refresh()) {
@@ -1077,7 +1393,8 @@ async function poll() {
 }
 
 document.getElementById("settings-btn").insertAdjacentHTML("afterbegin", icon("gear"));
-loadChannels().then(enterChannel).then(ok => { if (ok) render(); poll(); })
+document.getElementById("channels-btn").insertAdjacentHTML("afterbegin", icon("send"));
+loadProjects().then(enterProject).then(ok => { if (ok) render(); poll(); })
   .catch(e => { document.getElementById("app").innerHTML = `<div class="empty"><h3>Can't reach the studio</h3><p>${esc(e.message)}. Start it with <code>studio.py serve</code>.</p></div>`; });
 </script>
 </body>

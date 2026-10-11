@@ -29,12 +29,13 @@ sys.path.insert(0, str(STUDIO_PY.parent))
 import studio  # noqa: E402
 
 PROMPTS = {
-    "setup": ("Use the vid-studio skill to set up a channel called \"Test Plumbing\": Indian plumbing and bathroom products "
+    "setup": ("Use the vid-studio skill to set up a project called \"Test Plumbing\": Indian plumbing and bathroom products "
               "for homeowners and dealers, in Hinglish, timezone Asia/Kolkata. Don't ask me anything: choose 4 topics and "
               "about 6 sources yourself, add the sources as suggestions, and open the studio."),
-    "research": "Use the vid-studio skill to research now for the channel \"{channel}\".",
-    "draft": "Use the vid-studio skill to write the draft for the script \"{script_title}\" ({script}) in the channel \"{channel}\".",
-    "status": "Use the vid-studio skill: what's new in the channel \"{channel}\"?",
+    "research": "Use the vid-studio skill to research now for the project \"{project}\".",
+    "story": "Use the vid-studio skill to research the story \"{story_title}\" ({story}) in the project \"{project}\".",
+    "draft": "Use the vid-studio skill to write the script \"{script_title}\" ({script}) in the project \"{project}\".",
+    "status": "Use the vid-studio skill: what's new in the project \"{project}\"?",
 }
 
 
@@ -56,12 +57,16 @@ def serve(home: Path, open_browser: bool) -> None:
 # ---------------------------------------------------------------- sample data
 
 def seed(home: Path) -> None:
-    """Two channels with topics, sources, a finished run, findings, and scripts."""
-    (home / "channels").mkdir(parents=True, exist_ok=True)
+    """Two projects with topics, sources, a finished run, findings, stories, and scripts on three channels."""
+    (home / "projects").mkdir(parents=True, exist_ok=True)
     shutil.copyfile(SKILL / "assets" / "README.md", home / "README.md")
 
-    folder = studio.create_channel(home, "Pipe Gyaan", "Plumbing, sanitaryware और bathroom की हर बात, आसान भाषा में।", "Hinglish")
+    folder = studio.create_project(home, "Pipe Gyaan", "Plumbing, sanitaryware और bathroom की हर बात, आसान भाषा में।")
     pipe = studio.Studio(folder, home)
+    studio.add_channel(home, {"name": "Pipe Gyaan", "platform": "YouTube Shorts", "language": "Hinglish",
+                              "audience": "Indian homeowners, plumbers and dealers"})
+    studio.add_channel(home, {"name": "Pipe Gyaan WhatsApp", "platform": "WhatsApp channel", "kind": "post", "language": "Hinglish"})
+    studio.add_channel(home, {"name": "Explained in 90s", "platform": "YouTube Shorts", "language": "English"})
     pipe.update_settings({"audience": "Indian homeowners, plumbers and dealers", "timezone": "Asia/Kolkata",
                           "schedule": {"times": ["07:00"]}})
     for name, description in [("PVC pipes", "Prices, launches, BIS standards."), ("CP fittings", "Taps, showers, sensor faucets."),
@@ -83,18 +88,24 @@ def seed(home: Path) -> None:
     pipe.mark_checked(run["id"], run["sources"], "sample check")
     pipe.finish_run(run["id"])
     sensor = next(f for f in pipe.findings() if "Jaquar" in f["title"])
-    script = pipe.create_script("Sensor taps: पैसा बचेगा या नहीं?", [sensor["id"]])
-    pipe.update_script(script["id"], {
-        "script": ("## HOOK (5s)\nएक नल जो छूने की ज़रूरत ही नहीं — पर क्या ये **पानी और पैसा** बचाता है? [1]\n\n"
-                   "*Visual:* tap close-up\n\n## CONTEXT (15s)\nJaquar के नए sensor faucets ₹6,500 से शुरू। [1]\n\n"
-                   "- Touchless, battery से चलते हैं\n- पानी की खपत लगभग 50% कम\n\n*Visual:* price card\n"),
-        "post": "*Sensor taps: पैसा बचेगा?*\n\nJaquar के नए sensor faucets ₹6,500 से शुरू। [1]\n\nhttps://www.jaquar.com/news/sensor\n",
+    story = pipe.create_story("Sensor taps: पैसा बचेगा या नहीं?", [sensor["id"]])
+    pipe.update_story(story["id"], {
         "notes": ("# Research notes\n\n## What's new\n- Jaquar's touchless range starts at **₹6,500**. [1]\n"
                   "- The 50% water saving is the maker's claim; no independent test yet.\n\n"
                   "## Sources\n1. Jaquar, Sensor faucets, https://www.jaquar.com/news/sensor\n")})
-    pipe.create_script("Water tank को साफ़ कैसे रखें", topic_ids=["water-tanks"])
+    script = pipe.create_script(story["id"], "pipe-gyaan")
+    pipe.update_script(script["id"], {
+        "text": ("## HOOK (5s)\nएक नल जो छूने की ज़रूरत ही नहीं — पर क्या ये **पानी और पैसा** बचाता है? [1]\n\n"
+                   "*Visual:* tap close-up\n\n## CONTEXT (15s)\nJaquar के नए sensor faucets ₹6,500 से शुरू। [1]\n\n"
+                   "- Touchless, battery से चलते हैं\n- पानी की खपत लगभग 50% कम\n\n*Visual:* price card\n"),
+        "stage": "ready"})
+    pipe.add_comment(script["id"], "Say who made the 50% claim", "पानी की खपत लगभग 50% कम")
+    post = pipe.create_script(story["id"], "pipe-gyaan-whatsapp")
+    pipe.update_script(post["id"], {"text": "*Sensor taps: पैसा बचेगा?*\n\nJaquar के नए sensor faucets ₹6,500 से शुरू। [1]\n\nhttps://www.jaquar.com/news/sensor\n",
+                                    "stage": "published", "published_url": "https://whatsapp.com/channel/example"})
+    pipe.create_story("Water tank को साफ़ कैसे रखें", topic_ids=["water-tanks"])
 
-    folder = studio.create_channel(home, "Explained in 90s", "Indian tech and money news, explained in 90 seconds.", "English")
+    folder = studio.create_project(home, "Explained in 90s", "Indian tech and money news, explained in 90 seconds.")
     news = studio.Studio(folder, home)
     news.add_topic("UPI & payments", "Fees, NPCI rules, fraud, new features.")
     news.add_source("https://rbi.org.in", "Press releases")
@@ -104,6 +115,8 @@ def seed(home: Path) -> None:
                                    "sources": [{"url": "https://rbi.org.in/Scripts/BS_PressReleaseDisplay.aspx?prid=61234", "publisher": "RBI"}]}])
     news.mark_checked(run["id"], run["sources"], "1 press release")
     news.finish_run(run["id"])
+    upi = news.create_story("UPI Lite limit goes to ₹5,000", [news.findings()[0]["id"]])
+    news.create_script(upi["id"], "explained-in-90s")
 
 
 # ---------------------------------------------------------------- commands
@@ -141,10 +154,10 @@ def cmd_sandbox(args) -> None:
             f"Always pass `--workspace {home}` to studio.py (or set VID_STUDIO_HOME to it).\n")
     for name in ("AGENTS.md", "CLAUDE.md"):
         (root / name).write_text(note)
-    if args.seed and not studio.channel_dirs(home):
+    if args.seed and not studio.project_dirs(home):
         seed(home)
     print(f"Sandbox: {root}\nStudio data: {home}\nThe skill is linked to {SKILL}, so edits apply immediately.\n")
-    print(f"Try it:\n  cd {root} && claude          # then: Use vid-studio to set up my channel\n"
+    print(f"Try it:\n  cd {root} && claude          # then: Use vid-studio to set up my project\n"
           f"  python3 {Path(__file__).name} try setup      # or run it headlessly")
 
 
@@ -154,20 +167,21 @@ def cmd_try(args) -> None:
     if not (root / ".claude" / "skills" / "vid-studio").exists():
         raise SystemExit(f"No sandbox at {root}. Run: python3 {Path(__file__).name} sandbox")
     prompt = " ".join(args.prompt)
-    channel = args.channel
+    project = args.project
     if prompt in PROMPTS:
-        channels = studio.channels_overview(home) if (home / "channels").exists() else []
-        channel = channel or (channels[0]["name"] if channels else "")
-        if "{channel}" in PROMPTS[prompt] and not channel:
-            raise SystemExit("No channel yet. Run `try setup` first, or `sandbox --seed`.")
-        script = {}
-        if "{script}" in PROMPTS[prompt]:
-            folder = studio.find_channel(home, channel)
-            scripts = studio.Studio(folder, home).scripts()
-            if not scripts:
-                raise SystemExit("No scripts in that channel yet.")
-            script = scripts[0]
-        prompt = PROMPTS[prompt].format(channel=channel, script=script.get("id", ""), script_title=script.get("title", ""))
+        projects = studio.projects_overview(home) if (home / "projects").exists() else []
+        project = project or (projects[0]["name"] if projects else "")
+        if "{project}" in PROMPTS[prompt] and not project:
+            raise SystemExit("No project yet. Run `try setup` first, or `sandbox --seed`.")
+        picked = {}
+        for kind in ("story", "script"):
+            if "{" + kind + "}" in PROMPTS[prompt]:
+                folder = studio.find_project(home, project)
+                items = getattr(studio.Studio(folder, home), kind.replace("story", "storie") + "s")()
+                if not items:
+                    raise SystemExit(f"No {kind.replace('story', 'storie')}s in that project yet.")
+                picked = {kind: items[0]["id"], kind + "_title": items[0]["title"]}
+        prompt = PROMPTS[prompt].format(project=project, **{"story": "", "story_title": "", "script": "", "script_title": ""} | picked)
     env = {**os.environ, "VID_STUDIO_HOME": str(home)}
     if args.agent == "claude":
         command = ["claude", "-p", prompt, "--permission-mode", "acceptEdits",
@@ -180,7 +194,7 @@ def cmd_try(args) -> None:
     print(f"$ {args.agent}: {prompt}\n", flush=True)
     subprocess.run(command, cwd=root, env=env)
     print("\n--- studio after the run ---")
-    print(run_studio(home, "status", *(["--channel", channel] if channel else []), check=False))
+    print(run_studio(home, "status", *(["--project", project] if project else []), check=False))
     serve(home, False)
 
 
@@ -209,7 +223,7 @@ def main() -> None:
     sub = commands.add_parser("try", help=f"Run an agent in the sandbox: {', '.join(PROMPTS)}, or any prompt")
     sub.add_argument("prompt", nargs="+")
     sub.add_argument("--agent", choices=["claude", "codex"], default="claude")
-    sub.add_argument("--channel")
+    sub.add_argument("--project")
     sub.add_argument("--path", default=str(SANDBOX))
     sub.set_defaults(handler=cmd_try)
 

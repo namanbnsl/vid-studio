@@ -1,6 +1,6 @@
 # Research run
 
-Goal: new findings in the feed. A finding is a real development since the last run, on one of the channel's topics, that the audience would care about. Each finding is backed by pages you opened. You decide how to search and how deep to go.
+Goal: new findings in the feed. A finding is a real development since the last run, on one of the project's topics, that the audience would care about. Each finding is backed by pages you opened. You decide how to search and how deep to go.
 
 ## Steps
 
@@ -17,8 +17,8 @@ Goal: new findings in the feed. A finding is a real development since the last r
   "sources": [{"url": "https://…", "title": "Article title", "publisher": "Reuters", "published": "2026-10-08"}]}]
 ```
 
-   - Keep findings short: a headline (110 characters at most) and a one-sentence summary (240 at most). The helper rejects longer ones. Detail belongs in scripts.
-   - Write titles and summaries in English, whatever the channel's `language`. Only scripts and posts use it.
+   - Keep findings short: a headline (110 characters at most) and a one-sentence summary (240 at most). The helper rejects longer ones. Detail belongs in stories.
+   - Write titles and summaries in English, whatever language the channels use. Only scripts use it.
    - Every finding needs at least one topic and at least one page you opened. Prefer original pages, such as the regulator, the company, or the dataset.
    - Coverage of the same development from several outlets is **one** finding with several sources. If a URL is already in the feed, the helper merges into that finding.
    - The UI labels each finding "Your source" or "Found on the web" automatically, from the URLs.
