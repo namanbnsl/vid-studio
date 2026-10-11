@@ -24,9 +24,9 @@ Start with `studio.py status`.
 | The user wants… | Do |
 |---|---|
 | No channel yet, a new channel, or no topics | [setup.md](references/setup.md) |
-| "Research now", a scheduled run, or "what's new" | [research.md](references/research.md) |
+| "Research now", "run the scheduled research", or "what's new" | [research.md](references/research.md) |
 | "Write the draft for the script …", or rewrite or edit a script | [write.md](references/write.md) |
-| A daily schedule | [schedule.md](references/schedule.md) |
+| Set up, change, or turn off a research schedule (never runs research) | [schedule.md](references/schedule.md) |
 | Open, show, or see the studio | Run `studio.py serve --background` and share the printed link (one server serves every channel) |
 | Add, change, or remove topics or sources | Use `studio.py add-topic` / `add-source` (approved) / `suggest-source` (for the user to approve), or edit `topics.json` / `sources.json` |
 | A question across the data | Read the channel's JSON files directly |

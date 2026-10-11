@@ -214,7 +214,16 @@ dialog .sub { margin: 0 0 20px; color: var(--ink-2); font-size: 13.5px; }
 .dialog-actions { display: flex; justify-content: flex-end; gap: 8px; margin-top: 24px; }
 .dialog-error { color: var(--danger); font-size: 13px; margin: 10px 0 0; }
 .prompt-box { font: 13px/1.6 var(--mono); background: var(--surface); border: 1px solid var(--line); border-radius: 10px; padding: 12px 14px; white-space: pre-wrap; overflow-wrap: anywhere; user-select: all; }
-.times { display: flex; gap: 6px; flex-wrap: wrap; margin-bottom: 10px; }
+.times { display: flex; gap: 6px; flex-wrap: wrap; align-items: center; min-height: 32px; margin-bottom: 10px; }
+.muted.small { font-size: 13px; }
+.seg { display: inline-flex; background: var(--surface-2); border-radius: 9px; padding: 3px; }
+.seg button { height: 28px; padding: 0 12px; border: 0; border-radius: 6px; background: transparent; font-size: 13px; font-weight: 600; color: var(--ink-3); cursor: pointer; }
+.seg button:hover { color: var(--ink); }
+.seg button.on { background: var(--bg); color: var(--ink); box-shadow: 0 1px 2px rgba(17,17,16,.1); }
+.days { display: flex; gap: 6px; flex-wrap: wrap; margin-top: 10px; }
+.day { width: 46px; height: 32px; border: 1px solid var(--line-2); border-radius: 8px; background: var(--bg); font-size: 12.5px; font-weight: 600; color: var(--ink-2); cursor: pointer; }
+.day:hover { border-color: var(--ink-3); }
+.day.on { background: var(--ink); border-color: var(--ink); color: var(--bg); }
 .time { display: inline-flex; align-items: center; gap: 2px; background: var(--surface-2); border-radius: 8px; height: 32px; padding: 0 4px 0 10px; font: 500 13px var(--mono); }
 .time .icon-btn { width: 24px; height: 24px; }
 .inline { display: flex; gap: 8px; align-items: center; }
@@ -412,9 +421,20 @@ const lastRun = () => [...S.runs].reverse().find(r => r.status !== "running");
 const suggestedCount = () => S.sources.filter(s => s.status === "suggested").length;
 const runningRun = () => [...S.runs].reverse().find(r => r.status === "running");
 const workspaceSuffix = () => S.default_workspace ? "" : ` Workspace: ${S.workspace}`;
+const DAYS = ["mon", "tue", "wed", "thu", "fri", "sat", "sun"];
+const DAY_NAMES = { mon: "Mon", tue: "Tue", wed: "Wed", thu: "Thu", fri: "Fri", sat: "Sat", sun: "Sun" };
+// Matches describe_schedule in studio.py, e.g. "weekdays at 07:00 and 19:00".
+function describeSchedule(schedule = {}) {
+  const times = schedule.times || [], days = schedule.days?.length ? schedule.days : DAYS;
+  if (!times.length) return "";
+  const when = days.length === 7 ? "every day" : days.join() === DAYS.slice(0, 5).join() ? "weekdays"
+    : days.join() === DAYS.slice(5).join() ? "weekends" : days.map(d => DAY_NAMES[d]).join(", ");
+  return `${when} at ${times.join(" and ")}`;
+}
 const PROMPTS = {
   research: () => `Use the vid-studio skill to research now for the channel "${channelName()}".${workspaceSuffix()}`,
-  scheduled: () => `Use the vid-studio skill to research now for the channel "${channelName()}". This is a scheduled run.${workspaceSuffix()}`,
+  setSchedule: (schedule, timezone) => `Use the vid-studio skill to set up scheduled research for the channel "${channelName()}": ${describeSchedule(schedule)}${timezone ? ` (${timezone})` : ""}. Create the scheduled task now, replacing any earlier one for this channel. Don't run research now.${workspaceSuffix()}`,
+  stopSchedule: () => `Use the vid-studio skill to turn off scheduled research for the channel "${channelName()}". Delete its scheduled task. Don't run research now.${workspaceSuffix()}`,
   draft: s => `Use the vid-studio skill to write the draft for the script "${s.title}" (${s.id}) in the channel "${channelName()}".${workspaceSuffix()}`,
 };
 
@@ -450,7 +470,7 @@ function render() {
   editor = null;
   const app = document.getElementById("app");
   const run = lastRun(), active = runningRun();
-  const times = S.settings.schedule?.times || [];
+  const scheduleText = describeSchedule(S.settings.schedule);
   app.innerHTML = `
     <section class="head">
       <div>
@@ -460,8 +480,8 @@ function render() {
       <div class="head-actions">
         <button class="btn primary" data-action="research">${icon("refresh")}Research now</button>
         <div class="run-status"><span class="dot ${active ? "running" : run ? "" : "idle"}"></span>${active ? `Running since ${when(active.started)}…`
-          : run ? `Last run ${when(run.finished)}${run.status === "failed" ? " · failed" : ` · ${run.findings || 0} new`}` : "No research yet"}
-          · <button class="link-btn" data-action="schedule" title="Change the research schedule">${times.length ? `Daily at ${esc(times.join(", "))}` : "Set a schedule"}</button></div>
+          : run ? `Last run completed: ${when(run.finished)}${run.status === "failed" ? " · failed" : ` · ${run.findings || 0} new`}` : "No research yet"}
+          · <button class="link-btn" data-action="schedule" title="Change the research schedule">${scheduleText ? esc(scheduleText[0].toUpperCase() + scheduleText.slice(1)) : "Set a schedule"}</button></div>
       </div>
     </section>
     <nav class="tabs" aria-label="Sections">
@@ -754,32 +774,62 @@ const actions = {
       "Paste this into Claude or ChatGPT, in the project that has this workspace. Your agent researches every topic across the web and your sources, and new findings appear here.");
   },
   schedule() {
-    let times = [...(S.settings.schedule?.times || [])];
+    const saved = S.settings.schedule || {};
+    let times = [...(saved.times || [])];
+    let days = saved.days?.length ? [...saved.days] : [...DAYS];
+    let repeat = days.length === 7 ? "daily" : days.join() === DAYS.slice(0, 5).join() ? "weekdays" : "custom";
     const draw = form => {
-      form.querySelector("#times").innerHTML = times.length ? times.map(t => `<span class="time">${esc(t)}<button type="button" class="icon-btn" data-remove="${esc(t)}" aria-label="Remove ${esc(t)}">${icon("x")}</button></span>`).join("")
-        : `<span class="muted" style="font-size:13px">Manual only. Add a time to research every day.</span>`;
+      form.querySelector("#times").innerHTML = times.map(t => `<span class="time">${esc(t)}<button type="button" class="icon-btn" data-remove="${esc(t)}" aria-label="Remove ${esc(t)}">${icon("x")}</button></span>`).join("")
+        || `<span class="muted small">No times yet. Research only runs when you click Research now.</span>`;
       form.querySelectorAll("[data-remove]").forEach(b => b.onclick = () => { times = times.filter(t => t !== b.dataset.remove); draw(form); });
+      form.querySelectorAll("[data-repeat]").forEach(b => b.classList.toggle("on", b.dataset.repeat === repeat));
+      form.querySelector("#days").hidden = repeat !== "custom";
+      form.querySelectorAll("[data-day]").forEach(b => { b.classList.toggle("on", days.includes(b.dataset.day)); b.setAttribute("aria-pressed", days.includes(b.dataset.day)); });
+      const submit = form.querySelector('button[type="submit"]');
+      submit.textContent = times.length ? "Save and copy prompt" : saved.times?.length ? "Turn off and copy prompt" : "Save";
     };
     openDialog({
       title: "Research schedule",
-      sub: "Research runs for the whole channel at these times every day. Research now stays available.",
-      body: `<div class="field"><span>Daily times</span><div class="times" id="times"></div>
-          <div class="inline"><input type="time" id="new-time" class="time-input" aria-label="New time"><button type="button" class="btn" id="add-time">${icon("plus")}Add time</button></div></div>`
-        + field("Timezone", `<input name="timezone" value="${esc(S.settings.timezone || Intl.DateTimeFormat().resolvedOptions().timeZone)}">`)
-        + `<div class="field"><span>Set it up in Claude or ChatGPT</span><small style="margin:0 0 10px">Create a scheduled task in your project at these times with this prompt:</small>
-          <div class="prompt-box">${esc(PROMPTS.scheduled())}</div>
-          <button type="button" class="btn" id="copy-schedule" style="margin-top:8px">${icon("copy")}Copy prompt</button></div>`,
+      sub: "Choose when research runs. Saving copies a prompt for your agent that creates the scheduled task. Nothing runs now.",
+      body: `<div class="field"><span>Repeat</span><div class="seg">${[["daily", "Every day"], ["weekdays", "Weekdays"], ["custom", "Custom"]].map(([key, label]) =>
+            `<button type="button" data-repeat="${key}">${label}</button>`).join("")}</div>
+          <div class="days" id="days">${DAYS.map(d => `<button type="button" class="day" data-day="${d}">${DAY_NAMES[d]}</button>`).join("")}</div></div>
+        <div class="field"><span>Times</span><div class="times" id="times"></div>
+          <div class="inline"><input type="time" id="new-time" class="time-input" step="60" aria-label="New time"><button type="button" class="btn" id="add-time">${icon("plus")}Add time</button></div></div>`
+        + field("Timezone", `<input name="timezone" value="${esc(S.settings.timezone || Intl.DateTimeFormat().resolvedOptions().timeZone)}">`),
+      submit: "Save",
       onOpen: form => {
         draw(form);
-        form.querySelector("#add-time").onclick = () => {
-          const v = form.querySelector("#new-time").value;
-          if (v && !times.includes(v)) { times = [...times, v].sort(); draw(form); }
+        form.querySelectorAll("[data-repeat]").forEach(b => b.onclick = () => {
+          repeat = b.dataset.repeat;
+          days = repeat === "daily" ? [...DAYS] : repeat === "weekdays" ? DAYS.slice(0, 5) : days;
+          draw(form);
+        });
+        form.querySelectorAll("[data-day]").forEach(b => b.onclick = () => {
+          const d = b.dataset.day;
+          if (days.includes(d) && days.length === 1) return toast("Keep at least one day");
+          days = DAYS.filter(x => x === d ? !days.includes(d) : days.includes(x));
+          draw(form);
+        });
+        const add = () => {
+          const input = form.querySelector("#new-time"), v = input.value.slice(0, 5);
+          if (v && !times.includes(v)) { times = [...times, v].sort(); input.value = ""; draw(form); }
         };
-        form.querySelector("#copy-schedule").onclick = () => copyText(PROMPTS.scheduled()).then(ok => ok && toast("Prompt copied"));
+        form.querySelector("#add-time").onclick = add;
+        form.querySelector("#new-time").onkeydown = e => { if (e.key === "Enter") { e.preventDefault(); add(); } };
       },
       onSubmit: async form => {
-        await capi("PUT", "settings", { schedule: { times }, timezone: form.timezone.value.trim() });
-        await refresh(true); render(); toast("Schedule saved");
+        const pending = form.querySelector("#new-time").value.slice(0, 5);  // a time typed but not added still counts
+        if (pending && !times.includes(pending)) times = [...times, pending].sort();
+        const timezone = form.timezone.value.trim(), schedule = { days, times };
+        const wasOn = (saved.times || []).length > 0;
+        await capi("PUT", "settings", { schedule, timezone });
+        await refresh(true); render();
+        if (times.length) setTimeout(() => showPrompt("Create the schedule", PROMPTS.setSchedule(schedule, timezone),
+          "Paste this into Claude or ChatGPT, in the project that has this workspace. Your agent creates the scheduled task. It doesn't run research now."));
+        else if (wasOn) setTimeout(() => showPrompt("Turn off the schedule", PROMPTS.stopSchedule(),
+          "Paste this into Claude or ChatGPT, in the project where you created the scheduled task. Your agent deletes it."));
+        else toast("Schedule saved");
       },
     });
   },

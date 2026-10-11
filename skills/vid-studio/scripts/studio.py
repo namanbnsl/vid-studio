@@ -256,6 +256,30 @@ SETTING_KEYS = {"name", "description", "audience", "language", "timezone", "rese
                 "script_format", "post_format", "schedule"}
 
 
+DAYS = ["mon", "tue", "wed", "thu", "fri", "sat", "sun"]
+
+
+def clean_schedule(schedule: dict) -> dict:
+    """Times as sorted HH:MM; days as weekday keys in week order, where all seven means every day."""
+    times = sorted({str(t).strip() for t in schedule.get("times", []) if str(t).strip()})
+    for t in times:
+        if not re.fullmatch(r"([01]\d|2[0-3]):[0-5]\d", t):
+            raise ValueError(f"Times must look like 07:30, not {t!r}")
+    days = {str(d).strip().lower()[:3] for d in schedule.get("days") or DAYS}
+    if days - set(DAYS):
+        raise ValueError(f"Days must be from {', '.join(DAYS)}")
+    return {"days": [d for d in DAYS if d in days], "times": times}
+
+
+def describe_schedule(schedule: dict) -> str:
+    times, days = schedule.get("times", []), schedule.get("days") or DAYS
+    if not times:
+        return "manual only"
+    when = ("every day" if len(days) == 7 else "weekdays" if days == DAYS[:5] else "weekends" if days == DAYS[5:]
+            else ", ".join(d.title() for d in days))
+    return f"{when} at {' and '.join(times)}"
+
+
 class Studio:
     """All reads and writes of the workspace files. Raises ValueError for bad input."""
 
@@ -277,11 +301,7 @@ class Studio:
             if key not in SETTING_KEYS:
                 raise ValueError(f"Unknown setting: {key}")
             if key == "schedule":
-                times = sorted({str(t).strip() for t in (value or {}).get("times", []) if str(t).strip()})
-                for t in times:
-                    if not re.fullmatch(r"([01]\d|2[0-3]):[0-5]\d", t):
-                        raise ValueError(f"Times must look like 07:30, not {t!r}")
-                value = {**settings.get("schedule", {}), "times": times}
+                value = clean_schedule(value or {})
             elif not isinstance(value, str):
                 raise ValueError(f"{key} must be text")
             settings[key] = value
@@ -754,7 +774,8 @@ def cmd_status(root: Path, args) -> None:
           + (f" · {len(suggested)} suggested, waiting for the user" if suggested else ""))
     print(f"Findings: {sum(1 for f in studio.findings() if not f.get('dismissed_at'))} · last research: "
           + (f"{last['finished']} ({last['status']}, {last.get('findings', 0)} findings)" if last else "never"))
-    print(f"Schedule: {', '.join(settings.get('schedule', {}).get('times', [])) or 'manual only'}")
+    print(f"Schedule: {describe_schedule(settings.get('schedule', {}))}"
+          + (f" ({settings['timezone']})" if settings.get("timezone") and settings.get("schedule", {}).get("times") else ""))
     print("Scripts:" + ("" if scripts else " none"))
     for script in scripts:
         state = "drafted" if script["drafted"] else "not drafted"
@@ -774,6 +795,14 @@ def cmd_status(root: Path, args) -> None:
               if (s["findings"] or s["topics"]) and not s["drafted"]]
     if hints:
         print("Suggestions:\n" + "\n".join(f"- {h}" for h in hints))
+
+
+def cmd_set_schedule(ws: Path, args) -> None:
+    changes = {"schedule": {"times": [] if args.off else args.time or [], "days": args.day or DAYS}}
+    if args.timezone:
+        changes["timezone"] = args.timezone
+    settings = Studio(ws).update_settings(changes)
+    print(f"Schedule: {describe_schedule(settings['schedule'])}" + (f" ({settings['timezone']})" if settings.get("timezone") else ""))
 
 
 def cmd_add_topic(ws: Path, args) -> None:
@@ -1093,6 +1122,12 @@ def main(argv=None) -> None:
     sub.add_argument("--port", type=int, default=8765)
     sub.add_argument("--background", action="store_true", help="Start detached and print the URL")
     sub.add_argument("--stop", action="store_true")
+
+    sub = command("set-schedule", cmd_set_schedule, "Save the research schedule (the scheduled task itself is created in the agent app)")
+    sub.add_argument("--time", action="append", help="HH:MM; repeatable")
+    sub.add_argument("--day", action="append", choices=DAYS, help="Weekday; repeatable (default: every day)")
+    sub.add_argument("--timezone")
+    sub.add_argument("--off", action="store_true", help="Clear the schedule")
 
     sub = command("add-topic", cmd_add_topic, "Add a topic")
     sub.add_argument("--name", required=True)

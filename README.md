@@ -20,7 +20,7 @@ You manage topics, sources, and scripts in the UI. The two steps that need an AI
 - **Research now** copies a prompt. Paste it into Claude or ChatGPT; your agent researches every topic and the new findings show up in the UI.
 - **Write draft** (in a script) copies a prompt; your agent researches the attached findings in depth and writes the script, the post, and research notes.
 
-To research every day, set times under **Schedule** and create a scheduled task in your agent app with the prompt shown there.
+To research on a schedule, click the schedule link under **Research now**, pick the days and times, and paste the copied prompt into your agent. It creates the scheduled task.
 
 ## Start
 

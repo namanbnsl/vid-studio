@@ -220,8 +220,15 @@ class StudioTest(unittest.TestCase):
 
     def test_settings_validation(self):
         self.studio.update_settings({"name": "Explained", "schedule": {"times": ["19:00", "07:00", "07:00"]}})
-        self.assertEqual(self.studio.settings()["schedule"]["times"], ["07:00", "19:00"])
-        for bad in ({"schedule": {"times": ["7am"]}}, {"name": " "}, {"owner_secret": "x"}):
+        self.assertEqual(self.studio.settings()["schedule"], {"days": studio.DAYS, "times": ["07:00", "19:00"]})
+        self.assertEqual(studio.describe_schedule(self.studio.settings()["schedule"]), "every day at 07:00 and 19:00")
+        self.studio.update_settings({"schedule": {"times": ["07:00"], "days": ["fri", "Mon", "wed"]}})
+        self.assertEqual(studio.describe_schedule(self.studio.settings()["schedule"]), "Mon, Wed, Fri at 07:00")
+        self.cli("set-schedule", "--time", "08:15", "--day", "mon", "--day", "tue", "--day", "wed", "--day", "thu", "--day", "fri")
+        self.assertIn("weekdays at 08:15", self.cli("status"))
+        self.cli("set-schedule", "--off")
+        self.assertIn("manual only", self.cli("status"))
+        for bad in ({"schedule": {"times": ["7am"]}}, {"schedule": {"times": ["07:00"], "days": ["someday"]}}, {"name": " "}, {"owner_secret": "x"}):
             with self.assertRaises(ValueError):
                 self.studio.update_settings(bad)
 
