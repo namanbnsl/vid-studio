@@ -1,0 +1,457 @@
+<!doctype html>
+<html lang="en">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width, initial-scale=1">
+<title>Vid Studio</title>
+<style>
+:root {
+  color-scheme: light;
+  --bg: #f4f4f2; --surface: #fcfcfb; --surface-2: #f0efec; --line: #e2e1dc;
+  --text: #0b0b0b; --text-2: #52514e; --muted: #7a7973; --accent: #2a78d6; --accent-soft: #e3eefb;
+  --good: #0ca30c; --warning: #fab219; --serious: #ec835a; --critical: #d03b3b;
+  --good-ink: #006300; --warning-ink: #7a5200; --serious-ink: #9a3f1c; --critical-ink: #a32020;
+  --radius: 10px; --mono: ui-monospace, SFMono-Regular, Menlo, Consolas, monospace;
+}
+@media (prefers-color-scheme: dark) {
+  :root {
+    color-scheme: dark;
+    --bg: #121211; --surface: #1a1a19; --surface-2: #232321; --line: #33332f;
+    --text: #f0efec; --text-2: #c3c2b7; --muted: #8f8e86; --accent: #3987e5; --accent-soft: #1c2b3d;
+    --good-ink: #5fd35f; --warning-ink: #fac552; --serious-ink: #f2a385; --critical-ink: #f07a7a;
+  }
+}
+* { box-sizing: border-box; }
+body { margin: 0; font: 14px/1.5 system-ui, -apple-system, "Segoe UI", Roboto, sans-serif; background: var(--bg); color: var(--text); }
+a { color: var(--accent); text-decoration: none; }
+a:hover { text-decoration: underline; }
+.layout { display: grid; grid-template-columns: 220px 1fr; min-height: 100vh; }
+nav { background: var(--surface); border-right: 1px solid var(--line); padding: 18px 12px; position: sticky; top: 0; height: 100vh; overflow: auto; }
+nav .brand { font-weight: 700; font-size: 16px; padding: 0 10px 2px; }
+nav .owner { color: var(--muted); font-size: 12px; padding: 0 10px 16px; }
+nav a { display: flex; justify-content: space-between; padding: 7px 10px; border-radius: 8px; color: var(--text-2); }
+nav a:hover { background: var(--surface-2); text-decoration: none; }
+nav a.active { background: var(--accent-soft); color: var(--text); font-weight: 600; }
+nav .count { color: var(--muted); font-size: 12px; }
+nav input { width: 100%; margin: 0 0 12px; }
+nav .foot { color: var(--muted); font-size: 11px; padding: 16px 10px 0; line-height: 1.4; }
+main { padding: 24px 32px 64px; max-width: 1200px; width: 100%; }
+h1 { font-size: 22px; margin: 0 0 4px; }
+h2 { font-size: 16px; margin: 28px 0 10px; }
+.sub { color: var(--text-2); margin: 0 0 18px; }
+.card { background: var(--surface); border: 1px solid var(--line); border-radius: var(--radius); padding: 16px; }
+.grid { display: grid; gap: 12px; }
+.tiles { grid-template-columns: repeat(auto-fit, minmax(160px, 1fr)); }
+.tile .label { color: var(--text-2); font-size: 12px; }
+.tile .value { font-size: 28px; font-weight: 650; line-height: 1.2; }
+.tile .note { color: var(--muted); font-size: 12px; }
+.two { grid-template-columns: 1fr 1fr; }
+@media (max-width: 900px) { .layout { grid-template-columns: 1fr; } nav { position: static; height: auto; } .two { grid-template-columns: 1fr; } main { padding: 16px; } }
+table { width: 100%; border-collapse: collapse; background: var(--surface); }
+th, td { text-align: left; padding: 8px 10px; border-bottom: 1px solid var(--line); vertical-align: top; }
+th { font-size: 12px; color: var(--text-2); font-weight: 600; background: var(--surface-2); position: sticky; top: 0; }
+.table-wrap { border: 1px solid var(--line); border-radius: var(--radius); overflow: auto; max-height: 75vh; }
+tr.focus td { background: var(--accent-soft); }
+.pill { display: inline-block; padding: 1px 8px; border-radius: 99px; font-size: 12px; background: var(--surface-2); color: var(--text-2); border: 1px solid var(--line); white-space: nowrap; }
+.pill.accent { background: var(--accent-soft); color: var(--text); border-color: transparent; }
+.status { display: inline-flex; align-items: center; gap: 5px; font-size: 12px; white-space: nowrap; color: var(--text-2); }
+.status::before { content: ""; width: 9px; height: 9px; border-radius: 50%; background: var(--muted); }
+.st-verified::before { background: var(--good); } .st-verified { color: var(--good-ink); }
+.st-single-source::before { background: var(--warning); } .st-single-source { color: var(--warning-ink); }
+.st-disputed::before { background: var(--serious); } .st-disputed { color: var(--serious-ink); }
+.st-unverified::before { background: var(--critical); } .st-unverified { color: var(--critical-ink); }
+.chip { font: 11px var(--mono); padding: 0 5px; border-radius: 4px; margin: 0 1px; border: 1px solid var(--line); background: var(--surface-2); color: var(--text-2); vertical-align: 1px; }
+.chip.st-verified { border-color: var(--good); } .chip.st-single-source { border-color: var(--warning); }
+.chip.st-disputed { border-color: var(--serious); } .chip.st-unverified, .chip.missing { border-color: var(--critical); }
+.chip::before { display: none; }
+.bar { display: flex; gap: 2px; height: 8px; min-width: 120px; }
+.bar span { border-radius: 2px; }
+.legend { display: flex; flex-wrap: wrap; gap: 12px; margin: 6px 0 0; }
+.toolbar { display: flex; gap: 8px; flex-wrap: wrap; align-items: center; margin: 0 0 12px; }
+input, select { font: inherit; padding: 6px 10px; border: 1px solid var(--line); border-radius: 8px; background: var(--surface); color: var(--text); }
+.tabs { display: flex; gap: 4px; border-bottom: 1px solid var(--line); margin: 18px 0 16px; flex-wrap: wrap; }
+.tabs a { padding: 8px 12px; color: var(--text-2); border-bottom: 2px solid transparent; margin-bottom: -1px; }
+.tabs a.active { color: var(--text); border-bottom-color: var(--accent); font-weight: 600; }
+.doc { background: var(--surface); border: 1px solid var(--line); border-radius: var(--radius); padding: 8px 28px 24px; max-width: 820px; }
+.doc h1, .doc h2, .doc h3 { margin: 20px 0 8px; } .doc h2 { font-size: 18px; } .doc h3 { font-size: 15px; }
+.doc table { margin: 8px 0; } .doc pre { background: var(--surface-2); padding: 12px; border-radius: 8px; overflow: auto; }
+.doc code { font-family: var(--mono); font-size: 12.5px; }
+.doc hr { border: 0; border-top: 1px solid var(--line); margin: 20px 0; }
+.doc blockquote { margin: 8px 0; padding-left: 12px; border-left: 3px solid var(--line); color: var(--text-2); }
+.phone { background: #e5ddd5; border-radius: 16px; padding: 18px; max-width: 420px; }
+@media (prefers-color-scheme: dark) { .phone { background: #0b141a; } }
+.bubble { background: #fff; color: #111; border-radius: 8px; padding: 10px 12px; box-shadow: 0 1px 1px rgba(0,0,0,.15); white-space: normal; }
+@media (prefers-color-scheme: dark) { .bubble { background: #005c4b; color: #e9edef; } .bubble a { color: #53bdeb; } }
+.bubble p { margin: 0 0 8px; }
+.list { display: grid; gap: 8px; }
+.item { background: var(--surface); border: 1px solid var(--line); border-radius: var(--radius); padding: 10px 14px; }
+.item .title { font-weight: 600; }
+.meta { color: var(--muted); font-size: 12px; }
+.kanban { display: grid; grid-template-columns: repeat(6, minmax(150px, 1fr)); gap: 10px; overflow: auto; }
+.kanban .col { background: var(--surface-2); border-radius: var(--radius); padding: 10px; min-height: 80px; }
+.kanban .col h3 { font-size: 12px; color: var(--text-2); margin: 0 0 8px; text-transform: uppercase; letter-spacing: .04em; }
+.kanban .item { padding: 8px 10px; margin-bottom: 6px; font-size: 13px; }
+.errors { border-left: 3px solid var(--critical); } .warnings { border-left: 3px solid var(--warning); }
+.ok { border-left: 3px solid var(--good); }
+ul.plain { margin: 0; padding-left: 18px; }
+.empty { color: var(--muted); padding: 24px; text-align: center; background: var(--surface); border: 1px dashed var(--line); border-radius: var(--radius); }
+details summary { cursor: pointer; color: var(--text-2); }
+.split { display: grid; grid-template-columns: 220px 1fr; gap: 16px; align-items: start; }
+mark { background: #fde68a; color: inherit; border-radius: 2px; }
+</style>
+</head>
+<body>
+<div class="layout">
+  <nav id="nav"></nav>
+  <main id="app"></main>
+</div>
+<script id="studio-data" type="application/json">/*STUDIO_DATA*/null</script>
+<script>
+"use strict";
+const D = JSON.parse(document.getElementById("studio-data").textContent) || {};
+const app = document.getElementById("app");
+const STAGES = ["planning", "researching", "brief-review", "writing", "script-review", "approved"];
+const CLAIM_STATUSES = ["verified", "single-source", "disputed", "unverified"];
+const STATUS_ICON = { verified: "✓", "single-source": "◐", disputed: "⚠", unverified: "✕" };
+const sourceById = Object.fromEntries((D.sources || []).map(s => [s.id, s]));
+const projectById = Object.fromEntries((D.projects || []).map(p => [p.id, p]));
+const topicById = Object.fromEntries((D.topics || []).map(t => [t.id, t]));
+const live = location.protocol.startsWith("http");
+
+// ---------- helpers
+const esc = v => String(v ?? "").replace(/[&<>"']/g, c => ({ "&": "&amp;", "<": "&lt;", ">": "&gt;", '"': "&quot;", "'": "&#39;" }[c]));
+const safeUrl = u => /^https?:\/\//i.test(String(u || "")) ? esc(u) : "#";
+const ext = (u, label) => `<a href="${safeUrl(u)}" target="_blank" rel="noopener noreferrer">${esc(label || u)}</a>`;
+const fileHref = rel => "../" + String(rel).split("/").map(encodeURIComponent).join("/");
+const host = u => { try { return new URL(u).hostname.replace(/^www\./, ""); } catch { return ""; } };
+const pill = (text, cls = "") => text ? `<span class="pill ${cls}">${esc(text)}</span>` : "";
+const statusTag = s => `<span class="status st-${esc(s)}">${STATUS_ICON[s] || ""} ${esc(s || "—")}</span>`;
+const when = v => v ? esc(String(v).replace("T", " ").slice(0, 16)) : "—";
+const empty = msg => `<div class="empty">${msg}</div>`;
+const route = () => location.hash.replace(/^#\/?/, "").split("/").map(decodeURIComponent);
+
+function claimMix(claims) {
+  const counts = Object.fromEntries(CLAIM_STATUSES.map(s => [s, 0]));
+  (claims || []).forEach(c => { if (c.status in counts) counts[c.status]++; });
+  return counts;
+}
+function mixBar(claims) {
+  const counts = claimMix(claims), total = (claims || []).length;
+  if (!total) return `<span class="meta">no claims</span>`;
+  const colors = { verified: "var(--good)", "single-source": "var(--warning)", disputed: "var(--serious)", unverified: "var(--critical)" };
+  const parts = CLAIM_STATUSES.filter(s => counts[s]).map(s =>
+    `<span style="flex:${counts[s]};background:${colors[s]}" title="${counts[s]} ${s}"></span>`).join("");
+  const label = CLAIM_STATUSES.filter(s => counts[s]).map(s => `${counts[s]} ${s}`).join(" · ");
+  return `<div class="bar" role="img" aria-label="${esc(label)}">${parts}</div><div class="meta">${esc(label)}</div>`;
+}
+
+// ---------- tiny markdown renderer (escapes everything first)
+function inline(text, ctx = {}) {
+  const stash = [];
+  const keep = html => `\u0000${stash.push(html) - 1}\u0000`;
+  let s = esc(text);
+  s = s.replace(/`([^`]+)`/g, (_, c) => keep(`<code>${c}</code>`));
+  s = s.replace(/\[([^\]]+)\]\((https?:\/\/[^)\s]+)\)/g, (_, t, u) => keep(`<a href="${u}" target="_blank" rel="noopener noreferrer">${t}</a>`));
+  s = s.replace(/\[(C\d+(?:\s*,\s*C\d+)*)\]/g, (_, g) => keep(g.split(/\s*,\s*/).map(id => claimChip(id, ctx)).join("")));
+  s = s.replace(/(^|[\s(])(https?:\/\/[^\s<)]+)/g, (_, pre, u) => pre + keep(`<a href="${u}" target="_blank" rel="noopener noreferrer">${u}</a>`));
+  s = s.replace(/\*\*([^*]+)\*\*/g, "<strong>$1</strong>");
+  s = s.replace(/(^|[^\w*])\*([^*\s][^*]*)\*(?!\w)/g, ctx.whatsapp ? "$1<strong>$2</strong>" : "$1<em>$2</em>");
+  s = s.replace(/(^|[^\w])_([^_\s][^_]*)_(?!\w)/g, "$1<em>$2</em>");
+  s = s.replace(/~([^~\s][^~]*)~/g, "<del>$1</del>");
+  if (ctx.highlight) {
+    // Highlight plain text only, never inside placeholders or HTML entities.
+    const re = new RegExp(`(${esc(ctx.highlight).replace(/[.*+?^${}()|[\]\\]/g, "\\$&")})`, "gi");
+    s = s.split(/(\u0000\d+\u0000|&[#\w]+;|<[^>]+>)/).map((part, i) => i % 2 ? part : part.replace(re, "<mark>$1</mark>")).join("");
+  }
+  return s.replace(/\u0000(\d+)\u0000/g, (_, i) => stash[i]);
+}
+function claimChip(id, ctx) {
+  const claim = ctx.claims && ctx.claims[id];
+  if (!claim) return `<span class="chip missing" title="Unknown claim">${esc(id)}?</span>`;
+  const title = `${STATUS_ICON[claim.status] || ""} ${claim.status}: ${claim.text}`;
+  return `<a class="chip st-${esc(claim.status)}" href="#/project/${encodeURIComponent(ctx.project)}/claims/${esc(id)}" title="${esc(title)}">${esc(id)}</a>`;
+}
+function mdTable(rows, ctx) {
+  const cells = r => r.trim().replace(/^\||\|$/g, "").split("|").map(c => c.trim());
+  const body = rows.filter(r => !/^\s*\|?[\s|:-]+\|?\s*$/.test(r)).map(cells);
+  if (!body.length) return "";
+  const [head, ...rest] = body;
+  return `<div class="table-wrap"><table><thead><tr>${head.map(c => `<th>${inline(c, ctx)}</th>`).join("")}</tr></thead><tbody>${
+    rest.map(r => `<tr>${r.map(c => `<td>${inline(c, ctx)}</td>`).join("")}</tr>`).join("")}</tbody></table></div>`;
+}
+function md(src, ctx = {}) {
+  const lines = String(src || "").replace(/\r/g, "").split("\n"), out = [];
+  const listRe = /^\s*([-*+]|\d+\.)\s+/, special = /^(#{1,6}\s|```|\s*\||>)/;
+  let i = 0;
+  while (i < lines.length) {
+    const l = lines[i];
+    if (/^```/.test(l)) {
+      const buf = []; i++;
+      while (i < lines.length && !/^```/.test(lines[i])) buf.push(lines[i++]);
+      i++; out.push(`<pre><code>${esc(buf.join("\n"))}</code></pre>`); continue;
+    }
+    const h = l.match(/^(#{1,6})\s+(.*)/);
+    if (h) { const n = Math.min(h[1].length + 1, 6); out.push(`<h${n}>${inline(h[2], ctx)}</h${n}>`); i++; continue; }
+    if (/^\s*\|/.test(l)) { const rows = []; while (i < lines.length && /^\s*\|/.test(lines[i])) rows.push(lines[i++]); out.push(mdTable(rows, ctx)); continue; }
+    if (/^\s*(-{3,}|\*{3,})\s*$/.test(l)) { out.push("<hr>"); i++; continue; }
+    if (/^>/.test(l)) { const buf = []; while (i < lines.length && /^>/.test(lines[i])) buf.push(lines[i++].replace(/^>\s?/, "")); out.push(`<blockquote>${md(buf.join("\n"), ctx)}</blockquote>`); continue; }
+    if (listRe.test(l)) {
+      const ordered = /^\s*\d+\./.test(l), items = [];
+      while (i < lines.length && listRe.test(lines[i])) {
+        items.push(lines[i++].replace(listRe, ""));
+        while (i < lines.length && /^\s{2,}\S/.test(lines[i]) && !listRe.test(lines[i])) items[items.length - 1] += "<br>" + lines[i++].trim();
+      }
+      const tag = ordered ? "ol" : "ul";
+      out.push(`<${tag}>${items.map(it => `<li>${inline(it, ctx).replace(/&lt;br&gt;/g, "<br>")}</li>`).join("")}</${tag}>`); continue;
+    }
+    if (!l.trim()) { i++; continue; }
+    const buf = [];
+    while (i < lines.length && lines[i].trim() && !special.test(lines[i]) && !listRe.test(lines[i]) && !/^\s*-{3,}\s*$/.test(lines[i])) buf.push(lines[i++]);
+    out.push(`<p>${buf.map(b => inline(b, ctx)).join("<br>")}</p>`);
+  }
+  return out.join("\n");
+}
+
+// ---------- views
+function overview() {
+  const projects = D.projects || [], topics = D.topics || [], sources = D.sources || [];
+  const open = projects.filter(p => !["approved", "dropped"].includes(p.stage));
+  const review = projects.filter(p => ["brief-review", "script-review"].includes(p.stage));
+  const proposed = topics.filter(t => t.status === "proposed");
+  const failing = sources.filter(s => (D.source_state[s.id] || {}).last_error);
+  const tile = (label, value, note, href) => `<a class="card tile" href="${href}" style="color:inherit;text-decoration:none"><div class="label">${label}</div><div class="value">${value}</div><div class="note">${note}</div></a>`;
+  const byStage = Object.fromEntries(STAGES.map(s => [s, []]));
+  projects.forEach(p => (byStage[p.stage] || (byStage[p.stage] = [])).push(p));
+  return `
+    <h1>${esc(D.studio.channel || D.studio.owner || "Vid Studio")}</h1>
+    <p class="sub">${esc(D.studio.audience || "Set up your profile to tailor research.")}</p>
+    <div class="grid tiles">
+      ${tile("Waiting for you", review.length + proposed.length, `${review.length} to review · ${proposed.length} topics to approve`, "#/overview")}
+      ${tile("Inbox", D.state.inbox_since_triage || 0, `new since triage · ${(D.inbox || []).length} total`, "#/inbox")}
+      ${tile("Topics", topics.filter(t => t.status === "active").length, `active · ${proposed.length} proposed`, "#/topics")}
+      ${tile("Projects", open.length, `open · ${projects.length} total`, "#/projects")}
+      ${tile("Sources", sources.filter(s => s.enabled !== false).length, failing.length ? `${failing.length} failing` : `last scan ${when(D.state.last_scan)}`, "#/sources")}
+    </div>
+    <div class="grid two" style="margin-top:12px">
+      <div class="card"><h2 style="margin-top:0">Waiting for you</h2>${
+        review.length || proposed.length ? `<ul class="plain">${
+          review.map(p => `<li><a href="#/project/${encodeURIComponent(p.id)}/${p.stage === "brief-review" ? "brief" : "script"}">${esc(p.title)}</a> ${pill(p.stage, "accent")}</li>`).join("")}${
+          proposed.map(t => `<li><a href="#/topics/${encodeURIComponent(t.id)}">${esc(t.title)}</a> ${pill("proposed topic")}</li>`).join("")}</ul>`
+        : `<span class="meta">Nothing needs you right now.</span>`}</div>
+      <div class="card"><h2 style="margin-top:0">Next actions</h2><ul class="plain">${(D.status.actions || []).map(a => `<li>${inline(a)}</li>`).join("")}</ul>
+        <p class="meta" style="margin:10px 0 0">Ask your agent: “Use vid-studio, continue.”</p></div>
+    </div>
+    <h2>Pipeline</h2>
+    <div class="kanban">${STAGES.map(s => `<div class="col"><h3>${s} · ${byStage[s].length}</h3>${
+      byStage[s].map(p => `<a class="item" style="display:block;color:inherit" href="#/project/${encodeURIComponent(p.id)}">${esc(p.title)}<div class="meta">${esc(p.created || "")}${p.check.errors.length ? ` · <span class="status st-unverified">✕ ${p.check.errors.length} errors</span>` : ""}</div></a>`).join("")}</div>`).join("")}</div>
+    <h2>Latest in the inbox</h2>
+    ${inboxList((D.inbox || []).slice(0, 8))}
+    <details style="margin-top:20px"><summary>Raw status</summary><pre class="meta">${esc((D.status.lines || []).join("\n"))}</pre></details>`;
+}
+
+function inboxList(items, highlight) {
+  if (!items.length) return empty("No inbox items yet. Ask your agent to scan sources.");
+  return `<div class="list">${items.map(i => {
+    const src = sourceById[i.source_id];
+    return `<div class="item"><div class="title">${ext(i.url, i.title)}</div>
+      <div class="meta">${esc(src ? src.name : i.source_id)} · ${esc(i.published || i.date)} · ${esc(host(i.url))}</div>
+      ${i.summary ? `<div>${inline(i.summary, { highlight })}</div>` : ""}</div>`;
+  }).join("")}</div>`;
+}
+
+function inbox() {
+  const dates = [...new Set((D.inbox || []).map(i => i.date))];
+  const sources = [...new Set((D.inbox || []).map(i => i.source_id))];
+  setTimeout(() => {
+    const q = document.getElementById("q"), src = document.getElementById("src"), day = document.getElementById("day");
+    const draw = () => {
+      const text = q.value.trim().toLowerCase();
+      const items = (D.inbox || []).filter(i => (!src.value || i.source_id === src.value) && (!day.value || i.date === day.value)
+        && (!text || `${i.title} ${i.summary}`.toLowerCase().includes(text)));
+      document.getElementById("count").textContent = `${items.length} items`;
+      document.getElementById("items").innerHTML = inboxList(items.slice(0, 300), text);
+    };
+    [q, src, day].forEach(el => el.addEventListener("input", draw)); draw();
+  });
+  return `<h1>Inbox</h1><p class="sub">Everything the scans found, newest first. ${D.state.last_triage ? `Last triage ${when(D.state.last_triage)}.` : ""}</p>
+    <div class="toolbar"><input id="q" placeholder="Filter…" autofocus>
+      <select id="src"><option value="">All sources</option>${sources.map(s => `<option value="${esc(s)}">${esc(sourceById[s] ? sourceById[s].name : s)}</option>`).join("")}</select>
+      <select id="day"><option value="">All dates</option>${dates.map(d => `<option>${esc(d)}</option>`).join("")}</select>
+      <span id="count" class="meta"></span></div><div id="items"></div>`;
+}
+
+function topics(focus) {
+  const list = D.topics || [];
+  if (!list.length) return `<h1>Topics</h1>${empty("No topics yet. Ask your agent to discover topics.")}`;
+  const order = { proposed: 0, active: 1, paused: 2, used: 3, archived: 4 };
+  return `<h1>Topics</h1><p class="sub">Once topics become one explainer. Daily topics are checked every day and become a video only when there is real news.</p>
+    <div class="list">${[...list].sort((a, b) => (order[a.status] ?? 9) - (order[b.status] ?? 9)).map(t => `
+      <div class="item" id="topic-${esc(t.id)}" style="${t.id === focus ? "outline:2px solid var(--accent)" : ""}">
+        <div class="title">${esc(t.title)} ${pill(t.mode, "accent")} ${pill(t.status)}</div>
+        ${t.angle ? `<div>${esc(t.angle)}</div>` : ""}
+        ${t.why ? `<div class="meta">Why: ${esc(t.why)}</div>` : ""}
+        <div class="meta">Added ${esc(t.added || "—")} · last run ${esc(t.last_run || "never")}${(t.queries || []).length ? ` · queries: ${t.queries.map(esc).join("; ")}` : ""}</div>
+        ${(t.leads || []).length ? `<details open><summary>${t.leads.length} pending leads</summary><ul class="plain">${t.leads.map(l => `<li>${ext(l.url, l.title || l.url)}${l.note ? ` <span class="meta">— ${esc(l.note)}</span>` : ""}</li>`).join("")}</ul></details>` : ""}
+        ${(t.projects || []).length ? `<div>Projects: ${t.projects.map(p => `<a href="#/project/${encodeURIComponent(p)}">${esc(projectById[p] ? projectById[p].title + " (" + p.slice(0, 10) + ")" : p)}</a>`).join(", ")}</div>` : ""}
+        ${(t.history || []).length ? `<details><summary>Run history</summary><ul class="plain">${[...t.history].reverse().slice(0, 30).map(h => `<li>${esc(h.date)} · ${esc(h.result)}${h.note ? ` — ${esc(h.note)}` : ""}</li>`).join("")}</ul></details>` : ""}
+      </div>`).join("")}</div>`;
+}
+
+function projects() {
+  const list = D.projects || [];
+  if (!list.length) return `<h1>Projects</h1>${empty("No projects yet. Ask your agent to research a topic.")}`;
+  return `<h1>Projects</h1><p class="sub">One folder per video. Newest first.</p>
+    <div class="table-wrap"><table><thead><tr><th>Project</th><th>Stage</th><th>Topic</th><th>Claims</th><th>Sources</th><th>Check</th></tr></thead><tbody>${
+      list.map(p => `<tr><td><a href="#/project/${encodeURIComponent(p.id)}">${esc(p.title)}</a><div class="meta">${esc(p.id)}</div></td>
+        <td>${pill(p.stage, "accent")}</td>
+        <td>${p.topic_id ? `<a href="#/topics/${encodeURIComponent(p.topic_id)}">${esc(topicById[p.topic_id] ? topicById[p.topic_id].title : p.topic_id)}</a> ${pill(p.mode)}` : `<span class="meta">ad hoc</span>`}</td>
+        <td style="min-width:180px">${mixBar(p.claims)}</td><td>${p.sources.length}</td>
+        <td>${p.check.errors.length ? `<span class="status st-unverified">✕ ${p.check.errors.length} errors</span>` : `<span class="status st-verified">✓ passes</span>`}${p.check.warnings.length ? `<div class="meta">${p.check.warnings.length} warnings</div>` : ""}</td></tr>`).join("")}
+    </tbody></table></div>
+    <div class="legend">${CLAIM_STATUSES.map(statusTag).join("")}</div>`;
+}
+
+function project(id, tab, focus) {
+  const p = projectById[id];
+  if (!p) return empty(`Unknown project ${esc(id)}`);
+  const claims = Object.fromEntries(p.claims.map(c => [c.id, c]));
+  const ctx = { claims, project: p.id };
+  const tabs = [["brief", "Brief"], ["script", "Script"], ["post", "WhatsApp post"], ["claims", `Claims (${p.claims.length})`],
+    ["sources", `Sources (${p.sources.length})`], ["data", `Data (${p.data.length})`], ["plan", "Plan"], ["history", "History"]];
+  tab = tab || (p.files["script.md"] && ["writing", "script-review", "approved"].includes(p.stage) ? "script" : "brief");
+  const citedBy = {};
+  p.claims.forEach(c => (c.sources || []).forEach(s => (citedBy[s] = citedBy[s] || []).push(c.id)));
+  const fileLink = name => `<a class="meta" href="${fileHref(p.dir + "/" + name)}" target="_blank">open ${esc(name)}</a>`;
+  let body = "";
+  if (["brief", "script", "plan"].includes(tab)) {
+    const name = tab + ".md";
+    body = p.files[name] ? `<div class="toolbar">${fileLink(name)}</div><div class="doc">${md(p.files[name], ctx)}</div>` : empty(`No ${name} yet.`);
+  } else if (tab === "post") {
+    const text = p.files["post.md"] || "";
+    const [message, map] = text.split(/\n-{3,}\s*\n/);
+    const words = (message || "").split(/\s+/).filter(Boolean).length;
+    body = text ? `<div class="toolbar">${fileLink("post.md")}<span class="meta">${words} words</span></div>
+      <div class="phone"><div class="bubble">${md(message, { ...ctx, whatsapp: true })}</div></div>
+      ${map ? `<div class="doc" style="margin-top:16px">${md(map, ctx)}</div>` : ""}` : empty("No post.md yet.");
+  } else if (tab === "claims") {
+    setTimeout(() => {
+      const sel = document.getElementById("cstatus");
+      const draw = () => document.querySelectorAll("tr[data-status]").forEach(r => r.hidden = !!sel.value && r.dataset.status !== sel.value);
+      sel.addEventListener("input", draw);
+      const row = focus && document.getElementById("claim-" + focus); if (row) row.scrollIntoView({ block: "center" });
+    });
+    body = p.claims.length ? `<div class="toolbar"><select id="cstatus"><option value="">All statuses</option>${CLAIM_STATUSES.map(s => `<option>${s}</option>`).join("")}</select>${mixBar(p.claims)}</div>
+      <div class="table-wrap"><table><thead><tr><th>ID</th><th>Claim</th><th>Status</th><th>Sources</th></tr></thead><tbody>${
+        p.claims.map(c => `<tr id="claim-${esc(c.id)}" data-status="${esc(c.status)}" class="${c.id === focus ? "focus" : ""}">
+          <td><code>${esc(c.id)}</code></td>
+          <td>${esc(c.text)}${c.quote ? `<blockquote class="meta" style="margin:6px 0 0;border-left:3px solid var(--line);padding-left:8px">“${esc(c.quote)}”</blockquote>` : ""}${c.note ? `<div class="meta">Note: ${esc(c.note)}</div>` : ""}</td>
+          <td>${statusTag(c.status)}</td>
+          <td>${(c.sources || []).map(s => `<a href="#/project/${encodeURIComponent(p.id)}/sources/${esc(s)}">${esc(s)}</a>`).join(", ") || "—"}</td></tr>`).join("")}
+      </tbody></table></div>` : empty("No claims yet.");
+  } else if (tab === "sources") {
+    setTimeout(() => { const row = focus && document.getElementById("source-" + focus); if (row) row.scrollIntoView({ block: "center" }); });
+    body = p.sources.length ? `<div class="table-wrap"><table><thead><tr><th>ID</th><th>Source</th><th>Type</th><th>Published</th><th>Evidence</th><th>Cited by</th></tr></thead><tbody>${
+      p.sources.map(s => `<tr id="source-${esc(s.id)}" class="${s.id === focus ? "focus" : ""}"><td><code>${esc(s.id)}</code></td>
+        <td>${ext(s.url, s.title || s.url)}<div class="meta">${esc(s.publisher)}${s.note ? " · " + esc(s.note) : ""}</div></td>
+        <td>${pill(s.type, ["primary", "data"].includes(s.type) ? "accent" : "")}</td><td>${esc(s.published || "—")}</td>
+        <td><a href="${fileHref(p.dir + "/" + s.evidence)}" target="_blank">local copy</a><div class="meta">accessed ${esc(s.accessed)}</div></td>
+        <td>${(citedBy[s.id] || []).map(c => claimChip(c, ctx)).join("") || `<span class="meta">—</span>`}</td></tr>`).join("")}
+      </tbody></table></div>` : empty("No sources captured yet.");
+  } else if (tab === "data") {
+    body = p.data.length ? p.data.map(t => `<h2>${esc(t.name)} <a class="meta" href="${fileHref(p.dir + "/data/" + t.name)}" target="_blank">open</a></h2>
+      <div class="table-wrap"><table><thead><tr>${(t.rows[0] || []).map(c => `<th>${esc(c)}</th>`).join("")}</tr></thead><tbody>${
+        t.rows.slice(1).map(r => `<tr>${r.map(c => `<td>${esc(c)}</td>`).join("")}</tr>`).join("")}</tbody></table></div>`).join("") : empty("No chart data yet.");
+  } else if (tab === "history") {
+    body = `<div class="table-wrap"><table><thead><tr><th>Stage</th><th>When</th><th>Note</th></tr></thead><tbody>${
+      [...(p.history || [])].reverse().map(h => `<tr><td>${pill(h.stage, "accent")}</td><td>${when(h.at)}</td><td>${esc(h.note || "")}</td></tr>`).join("")}</tbody></table></div>
+      ${(p.leads || []).length ? `<h2>Leads it started from</h2><ul class="plain">${p.leads.map(l => `<li>${ext(l.url, l.title || l.url)}</li>`).join("")}</ul>` : ""}
+      ${(p.previous_projects || []).length ? `<h2>Previous projects on this topic</h2><ul class="plain">${p.previous_projects.map(x => `<li><a href="#/project/${encodeURIComponent(x)}">${esc(x)}</a></li>`).join("")}</ul>` : ""}`;
+  }
+  const check = p.check;
+  return `<div class="meta"><a href="#/projects">Projects</a> / ${esc(p.id)}</div>
+    <h1>${esc(p.title)}</h1>
+    <p class="sub">${pill(p.stage, "accent")} ${p.topic_id ? `<a href="#/topics/${encodeURIComponent(p.topic_id)}">${esc(p.topic_id)}</a> ${pill(p.mode)}` : ""} · created ${esc(p.created || "—")}${p.angle ? ` · ${esc(p.angle)}` : ""}</p>
+    <div class="card ${check.errors.length ? "errors" : check.warnings.length ? "warnings" : "ok"}">
+      <strong>Check:</strong> ${esc(check.summary)} — ${check.errors.length ? `<span class="status st-unverified">✕ ${check.errors.length} errors</span>` : `<span class="status st-verified">✓ passes</span>`}
+      ${check.errors.length || check.warnings.length ? `<details ${check.errors.length ? "open" : ""}><summary>${check.errors.length} errors, ${check.warnings.length} warnings</summary><ul class="plain">${
+        check.errors.map(e => `<li class="st-unverified">✕ ${esc(e)}</li>`).join("")}${check.warnings.map(w => `<li class="st-single-source">⚠ ${esc(w)}</li>`).join("")}</ul></details>` : ""}
+    </div>
+    <div class="tabs">${tabs.map(([key, label]) => `<a href="#/project/${encodeURIComponent(p.id)}/${key}" class="${key === tab ? "active" : ""}">${esc(label)}</a>`).join("")}</div>
+    ${body}`;
+}
+
+function sources() {
+  const list = D.sources || [];
+  if (!list.length) return `<h1>Sources</h1>${empty("No sources yet. Ask your agent to find websites to monitor.")}`;
+  return `<h1>Sources</h1><p class="sub">Checked on every scan. Last scan ${when(D.state.last_scan)}.</p>
+    <div class="table-wrap"><table><thead><tr><th>Source</th><th>Kind</th><th>Health</th><th>Why</th></tr></thead><tbody>${
+      list.map(s => { const h = D.source_state[s.id] || {};
+        const health = s.enabled === false ? pill("paused")
+          : h.last_error ? `<span class="status st-unverified">✕ failing</span><div class="meta">${esc(h.last_error)}</div>`
+          : s.feed ? `<span class="status st-verified">✓ ok</span><div class="meta">${h.last_ok ? `${when(h.last_ok)} · ${h.last_new ?? 0} new` : "not scanned yet"}</div>`
+          : `<span class="meta">manual · checked ${when(h.last_checked)}</span>`;
+        return `<tr><td>${ext(s.url, s.name)}<div class="meta">${esc(s.id)}${s.feed ? ` · ${ext(s.feed, "feed")}` : ""}</div></td>
+          <td>${pill(s.kind)}</td><td>${health}</td><td>${esc(s.why || "")}</td></tr>`; }).join("")}
+    </tbody></table></div>`;
+}
+
+function digests(name) {
+  const list = D.digests || [];
+  if (!list.length) return `<h1>Digests</h1>${empty("No digests yet. Each scheduled run writes one.")}`;
+  const current = list.find(d => d.name === name) || list[0];
+  return `<h1>Digests</h1><div class="split">
+    <div class="list">${list.map(d => `<a class="item" style="${d === current ? "outline:2px solid var(--accent)" : ""}" href="#/digests/${encodeURIComponent(d.name)}">${esc(d.name)}</a>`).join("")}</div>
+    <div class="doc">${md(current.text)}</div></div>`;
+}
+
+function search(q) {
+  const text = (q || "").trim().toLowerCase();
+  if (!text) return `<h1>Search</h1>${empty("Type in the search box.")}`;
+  const has = (...v) => v.join(" ").toLowerCase().includes(text);
+  const claims = (D.projects || []).flatMap(p => p.claims.filter(c => has(c.text, c.quote, c.note)).map(c => ({ p, c })));
+  const docs = (D.projects || []).flatMap(p => Object.entries(p.files).filter(([, t]) => has(t)).map(([n]) => ({ p, n })));
+  const items = (D.inbox || []).filter(i => has(i.title, i.summary));
+  const tops = (D.topics || []).filter(t => has(t.title, t.angle, t.why, (t.queries || []).join(" ")));
+  return `<h1>Search: “${esc(q)}”</h1>
+    <h2>Topics (${tops.length})</h2>${tops.length ? `<ul class="plain">${tops.map(t => `<li><a href="#/topics/${encodeURIComponent(t.id)}">${esc(t.title)}</a> ${pill(t.status)}</li>`).join("")}</ul>` : `<span class="meta">none</span>`}
+    <h2>Project documents (${docs.length})</h2>${docs.length ? `<ul class="plain">${docs.map(({ p, n }) => `<li><a href="#/project/${encodeURIComponent(p.id)}/${n.replace(".md", "")}">${esc(p.title)} · ${esc(n)}</a></li>`).join("")}</ul>` : `<span class="meta">none</span>`}
+    <h2>Claims (${claims.length})</h2>${claims.length ? `<div class="table-wrap"><table><tbody>${claims.slice(0, 200).map(({ p, c }) => `<tr><td><a href="#/project/${encodeURIComponent(p.id)}/claims/${esc(c.id)}">${esc(p.title)} · ${esc(c.id)}</a></td><td>${inline(c.text, { highlight: text })}</td><td>${statusTag(c.status)}</td></tr>`).join("")}</tbody></table></div>` : `<span class="meta">none</span>`}
+    <h2>Inbox (${items.length})</h2>${inboxList(items.slice(0, 100), text)}`;
+}
+
+// ---------- shell
+function renderNav(active) {
+  const projects = D.projects || [];
+  const link = (key, label, count) => `<a href="#/${key}" class="${active === key ? "active" : ""}">${label}${count !== undefined ? `<span class="count">${count}</span>` : ""}</a>`;
+  document.getElementById("nav").innerHTML = `
+    <div class="brand">${esc(D.studio.channel || "Vid Studio")}</div>
+    <div class="owner">${esc(D.studio.owner || D.workspace || "")}</div>
+    <input id="search" placeholder="Search everything…" value="${esc(active === "search" ? route()[1] || "" : "")}">
+    ${link("overview", "Overview")}
+    ${link("inbox", "Inbox", D.state.inbox_since_triage ? `${D.state.inbox_since_triage} new` : (D.inbox || []).length)}
+    ${link("topics", "Topics", (D.topics || []).length)}
+    ${link("projects", "Projects", projects.length)}
+    ${link("sources", "Sources", (D.sources || []).length)}
+    ${link("digests", "Digests", (D.digests || []).length)}
+    <div class="foot">${live ? "Live: reload to see the latest." : `Snapshot from ${when(D.generated_at)}. Run <code>studio.py serve</code> for live data.`}<br>${esc(D.workspace || "")}</div>`;
+  const box = document.getElementById("search");
+  box.addEventListener("keydown", e => { if (e.key === "Enter") location.hash = "#/search/" + encodeURIComponent(box.value); });
+}
+
+function render() {
+  const [view = "overview", a, b, c] = route();
+  const views = {
+    overview: () => overview(), inbox: () => inbox(), topics: () => topics(a), projects: () => projects(),
+    project: () => project(a, b, c), sources: () => sources(), digests: () => digests(a), search: () => search(a),
+  };
+  if (!D.studio) { app.innerHTML = empty("No studio data."); return; }
+  renderNav(view === "project" ? "projects" : view);
+  app.innerHTML = (views[view] || views.overview)();
+  if (view === "topics" && a) { const el = document.getElementById("topic-" + a); if (el) el.scrollIntoView({ block: "center" }); }
+  else if (!c) window.scrollTo(0, 0);
+}
+window.addEventListener("hashchange", render);
+render();
+</script>
+</body>
+</html>

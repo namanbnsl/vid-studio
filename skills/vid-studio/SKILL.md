@@ -1,6 +1,6 @@
 ---
 name: vid-studio
-description: One entry point for an explainer-video research studio. Use for anything about it — setting up the studio, finding websites/feeds/Google Alerts/Google Trends to monitor, discovering or managing topics (one-time or daily), scanning sources, researching a topic with sourced and verified claims, writing WhatsApp posts and video scripts, reviewing/editing/approving scripts, scheduling the daily routine, or "what's next" / "run the daily routine". All data stays in a local workspace.
+description: One entry point for an explainer-video research studio. Use for anything about it — setting up the studio, opening the studio dashboard/explorer UI, querying studio data, finding websites/feeds/Google Alerts/Google Trends to monitor, discovering or managing topics (one-time or daily), scanning sources, researching a topic with sourced and verified claims, writing WhatsApp posts and video scripts, reviewing/editing/approving scripts, scheduling the daily routine, or "what's next" / "run the daily routine". All data stays in a local workspace.
 ---
 
 # Vid Studio
@@ -24,9 +24,22 @@ Then route:
 | Research a topic, or continue a project | [research.md](references/research.md) |
 | WhatsApp post, script, edits, approval | [write.md](references/write.md) |
 | Daily routine, scheduled run, or automation setup | [schedule.md](references/schedule.md) |
+| Show, open, browse, or explore the data | [Explorer](#explorer) below |
+| A question across the data ("which claims are disputed?") | `studio.py sql "SELECT …"` (no query prints the schema) |
 | "What's next?", "continue", or a bare invocation | Do the first actionable item from `status` |
 
 If setup is incomplete, finish onboarding first. Exception: if the user asks to research one specific topic right away, do it with defaults and finish setup afterwards.
+
+## Explorer
+
+The explorer is a local web dashboard. It covers the overview and pipeline, the inbox, topics, sources, and digests. Each project shows its brief, script, WhatsApp post preview, claims, sources with their local evidence, and chart data.
+
+- Run `studio.py serve --background` and give the user the printed `http://localhost:…` link as a clickable Markdown link. The page always shows the latest files, and the command reuses a running server. Stop it with `serve --stop`.
+- If the server cannot start, run `studio.py ui` and share the `file://` link. It is a snapshot, rebuilt automatically after every `studio.py` command that changes data.
+- After you edit project files directly, run `studio.py ui` so the snapshot and `studio.db` catch up.
+- End sessions that changed data with the explorer link.
+
+Storage: JSON and Markdown files are the source of truth, so edit those. `studio.db` is a derived SQLite index that is rebuilt every time; never write to it.
 
 ## How to behave
 

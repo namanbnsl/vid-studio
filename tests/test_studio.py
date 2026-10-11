@@ -1,4 +1,7 @@
 import contextlib
+import http.client
+import re
+import threading
 import io
 import json
 import sys
@@ -169,6 +172,43 @@ class StudioTest(unittest.TestCase):
         self.assertIn("Check passed", self.run_cli("check", project_id))
         self.run_cli("stage", project_id, "script-review")
         self.assertEqual(json.loads((project / "project.json").read_text())["stage"], "script-review")
+
+    def test_explorer_html_and_sqlite_index(self):
+        self.run_cli("add-topic", "--title", "Chips </script><b>x</b>", "--mode", "once", "--status", "active")
+        self.run_cli("new-project", "--topic", "chips-script-b-x-b")
+        page = (self.ws / "ui" / "index.html").read_text()
+        payload = re.search(r'<script id="studio-data" type="application/json">(.*?)</script>', page, re.S).group(1)
+        self.assertNotIn("</script>", payload)  # scraped text cannot break out of the data block
+        data = json.loads(payload)
+        self.assertEqual(data["projects"][0]["stage"], "planning")
+        self.assertIn("Chips </script>", data["topics"][0]["title"])
+        output = self.run_cli("sql", "SELECT id, stage FROM projects")
+        self.assertIn("planning", output)
+        self.assertIn("CREATE TABLE claims", self.run_cli("sql"))
+        with self.assertRaises(SystemExit):
+            self.run_cli("sql", "DELETE FROM projects")  # index is opened read-only
+
+    def test_server_serves_fresh_page_and_blocks_escapes(self):
+        server = studio.ThreadingHTTPServer(("127.0.0.1", 0), studio.make_handler(self.ws))
+        threading.Thread(target=server.serve_forever, daemon=True).start()
+        self.addCleanup(server.shutdown)
+        (self.root / "secret.txt").write_text("secret")
+
+        def get(path, host="localhost"):
+            connection = http.client.HTTPConnection("127.0.0.1", server.server_port)
+            connection.request("GET", path, headers={"Host": host})
+            response = connection.getresponse()
+            return response.status, response.read().decode()
+
+        self.run_cli("add-topic", "--title", "Live topic", "--mode", "once")
+        status, body = get("/")
+        self.assertEqual(status, 200)
+        self.assertIn("Live topic", body)
+        self.assertEqual(get("/studio.json")[0], 200)
+        self.assertEqual(get("/../secret.txt")[0], 404)
+        self.assertEqual(get("/%2e%2e/secret.txt")[0], 404)
+        self.assertEqual(get("/studio.db")[0], 404)
+        self.assertEqual(get("/", host="evil.example")[0], 403)
 
 
 if __name__ == "__main__":

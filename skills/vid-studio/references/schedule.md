@@ -17,7 +17,7 @@ Run this whenever the prompt says "run the daily routine", whether from a schedu
    - **Inbox highlights:** 3-5 stories.
    - **Problems:** failed feeds, failed fetches, and missing tools.
 
-   End by printing the "Waiting for you" section.
+   End by printing the "Waiting for you" section and the explorer link. Run `studio.py serve --background` to get the link; if the server cannot start, use the `file://` path from `studio.py ui`.
 
 ## Choosing a scheduler
 

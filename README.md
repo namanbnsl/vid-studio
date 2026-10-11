@@ -32,6 +32,16 @@ The first run sets up your profile, proposes sources and topics, and offers a da
 4. **Write.** A WhatsApp post and a video script in your standard structure. The script includes a visual plan for each beat (charts, real assets, graphics), with every fact tagged to a verified claim.
 5. **Review.** You edit and approve the script. `studio.py check` blocks review while citations are unsupported.
 
+**Explore.** Say "Use vid-studio, show me my studio" and the agent replies with a link (`http://localhost:8765`). The dashboard shows:
+- the pipeline and an inbox search
+- topics, with their leads and run history
+- source health
+- for each project: the brief, the script with claim chips (hover to see the fact, click to see its sources), a WhatsApp preview, the claim ledger, sources with local evidence, and chart data
+
+It works in light and dark mode. You can also open `~/vid-studio/ui/index.html` directly as a snapshot.
+
+**Storage.** JSON and Markdown files are the source of truth, so any agent or person can read and edit them. `studio.db` is a SQLite index that is rebuilt automatically, so you can query it: `studio.py sql "SELECT status, count(*) FROM claims GROUP BY status"`.
+
 **Video workspace.** Not built yet. The approved `script.md` and its `data/` folder are the hand-off.
 
 ## Files
@@ -41,8 +51,9 @@ skills/vid-studio/
   SKILL.md              entry point and router
   references/           setup, discover, research, write, schedule playbooks
   scripts/studio.py     workspace helper (Python 3 stdlib): init, status, add-source, add-topic,
-                        scan, lead, triaged, new-project, no-news, snapshot, check, stage
-  assets/               workspace and project templates
+                        scan, lead, triaged, new-project, no-news, snapshot, check, stage,
+                        ui, serve, sql
+  assets/               workspace, project, and explorer (ui/index.html) templates
 ```
 
 Scheduling: [schedule.md](skills/vid-studio/references/schedule.md) covers cron or launchd running a headless agent locally, host-app scheduled tasks, and why cloud schedulers (ChatGPT Tasks and similar) can't write to your local workspace.
