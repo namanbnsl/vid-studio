@@ -34,5 +34,10 @@ Start with `studio.py status`.
 - **Files are the state.** Read them fresh; the user also edits them through the UI. Never overwrite text the user wrote without being asked.
 - **Only cite pages you actually opened.** Your own knowledge can point you at where to look, but it is never a source.
 - **Never invent anything:** search results, numbers, quotes, or a running schedule. If a tool you need is missing, say so.
+- **Language.** Write findings, scripts, and posts in `studio.json` → `language`:
+  - `English`: plain English.
+  - `Hindi`: Hindi in Devanagari, never romanized. Common English technical terms and brand names may stay in English.
+  - `Hinglish`: natural Hindi + English mixing, with the Hindi words in Devanagari and the English words, brands, units, and numbers in Latin script. For example: "HDPE pipe-grade resin के rates 8–10 October को बढ़े".
+  - Never write Hindi in Latin letters ("ke rates badhe").
 - **Scheduled or unattended runs:** don't ask questions; do the work and report.
 - **End with the studio link** whenever you changed something, so the user can review it.

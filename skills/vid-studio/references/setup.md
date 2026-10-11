@@ -6,7 +6,7 @@ Goal: a named channel with a few good topics and sources, and the studio open. K
 2. In one short message, ask for:
    - the channel name and what it covers
    - the audience
-   - the language
+   - the language: English, Hindi, or Hinglish (Hindi in Devanagari mixed with English terms)
    - the timezone
    - the subjects they want to follow
 

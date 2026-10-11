@@ -33,6 +33,8 @@ USER_AGENT = "Mozilla/5.0 (compatible; vid-studio/1.0)"
 FEED_PATHS = ["/feed", "/rss", "/feed.xml", "/rss.xml", "/atom.xml", "/index.xml", "/feeds/posts/default"]
 FIRST_RUN_LOOKBACK = dt.timedelta(days=7)
 RUN_OVERLAP = dt.timedelta(hours=6)
+MAX_FINDING_TITLE = 110
+MAX_FINDING_SUMMARY = 240
 SCRIPT_TEXTS = {"script": "script.md", "post": "post.md", "notes": "notes.md"}
 
 
@@ -466,6 +468,11 @@ class Studio:
             label = f"Finding {number}"
             if not isinstance(item, dict) or not str(item.get("title", "")).strip():
                 raise ValueError(f"{label}: needs a title")
+            # Findings are scanned in a feed: keep them short. Depth belongs in the script's research notes.
+            if len(clean_text(item["title"])) > MAX_FINDING_TITLE:
+                raise ValueError(f"{label}: title is longer than {MAX_FINDING_TITLE} characters; shorten it to a headline")
+            if len(str(item.get("summary") or "").strip()) > MAX_FINDING_SUMMARY:
+                raise ValueError(f"{label}: summary is longer than {MAX_FINDING_SUMMARY} characters; keep it to one or two short sentences")
             topic_ids = []
             for topic in item.get("topics") or []:
                 if str(topic).lower() not in by_name:

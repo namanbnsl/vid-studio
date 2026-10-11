@@ -84,7 +84,9 @@ class StudioTest(unittest.TestCase):
         run_id = self.studio.runs()[-1]["id"]
         for bad in ([{"title": "x", "topics": ["nope"], "sources": ["https://a.com"]}],
                     [{"title": "x", "topics": ["UPI"], "sources": []}],
-                    [{"title": "", "sources": ["https://a.com"]}]):
+                    [{"title": "", "sources": ["https://a.com"]}],
+                    [{"title": "x" * 200, "topics": ["UPI"], "sources": ["https://a.com"]}],
+                    [{"title": "x", "summary": "y" * 400, "topics": ["UPI"], "sources": ["https://a.com"]}]):
             with self.assertRaises(SystemExit):
                 self.cli("add-findings", "--run", run_id, "-", stdin=json.dumps(bad))
         self.assertEqual(self.studio.findings(), [])

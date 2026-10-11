@@ -201,22 +201,20 @@ dialog .sub { margin: 0 0 20px; color: var(--ink-2); font-size: 13.5px; }
 .dismissed { margin-top: 20px; color: var(--ink-3); font-size: 13px; }
 .dismissed summary { cursor: pointer; }
 .dismissed-row { display: flex; align-items: center; justify-content: space-between; padding: 6px 0; border-bottom: 1px solid var(--line); }
-.filter-row { display: flex; justify-content: space-between; align-items: flex-start; gap: 12px; flex-wrap: wrap; }
-.toggle { display: inline-flex; align-items: center; gap: 7px; font-size: 13px; color: var(--ink-2); height: 32px; cursor: pointer; }
-.toggle input { accent-color: var(--primary); }
-.origin { display: inline-flex; align-items: center; gap: 5px; height: 22px; padding: 0 8px; border-radius: 6px; font-size: 12px; font-weight: 600; color: var(--ink-3); border: 1px dashed var(--line-2); }
-.origin svg { width: 12px; height: 12px; }
-.origin.mine { color: #166534; border: 1px solid #bbe5c8; background: #f0faf3; }
-.source-list { list-style: none; margin: 12px 0 0; padding: 0; border-left: 2px solid var(--line); }
-.source-list li { display: flex; align-items: baseline; gap: 8px; padding: 3px 0 3px 12px; font-size: 13px; flex-wrap: wrap; }
-.source-list a { display: inline-flex; align-items: baseline; gap: 6px; text-decoration: none; color: var(--ink); min-width: 0; }
-.source-list a span { color: var(--ink-2); overflow-wrap: anywhere; }
-.source-list a:hover span { color: var(--ink); text-decoration: underline; text-underline-offset: 3px; }
-.source-list a svg { width: 12px; height: 12px; color: var(--ink-3); align-self: center; flex: none; }
-.source-list .mine-dot { font-size: 11px; font-weight: 600; color: #166534; background: #f0faf3; border-radius: 5px; padding: 1px 6px; }
-.source-list .date { font: 500 11px var(--mono); color: var(--ink-3); }
-.finding.is-dismissed { opacity: .55; }
-.finding .tools .btn svg { width: 13px; height: 13px; }
+.finding.is-dismissed { opacity: .5; }
+.finding { padding: 16px 4px; gap: 14px; }
+.finding h3 { font-size: 15px; }
+.finding p { margin-top: 3px; }
+.finding-meta { display: flex; flex-wrap: wrap; align-items: center; gap: 4px 0; margin-top: 8px; font-size: 12.5px; color: var(--ink-3); }
+.finding-meta > span + span::before { content: "·"; margin: 0 8px; }
+.finding-meta .links a { color: var(--ink-2); text-decoration: none; }
+.finding-meta .links a + a::before { content: ", "; color: var(--ink-3); }
+.finding-meta .links a:hover { color: var(--ink); text-decoration: underline; text-underline-offset: 3px; }
+.finding-meta .links a.mine { color: var(--ink); font-weight: 600; }
+.topic-select { height: 34px; border: 1px solid var(--line-2); border-radius: 8px; padding: 0 30px 0 11px; background: var(--bg) url("data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' width='12' height='12' viewBox='0 0 24 24' fill='none' stroke='%238f8c86' stroke-width='2'%3E%3Cpath d='m6 9 6 6 6-6'/%3E%3C/svg%3E") no-repeat right 10px center; appearance: none; font-weight: 550; font-size: 13px; cursor: pointer; max-width: 100%; }
+.field select { appearance: none; background: var(--bg) url("data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' width='12' height='12' viewBox='0 0 24 24' fill='none' stroke='%238f8c86' stroke-width='2'%3E%3Cpath d='m6 9 6 6 6-6'/%3E%3C/svg%3E") no-repeat right 12px center; padding-right: 32px; }
+.text-btn { border: 0; background: none; color: var(--ink-3); font-size: 13px; padding: 14px 4px; cursor: pointer; }
+.text-btn:hover { color: var(--ink); text-decoration: underline; text-underline-offset: 3px; }
 .topic-links { display: flex; flex-wrap: wrap; gap: 6px; margin-bottom: 26px; }
 .tag.removable { padding-right: 2px; gap: 2px; }
 .tag.removable .icon-btn { width: 20px; height: 20px; }
@@ -431,14 +429,13 @@ function render() {
 function topicsPanel() {
   const findingCount = id => S.findings.filter(f => !f.dismissed_at && (f.topics || []).includes(id)).length;
   const scriptCount = id => S.scripts.filter(s => s.topics.includes(id) || s.findings.some(fid => (findingById(fid)?.topics || []).includes(id))).length;
-  return `<div class="section-head"><div><h2>Topics</h2><p>What you make videos about. Research looks for news on every topic; an explainer can start straight from a topic.</p></div>
+  return `<div class="section-head"><div><h2>Topics</h2><p>What you make videos about. Descriptions guide what research considers relevant.</p></div>
       <button class="btn primary" data-action="new-topic">${icon("plus")}New topic</button></div>
     ${S.topics.length ? `<div class="list">${S.topics.map(t => `
       <article class="item"><div class="glyph">${icon("search")}</div>
         <div class="body"><h3>${esc(t.name)}</h3><p>${esc(t.description) || '<span class="muted">No description</span>'}</p>
           <div class="meta"><a href="#/findings" data-action="filter" data-id="${esc(t.id)}" class="meta-link">${findingCount(t.id)} findings</a> · ${scriptCount(t.id)} scripts</div></div>
         <div class="row-actions">
-          <button class="btn small" data-action="new-explainer" data-id="${esc(t.id)}">${icon("file")}New explainer</button>
           <div class="tools"><button class="icon-btn" data-action="edit-topic" data-id="${esc(t.id)}" aria-label="Edit ${esc(t.name)}">${icon("edit")}</button>
             <button class="icon-btn" data-action="delete-topic" data-id="${esc(t.id)}" aria-label="Delete ${esc(t.name)}">${icon("trash")}</button></div>
         </div>
@@ -484,53 +481,43 @@ function findingsPanel() {
       ${empty("No findings yet", S.topics.length ? "Click Research now and paste the prompt into Claude or ChatGPT. New findings appear here on their own."
         : "Add a topic first, then run research.", S.topics.length ? "research" : "new-topic", S.topics.length ? "Research now" : "New topic")}`;
   }
-  const inScripts = {};
-  S.scripts.forEach(s => s.findings.forEach(f => (inScripts[f] = inScripts[f] || []).push(s)));
   const counts = {};
   live.forEach(f => (f.topics || []).forEach(t => counts[t] = (counts[t] || 0) + 1));
-  const pool = showDismissed ? S.findings : live;
-  const shown = pool.filter(f => topicFilter === "all" || (f.topics || []).includes(topicFilter));
-  const sourceName = id => { const s = S.sources.find(x => x.id === id); return s ? shortUrl(s.url) : id; };
-  return `<div class="section-head"><div><h2>Findings</h2><p>New developments on your topics, from your sources and the wider web. Select findings to start or extend a script.</p></div></div>
-    <div class="filter-row">
-      <div class="chips" role="group" aria-label="Filter by topic">
-        <button class="chip ${topicFilter === "all" ? "on" : ""}" data-action="filter" data-id="all">All topics<span class="n">${live.length}</span></button>
-        ${S.topics.map(t => `<button class="chip ${topicFilter === t.id ? "on" : ""}" data-action="filter" data-id="${esc(t.id)}">${esc(t.name)}${counts[t.id] ? `<span class="n">${counts[t.id]}</span>` : ""}</button>`).join("")}
-      </div>
-      ${dismissedCount ? `<label class="toggle"><input type="checkbox" data-action="toggle-dismissed" ${showDismissed ? "checked" : ""}>Show dismissed (${dismissedCount})</label>` : ""}
-    </div>
-    <div class="list">${shown.map(f => {
-      const mine = [...new Set(f.sources.filter(s => s.source_id).map(s => s.source_id))];
-      return `<article class="item finding ${f.dismissed_at ? "is-dismissed" : ""}">
+  const shown = (showDismissed ? S.findings : live).filter(f => topicFilter === "all" || (f.topics || []).includes(topicFilter));
+  return `<div class="section-head"><div><h2>Findings</h2><p>Select findings to start or extend a script.</p></div>
+      <select class="topic-select" data-action="filter-select" aria-label="Filter by topic">
+        <option value="all">All topics (${live.length})</option>
+        ${S.topics.map(t => `<option value="${esc(t.id)}" ${topicFilter === t.id ? "selected" : ""}>${esc(t.name)} (${counts[t.id] || 0})</option>`).join("")}
+      </select></div>
+    <div class="list">${shown.map(f => `
+      <article class="item finding ${f.dismissed_at ? "is-dismissed" : ""}">
         <input type="checkbox" class="check" data-action="select" data-id="${esc(f.id)}" ${selected.has(f.id) ? "checked" : ""} ${f.dismissed_at ? "disabled" : ""} aria-label="Select ${esc(f.title)}">
         <div class="body">
-          <div class="tags">${(f.topics || []).map(t => `<span class="tag">${esc(topicName(t))}</span>`).join("")}
-            <span class="origin ${mine.length ? "mine" : ""}">${mine.length ? `${icon("check")}Your source: ${esc(mine.map(sourceName).join(", "))}` : `${icon("globe")}Found on the web`}</span>
-            ${(inScripts[f.id] || []).map(s => `<a class="tag script" href="#/scripts/${encodeURIComponent(s.id)}">In “${esc(s.title)}”</a>`).join("")}</div>
           <h3>${esc(f.title)}</h3>
           ${f.summary ? `<p>${esc(f.summary)}</p>` : ""}
-          <ul class="source-list">${f.sources.map(s => `<li>
-            <a href="${safeUrl(s.url)}" target="_blank" rel="noopener noreferrer"><b>${esc(s.publisher || host(s.url))}</b>${s.title ? `<span>${esc(s.title)}</span>` : ""}${icon("external")}</a>
-            ${s.source_id ? `<span class="mine-dot" title="One of your sources">your source</span>` : ""}${s.published ? `<span class="date">${esc(s.published)}</span>` : ""}</li>`).join("")}</ul>
-          <div class="meta">Found ${esc(when(f.found_at))}${f.dismissed_at ? ` · dismissed ${esc(when(f.dismissed_at))}` : ""}</div>
+          <div class="finding-meta">
+            <span>${esc((f.topics || []).map(topicName).join(", "))}</span>
+            <span>${esc(when(f.found_at))}</span>
+            <span class="links">${f.sources.map(src => `<a href="${safeUrl(src.url)}" target="_blank" rel="noopener noreferrer" class="${src.source_id ? "mine" : ""}" title="${esc((src.title || src.url) + (src.source_id ? " · one of your sources" : ""))}">${esc(src.publisher || host(src.url))}</a>`).join("")}</span>
+          </div>
         </div>
         <div class="tools">${f.dismissed_at ? `<button class="btn ghost small" data-action="restore-finding" data-id="${esc(f.id)}">Restore</button>`
-          : `<button class="btn ghost small" data-action="dismiss-finding" data-id="${esc(f.id)}" aria-label="Dismiss ${esc(f.title)}">${icon("x")}Dismiss</button>`}</div>
-      </article>`; }).join("") || `<p class="muted" style="padding:20px 0">Nothing here for this topic.</p>`}</div>`;
+          : `<button class="icon-btn" data-action="dismiss-finding" data-id="${esc(f.id)}" aria-label="Dismiss ${esc(f.title)}" title="Dismiss">${icon("x")}</button>`}</div>
+      </article>`).join("") || `<p class="muted" style="padding:20px 0">No findings for this topic yet.</p>`}</div>
+    ${dismissedCount ? `<button class="text-btn" data-action="toggle-dismissed">${showDismissed ? "Hide" : "Show"} ${dismissedCount} dismissed</button>` : ""}`;
 }
 
 function scriptsPanel() {
-  return `<div class="section-head"><div><h2>Scripts</h2><p>Each script links findings, topics, or both, and holds the video script, a WhatsApp post, and research notes.</p></div>
+  return `<div class="section-head"><div><h2>Scripts</h2><p>Each script holds the video script, a WhatsApp post, and research notes, built from its findings and topics.</p></div>
       <button class="btn primary" data-action="new-script">${icon("plus")}New script</button></div>
     ${S.scripts.length ? `<div class="list">${S.scripts.map(s => `
       <article class="item"><div class="glyph">${icon("file")}</div>
         <div class="body">
-          <div class="tags">${s.topics.map(t => `<span class="tag">${esc(topicName(t))}</span>`).join("")}${s.topics.length && !s.findings.length ? `<span class="tag script">Explainer</span>` : ""}</div>
           <h3><a href="#/scripts/${encodeURIComponent(s.id)}">${esc(s.title)}</a></h3>
-          <div class="meta">${s.findings.length} finding${s.findings.length === 1 ? "" : "s"} · ${s.drafted ? "drafted" : "no draft yet"}${s.has_post ? " · post ready" : ""} · updated ${esc(when(s.updated))}</div></div>
+          <div class="meta">${s.topics.length ? esc(s.topics.map(topicName).join(", ")) + " · " : ""}${s.findings.length} finding${s.findings.length === 1 ? "" : "s"} · ${s.drafted ? "drafted" : "no draft yet"}${s.has_post ? " · post ready" : ""} · updated ${esc(when(s.updated))}</div></div>
         <div class="tools"><button class="icon-btn" data-action="delete-script" data-id="${esc(s.id)}" aria-label="Delete ${esc(s.title)}">${icon("trash")}</button></div>
       </article>`).join("")}</div>`
-    : empty("Start a script", "Select findings and choose Add to script, start an explainer from a topic, or start an empty script here.", "new-script", "New script")}`;
+    : empty("Start a script", "Select findings and choose Add to script, or start a script here and link a topic.", "new-script", "New script")}`;
 }
 
 function empty(title, text, action, label) {
@@ -634,7 +621,9 @@ const actions = {
       body: field("Channel name", `<input name="name" value="${esc(st.name)}" required>`)
         + field("Description", `<input name="description" value="${esc(st.description)}" placeholder="What the channel is about">`)
         + field("Audience", `<input name="audience" value="${esc(st.audience)}" placeholder="Who watches, and what they already know">`)
-        + field("Language", `<input name="language" value="${esc(st.language)}">`)
+        + field("Language", `<select name="language">${["English", "Hindi", "Hinglish"].map(l => `<option ${st.language === l ? "selected" : ""}>${l}</option>`).join("")}${
+            ["English", "Hindi", "Hinglish"].includes(st.language) ? "" : `<option selected>${esc(st.language)}</option>`}</select>`,
+            "Hindi is always written in Devanagari. Hinglish mixes Hindi (Devanagari) with English terms, e.g. “HDPE resin के rates बढ़े”.")
         + field("Script format", `<textarea name="script_format" rows="7">${esc(st.script_format)}</textarea>`, "Length, structure, tone. The agent follows this when drafting.")
         + field("WhatsApp post format", `<textarea name="post_format" rows="3">${esc(st.post_format)}</textarea>`)
         + field("Research notes", `<textarea name="research_notes" rows="3" placeholder="Anything research should always do or avoid">${esc(st.research_notes)}</textarea>`),
@@ -783,15 +772,8 @@ const actions = {
     undoToast("Finding dismissed", async () => { await api("PUT", "findings/" + encodeURIComponent(id), { dismissed: false }); await refresh(true); render(); });
   },
   async "restore-finding"(id) { await api("PUT", "findings/" + encodeURIComponent(id), { dismissed: false }); await refresh(true); render(); },
-  "toggle-dismissed"(_, el) { showDismissed = el.checked; render(); },
-  "new-explainer"(id) {
-    const t = S.topics.find(x => x.id === id);
-    openDialog({
-      title: "New explainer", sub: `A script linked to “${esc(t.name)}”. Write draft researches the topic from scratch: background, how it works, key numbers.`,
-      body: field("Title", `<input name="title" value="${esc(t.name)}" placeholder="e.g. How do chip fabs work?">`), submit: "Create",
-      onSubmit: async form => { const s = await api("POST", "scripts", { title: form.title.value, topics: [id] }); await refresh(true); location.hash = "#/scripts/" + encodeURIComponent(s.id); },
-    });
-  },
+  "toggle-dismissed"() { showDismissed = !showDismissed; render(); },
+  "filter-select"(_, el) { topicFilter = el.value; render(); },
 };
 
 function topicDialog(topic) {
@@ -810,9 +792,13 @@ function topicDialog(topic) {
 
 document.addEventListener("click", event => {
   const el = event.target.closest("[data-action]");
-  if (!el || !actions[el.dataset.action]) return;
+  if (!el || !actions[el.dataset.action] || el.tagName === "SELECT") return;
   if (el.tagName !== "INPUT") event.preventDefault();
   Promise.resolve(actions[el.dataset.action](el.dataset.id, el)).catch(e => toast(e.message, "error"));
+});
+document.addEventListener("change", event => {
+  const el = event.target.closest('select[data-action]');
+  if (el && actions[el.dataset.action]) actions[el.dataset.action](el.dataset.id, el);
 });
 document.addEventListener("keydown", event => {
   if ((event.ctrlKey || event.metaKey) && event.key === "s" && editor) { event.preventDefault(); saveScript(); }

@@ -13,7 +13,7 @@ A script can be one of three kinds:
 
 ## Steps
 
-1. Read the linked findings and topics, along with `studio.json`: `audience`, `language`, `script_format`, and `post_format`. If nothing is linked, work from the title.
+1. Read the linked findings and topics, along with `studio.json`: `audience`, `language`, `script_format`, and `post_format`. Write the script and post in that language, following the language rule in SKILL.md. If nothing is linked, work from the title.
 2. **Research in depth.** Open the findings' sources, and go further wherever the story needs it: primary documents, data, background, opposing views. Check the facts the script will rely on, especially numbers and dates.
 3. **Write `notes.md`.** Record what you learned, organised however suits the story. End with a numbered source list (`[1] Publisher, title, date, URL`) covering every source you cite. Note anything uncertain or disputed.
 4. **Write `script.md`.** Follow `script_format`: its structure, length, tone, and visual notes. Cite facts inline with the source numbers, like `[1]`. Present contested points as contested.
