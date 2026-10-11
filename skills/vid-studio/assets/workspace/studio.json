@@ -1,84 +1,14 @@
 {
-  "schema_version": 3,
-  "setup_complete": false,
-  "owner": "",
-  "channel": "",
+  "schema_version": 4,
+  "name": "",
+  "description": "",
   "audience": "",
-  "language": "",
-  "locale": {
-    "language": "en",
-    "country": "US"
-  },
+  "language": "English",
   "timezone": "",
-  "interests": [],
-  "avoid": [],
-  "research": {
-    "freshness_days": 30,
-    "trusted_sources": [],
-    "blocked_sources": [],
-    "notes": ""
-  },
-  "review": {
-    "topics": true,
-    "plan": false,
-    "brief": false,
-    "script": true
-  },
-  "automation": {
-    "max_projects_per_run": 2
-  },
-  "format": {
-    "video_seconds": 90,
-    "aspect": "9:16",
-    "tone": "clear, curious, no hype",
-    "title_rules": "Under 60 characters. Concrete and specific. No clickbait the video cannot pay off.",
-    "structure": [
-      {
-        "beat": "Hook",
-        "seconds": 5,
-        "purpose": "A surprising fact, number, or question that makes the viewer stay."
-      },
-      {
-        "beat": "Context",
-        "seconds": 15,
-        "purpose": "What happened or what this is, and why it matters now."
-      },
-      {
-        "beat": "How it works",
-        "seconds": 30,
-        "purpose": "The core mechanism, in 2-3 simple steps."
-      },
-      {
-        "beat": "Evidence",
-        "seconds": 20,
-        "purpose": "The key numbers, shown as a chart or data card."
-      },
-      {
-        "beat": "So what",
-        "seconds": 15,
-        "purpose": "What it means for the viewer, including the main caveat."
-      },
-      {
-        "beat": "Takeaway",
-        "seconds": 5,
-        "purpose": "One memorable line. Optional call to action."
-      }
-    ],
-    "whatsapp": {
-      "max_words": 180,
-      "emoji": "minimal",
-      "structure": [
-        "Bold title",
-        "2-4 short paragraphs or bullets",
-        "One-line takeaway",
-        "Sources"
-      ]
-    },
-    "examples": []
-  },
   "schedule": {
-    "description": "",
-    "host": "",
-    "task_id": ""
-  }
+    "times": []
+  },
+  "research_notes": "",
+  "script_format": "About 90 seconds, vertical video.\n\nHOOK (5s): a surprising fact or question.\nCONTEXT (15s): what happened and why it matters now.\nHOW IT WORKS (30s): the mechanism in 2-3 simple steps.\nEVIDENCE (20s): the key numbers, shown as a chart.\nSO WHAT (15s): what it means for the viewer, with the main caveat.\nTAKEAWAY (5s): one memorable line.\n\nUnder each beat, add a 'Visual:' line (chart, real asset, graphic, or text card).",
+  "post_format": "WhatsApp channel post, under 180 words. *Bold* title, 2-4 short paragraphs, a one-line takeaway, then 1-3 source links. Minimal emoji."
 }

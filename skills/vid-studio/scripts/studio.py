@@ -1,5 +1,5 @@
 #!/usr/bin/env python3
-"""Vid Studio workspace helper: state, monitoring, evidence capture, and checks.
+"""Vid Studio helper: one channel's topics, sources, findings, scripts, and the local web UI.
 
 Standard library only. The workspace is --workspace, else $VID_STUDIO_HOME, else ~/vid-studio.
 Every command prints what it did so the calling agent can continue from the output.
@@ -8,12 +8,10 @@ Every command prints what it did so the calling agent can continue from the outp
 from __future__ import annotations
 
 import argparse
-import csv
 import datetime as dt
 import hashlib
 import html
 import json
-import mimetypes
 import os
 import re
 import shutil
@@ -32,22 +30,21 @@ from pathlib import Path
 SKILL_DIR = Path(__file__).resolve().parents[1]
 ASSETS = SKILL_DIR / "assets"
 USER_AGENT = "Mozilla/5.0 (compatible; vid-studio/1.0)"
-STAGES = ["planning", "researching", "brief-review", "writing", "script-review", "approved", "dropped"]
-CLAIM_STATUSES = {"verified", "single-source", "disputed", "unverified"}
-STRONG_SOURCE_TYPES = {"primary", "data"}
-REFRESH_AFTER = {"init", "add-source", "add-topic", "lead", "scan", "checked", "triaged",
-                 "new-project", "no-news", "snapshot", "stage"}
 FEED_PATHS = ["/feed", "/rss", "/feed.xml", "/rss.xml", "/atom.xml", "/index.xml", "/feeds/posts/default"]
+FIRST_RUN_LOOKBACK = dt.timedelta(days=7)
+RUN_OVERLAP = dt.timedelta(hours=6)
+SCRIPT_TEXTS = {"script": "script.md", "post": "post.md", "notes": "notes.md"}
 
 
 # ---------------------------------------------------------------- basics
 
-def today() -> str:
-    return dt.date.today().isoformat()
-
-
 def now() -> str:
     return dt.datetime.now().astimezone().isoformat(timespec="seconds")
+
+
+def parse_time(value: str) -> dt.datetime:
+    parsed = dt.datetime.fromisoformat(value)
+    return parsed if parsed.tzinfo else parsed.astimezone()
 
 
 def workspace_path(value: str | None) -> Path:
@@ -69,6 +66,12 @@ def save(path: Path, data) -> None:
     path.parent.mkdir(parents=True, exist_ok=True)
     temporary = path.with_suffix(path.suffix + ".tmp")
     temporary.write_text(json.dumps(data, indent=2, ensure_ascii=False) + "\n", encoding="utf-8")
+    temporary.replace(path)
+
+
+def write_text(path: Path, text: str) -> None:
+    temporary = path.with_suffix(path.suffix + ".tmp")
+    temporary.write_text(text, encoding="utf-8")
     temporary.replace(path)
 
 
@@ -108,18 +111,21 @@ def decode(data: bytes, content_type: str) -> str:
         return data.decode("utf-8", errors="replace")
 
 
-def project_dir(ws: Path, project_id: str) -> Path:
-    path = ws / "projects" / project_id
-    if not (path / "project.json").exists():
-        raise SystemExit(f"Unknown project: {project_id} (expected {path}/project.json)")
-    return path
-
-
-def find(records: list, record_id: str, label: str) -> dict:
-    for record in records:
-        if record.get("id") == record_id:
-            return record
-    raise SystemExit(f"Unknown {label}: {record_id}")
+def normalize_url(value: str) -> str:
+    original = value = (value or "").strip()
+    if re.match(r"[a-zA-Z][\w+.-]*:(?!\d)", value) and not re.match(r"https?://", value, re.I):
+        raise ValueError(f"Not a web address: {original!r}")  # javascript:, mailto:, file: …
+    if value and "://" not in value:
+        value = "https://" + value
+    parts = urllib.parse.urlsplit(value)
+    try:
+        parts.port
+    except ValueError:
+        raise ValueError(f"Not a web address: {original!r}")
+    host = parts.hostname or ""
+    if parts.scheme not in ("http", "https") or not ("." in host or host == "localhost"):
+        raise ValueError(f"Not a web address: {original!r}")
+    return value
 
 
 # ---------------------------------------------------------------- feeds
@@ -243,786 +249,562 @@ def discover_feed(url: str) -> tuple[str | None, str]:
     return None, "no feed found; the agent checks this page during scans"
 
 
-def locale(ws: Path) -> tuple[str, str]:
-    settings = load(ws / "studio.json", {}).get("locale", {})
-    return settings.get("language") or "en", (settings.get("country") or "US").upper()
+# ---------------------------------------------------------------- studio model (shared by CLI and web UI)
+
+SETTING_KEYS = {"name", "description", "audience", "language", "timezone", "research_notes",
+                "script_format", "post_format", "schedule"}
 
 
-# ---------------------------------------------------------------- html → text
+class Studio:
+    """All reads and writes of the workspace files. Raises ValueError for bad input."""
 
-class TextExtractor(HTMLParser):
-    SKIP = {"script", "style", "noscript", "svg", "template", "iframe", "nav", "footer", "aside", "form", "button"}
-    BLOCK = {"p", "div", "br", "li", "tr", "section", "article", "main", "blockquote", "pre", "table",
-             "ul", "ol", "dd", "dt", "figcaption", "h1", "h2", "h3", "h4", "h5", "h6"}
+    def __init__(self, ws: Path):
+        self.ws = ws
 
-    def __init__(self):
-        super().__init__(convert_charrefs=True)
-        self.parts, self.meta, self.title, self.skip, self.in_title = [], {}, "", 0, False
+    def path(self, *parts: str) -> Path:
+        return self.ws.joinpath(*parts)
 
-    def handle_starttag(self, tag, attrs):
-        attributes = dict(attrs)
-        if tag == "meta":
-            key = (attributes.get("property") or attributes.get("name") or attributes.get("itemprop") or "").lower()
-            if key and attributes.get("content"):
-                self.meta.setdefault(key, attributes["content"].strip())
-        elif tag == "title":
-            self.in_title = True
-        elif tag in self.SKIP:
-            self.skip += 1
-        elif tag in self.BLOCK:
-            self.parts.append("\n")
-            if tag in ("h1", "h2", "h3"):
-                self.parts.append("## ")
-            elif tag == "li":
-                self.parts.append("- ")
+    # settings
 
-    def handle_endtag(self, tag):
-        if tag == "title":
-            self.in_title = False
-        elif tag in self.SKIP:
-            self.skip = max(0, self.skip - 1)
-        elif tag in self.BLOCK:
-            self.parts.append("\n")
+    def settings(self) -> dict:
+        return load(self.path("studio.json"))
 
-    def handle_data(self, data):
-        if self.in_title:
-            self.title += data
-        elif not self.skip:
-            self.parts.append(data)
+    def update_settings(self, changes: dict) -> dict:
+        settings = self.settings()
+        for key, value in changes.items():
+            if key not in SETTING_KEYS:
+                raise ValueError(f"Unknown setting: {key}")
+            if key == "schedule":
+                times = sorted({str(t).strip() for t in (value or {}).get("times", []) if str(t).strip()})
+                for t in times:
+                    if not re.fullmatch(r"([01]\d|2[0-3]):[0-5]\d", t):
+                        raise ValueError(f"Times must look like 07:30, not {t!r}")
+                value = {**settings.get("schedule", {}), "times": times}
+            elif not isinstance(value, str):
+                raise ValueError(f"{key} must be text")
+            settings[key] = value
+        if not settings.get("name", "").strip():
+            raise ValueError("The channel needs a name")
+        save(self.path("studio.json"), settings)
+        return settings
 
-    def text(self) -> str:
-        lines = [re.sub(r"[ \t\r\f\v]+", " ", line).strip() for line in "".join(self.parts).split("\n")]
-        lines = [line for line in lines if line and line not in ("##", "-")]
-        return "\n".join(lines)
+    # topics
 
+    def topics(self) -> list[dict]:
+        return load(self.path("topics.json"))["topics"]
 
-def extract_html(raw: str) -> dict:
-    parser = TextExtractor()
-    parser.feed(raw)
-    meta = parser.meta
-    published = next((meta[k] for k in ("article:published_time", "datepublished", "date", "dc.date", "pubdate") if k in meta), "")
-    return {
-        "title": clean_text(meta.get("og:title") or parser.title),
-        "publisher": clean_text(meta.get("og:site_name", "")),
-        "published": published,
-        "text": parser.text(),
-    }
+    def add_topic(self, name: str, description: str = "") -> dict:
+        name, data = (name or "").strip(), load(self.path("topics.json"))
+        if not name:
+            raise ValueError("A topic needs a name")
+        if any(t["name"].lower() == name.lower() for t in data["topics"]):
+            raise ValueError(f"Topic already exists: {name}")
+        topic = {"id": unique_id(slugify(name, 40), {t["id"] for t in data["topics"]}),
+                 "name": name, "description": (description or "").strip(), "created": now()}
+        data["topics"].append(topic)
+        save(self.path("topics.json"), data)
+        return topic
+
+    def update_topic(self, topic_id: str, changes: dict) -> dict:
+        data = load(self.path("topics.json"))
+        topic = self._find(data["topics"], topic_id, "topic")
+        if "name" in changes:
+            name = str(changes["name"]).strip()
+            if not name:
+                raise ValueError("A topic needs a name")
+            if any(t["name"].lower() == name.lower() and t["id"] != topic_id for t in data["topics"]):
+                raise ValueError(f"Topic already exists: {name}")
+            topic["name"] = name
+        if "description" in changes:
+            topic["description"] = str(changes["description"]).strip()
+        save(self.path("topics.json"), data)
+        return topic
+
+    def delete_topic(self, topic_id: str) -> None:
+        data = load(self.path("topics.json"))
+        self._find(data["topics"], topic_id, "topic")
+        data["topics"] = [t for t in data["topics"] if t["id"] != topic_id]
+        save(self.path("topics.json"), data)
+        findings = load(self.path("findings.json"))
+        for finding in findings["findings"]:
+            finding["topics"] = [t for t in finding.get("topics", []) if t != topic_id]
+        save(self.path("findings.json"), findings)
+        for script_id in self.script_ids():
+            meta_path = self.path("scripts", script_id, "script.json")
+            meta = load(meta_path)
+            if topic_id in meta.get("topics", []):
+                meta["topics"] = [t for t in meta["topics"] if t != topic_id]
+                save(meta_path, meta)
+
+    # sources: "approved" ones are checked on every run; "suggested" ones wait for the user
+
+    def sources(self) -> list[dict]:
+        return [s | {"status": s.get("status", "approved")} for s in load(self.path("sources.json"))["sources"]]
+
+    def approved_sources(self) -> list[dict]:
+        return [s for s in self.sources() if s["status"] == "approved"]
+
+    def add_source(self, url: str, note: str = "", suggested_reason: str | None = None, run_id: str | None = None) -> dict:
+        url, data = normalize_url(url), load(self.path("sources.json"))
+        for existing in data["sources"]:
+            if url_key(existing["url"]) == url_key(url):
+                state = existing.get("status", "approved")
+                if suggested_reason is not None:
+                    raise ValueError(f"Already {'dismissed by the user' if state == 'dismissed' else state}: {url}")
+                if state == "approved":
+                    raise ValueError(f"Already a source: {url}")
+                existing.update(status="approved", note=(note or existing.get("note", "")).strip())  # user adds a suggested/dismissed one
+                save(self.path("sources.json"), data)
+                return existing
+        source = {"id": unique_id(slugify(domain(url) + urllib.parse.urlsplit(url).path, 40), {s["id"] for s in data["sources"]}),
+                  "url": url, "note": (note or "").strip(), "status": "approved", "feed": None, "feed_checked": False,
+                  "created": now()}
+        if suggested_reason is not None:
+            if not suggested_reason.strip():
+                raise ValueError("A suggested source needs a reason")
+            source.update(status="suggested", reason=suggested_reason.strip(), suggested_by=run_id)
+        data["sources"].append(source)
+        save(self.path("sources.json"), data)
+        return source
+
+    def update_source(self, source_id: str, changes: dict) -> dict:
+        data = load(self.path("sources.json"))
+        source = self._find(data["sources"], source_id, "source")
+        if "note" in changes:
+            source["note"] = str(changes["note"]).strip()
+        if "status" in changes:
+            if changes["status"] not in ("approved", "dismissed"):
+                raise ValueError("Status must be approved or dismissed")
+            source["status"] = changes["status"]
+            source["decided"] = now()
+        save(self.path("sources.json"), data)
+        return source
+
+    def delete_source(self, source_id: str) -> None:
+        data = load(self.path("sources.json"))
+        self._find(data["sources"], source_id, "source")
+        data["sources"] = [s for s in data["sources"] if s["id"] != source_id]
+        save(self.path("sources.json"), data)
+
+    def source_for_url(self, url: str) -> dict | None:
+        """The approved source a page belongs to: same site, and inside the source's path if it has one."""
+        parts = urllib.parse.urlsplit(url)
+        for source in self.approved_sources():
+            base = urllib.parse.urlsplit(source["url"])
+            if domain(url) == domain(source["url"]) and parts.path.startswith(base.path.rstrip("/")):
+                return source
+        return None
+
+    # research runs and findings
+
+    def findings(self) -> list[dict]:
+        return sorted(load(self.path("findings.json"))["findings"], key=lambda f: f.get("found_at", ""), reverse=True)
+
+    def runs(self) -> list[dict]:
+        return load(self.path("runs.json"))["runs"]
+
+    def research_since(self) -> dt.datetime:
+        completed = [r for r in self.runs() if r.get("status") == "completed"]
+        if not completed:
+            return dt.datetime.now().astimezone() - FIRST_RUN_LOOKBACK
+        return parse_time(completed[-1]["started"]) - RUN_OVERLAP
+
+    def start_run(self, trigger: str = "manual") -> tuple[dict, dt.datetime, list[str]]:
+        since = self.research_since()
+        data = load(self.path("runs.json"))
+        abandoned = []
+        for run in data["runs"]:
+            if run.get("status") == "running":
+                run.update(status="abandoned", finished=now())
+                abandoned.append(run["id"])
+        run = {"id": unique_id("run-" + dt.datetime.now().strftime("%Y%m%d-%H%M"), {r["id"] for r in data["runs"]}),
+               "trigger": trigger, "status": "running", "started": now(), "since": since.isoformat(timespec="seconds"),
+               "sources": [s["id"] for s in self.approved_sources()], "checked": {}}
+        data["runs"].append(run)
+        save(self.path("runs.json"), data)
+        return run, since, abandoned
+
+    def mark_checked(self, run_id: str, source_ids: list[str], note: str = "") -> dict:
+        data = load(self.path("runs.json"))
+        run = self._find(data["runs"], run_id, "run")
+        if run.get("status") != "running":
+            raise ValueError(f"Run {run_id} is not running")
+        for source_id in source_ids:
+            if source_id not in run.get("sources", []):
+                raise KeyError(f"Source {source_id} is not part of run {run_id}")
+            run.setdefault("checked", {})[source_id] = {"at": now(), "note": note}
+        save(self.path("runs.json"), data)
+        return run
+
+    def unchecked_sources(self, run: dict) -> list[str]:
+        return [s for s in run.get("sources", []) if s not in run.get("checked", {})]
+
+    def finish_run(self, run_id: str, failed: str | None = None, note: str = "") -> dict:
+        data = load(self.path("runs.json"))
+        run = self._find(data["runs"], run_id, "run")
+        missing = self.unchecked_sources(run)
+        if missing and not failed:
+            raise ValueError("Check every source before finishing. Not checked yet: " + ", ".join(missing)
+                             + ". Mark each with `studio.py checked --run RUN --source ID --note \"…\"` (note why if a site was unreachable).")
+        run.update(status="failed" if failed else "completed", finished=now(),
+                   findings=sum(1 for f in self.findings() if run_id in f.get("runs", [])),
+                   suggested_sources=sum(1 for s in self.sources() if s.get("suggested_by") == run_id),
+                   note=failed or note or "")
+        save(self.path("runs.json"), data)
+        return run
+
+    def add_findings(self, run_id: str, items: list) -> tuple[list[str], list[str]]:
+        self._find(self.runs(), run_id, "run")
+        topics = self.topics()
+        by_name = {t["name"].lower(): t["id"] for t in topics} | {t["id"]: t["id"] for t in topics}
+        data = load(self.path("findings.json"))
+        owner = {url_key(s["url"]): f for f in data["findings"] for s in f.get("sources", [])}
+        added, merged = [], []
+        if not isinstance(items, list):
+            raise ValueError("Expected a JSON list of findings")
+        for number, item in enumerate(items, 1):
+            label = f"Finding {number}"
+            if not isinstance(item, dict) or not str(item.get("title", "")).strip():
+                raise ValueError(f"{label}: needs a title")
+            topic_ids = []
+            for topic in item.get("topics") or []:
+                if str(topic).lower() not in by_name:
+                    raise ValueError(f"{label}: unknown topic {topic!r}; topics are {', '.join(t['name'] for t in topics)}")
+                topic_ids.append(by_name[str(topic).lower()])
+            if not topic_ids:
+                raise ValueError(f"{label}: needs at least one topic")
+            sources = []
+            for source in item.get("sources") or []:
+                source = source if isinstance(source, dict) else {"url": source}
+                url = normalize_url(str(source.get("url", "")))
+                mine = self.source_for_url(url)
+                sources.append({"url": url, "title": str(source.get("title") or "").strip(),
+                                "publisher": str(source.get("publisher") or domain(url)).strip(),
+                                "published": str(source.get("published") or "").strip(),
+                                "source_id": mine["id"] if mine else None})
+            if not sources:
+                raise ValueError(f"{label}: needs at least one source URL")
+            existing = next((owner[url_key(s["url"])] for s in sources if url_key(s["url"]) in owner), None)
+            if existing:
+                known = {url_key(s["url"]) for s in existing["sources"]}
+                existing["sources"] += [s for s in sources if url_key(s["url"]) not in known]
+                existing["topics"] = list(dict.fromkeys(existing.get("topics", []) + topic_ids))
+                existing["runs"] = list(dict.fromkeys(existing.get("runs", []) + [run_id]))
+                existing["updated_at"] = now()
+                merged.append(existing["id"])
+                target = existing
+            else:
+                target = {"id": "f-" + hashlib.sha1(url_key(sources[0]["url"]).encode()).hexdigest()[:10],
+                          "title": clean_text(item["title"]), "summary": str(item.get("summary") or "").strip(),
+                          "topics": list(dict.fromkeys(topic_ids)), "sources": sources,
+                          "found_at": now(), "runs": [run_id]}
+                data["findings"].append(target)
+                added.append(target["id"])
+            for source in target["sources"]:
+                owner[url_key(source["url"])] = target
+        save(self.path("findings.json"), data)
+        return added, merged
+
+    def set_dismissed(self, finding_id: str, dismissed: bool) -> dict:
+        data = load(self.path("findings.json"))
+        finding = self._find(data["findings"], finding_id, "finding")
+        if dismissed:
+            finding["dismissed_at"] = now()
+        else:
+            finding.pop("dismissed_at", None)
+        save(self.path("findings.json"), data)
+        return finding
+
+    # scripts: linked to findings (news), topics (explainers), or both
+
+    def script_ids(self) -> list[str]:
+        return sorted(p.parent.name for p in self.path("scripts").glob("*/script.json"))
+
+    def script(self, script_id: str) -> dict:
+        folder = self.path("scripts", script_id)
+        if not re.fullmatch(r"[a-z0-9-]+", script_id or "") or not (folder / "script.json").is_file():
+            raise KeyError(f"Unknown script: {script_id}")
+        meta = {"findings": [], "topics": []} | load(folder / "script.json")
+        texts = {key: (folder / name).read_text(encoding="utf-8") if (folder / name).is_file() else ""
+                 for key, name in SCRIPT_TEXTS.items()}
+        version = hashlib.sha1(json.dumps([meta, texts], sort_keys=True).encode()).hexdigest()[:16]
+        return {**meta, **texts, "version": version}
+
+    def scripts(self) -> list[dict]:
+        listed = []
+        for script_id in self.script_ids():
+            item = self.script(script_id)
+            listed.append({key: item[key] for key in ("id", "title", "findings", "topics", "created", "updated", "version")}
+                          | {"drafted": bool(item["script"].strip()), "has_post": bool(item["post"].strip())})
+        return sorted(listed, key=lambda s: s.get("updated", ""), reverse=True)
+
+    def create_script(self, title: str, finding_ids: list[str] | None = None, topic_ids: list[str] | None = None) -> dict:
+        title = (title or "").strip() or "Untitled script"
+        finding_ids, topic_ids = self._check_findings(finding_ids or []), self._check_topics(topic_ids or [])
+        script_id = unique_id(dt.date.today().isoformat() + "-" + slugify(title, 40), set(self.script_ids()))
+        folder = self.path("scripts", script_id)
+        folder.mkdir(parents=True)
+        save(folder / "script.json", {"id": script_id, "title": title, "findings": finding_ids, "topics": topic_ids,
+                                      "created": now(), "updated": now()})
+        for name in SCRIPT_TEXTS.values():
+            (folder / name).write_text("", encoding="utf-8")
+        return self.script(script_id)
+
+    def update_script(self, script_id: str, changes: dict, version: str | None = None) -> dict:
+        current = self.script(script_id)
+        if version is not None and version != current["version"]:
+            raise RuntimeError("This script changed since you opened it (probably your agent wrote a draft). Reload to see it.")
+        folder = self.path("scripts", script_id)
+        meta = {"findings": [], "topics": []} | load(folder / "script.json")
+        if "title" in changes:
+            meta["title"] = str(changes["title"]).strip() or "Untitled script"
+        if "findings" in changes:
+            meta["findings"] = self._check_findings(changes["findings"])
+        if "add_findings" in changes:
+            meta["findings"] = list(dict.fromkeys(meta["findings"] + self._check_findings(changes["add_findings"])))
+        if "topics" in changes:
+            meta["topics"] = self._check_topics(changes["topics"])
+        for key, name in SCRIPT_TEXTS.items():
+            if key in changes:
+                write_text(folder / name, str(changes[key]))
+        meta["updated"] = now()
+        save(folder / "script.json", meta)
+        return self.script(script_id)
+
+    def delete_script(self, script_id: str) -> None:
+        self.script(script_id)
+        trash = self.path("scripts", ".trash")
+        trash.mkdir(exist_ok=True)
+        self.path("scripts", script_id).rename(trash / f"{script_id}-{int(time.time())}")
+
+    # whole state for the UI
+
+    def state(self) -> dict:
+        runs = self.runs()
+        return {"workspace": str(self.ws), "default_workspace": self.ws == workspace_path(None) and not os.environ.get("VID_STUDIO_HOME"),
+                "settings": self.settings(), "topics": self.topics(), "sources": self.sources(),
+                "findings": self.findings(), "runs": runs[-20:], "scripts": self.scripts()}
+
+    # helpers
+
+    def _find(self, records: list, record_id: str, label: str) -> dict:
+        for record in records:
+            if record.get("id") == record_id:
+                return record
+        raise KeyError(f"Unknown {label}: {record_id}")
+
+    def _check_findings(self, finding_ids) -> list[str]:
+        known = {f["id"] for f in self.findings()}
+        finding_ids = [str(f) for f in finding_ids or []]
+        unknown = [f for f in finding_ids if f not in known]
+        if unknown:
+            raise ValueError(f"Unknown findings: {', '.join(unknown)}")
+        return list(dict.fromkeys(finding_ids))
+
+    def _check_topics(self, topic_ids) -> list[str]:
+        known = {t["id"] for t in self.topics()}
+        topic_ids = [str(t) for t in topic_ids or []]
+        unknown = [t for t in topic_ids if t not in known]
+        if unknown:
+            raise ValueError(f"Unknown topics: {', '.join(unknown)}")
+        return list(dict.fromkeys(topic_ids))
 
 
 # ---------------------------------------------------------------- commands
 
 def cmd_init(ws: Path, args) -> None:
-    created, kept = [], []
+    created = []
     templates = ASSETS / "workspace"
     for source in sorted(templates.rglob("*")):
-        if not source.is_file():
-            continue
         target = ws / source.relative_to(templates)
-        target.parent.mkdir(parents=True, exist_ok=True)
-        if target.exists():
-            kept.append(str(target.relative_to(ws)))
-        else:
+        if source.is_file() and not target.exists():
+            target.parent.mkdir(parents=True, exist_ok=True)
             shutil.copyfile(source, target)
             created.append(str(target.relative_to(ws)))
-    for folder in ("inbox", "projects", "digests"):
-        (ws / folder).mkdir(parents=True, exist_ok=True)
+    (ws / "scripts").mkdir(parents=True, exist_ok=True)
     print(f"Workspace: {ws}")
-    print(f"Created: {', '.join(created) or 'nothing'}")
-    if kept:
-        print(f"Kept existing: {', '.join(kept)}")
-
-
-def setup_gaps(studio: dict) -> list[str]:
-    gaps = [key for key in ("owner", "audience", "language", "timezone") if not studio.get(key)]
-    if not studio.get("interests"):
-        gaps.append("interests")
-    return gaps
-
-
-def status_report(ws: Path) -> tuple[list[str], list[str]]:
-    """Summary lines and next actions, shared by `status` and the UI."""
-    lines: list[str] = []
-    if not (ws / "studio.json").exists():
-        return [f"Workspace: {ws} (not created)"], ["Run `studio.py init`, then onboard the user (references/setup.md)."]
-    studio = load(ws / "studio.json")
-    sources = load(ws / "sources.json")["sources"]
-    topics = load(ws / "topics.json")["topics"]
-    state = load(ws / "state.json")
-    projects = []
-    for path in sorted((ws / "projects").glob("*/project.json")):
-        projects.append(load(path))
-
-    gaps = setup_gaps(studio)
-    enabled = [s for s in sources if s.get("enabled", True)]
-    feeds = [s for s in enabled if s.get("feed")]
-    failing = [s["id"] for s in enabled if state.get("sources", {}).get(s["id"], {}).get("last_error")]
-    active = [t for t in topics if t.get("status") == "active"]
-    proposed = [t for t in topics if t.get("status") == "proposed"]
-    due = [t for t in active if t.get("mode") == "daily" and t.get("last_run") != today()]
-    pending_once = [t for t in active if t.get("mode") == "once" and not t.get("projects")]
-    untriaged = state.get("inbox_since_triage", 0)
-    last_scan = state.get("last_scan") or "never"
-
-    lines.append(f"Workspace: {ws}")
-    lines.append(f"Setup: {'complete' if studio.get('setup_complete') and not gaps else 'incomplete'}"
-          + (f" (missing: {', '.join(gaps)})" if gaps else ""))
-    lines.append(f"Sources: {len(enabled)} enabled ({len(feeds)} feeds, {len(enabled) - len(feeds)} manual pages)"
-          + f" · last scan: {last_scan}" + (f" · failing: {', '.join(failing)}" if failing else ""))
-    lines.append(f"Topics: {len(active)} active, {len(proposed)} proposed"
-          + (f" · daily due: {', '.join(t['id'] for t in due)}" if due else "")
-          + (f" · once not started: {', '.join(t['id'] for t in pending_once)}" if pending_once else ""))
-    lines.append(f"Inbox: {untriaged} items since last triage")
-    lines.append(f"Schedule: {studio.get('schedule', {}).get('description') or 'none recorded'}")
-    open_projects = [p for p in projects if p.get("stage") not in ("approved", "dropped")]
-    lines.append(f"Projects: {len(projects)} total, {len(open_projects)} open")
-    for project in projects[-15:]:
-        lines.append(f"  {project['id']} · {project.get('stage')} · {project.get('title')}")
-
-    actions = []
-    if not studio.get("setup_complete") or gaps:
-        actions.append("Onboard the user and fill studio.json (references/setup.md).")
-    if not enabled:
-        actions.append("Discover sources to monitor (references/discover.md).")
-    if not active and not proposed:
-        actions.append("Discover topics (references/discover.md).")
-    if proposed:
-        actions.append(f"Ask the user to approve proposed topics: {', '.join(t['id'] for t in proposed)}.")
-    if feeds and not str(last_scan).startswith(today()):
-        actions.append("Scan sources: `studio.py scan` (references/discover.md#scan).")
-    if untriaged:
-        actions.append("Triage the inbox into leads and proposed topics (references/discover.md#triage).")
-    for topic in due:
-        actions.append(f"Run daily topic {topic['id']}: new project or `no-news` (references/research.md).")
-    for topic in pending_once:
-        actions.append(f"Research once topic {topic['id']} (references/research.md).")
-    for project in open_projects:
-        stage = project.get("stage")
-        if stage in ("planning", "researching"):
-            actions.append(f"Continue research on {project['id']} (references/research.md).")
-        elif stage == "writing":
-            actions.append(f"Write post and script for {project['id']} (references/write.md).")
-        elif stage in ("brief-review", "script-review"):
-            actions.append(f"Waiting for user review: {project['id']} ({stage}).")
-    if studio.get("setup_complete") and not studio.get("schedule", {}).get("description"):
-        actions.append("Offer to schedule the daily routine (references/schedule.md).")
-    return lines, actions or ["Nothing pending. Ask the user what to research next."]
+    print(f"Created: {', '.join(created) or 'nothing (already set up)'}")
 
 
 def cmd_status(ws: Path, args) -> None:
-    lines, actions = status_report(ws)
-    print("\n".join(lines))
-    print("Next actions:")
-    for action in actions:
-        print(f"- {action}")
-
-
-def cmd_add_source(ws: Path, args) -> None:
-    data = load(ws / "sources.json")
-    sources = data["sources"]
-    language, country = locale(ws)
-    kind, url, feed, name = args.kind, args.url, args.feed, args.name
-    if args.news_query:
-        query = urllib.parse.quote_plus(args.news_query)
-        params = f"hl={language}-{country}&gl={country}&ceid={country}:{language}"
-        feed = f"https://news.google.com/rss/search?q={query}&{params}"
-        url = url or f"https://news.google.com/search?q={query}&{params}"
-        kind, name = "news", name or f"Google News: {args.news_query}"
-    elif args.trends_geo:
-        geo = args.trends_geo.upper()
-        feed = f"https://trends.google.com/trending/rss?geo={geo}"
-        url = url or f"https://trends.google.com/trending?geo={geo}"
-        kind, name = "trends", name or f"Google Trends: {geo}"
-    if not url and not feed:
-        raise SystemExit("Provide --url, --feed, --news-query, or --trends-geo")
-    if not name:
-        raise SystemExit("Provide --name")
-    for source in sources:
-        if (url and source.get("url") == url) or (feed and source.get("feed") == feed):
-            raise SystemExit(f"Already monitored as {source['id']}")
-
-    notes = []
-    if feed:
-        if not try_feed(feed):
-            notes.append("warning: feed did not return items right now")
-    elif url and not args.no_discover:
-        feed, explanation = discover_feed(url)
-        notes.append(explanation)
-    kind = kind or ("feed" if feed else "page")
-
-    source = {
-        "id": unique_id(args.id or slugify(name, 32), {s["id"] for s in sources}),
-        "name": name, "kind": kind, "url": url or feed, "feed": feed,
-        "why": args.why or "", "enabled": True, "added": today(),
-    }
-    sources.append(source)
-    save(ws / "sources.json", data)
-    print(f"Added source {source['id']} ({kind}){': ' + '; '.join(notes) if notes else ''}")
+    if not (ws / "studio.json").exists():
+        print(f"No workspace at {ws}. Run `studio.py init`, then set up the channel (references/setup.md).")
+        return
+    studio = Studio(ws)
+    settings, topics, sources, scripts = studio.settings(), studio.topics(), studio.sources(), studio.scripts()
+    runs = studio.runs()
+    last = next((r for r in reversed(runs) if r.get("status") in ("completed", "failed")), None)
+    print(f"Channel: {settings.get('name') or '(unnamed)'} · workspace {ws}")
+    print(f"Topics: {', '.join(t['name'] for t in topics) or 'none'}")
+    approved = [s for s in sources if s["status"] == "approved"]
+    suggested = [s for s in sources if s["status"] == "suggested"]
+    print(f"Sources: {', '.join(domain(s['url']) + urllib.parse.urlsplit(s['url']).path.rstrip('/') for s in approved) or 'none'}"
+          + (f" · {len(suggested)} suggested, waiting for the user" if suggested else ""))
+    print(f"Findings: {sum(1 for f in studio.findings() if not f.get('dismissed_at'))} · last research: "
+          + (f"{last['finished']} ({last['status']}, {last.get('findings', 0)} findings)" if last else "never"))
+    print(f"Schedule: {', '.join(settings.get('schedule', {}).get('times', [])) or 'manual only'}")
+    print("Scripts:" + ("" if scripts else " none"))
+    for script in scripts:
+        state = "drafted" if script["drafted"] else "not drafted"
+        links = [f"{len(script['findings'])} findings"] + [f"topic {t}" for t in script["topics"]]
+        print(f"  {script['id']} · {script['title']} · {', '.join(links)} · {state}")
+    server = running_server(ws)
+    print(f"UI: {server['url'] if server else 'not running (studio.py serve --background)'}")
+    hints = []
+    if not settings.get("name") or not topics:
+        hints.append("Set up the channel: name, topics, sources (references/setup.md).")
+    elif not last:
+        hints.append("Run research (references/research.md).")
+    running = next((r for r in reversed(runs) if r.get("status") == "running"), None)
+    if running:
+        hints.append(f"Run {running['id']} is unfinished; sources not checked yet: {', '.join(studio.unchecked_sources(running)) or 'none'}.")
+    hints += [f"Script '{s['title']}' has material but no draft (references/write.md)." for s in scripts
+              if (s["findings"] or s["topics"]) and not s["drafted"]]
+    if hints:
+        print("Suggestions:\n" + "\n".join(f"- {h}" for h in hints))
 
 
 def cmd_add_topic(ws: Path, args) -> None:
-    data = load(ws / "topics.json")
-    topics = data["topics"]
-    source_ids = {s["id"] for s in load(ws / "sources.json")["sources"]}
-    unknown = [s for s in args.source or [] if s not in source_ids]
-    if unknown:
-        raise SystemExit(f"Unknown source IDs: {', '.join(unknown)}")
-    topic = {
-        "id": unique_id(args.id or slugify(args.title, 40), {t["id"] for t in topics}),
-        "title": args.title, "angle": args.angle or "", "why": args.why or "",
-        "mode": args.mode, "status": args.status,
-        "queries": args.query or [], "source_ids": args.source or [],
-        "added": today(), "last_run": None, "leads": [], "projects": [], "history": [],
-    }
-    topics.append(topic)
-    save(ws / "topics.json", data)
-    print(f"Added topic {topic['id']} ({topic['mode']}, {topic['status']})")
+    topic = Studio(ws).add_topic(args.name, args.description or "")
+    print(f"Added topic {topic['id']}: {topic['name']}")
 
 
-def cmd_lead(ws: Path, args) -> None:
-    data = load(ws / "topics.json")
-    topic = find(data["topics"], args.topic, "topic")
-    leads = topic.setdefault("leads", [])
-    if any(lead.get("url") == args.url for lead in leads):
-        print(f"Lead already on {topic['id']}")
-        return
-    leads.append({"url": args.url, "title": args.title or "", "note": args.note or "", "added": today()})
-    save(ws / "topics.json", data)
-    print(f"Lead added to {topic['id']} ({len(leads)} pending)")
+def cmd_add_source(ws: Path, args) -> None:
+    source = Studio(ws).add_source(args.url, args.note or "")
+    print(f"Added source {source['id']}: {source['url']}")
 
 
-def cmd_scan(ws: Path, args) -> None:
-    sources = load(ws / "sources.json")["sources"]
-    state = load(ws / "state.json")
-    seen_path = ws / "inbox" / "seen.json"
-    seen = load(seen_path, {"keys": {}})["keys"]
-    cutoff = (dt.date.today() - dt.timedelta(days=90)).isoformat()
-    seen = {key: day for key, day in seen.items() if day >= cutoff}
-    source_state = state.setdefault("sources", {})
-
-    sections, manual, errors, total, records = [], [], [], 0, []
-    scanned_at = now()
-    for source in sources:
-        if not source.get("enabled", True) or (args.source and source["id"] not in args.source):
-            continue
-        if not source.get("feed"):
-            manual.append(source)
-            continue
-        record = source_state.setdefault(source["id"], {})
-        record["last_attempt"] = now()
-        try:
-            items = parse_feed(fetch(source["feed"])[0])
-        except Exception as error:
-            record["last_error"] = f"{type(error).__name__}: {error}"
-            errors.append(f"{source['id']}: {record['last_error']}")
-            continue
-        record.pop("last_error", None)
-        record["last_ok"] = now()
-        fresh = []
-        for item in items:
-            keys = [key for key in (url_key(item["url"]), title_key(item["title"])) if key]
-            if not keys or any(key in seen for key in keys):
-                continue
-            for key in keys:
-                seen[key] = today()
-            fresh.append(item)
-            if len(fresh) >= args.limit:
-                break
-        record["last_new"] = len(fresh)
-        total += len(fresh)
-        for item in fresh:
-            key = url_key(item["url"]) or title_key(item["title"])
-            records.append({"id": hashlib.sha1(key.encode()).hexdigest()[:12], "date": today(),
-                            "scanned_at": scanned_at, "source_id": source["id"], **item})
-        if fresh:
-            lines = [f"### {source['name']} ({source['id']})"]
-            for item in fresh:
-                meta = " · ".join(part for part in (item["published"], domain(item["url"])) if part)
-                lines.append(f"- [{item['title']}]({item['url']}) · {meta}")
-                if item["summary"]:
-                    lines.append(f"  {item['summary']}")
-            sections.append("\n".join(lines))
-
-    inbox_file = ws / "inbox" / f"{today()}.md"
-    if sections:
-        header = "" if inbox_file.exists() else f"# Inbox {today()}\n"
-        with inbox_file.open("a", encoding="utf-8") as output:
-            output.write(f"{header}\n## Scan {dt.datetime.now().strftime('%H:%M')}\n\n" + "\n\n".join(sections) + "\n")
-    if records:
-        # Structured copy of the inbox for the UI and SQLite index; the Markdown file is for reading.
-        with (ws / "inbox" / "items.jsonl").open("a", encoding="utf-8") as output:
-            output.writelines(json.dumps(record, ensure_ascii=False) + "\n" for record in records)
-    state["last_scan"] = scanned_at
-    state["inbox_since_triage"] = state.get("inbox_since_triage", 0) + total
-    save(seen_path, {"keys": seen})
-    save(ws / "state.json", state)
-
-    print(f"New items: {total}" + (f" → {inbox_file}" if total else ""))
-    for error in errors:
-        print(f"Failed: {error}")
-    if manual:
-        print("Check these pages yourself (no feed):")
-        for source in manual:
-            last = source_state.get(source["id"], {}).get("last_checked", "never")
-            print(f"- {source['id']}: {source['url']} (last checked {last})")
+def cmd_suggest_source(ws: Path, args) -> None:
+    source = Studio(ws).add_source(args.url, args.note or "", suggested_reason=args.reason, run_id=args.run)
+    print(f"Suggested {source['url']}; it waits in the Sources tab for the user to approve")
 
 
 def cmd_checked(ws: Path, args) -> None:
-    state = load(ws / "state.json")
-    for source_id in args.source:
-        state.setdefault("sources", {}).setdefault(source_id, {})["last_checked"] = now()
-    save(ws / "state.json", state)
-    print(f"Marked checked: {', '.join(args.source)}")
+    studio = Studio(ws)
+    run = studio.mark_checked(args.run, args.source, args.note or "")
+    left = studio.unchecked_sources(run)
+    print(f"Checked {', '.join(args.source)}. " + (f"Still to check: {', '.join(left)}" if left else "All sources checked."))
 
 
-def cmd_triaged(ws: Path, args) -> None:
-    state = load(ws / "state.json")
-    state["inbox_since_triage"] = 0
-    state["last_triage"] = now()
-    save(ws / "state.json", state)
-    print("Inbox marked triaged")
-
-
-def cmd_new_project(ws: Path, args) -> None:
-    topics_data = load(ws / "topics.json")
-    topic = find(topics_data["topics"], args.topic, "topic") if args.topic else None
-    title = args.title or (topic["title"] if topic else None)
-    if not title:
-        raise SystemExit("Provide --topic or --title")
-    existing = {p.name for p in (ws / "projects").glob("*")}
-    project_id = unique_id(f"{today()}-{slugify(title, 40)}", existing)
-    path = ws / "projects" / project_id
-    (path / "evidence").mkdir(parents=True)
-    (path / "data").mkdir()
-    for template in sorted((ASSETS / "project").iterdir()):
-        content = template.read_text(encoding="utf-8").replace("{{title}}", title).replace("{{date}}", today())
-        (path / template.name).write_text(content, encoding="utf-8")
-
-    project = load(path / "project.json")
-    project.update({
-        "id": project_id, "title": title, "created": today(),
-        "topic_id": topic["id"] if topic else None,
-        "mode": topic["mode"] if topic else "once",
-        "angle": args.angle or (topic.get("angle", "") if topic else ""),
-        "queries": list(topic.get("queries", [])) if topic else [],
-        "leads": list(topic.get("leads", [])) if topic else [],
-        "previous_projects": list(topic.get("projects", [])) if topic else [],
-        "stage": "planning", "history": [{"stage": "planning", "at": now()}],
-    })
-    save(path / "project.json", project)
-    if topic:
-        topic["leads"] = []
-        topic.setdefault("projects", []).append(project_id)
-        topic.setdefault("history", []).append({"date": today(), "result": "project", "project": project_id})
-        topic["last_run"] = today()
-        if topic["mode"] == "once":
-            topic["status"] = "used"
-        save(ws / "topics.json", topics_data)
-    print(f"Project: {path}")
-    if project["previous_projects"]:
-        print(f"Baseline (read their brief.md first): {', '.join(project['previous_projects'][-3:])}")
-    if project["leads"]:
-        print(f"Leads carried over: {len(project['leads'])}")
-
-
-def cmd_no_news(ws: Path, args) -> None:
-    data = load(ws / "topics.json")
-    topic = find(data["topics"], args.topic, "topic")
-    topic["last_run"] = today()
-    topic.setdefault("history", []).append({"date": today(), "result": "no-news", "note": args.note})
-    save(ws / "topics.json", data)
-    print(f"Recorded no-news run for {topic['id']}")
-
-
-def cmd_snapshot(ws: Path, args) -> None:
-    path = project_dir(ws, args.project)
-    registry = load(path / "sources.json")
-    for source in registry["sources"]:
-        if source["url"] == args.url:
-            print(f"Already captured as {source['id']} ({source['evidence']})")
-            return
-    source_id = f"S{max([int(s['id'][1:]) for s in registry['sources']] + [0]) + 1}"
-    info = {"title": args.title or "", "publisher": args.publisher or "", "published": args.published or "", "text": ""}
-    final_url, evidence_name, warning = args.url, f"{source_id}.md", ""
-
-    if args.text_file:
-        info["text"] = Path(args.text_file).expanduser().read_text(encoding="utf-8")
-    else:
+def cmd_scan(ws: Path, args) -> None:
+    """Pull new items from source feeds. Read-only apart from the feed cache."""
+    studio = Studio(ws)
+    data = load(ws / "sources.json")
+    seen_path = ws / ".cache" / "seen.json"
+    seen = load(seen_path, {"keys": {}})["keys"]
+    cutoff = (dt.date.today() - dt.timedelta(days=120)).isoformat()
+    seen = {key: day for key, day in seen.items() if day >= cutoff}
+    today = dt.date.today().isoformat()
+    without_feed = []
+    for source in data["sources"]:
+        if source.get("status", "approved") != "approved":
+            continue
+        if not source.get("feed") and not source.get("feed_checked"):
+            source["feed"], _ = discover_feed(source["url"])
+            source["feed_checked"] = True
+        if not source.get("feed"):
+            without_feed.append(source)
+            continue
         try:
-            data, content_type, final_url = fetch(args.url)
+            items = parse_feed(fetch(source["feed"])[0])
         except Exception as error:
-            raise SystemExit(f"Fetch failed: {type(error).__name__}: {error}\n"
-                             "Open the page with your own browsing tool, save the relevant text to a file, "
-                             "and rerun with --text-file FILE --title TITLE.")
-        if "pdf" in content_type.lower() or data[:5] == b"%PDF-":
-            evidence_name = f"{source_id}.pdf"
-            (path / "evidence" / evidence_name).write_bytes(data)
-            warning = "Saved PDF. Quote the passages you use in the claim notes."
-        else:
-            extracted = extract_html(decode(data, content_type))
-            info = {key: info[key] or extracted[key] for key in info}
-            if len(info["text"]) < 600:
-                warning = "Very little text extracted (paywall or script-rendered page?). Capture with --text-file if needed."
-
-    info["publisher"] = info["publisher"] or domain(final_url)
-    digest = hashlib.sha256(info["text"].encode() if evidence_name.endswith(".md") else (path / "evidence" / evidence_name).read_bytes()).hexdigest()
-    if evidence_name.endswith(".md"):
-        header = [f"id: {source_id}", f"url: {args.url}", f"final_url: {final_url}", f"title: {info['title']}",
-                  f"publisher: {info['publisher']}", f"published: {info['published']}", f"accessed: {now()}",
-                  f"type: {args.type}", f"sha256: {digest}"]
-        (path / "evidence" / evidence_name).write_text("---\n" + "\n".join(header) + "\n---\n\n" + info["text"].strip() + "\n", encoding="utf-8")
-
-    registry["sources"].append({
-        "id": source_id, "url": args.url, "final_url": final_url, "title": info["title"],
-        "publisher": info["publisher"], "published": info["published"], "accessed": today(),
-        "type": args.type, "evidence": f"evidence/{evidence_name}", "note": args.note or "",
-    })
-    save(path / "sources.json", registry)
-    print(f"{source_id}: {info['title'] or args.url} · {info['publisher']} · {len(info['text'])} chars → evidence/{evidence_name}")
-    if warning:
-        print(f"Warning: {warning}")
-
-
-def run_checks(path: Path) -> tuple[list[str], list[str], str]:
-    errors, warnings = [], []
-    sources = {s["id"]: s for s in load(path / "sources.json")["sources"]}
-    claims = {c["id"]: c for c in load(path / "claims.json")["claims"]}
-
-    for source in sources.values():
-        if not (path / source.get("evidence", "")).is_file():
-            errors.append(f"{source['id']}: evidence file missing ({source.get('evidence')})")
-        if domain(source.get("final_url") or source["url"]) == "news.google.com":
-            warnings.append(f"{source['id']}: Google News redirect URL; capture the original article instead")
-
-    counts = {status: 0 for status in CLAIM_STATUSES}
-    for claim in claims.values():
-        cid, status, refs = claim.get("id"), claim.get("status"), claim.get("sources", [])
-        if status not in CLAIM_STATUSES:
-            errors.append(f"{cid}: status must be one of {sorted(CLAIM_STATUSES)}")
+            print(f"\n## {source['id']}: {source['url']}\nFeed failed ({type(error).__name__}: {error}); search this site directly.")
             continue
-        counts[status] += 1
-        missing = [ref for ref in refs if ref not in sources]
-        if missing:
-            errors.append(f"{cid}: unknown sources {missing}")
-        known = [sources[ref] for ref in refs if ref in sources]
-        if not known and status != "unverified":
-            errors.append(f"{cid}: no sources")
-        if status == "verified":
-            strong = any(s.get("type") in STRONG_SOURCE_TYPES for s in known)
-            domains = {domain(s.get("final_url") or s["url"]) for s in known}
-            if not strong and len(domains) < 2:
-                errors.append(f"{cid}: 'verified' needs a primary/data source or two independent domains; use 'single-source'")
-        if status == "disputed" and not claim.get("note"):
-            warnings.append(f"{cid}: disputed claim needs a note describing both sides")
-
-    for name in ("brief.md", "script.md", "post.md"):
-        file = path / name
-        if not file.exists():
-            continue
-        text = file.read_text(encoding="utf-8")
-        for group in re.findall(r"\[(C\d+(?:\s*,\s*C\d+)*)\]", text):
-            for cid in re.split(r"\s*,\s*", group):
-                claim = claims.get(cid)
-                if claim is None:
-                    errors.append(f"{name}: cites unknown claim {cid}")
-                elif claim.get("status") == "unverified":
-                    errors.append(f"{name}: cites unverified claim {cid}")
-                elif claim.get("status") == "disputed":
-                    warnings.append(f"{name}: cites disputed {cid}; present it as contested")
-                elif claim.get("status") == "single-source" and re.search(r"\d", claim.get("text", "")):
-                    warnings.append(f"{name}: cites single-source number {cid}; attribute it or verify")
-        if "TODO" in text:
-            warnings.append(f"{name}: still contains TODO placeholders")
-
-    errors, warnings = list(dict.fromkeys(errors)), list(dict.fromkeys(warnings))
-    summary = (f"{len(claims)} claims ({', '.join(f'{v} {k}' for k, v in sorted(counts.items()) if v)}), "
-               f"{len(sources)} sources")
-    return errors, warnings, summary
-
-
-def cmd_check(ws: Path, args) -> None:
-    errors, warnings, summary = run_checks(project_dir(ws, args.project))
-    print(f"{args.project}: {summary}")
-    for error in errors:
-        print(f"ERROR {error}")
-    for warning in warnings:
-        print(f"WARN  {warning}")
-    print("Check passed" if not errors else f"Check failed with {len(errors)} errors")
-    if errors:
-        raise SystemExit(1)
-
-
-def cmd_stage(ws: Path, args) -> None:
-    path = project_dir(ws, args.project)
-    if args.stage in ("brief-review", "script-review", "approved") and not args.force:
-        errors, _, _ = run_checks(path)
-        if errors:
-            raise SystemExit(f"Fix check errors before '{args.stage}' (run `studio.py check {args.project}`).")
-    project = load(path / "project.json")
-    project["stage"] = args.stage
-    entry = {"stage": args.stage, "at": now()}
-    if args.note:
-        entry["note"] = args.note
-    project.setdefault("history", []).append(entry)
-    save(path / "project.json", project)
-    print(f"{args.project} → {args.stage}")
-
-
-# ---------------------------------------------------------------- explorer: data, SQLite index, HTML, server
-
-PROJECT_DOCUMENTS = ("brief.md", "script.md", "post.md", "plan.md")
-TEXT_TYPES = {".md", ".json", ".jsonl", ".csv", ".txt"}
-DB_SCHEMA = """
-CREATE TABLE meta(key TEXT PRIMARY KEY, value TEXT);
-CREATE TABLE sources(id TEXT PRIMARY KEY, name TEXT, kind TEXT, url TEXT, feed TEXT, why TEXT, enabled INTEGER,
-                     added TEXT, last_ok TEXT, last_checked TEXT, last_error TEXT, last_new INTEGER);
-CREATE TABLE topics(id TEXT PRIMARY KEY, title TEXT, mode TEXT, status TEXT, angle TEXT, why TEXT, added TEXT,
-                    last_run TEXT, pending_leads INTEGER);
-CREATE TABLE topic_runs(topic_id TEXT, date TEXT, result TEXT, project_id TEXT, note TEXT);
-CREATE TABLE leads(topic_id TEXT, url TEXT, title TEXT, note TEXT, added TEXT);
-CREATE TABLE inbox(id TEXT, date TEXT, scanned_at TEXT, source_id TEXT, title TEXT, url TEXT, published TEXT, summary TEXT);
-CREATE TABLE projects(id TEXT PRIMARY KEY, title TEXT, topic_id TEXT, mode TEXT, stage TEXT, created TEXT, angle TEXT,
-                      check_errors INTEGER, check_warnings INTEGER);
-CREATE TABLE project_sources(project_id TEXT, id TEXT, url TEXT, title TEXT, publisher TEXT, published TEXT,
-                             accessed TEXT, type TEXT, evidence TEXT);
-CREATE TABLE claims(project_id TEXT, id TEXT, text TEXT, status TEXT, subtopic TEXT, quote TEXT, note TEXT);
-CREATE TABLE claim_sources(project_id TEXT, claim_id TEXT, source_id TEXT);
-CREATE TABLE documents(project_id TEXT, name TEXT, text TEXT);
-CREATE INDEX inbox_date ON inbox(date);
-CREATE INDEX claims_status ON claims(status);
-"""
-
-
-def read_jsonl(path: Path, limit: int) -> list[dict]:
-    if not path.exists():
-        return []
-    records = []
-    for line in path.read_text(encoding="utf-8").splitlines()[-limit:]:
-        try:
-            records.append(json.loads(line))
-        except json.JSONDecodeError:
-            continue
-    return records
-
-
-def collect(ws: Path) -> dict:
-    """Everything the explorer shows, read fresh from the workspace files."""
-    state = load(ws / "state.json")
-    lines, actions = status_report(ws)
-    projects = []
-    for project_file in sorted((ws / "projects").glob("*/project.json"), reverse=True):
-        path = project_file.parent
-        record = {"id": path.name, "title": path.name, "dir": f"projects/{path.name}"}
-        try:
-            record.update(load(project_file))
-            record["sources"] = load(path / "sources.json", {"sources": []})["sources"]
-            record["claims"] = load(path / "claims.json", {"claims": []})["claims"]
-            errors, warnings, summary = run_checks(path)
-        except (SystemExit, Exception) as error:  # a hand-edited file may be broken; show it instead of failing
-            record.setdefault("sources", [])
-            record.setdefault("claims", [])
-            errors, warnings, summary = [str(error)], [], "unreadable"
-        record["check"] = {"errors": errors, "warnings": warnings, "summary": summary}
-        record["files"] = {name: (path / name).read_text(encoding="utf-8")
-                           for name in PROJECT_DOCUMENTS if (path / name).is_file()}
-        record["data"] = []
-        for table in sorted((path / "data").glob("*.csv")):
-            with table.open(encoding="utf-8", newline="") as handle:
-                record["data"].append({"name": table.name, "rows": list(csv.reader(handle))[:500]})
-        projects.append(record)
-    digests = [{"name": f.stem, "text": f.read_text(encoding="utf-8")}
-               for f in sorted((ws / "digests").glob("*.md"), reverse=True)[:60]]
-    return {
-        "generated_at": now(), "workspace": str(ws),
-        "studio": load(ws / "studio.json"),
-        "sources": load(ws / "sources.json")["sources"],
-        "source_state": state.get("sources", {}),
-        "state": {key: value for key, value in state.items() if key != "sources"},
-        "topics": load(ws / "topics.json")["topics"],
-        "inbox": list(reversed(read_jsonl(ws / "inbox" / "items.jsonl", 5000))),
-        "projects": projects, "digests": digests,
-        "status": {"lines": lines, "actions": actions},
-    }
-
-
-def build_db(path: Path, data: dict) -> None:
-    """Rebuild the read-only SQLite index. Files stay the source of truth."""
-    temporary = path.with_suffix(".db.tmp")
-    temporary.unlink(missing_ok=True)
-    db = sqlite3.connect(temporary)
-    try:
-        db.executescript(DB_SCHEMA)
-        db.executemany("INSERT INTO meta VALUES (?, ?)", [("generated_at", data["generated_at"]), ("workspace", data["workspace"])])
-        for s in data["sources"]:
-            health = data["source_state"].get(s.get("id"), {})
-            db.execute("INSERT OR REPLACE INTO sources VALUES (?,?,?,?,?,?,?,?,?,?,?,?)", (
-                s.get("id"), s.get("name"), s.get("kind"), s.get("url"), s.get("feed"), s.get("why"),
-                int(bool(s.get("enabled", True))), s.get("added"), health.get("last_ok"), health.get("last_checked"),
-                health.get("last_error"), health.get("last_new")))
-        for t in data["topics"]:
-            db.execute("INSERT OR REPLACE INTO topics VALUES (?,?,?,?,?,?,?,?,?)", (
-                t.get("id"), t.get("title"), t.get("mode"), t.get("status"), t.get("angle"), t.get("why"),
-                t.get("added"), t.get("last_run"), len(t.get("leads") or [])))
-            db.executemany("INSERT INTO topic_runs VALUES (?,?,?,?,?)", [
-                (t.get("id"), h.get("date"), h.get("result"), h.get("project"), h.get("note")) for h in t.get("history") or []])
-            db.executemany("INSERT INTO leads VALUES (?,?,?,?,?)", [
-                (t.get("id"), l.get("url"), l.get("title"), l.get("note"), l.get("added")) for l in t.get("leads") or []])
-        db.executemany("INSERT INTO inbox VALUES (?,?,?,?,?,?,?,?)", [
-            (i.get("id"), i.get("date"), i.get("scanned_at"), i.get("source_id"), i.get("title"), i.get("url"),
-             i.get("published"), i.get("summary")) for i in data["inbox"]])
-        for p in data["projects"]:
-            db.execute("INSERT OR REPLACE INTO projects VALUES (?,?,?,?,?,?,?,?,?)", (
-                p["id"], p.get("title"), p.get("topic_id"), p.get("mode"), p.get("stage"), p.get("created"),
-                p.get("angle"), len(p["check"]["errors"]), len(p["check"]["warnings"])))
-            db.executemany("INSERT INTO project_sources VALUES (?,?,?,?,?,?,?,?,?)", [
-                (p["id"], s.get("id"), s.get("url"), s.get("title"), s.get("publisher"), s.get("published"),
-                 s.get("accessed"), s.get("type"), s.get("evidence")) for s in p["sources"]])
-            for c in p["claims"]:
-                db.execute("INSERT INTO claims VALUES (?,?,?,?,?,?,?)", (
-                    p["id"], c.get("id"), c.get("text"), c.get("status"), str(c.get("subtopic", "")),
-                    c.get("quote"), c.get("note")))
-                db.executemany("INSERT INTO claim_sources VALUES (?,?,?)", [(p["id"], c.get("id"), s) for s in c.get("sources") or []])
-            db.executemany("INSERT INTO documents VALUES (?,?,?)", [(p["id"], name, text) for name, text in p["files"].items()])
-        db.commit()
-    finally:
-        db.close()
-    temporary.replace(path)
-
-
-def render_html(data: dict) -> str:
-    template = (ASSETS / "ui" / "index.html").read_text(encoding="utf-8")
-    # Escaping "<" keeps scraped text from closing the <script> block; it stays valid JSON.
-    payload = json.dumps(data, ensure_ascii=False).replace("<", "\\u003c")
-    return template.replace("/*STUDIO_DATA*/null", payload)
-
-
-def refresh(ws: Path) -> tuple[Path, Path]:
-    data = collect(ws)
-    page = ws / "ui" / "index.html"
-    page.parent.mkdir(parents=True, exist_ok=True)
-    temporary = page.with_suffix(".tmp")
-    temporary.write_text(render_html(data), encoding="utf-8")
-    temporary.replace(page)
-    build_db(ws / "studio.db", data)
-    return page, ws / "studio.db"
-
-
-def running_server(ws: Path) -> dict | None:
-    info = load(ws / "ui" / "server.json", {})
-    if not info.get("url"):
-        return None
-    try:
-        with urllib.request.urlopen(info["url"] + "health", timeout=2) as response:
-            return info if response.read().decode() == str(ws) else None
-    except Exception:
-        return None
-
-
-def make_handler(ws: Path):
-    class Handler(BaseHTTPRequestHandler):
-        def log_message(self, *args):
-            pass
-
-        def reply(self, code: int, body: bytes, content_type: str) -> None:
-            self.send_response(code)
-            self.send_header("Content-Type", content_type)
-            self.send_header("Content-Length", str(len(body)))
-            self.send_header("Cache-Control", "no-store")
-            self.send_header("X-Content-Type-Options", "nosniff")
-            self.end_headers()
-            self.wfile.write(body)
-
-        def do_GET(self):
-            # Only answer requests addressed to this machine, which blocks DNS-rebinding reads by other websites.
-            hostname = (self.headers.get("Host") or "").rsplit(":", 1)[0].strip("[]")
-            if hostname not in ("localhost", "127.0.0.1", "::1"):
-                return self.reply(403, b"Forbidden", "text/plain; charset=utf-8")
-            path = urllib.parse.unquote(urllib.parse.urlsplit(self.path).path)
-            if path == "/health":
-                return self.reply(200, str(ws).encode(), "text/plain; charset=utf-8")
-            if path in ("/", "/index.html", "/ui/", "/ui/index.html"):
-                try:
-                    body = render_html(collect(ws)).encode()
-                except (SystemExit, Exception) as error:
-                    return self.reply(500, f"Could not read the workspace: {error}".encode(), "text/plain; charset=utf-8")
-                return self.reply(200, body, "text/html; charset=utf-8")
-            target = (ws / path.lstrip("/")).resolve()
-            if (not target.is_relative_to(ws) or not target.is_file() or target.suffix in (".db", ".tmp")
-                    or any(part.startswith(".") for part in target.relative_to(ws).parts)):
-                return self.reply(404, b"Not found", "text/plain; charset=utf-8")
-            # Workspace files are shown as plain text so captured web pages can never run in the browser.
-            content_type = ("text/plain; charset=utf-8" if target.suffix in TEXT_TYPES or target.suffix in (".html", ".htm")
-                            else mimetypes.guess_type(target.name)[0] or "application/octet-stream")
-            return self.reply(200, target.read_bytes(), content_type)
-
-    return Handler
-
-
-def cmd_ui(ws: Path, args) -> None:
-    page, db = refresh(ws)
-    server = running_server(ws)
-    print(f"Explorer: {server['url'] if server else page.as_uri()}")
-    if not server:
-        print("For a link that works from any app or browser, run `studio.py serve --background`.")
-    print(f"SQLite index: {db}")
-
-
-def cmd_serve(ws: Path, args) -> None:
-    info_path = ws / "ui" / "server.json"
-    server_info = running_server(ws)
-    if args.stop:
-        if server_info:
-            os.kill(server_info["pid"], signal.SIGTERM)
-            print(f"Stopped explorer at {server_info['url']}")
-        else:
-            print("No explorer server running")
-        info_path.unlink(missing_ok=True)
-        return
-    if server_info:
-        print(f"Explorer: {server_info['url']}")
-        return
-    if args.background:
-        detach = {"creationflags": 0x00000008} if os.name == "nt" else {"start_new_session": True}
-        process = subprocess.Popen(
-            [sys.executable, str(Path(__file__).resolve()), "--workspace", str(ws), "serve", "--port", str(args.port)],
-            stdin=subprocess.DEVNULL, stdout=subprocess.DEVNULL, stderr=subprocess.DEVNULL, **detach)
-        for _ in range(60):
-            time.sleep(0.1)
-            server_info = running_server(ws)
-            if server_info:
-                print(f"Explorer: {server_info['url']}")
-                return
-            if process.poll() is not None:
+        fresh = []
+        for item in items:
+            keys = [key for key in (url_key(item["url"]), title_key(item["title"])) if key]
+            if keys and not any(key in seen for key in keys):
+                fresh.append(item)
+                for key in keys:
+                    seen[key] = today
+            if len(fresh) >= args.limit:
                 break
-        raise SystemExit("Explorer server did not start. Run `studio.py serve` in the foreground to see why.")
+        print(f"\n## {source['id']}: {source['url']} ({len(fresh)} new)")
+        for item in fresh:
+            print(f"- {item['title']} | {item['url']} | {item['published']}" + (f"\n  {item['summary']}" if item["summary"] else ""))
+    save(ws / "sources.json", data)
+    save(seen_path, {"keys": seen})
+    if without_feed:
+        print("\nNo feed; search these sites directly (for example `site:` queries):")
+        for source in without_feed:
+            print(f"- {source['id']}: {source['url']}" + (f" ({source['note']})" if source.get("note") else ""))
+    print(f"\nTopics: {', '.join(t['name'] for t in studio.topics())}")
 
-    for port in range(args.port, args.port + 20):
-        try:
-            server = ThreadingHTTPServer(("127.0.0.1", port), make_handler(ws))
-            break
-        except OSError:
-            continue
-    else:
-        raise SystemExit(f"No free port between {args.port} and {args.port + 19}")
-    url = f"http://localhost:{server.server_port}/"
-    save(info_path, {"pid": os.getpid(), "port": server.server_port, "url": url, "started": now()})
-    print(f"Explorer: {url} (Ctrl+C to stop)", flush=True)
+
+def cmd_start_run(ws: Path, args) -> None:
+    run, since, abandoned = Studio(ws).start_run(args.trigger)
+    if abandoned:
+        print(f"Marked unfinished runs abandoned: {', '.join(abandoned)}")
+    print(f"Run: {run['id']}")
+    print(f"Look for developments since: {since.isoformat(timespec='minutes')}")
+    sources = {s["id"]: s for s in Studio(ws).sources()}
+    if run["sources"]:
+        print("Check every one of these sources, then mark it with `studio.py checked`:")
+        for source_id in run["sources"]:
+            print(f"- {source_id}: {sources[source_id]['url']}")
+
+
+def cmd_add_findings(ws: Path, args) -> None:
+    raw = sys.stdin.read() if args.file == "-" else Path(args.file).expanduser().read_text(encoding="utf-8")
     try:
-        server.serve_forever()
-    except KeyboardInterrupt:
-        pass
-    finally:
-        server.server_close()
-        if load(info_path, {}).get("pid") == os.getpid():
-            info_path.unlink(missing_ok=True)
+        items = json.loads(raw)
+    except json.JSONDecodeError as error:
+        raise SystemExit(f"Invalid JSON: {error}")
+    added, merged = Studio(ws).add_findings(args.run, items)
+    print(f"Added {len(added)} findings" + (f", merged {len(merged)} into existing ones (same sources)" if merged else ""))
+
+
+def cmd_finish_run(ws: Path, args) -> None:
+    run = Studio(ws).finish_run(args.run, args.failed, args.note or "")
+    print(f"{run['id']}: {run['status']}, {run['findings']} findings, {len(run.get('checked', {}))}/{len(run.get('sources', []))} sources checked"
+          + (f", {run['suggested_sources']} sources suggested" if run.get("suggested_sources") else ""))
+
+
+def cmd_new_script(ws: Path, args) -> None:
+    script = Studio(ws).create_script(args.title, args.finding or [], args.topic or [])
+    print(f"Script: {ws / 'scripts' / script['id']}")
 
 
 def cmd_sql(ws: Path, args) -> None:
-    _, db_path = refresh(ws)
+    state = Studio(ws).state()
+    db_path = ws / "studio.db"
+    temporary = db_path.with_suffix(".db.tmp")
+    temporary.unlink(missing_ok=True)
+    db = sqlite3.connect(temporary)
+    db.executescript("""
+        CREATE TABLE topics(id TEXT PRIMARY KEY, name TEXT, description TEXT, created TEXT);
+        CREATE TABLE sources(id TEXT PRIMARY KEY, url TEXT, note TEXT, status TEXT, reason TEXT, feed TEXT, created TEXT);
+        CREATE TABLE findings(id TEXT PRIMARY KEY, title TEXT, summary TEXT, found_at TEXT, dismissed_at TEXT);
+        CREATE TABLE finding_topics(finding_id TEXT, topic_id TEXT);
+        CREATE TABLE finding_sources(finding_id TEXT, url TEXT, title TEXT, publisher TEXT, published TEXT, source_id TEXT);
+        CREATE TABLE scripts(id TEXT PRIMARY KEY, title TEXT, created TEXT, updated TEXT, drafted INTEGER);
+        CREATE TABLE script_findings(script_id TEXT, finding_id TEXT);
+        CREATE TABLE script_topics(script_id TEXT, topic_id TEXT);
+        CREATE TABLE runs(id TEXT PRIMARY KEY, trigger TEXT, status TEXT, started TEXT, finished TEXT, findings INTEGER, note TEXT);
+    """)
+    db.executemany("INSERT INTO topics VALUES (?,?,?,?)", [(t["id"], t["name"], t.get("description"), t.get("created")) for t in state["topics"]])
+    db.executemany("INSERT INTO sources VALUES (?,?,?,?,?,?,?)", [(s["id"], s["url"], s.get("note"), s["status"], s.get("reason"), s.get("feed"),
+                                                                  s.get("created")) for s in state["sources"]])
+    for f in state["findings"]:
+        db.execute("INSERT INTO findings VALUES (?,?,?,?,?)", (f["id"], f["title"], f.get("summary"), f.get("found_at"), f.get("dismissed_at")))
+        db.executemany("INSERT INTO finding_topics VALUES (?,?)", [(f["id"], t) for t in f.get("topics", [])])
+        db.executemany("INSERT INTO finding_sources VALUES (?,?,?,?,?,?)",
+                       [(f["id"], s["url"], s.get("title"), s.get("publisher"), s.get("published"), s.get("source_id")) for s in f.get("sources", [])])
+    for s in state["scripts"]:
+        db.execute("INSERT INTO scripts VALUES (?,?,?,?,?)", (s["id"], s["title"], s.get("created"), s.get("updated"), int(s["drafted"])))
+        db.executemany("INSERT INTO script_findings VALUES (?,?)", [(s["id"], f) for f in s["findings"]])
+        db.executemany("INSERT INTO script_topics VALUES (?,?)", [(s["id"], t) for t in s["topics"]])
+    db.executemany("INSERT INTO runs VALUES (?,?,?,?,?,?,?)", [(r["id"], r.get("trigger"), r.get("status"), r.get("started"),
+                                                                r.get("finished"), r.get("findings"), r.get("note")) for r in load(ws / "runs.json")["runs"]])
+    db.commit()
+    db.close()
+    temporary.replace(db_path)
+
     db = sqlite3.connect(f"{db_path.as_uri()}?mode=ro", uri=True)
     try:
         if not args.query:
             for (statement,) in db.execute("SELECT sql FROM sqlite_master WHERE type = 'table'"):
-                print(statement + ";")
+                print(statement.strip() + ";")
             return
         try:
             cursor = db.execute(args.query)
@@ -1036,6 +818,185 @@ def cmd_sql(ws: Path, args) -> None:
             print(f"… more rows; raise --limit (now {args.limit})")
     finally:
         db.close()
+
+
+# ---------------------------------------------------------------- web UI server
+
+def running_server(ws: Path) -> dict | None:
+    info = load(ws / ".cache" / "server.json", {})
+    if not info.get("url"):
+        return None
+    try:
+        with urllib.request.urlopen(info["url"] + "api/health", timeout=2) as response:
+            return info if response.read().decode() == str(ws) else None
+    except Exception:
+        return None
+
+
+def make_handler(ws: Path):
+    import threading
+    lock = threading.Lock()
+    studio = Studio(ws)
+    page = ASSETS / "ui" / "index.html"
+
+    class Handler(BaseHTTPRequestHandler):
+        def log_message(self, *args):
+            pass
+
+        def reply(self, code: int, body, content_type: str = "application/json; charset=utf-8") -> None:
+            if not isinstance(body, bytes):
+                body = json.dumps(body, ensure_ascii=False).encode()
+            self.send_response(code)
+            self.send_header("Content-Type", content_type)
+            self.send_header("Content-Length", str(len(body)))
+            self.send_header("Cache-Control", "no-store")
+            self.send_header("X-Content-Type-Options", "nosniff")
+            self.end_headers()
+            self.wfile.write(body)
+
+        def allowed(self, write: bool) -> bool:
+            # Only this machine may talk to the server (blocks DNS rebinding). Writes also need a custom
+            # header and a JSON body, which browsers will not send cross-site without a CORS preflight.
+            hostname = (self.headers.get("Host") or "").rsplit(":", 1)[0].strip("[]")
+            if hostname not in ("localhost", "127.0.0.1", "::1"):
+                return False
+            return not write or (self.headers.get("X-Vid-Studio") == "1"
+                                 and (self.headers.get("Content-Type") or "").startswith("application/json"))
+
+        def route(self, method: str):
+            if not self.allowed(method != "GET"):
+                return self.reply(403, {"error": "Forbidden"})
+            path = urllib.parse.urlsplit(self.path).path.rstrip("/") or "/"
+            parts = [urllib.parse.unquote(p) for p in path.strip("/").split("/")] if path != "/" else []
+            body = {}
+            if method in ("POST", "PUT"):
+                length = int(self.headers.get("Content-Length") or 0)
+                try:
+                    body = json.loads(self.rfile.read(length) or b"{}")
+                except json.JSONDecodeError:
+                    return self.reply(400, {"error": "Invalid JSON"})
+                if not isinstance(body, dict):
+                    return self.reply(400, {"error": "Expected a JSON object"})
+            try:
+                if method == "GET" and not parts:
+                    return self.reply(200, page.read_bytes(), "text/html; charset=utf-8")
+                if method == "GET" and len(parts) == 2 and parts[0] == "fonts" and re.fullmatch(r"[a-z0-9-]+\.woff2", parts[1]):
+                    font = page.parent / "fonts" / parts[1]
+                    if font.is_file():
+                        return self.reply(200, font.read_bytes(), "font/woff2")
+                if parts == ["api", "health"]:
+                    return self.reply(200, str(ws).encode(), "text/plain; charset=utf-8")
+                if parts[:1] != ["api"]:
+                    return self.reply(404, {"error": "Not found"})
+                with lock:
+                    result = self.api(method, parts[1:], body)
+                return self.reply(200, result)
+            except KeyError as error:
+                return self.reply(404, {"error": str(error.args[0] if error.args else error)})
+            except ValueError as error:
+                return self.reply(400, {"error": str(error)})
+            except RuntimeError as error:
+                return self.reply(409, {"error": str(error)})
+            except (SystemExit, OSError) as error:
+                return self.reply(500, {"error": str(error)})
+
+        def api(self, method: str, parts: list[str], body: dict):
+            resource, item = (parts + [None, None])[:2]
+            if method == "GET" and resource == "state":
+                return studio.state()
+            if resource == "settings" and method == "PUT":
+                return studio.update_settings(body)
+            if resource == "topics":
+                if method == "POST":
+                    return studio.add_topic(body.get("name", ""), body.get("description", ""))
+                if method == "PUT" and item:
+                    return studio.update_topic(item, body)
+                if method == "DELETE" and item:
+                    return studio.delete_topic(item) or {"ok": True}
+            if resource == "sources":
+                if method == "POST":
+                    return studio.add_source(body.get("url", ""), body.get("note", ""))
+                if method == "PUT" and item:
+                    return studio.update_source(item, body)
+                if method == "DELETE" and item:
+                    return studio.delete_source(item) or {"ok": True}
+            if resource == "findings" and method == "PUT" and item and "dismissed" in body:
+                return studio.set_dismissed(item, bool(body["dismissed"]))
+            if resource == "scripts":
+                if method == "GET" and item:
+                    return studio.script(item)
+                if method == "POST":
+                    return studio.create_script(body.get("title", ""), body.get("findings", []), body.get("topics", []))
+                if method == "PUT" and item:
+                    version = body.pop("version", None)
+                    return studio.update_script(item, body, version)
+                if method == "DELETE" and item:
+                    return studio.delete_script(item) or {"ok": True}
+            raise KeyError("Not found")
+
+        def do_GET(self):
+            self.route("GET")
+
+        def do_POST(self):
+            self.route("POST")
+
+        def do_PUT(self):
+            self.route("PUT")
+
+        def do_DELETE(self):
+            self.route("DELETE")
+
+    return Handler
+
+
+def cmd_serve(ws: Path, args) -> None:
+    info_path = ws / ".cache" / "server.json"
+    server_info = running_server(ws)
+    if args.stop:
+        if server_info:
+            os.kill(server_info["pid"], signal.SIGTERM)
+            print(f"Stopped {server_info['url']}")
+        else:
+            print("No server running")
+        info_path.unlink(missing_ok=True)
+        return
+    if server_info:
+        print(f"Studio: {server_info['url']}")
+        return
+    if args.background:
+        detach = {"creationflags": 0x00000008} if os.name == "nt" else {"start_new_session": True}
+        process = subprocess.Popen(
+            [sys.executable, str(Path(__file__).resolve()), "--workspace", str(ws), "serve", "--port", str(args.port)],
+            stdin=subprocess.DEVNULL, stdout=subprocess.DEVNULL, stderr=subprocess.DEVNULL, **detach)
+        for _ in range(60):
+            time.sleep(0.1)
+            server_info = running_server(ws)
+            if server_info:
+                print(f"Studio: {server_info['url']}")
+                return
+            if process.poll() is not None:
+                break
+        raise SystemExit("The studio server did not start. Run `studio.py serve` in the foreground to see why.")
+
+    for port in range(args.port, args.port + 20):
+        try:
+            server = ThreadingHTTPServer(("127.0.0.1", port), make_handler(ws))
+            break
+        except OSError:
+            continue
+    else:
+        raise SystemExit(f"No free port between {args.port} and {args.port + 19}")
+    url = f"http://localhost:{server.server_port}/"
+    save(info_path, {"pid": os.getpid(), "port": server.server_port, "url": url, "started": now()})
+    print(f"Studio: {url} (Ctrl+C to stop)", flush=True)
+    try:
+        server.serve_forever()
+    except KeyboardInterrupt:
+        pass
+    finally:
+        server.server_close()
+        if load(info_path, {}).get("pid") == os.getpid():
+            info_path.unlink(missing_ok=True)
 
 
 # ---------------------------------------------------------------- cli
@@ -1055,93 +1016,64 @@ def main(argv=None) -> None:
         return sub
 
     command("init", cmd_init, "Create the workspace; never overwrites files")
-    command("status", cmd_status, "Show state and the next actions")
+    command("status", cmd_status, "Show the channel, research runs, scripts, and suggestions")
 
-    sub = command("add-source", cmd_add_source, "Monitor a website, feed, Google News query, or Trends region")
-    sub.add_argument("--name")
-    sub.add_argument("--url")
-    sub.add_argument("--feed", help="RSS/Atom URL, including Google Alerts RSS feeds")
-    sub.add_argument("--news-query", help="Google News search to monitor")
-    sub.add_argument("--trends-geo", help="Google Trends daily trending searches for a country code")
-    sub.add_argument("--kind", choices=["feed", "page", "news", "alert", "trends"])
-    sub.add_argument("--why")
-    sub.add_argument("--id")
-    sub.add_argument("--no-discover", action="store_true", help="Skip feed auto-discovery for --url")
-
-    sub = command("add-topic", cmd_add_topic, "Add a topic")
-    sub.add_argument("--title", required=True)
-    sub.add_argument("--mode", choices=["once", "daily"], required=True)
-    sub.add_argument("--status", choices=["proposed", "active"], default="proposed")
-    sub.add_argument("--angle")
-    sub.add_argument("--why")
-    sub.add_argument("--query", action="append", help="Search query; repeatable")
-    sub.add_argument("--source", action="append", help="Related source ID; repeatable")
-    sub.add_argument("--id")
-
-    sub = command("lead", cmd_lead, "Attach an inbox item to a topic for its next run")
-    sub.add_argument("--topic", required=True)
-    sub.add_argument("--url", required=True)
-    sub.add_argument("--title")
-    sub.add_argument("--note")
-
-    sub = command("scan", cmd_scan, "Fetch feeds into inbox/<date>.md, skipping items already seen")
-    sub.add_argument("--source", action="append", help="Only this source ID; repeatable")
-    sub.add_argument("--limit", type=int, default=15, help="Max new items per source")
-
-    sub = command("checked", cmd_checked, "Record that manual pages were checked")
-    sub.add_argument("source", nargs="+")
-
-    command("triaged", cmd_triaged, "Mark the inbox as triaged")
-
-    sub = command("new-project", cmd_new_project, "Start a research project from a topic or title")
-    sub.add_argument("--topic")
-    sub.add_argument("--title")
-    sub.add_argument("--angle")
-
-    sub = command("no-news", cmd_no_news, "Record a daily run with nothing worth a video")
-    sub.add_argument("--topic", required=True)
-    sub.add_argument("--note", required=True)
-
-    sub = command("snapshot", cmd_snapshot, "Save a source locally as evidence and register it")
-    sub.add_argument("project")
-    sub.add_argument("url")
-    sub.add_argument("--type", choices=["primary", "data", "secondary", "analysis", "opinion"], default="secondary")
-    sub.add_argument("--title")
-    sub.add_argument("--publisher")
-    sub.add_argument("--published")
-    sub.add_argument("--note")
-    sub.add_argument("--text-file", help="Use text you captured yourself instead of fetching")
-
-    sub = command("check", cmd_check, "Validate claims, sources, evidence, and citations")
-    sub.add_argument("project")
-
-    command("ui", cmd_ui, "Rebuild the HTML explorer and SQLite index")
-
-    sub = command("serve", cmd_serve, "Serve the explorer at http://localhost (always fresh)")
+    sub = command("serve", cmd_serve, "Run the studio web UI at http://localhost")
     sub.add_argument("--port", type=int, default=8765)
-    sub.add_argument("--background", action="store_true", help="Start detached and return the URL")
+    sub.add_argument("--background", action="store_true", help="Start detached and print the URL")
     sub.add_argument("--stop", action="store_true")
 
-    sub = command("sql", cmd_sql, "Run a read-only SQL query on the index; no query prints the schema")
+    sub = command("add-topic", cmd_add_topic, "Add a topic")
+    sub.add_argument("--name", required=True)
+    sub.add_argument("--description")
+
+    sub = command("add-source", cmd_add_source, "Add a website to check on every research run")
+    sub.add_argument("--url", required=True)
+    sub.add_argument("--note")
+
+    sub = command("suggest-source", cmd_suggest_source, "Suggest a source; the user approves it in the Sources tab")
+    sub.add_argument("--url", required=True)
+    sub.add_argument("--reason", required=True, help="Why this source is worth checking on every run")
+    sub.add_argument("--note")
+    sub.add_argument("--run", help="Run that found it")
+
+    sub = command("checked", cmd_checked, "Mark sources as checked in a research run")
+    sub.add_argument("--run", required=True)
+    sub.add_argument("--source", action="append", required=True, help="Source ID; repeatable")
+    sub.add_argument("--note", help="What you found, or why the site could not be checked")
+
+    sub = command("scan", cmd_scan, "List new items from source feeds (helper for research runs)")
+    sub.add_argument("--limit", type=int, default=20, help="Max new items per source")
+
+    sub = command("start-run", cmd_start_run, "Start a research run; prints the run ID and the since-time")
+    sub.add_argument("--trigger", choices=["manual", "scheduled"], default="manual")
+
+    sub = command("add-findings", cmd_add_findings, "Save findings from a JSON file (or - for stdin)")
+    sub.add_argument("--run", required=True)
+    sub.add_argument("file")
+
+    sub = command("finish-run", cmd_finish_run, "Finish a research run")
+    sub.add_argument("--run", required=True)
+    sub.add_argument("--note")
+    sub.add_argument("--failed", metavar="REASON")
+
+    sub = command("new-script", cmd_new_script, "Create a script, optionally with findings attached")
+    sub.add_argument("--title", required=True)
+    sub.add_argument("--finding", action="append", help="Finding ID; repeatable")
+    sub.add_argument("--topic", action="append", help="Topic ID, for explainers; repeatable")
+
+    sub = command("sql", cmd_sql, "Query a SQLite copy of the studio; no query prints the schema")
     sub.add_argument("query", nargs="?")
     sub.add_argument("--limit", type=int, default=200)
-
-    sub = command("stage", cmd_stage, "Move a project to a stage (review stages require a passing check)")
-    sub.add_argument("project")
-    sub.add_argument("stage", choices=STAGES)
-    sub.add_argument("--note")
-    sub.add_argument("--force", action="store_true")
 
     args = parser.parse_args(argv)
     workspace = workspace_path(args.workspace)
     if args.command not in ("init", "status") and not (workspace / "studio.json").exists():
         raise SystemExit(f"No workspace at {workspace}. Run: studio.py init")
-    args.handler(workspace, args)
-    if args.command in REFRESH_AFTER:
-        try:
-            refresh(workspace)
-        except Exception as error:  # the command itself succeeded; a stale explorer is not fatal
-            print(f"Warning: explorer not refreshed: {error}", file=sys.stderr)
+    try:
+        args.handler(workspace, args)
+    except (ValueError, KeyError, RuntimeError) as error:
+        raise SystemExit(f"Error: {error.args[0] if error.args else error}")
 
 
 if __name__ == "__main__":

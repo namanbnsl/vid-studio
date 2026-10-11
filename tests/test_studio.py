@@ -1,13 +1,11 @@
 import contextlib
 import http.client
-import re
-import threading
 import io
 import json
 import sys
 import tempfile
+import threading
 import unittest
-import unittest.mock
 from pathlib import Path
 
 sys.path.insert(0, str(Path(__file__).resolve().parents[1] / "skills" / "vid-studio" / "scripts"))
@@ -16,16 +14,7 @@ import studio  # noqa: E402
 RSS = """<?xml version="1.0"?><rss version="2.0"><channel><title>T</title>
 <item><title>Rate cut announced by central bank today</title><link>https://example.com/a?utm_source=x</link>
 <pubDate>Sat, 10 Oct 2026 10:00:00 GMT</pubDate><description>&lt;b&gt;Big&lt;/b&gt; news</description></item>
-<item><title>Second story about something else entirely</title><link>https://example.com/b</link></item>
 </channel></rss>"""
-
-ATOM = """<?xml version="1.0"?><feed xmlns="http://www.w3.org/2005/Atom"><title>A</title>
-<entry><title>Rate cut announced by central bank today - Other Paper</title>
-<link rel="alternate" href="https://other.org/x"/><updated>2026-10-10</updated></entry></feed>"""
-
-PAGE = """<html><head><title>Fallback</title><meta property="og:title" content="Real Title">
-<meta property="article:published_time" content="2026-10-01"><meta property="og:site_name" content="Example News">
-<script>var x=1;</script></head><body><nav>Menu</nav><h1>Heading</h1><p>""" + "Body text. " * 80 + "</p></body></html>"
 
 
 class StudioTest(unittest.TestCase):
@@ -33,182 +22,214 @@ class StudioTest(unittest.TestCase):
         self.tmp = tempfile.TemporaryDirectory()
         self.root = Path(self.tmp.name)
         self.ws = self.root / "ws"
-        self.run_cli("init")
+        self.cli("init")
+        self.studio = studio.Studio(self.ws)
 
     def tearDown(self):
         self.tmp.cleanup()
 
-    def run_cli(self, *args):
+    def cli(self, *args, stdin=None):
         output = io.StringIO()
-        with contextlib.redirect_stdout(output):
-            studio.main(["--workspace", str(self.ws), *args])
+        old_stdin = sys.stdin
+        if stdin is not None:
+            sys.stdin = io.StringIO(stdin)
+        try:
+            with contextlib.redirect_stdout(output):
+                studio.main(["--workspace", str(self.ws), *args])
+        finally:
+            sys.stdin = old_stdin
         return output.getvalue()
 
-    def write(self, name, text):
-        path = self.root / name
-        path.write_text(text, encoding="utf-8")
-        return path.as_uri()
+    def run_with_findings(self, findings):
+        self.cli("start-run")
+        run_id = self.studio.runs()[-1]["id"]
+        self.cli("add-findings", "--run", run_id, "-", stdin=json.dumps(findings))
+        for source_id in self.studio.runs()[-1]["sources"]:
+            self.cli("checked", "--run", run_id, "--source", source_id)
+        self.cli("finish-run", "--run", run_id)
+        return run_id
 
-    def test_status_on_fresh_workspace_points_to_setup(self):
-        output = self.run_cli("status")
-        self.assertIn("Setup: incomplete", output)
-        self.assertIn("references/setup.md", output)
-
-    def test_workspace_flag_after_subcommand(self):
-        output = io.StringIO()
-        with contextlib.redirect_stdout(output):
-            studio.main(["status", "--workspace", str(self.ws)])
-        self.assertIn(str(self.ws), output.getvalue())
-
-    def test_scan_dedupes_by_url_and_title_across_feeds(self):
-        self.run_cli("add-source", "--name", "RSS", "--feed", self.write("a.xml", RSS))
-        self.run_cli("add-source", "--name", "Atom", "--feed", self.write("b.xml", ATOM))
-        first = self.run_cli("scan")
-        self.assertIn("New items: 2", first)
-        inbox = (self.ws / "inbox" / f"{studio.today()}.md").read_text()
-        self.assertIn("Rate cut announced", inbox)
-        self.assertIn("Big news", inbox)
-        self.assertNotIn("other.org", inbox)  # same headline, different feed
-        self.assertIn("New items: 0", self.run_cli("scan"))
-        self.assertIn("2 items since last triage", self.run_cli("status"))
-        self.run_cli("triaged")
-        self.assertIn("0 items since last triage", self.run_cli("status"))
-
-    def test_add_source_discovers_feed_from_page(self):
-        feed_uri = self.write("feed.xml", RSS)
-        page = self.write("site.html", f'<html><head><link rel="alternate" type="application/rss+xml" href="{feed_uri}"></head></html>')
-        output = self.run_cli("add-source", "--name", "Site", "--url", page)
-        self.assertIn("feed found", output)
-        source = json.loads((self.ws / "sources.json").read_text())["sources"][0]
-        self.assertEqual(source["feed"], feed_uri)
-
-    def test_page_without_feed_is_listed_for_manual_check(self):
-        self.run_cli("add-source", "--name", "Plain", "--url", self.write("plain.html", "<p>hi</p>"))
-        self.assertIn("Check these pages yourself", self.run_cli("scan"))
-
-    def test_news_query_uses_locale(self):
-        studio_json = json.loads((self.ws / "studio.json").read_text())
-        studio_json["locale"] = {"language": "hi", "country": "IN"}
-        (self.ws / "studio.json").write_text(json.dumps(studio_json))
-        with unittest.mock.patch.object(studio, "try_feed", return_value=True):
-            self.run_cli("add-source", "--news-query", "UPI fraud")
-        source = json.loads((self.ws / "sources.json").read_text())["sources"][0]
-        self.assertIn("q=UPI+fraud&hl=hi-IN&gl=IN&ceid=IN:hi", source["feed"])
-
-    def test_trends_feed_uses_news_item_url(self):
-        trends = """<rss xmlns:ht="https://trends.google.com/trending/rss" version="2.0"><channel>
-        <item><title>cricket</title><ht:approx_traffic>500+</ht:approx_traffic>
-        <link>https://trends.google.com/trending/rss?geo=IN</link>
-        <ht:news_item><ht:news_item_url>https://news.example/story</ht:news_item_url></ht:news_item></item></channel></rss>"""
-        items = studio.parse_feed(trends.encode())
-        self.assertEqual(items[0]["url"], "https://news.example/story")
-        self.assertIn("500+", items[0]["summary"])
-
-    def test_daily_topic_project_lifecycle(self):
-        self.run_cli("add-topic", "--title", "UPI growth", "--mode", "daily", "--status", "active")
-        self.assertIn("daily due: upi-growth", self.run_cli("status"))
-        self.run_cli("lead", "--topic", "upi-growth", "--url", "https://x.org/1", "--title", "Lead")
-        self.run_cli("new-project", "--topic", "upi-growth")
-        project_id = f"{studio.today()}-upi-growth"
-        project = json.loads((self.ws / "projects" / project_id / "project.json").read_text())
-        self.assertEqual(project["leads"][0]["url"], "https://x.org/1")
-        self.assertIn("UPI growth", (self.ws / "projects" / project_id / "plan.md").read_text())
-        topic = json.loads((self.ws / "topics.json").read_text())["topics"][0]
-        self.assertEqual(topic["leads"], [])
-        self.assertEqual(topic["last_run"], studio.today())
-        self.assertNotIn("daily due", self.run_cli("status"))
-
-        # Second project for the same topic links the first as its baseline.
-        output = self.run_cli("new-project", "--topic", "upi-growth")
-        self.assertIn(project_id, output)
-
-    def test_no_news_marks_topic_run(self):
-        self.run_cli("add-topic", "--title", "Chips", "--mode", "daily", "--status", "active")
-        self.run_cli("no-news", "--topic", "chips", "--note", "nothing since yesterday")
-        topic = json.loads((self.ws / "topics.json").read_text())["topics"][0]
-        self.assertEqual(topic["history"][-1]["result"], "no-news")
-
-    def test_snapshot_check_and_stage_gate(self):
-        self.run_cli("new-project", "--title", "Test")
-        project_id = f"{studio.today()}-test"
-        project = self.ws / "projects" / project_id
-        output = self.run_cli("snapshot", project_id, self.write("page.html", PAGE))
-        self.assertIn("S1: Real Title · Example News", output)
-        evidence = (project / "evidence" / "S1.md").read_text()
-        self.assertIn("published: 2026-10-01", evidence)
-        self.assertIn("## Heading", evidence)
-        self.assertNotIn("Menu", evidence)
-        self.assertNotIn("var x", evidence)
-        self.assertIn("Already captured", self.run_cli("snapshot", project_id, self.write("page.html", PAGE)))
-
-        text_file = self.root / "manual.txt"
-        text_file.write_text("Official statistic: 42 widgets.")
-        self.run_cli("snapshot", project_id, "https://stats.gov/table", "--type", "data", "--title", "Table", "--text-file", str(text_file))
-
-        claims = {"claims": [
-            {"id": "C1", "text": "42 widgets", "sources": ["S2"], "status": "verified"},
-            {"id": "C2", "text": "Body text", "sources": ["S1"], "status": "verified"},
-            {"id": "C3", "text": "Rumour", "sources": [], "status": "unverified"},
-        ]}
-        (project / "claims.json").write_text(json.dumps(claims))
-        (project / "script.md").write_text("Fact [C1]. Other [C2, C3]. Ghost [C9].")
-        (project / "brief.md").write_text("ok [C1]")
-        (project / "post.md").write_text("ok")
+    def test_topics_and_sources(self):
+        self.cli("add-topic", "--name", "UPI & payments", "--description", "Fees and rules")
         with self.assertRaises(SystemExit):
-            self.run_cli("check", project_id)
+            self.cli("add-topic", "--name", "upi & payments")  # duplicate names are rejected
+        self.cli("add-source", "--url", "rbi.org.in", "--note", "Press")
+        self.assertEqual(self.studio.sources()[0]["url"], "https://rbi.org.in")
         with self.assertRaises(SystemExit):
-            self.run_cli("stage", project_id, "script-review")
-
-        errors, _, _ = studio.run_checks(project)
-        joined = "\n".join(errors)
-        self.assertIn("C2: 'verified' needs", joined)  # one secondary source
-        self.assertIn("unverified claim C3", joined)
-        self.assertIn("unknown claim C9", joined)
-        self.assertNotIn("C1:", joined)  # data source is strong enough alone
-
-        claims["claims"][1]["status"] = "single-source"
-        (project / "claims.json").write_text(json.dumps(claims))
-        (project / "script.md").write_text("Fact [C1]. Other [C2].")
-        self.assertIn("Check passed", self.run_cli("check", project_id))
-        self.run_cli("stage", project_id, "script-review")
-        self.assertEqual(json.loads((project / "project.json").read_text())["stage"], "script-review")
-
-    def test_explorer_html_and_sqlite_index(self):
-        self.run_cli("add-topic", "--title", "Chips </script><b>x</b>", "--mode", "once", "--status", "active")
-        self.run_cli("new-project", "--topic", "chips-script-b-x-b")
-        page = (self.ws / "ui" / "index.html").read_text()
-        payload = re.search(r'<script id="studio-data" type="application/json">(.*?)</script>', page, re.S).group(1)
-        self.assertNotIn("</script>", payload)  # scraped text cannot break out of the data block
-        data = json.loads(payload)
-        self.assertEqual(data["projects"][0]["stage"], "planning")
-        self.assertIn("Chips </script>", data["topics"][0]["title"])
-        output = self.run_cli("sql", "SELECT id, stage FROM projects")
-        self.assertIn("planning", output)
-        self.assertIn("CREATE TABLE claims", self.run_cli("sql"))
+            self.cli("add-source", "--url", "https://rbi.org.in/")
         with self.assertRaises(SystemExit):
-            self.run_cli("sql", "DELETE FROM projects")  # index is opened read-only
+            self.cli("add-source", "--url", "javascript:alert(1)")
 
-    def test_server_serves_fresh_page_and_blocks_escapes(self):
+    def test_research_run_adds_and_merges_findings(self):
+        self.cli("add-topic", "--name", "UPI")
+        status = self.cli("status")
+        self.assertIn("last research: never", status)
+        run_id = self.run_with_findings([
+            {"title": "Fee delayed", "summary": "s", "topics": ["upi"],
+             "sources": [{"url": "https://a.com/1", "publisher": "A"}]},
+            {"title": "Same story elsewhere", "topics": ["UPI"], "sources": ["https://b.com/2", "https://a.com/1?utm_source=x"]},
+        ])
+        findings = self.studio.findings()
+        self.assertEqual(len(findings), 1)  # second item shares a source, so it merges
+        self.assertEqual({s["url"] for s in findings[0]["sources"]}, {"https://a.com/1", "https://b.com/2"})
+        run = self.studio.runs()[-1]
+        self.assertEqual((run["id"], run["status"], run["findings"]), (run_id, "completed", 1))
+        # The next run looks back from the last successful run, with overlap.
+        since = self.studio.research_since()
+        self.assertLess(since, studio.parse_time(run["started"]))
+
+    def test_findings_are_validated(self):
+        self.cli("add-topic", "--name", "UPI")
+        self.cli("start-run")
+        run_id = self.studio.runs()[-1]["id"]
+        for bad in ([{"title": "x", "topics": ["nope"], "sources": ["https://a.com"]}],
+                    [{"title": "x", "topics": ["UPI"], "sources": []}],
+                    [{"title": "", "sources": ["https://a.com"]}]):
+            with self.assertRaises(SystemExit):
+                self.cli("add-findings", "--run", run_id, "-", stdin=json.dumps(bad))
+        self.assertEqual(self.studio.findings(), [])
+
+    def test_scripts_attach_and_detect_conflicts(self):
+        self.cli("add-topic", "--name", "UPI")
+        self.run_with_findings([{"title": "F", "topics": ["UPI"], "sources": ["https://a.com/1"]}])
+        finding_id = self.studio.findings()[0]["id"]
+        self.cli("new-script", "--title", "Will UPI stay free?", "--finding", finding_id)
+        script = self.studio.scripts()[0]
+        self.assertEqual(script["findings"], [finding_id])
+        self.assertFalse(script["drafted"])
+
+        opened = self.studio.script(script["id"])
+        (self.ws / "scripts" / script["id"] / "script.md").write_text("Agent draft")  # agent writes meanwhile
+        with self.assertRaises(RuntimeError):
+            self.studio.update_script(script["id"], {"script": "user text"}, opened["version"])
+        fresh = self.studio.script(script["id"])
+        saved = self.studio.update_script(script["id"], {"post": "*Post*"}, fresh["version"])
+        self.assertEqual((saved["script"], saved["post"]), ("Agent draft", "*Post*"))
+        self.assertIn("drafted", self.cli("status"))
+
+        self.studio.delete_script(script["id"])
+        self.assertEqual(self.studio.scripts(), [])
+        self.assertTrue(any((self.ws / "scripts" / ".trash").iterdir()))
+
+    def test_deleting_topic_untags_findings(self):
+        self.cli("add-topic", "--name", "UPI")
+        self.run_with_findings([{"title": "F", "topics": ["UPI"], "sources": ["https://a.com/1"]}])
+        self.studio.delete_topic("upi")
+        self.assertEqual(self.studio.findings()[0]["topics"], [])
+
+    def test_scan_lists_new_feed_items_once(self):
+        feed = self.root / "feed.xml"
+        feed.write_text(RSS)
+        self.cli("add-source", "--url", "https://example.com")
+        data = json.loads((self.ws / "sources.json").read_text())
+        data["sources"][0].update(feed=feed.as_uri(), feed_checked=True)
+        (self.ws / "sources.json").write_text(json.dumps(data))
+        first = self.cli("scan")
+        self.assertIn("Rate cut announced", first)
+        self.assertIn("Big news", first)
+        self.assertNotIn("Rate cut announced", self.cli("scan"))
+
+    def test_runs_must_check_every_approved_source(self):
+        self.cli("add-topic", "--name", "UPI")
+        self.cli("add-source", "--url", "https://rbi.org.in", "--note", "Press")
+        self.cli("suggest-source", "--url", "https://npci.org.in", "--reason", "Primary data")
+        self.cli("start-run")
+        run_id = self.studio.runs()[-1]["id"]
+        self.assertEqual(self.studio.runs()[-1]["sources"], ["rbi-org-in"])  # suggestions are not required
+        with self.assertRaises(SystemExit):
+            self.cli("finish-run", "--run", run_id)
+        with self.assertRaises(SystemExit):
+            self.cli("checked", "--run", run_id, "--source", "npci-org-in")
+        self.cli("checked", "--run", run_id, "--source", "rbi-org-in", "--note", "1 new")
+        self.assertIn("1/1 sources checked", self.cli("finish-run", "--run", run_id))
+        # A failed run may finish without every check.
+        self.cli("start-run")
+        self.assertIn("failed", self.cli("finish-run", "--run", self.studio.runs()[-1]["id"], "--failed", "no network"))
+
+    def test_source_suggestions(self):
+        self.cli("suggest-source", "--url", "npci.org.in", "--reason", "Primary data")
+        source = self.studio.sources()[0]
+        self.assertEqual((source["status"], source["reason"]), ("suggested", "Primary data"))
+        with self.assertRaises(SystemExit):
+            self.cli("suggest-source", "--url", "https://npci.org.in/", "--reason", "again")
+        self.studio.update_source(source["id"], {"status": "dismissed"})
+        with self.assertRaises(SystemExit):
+            self.cli("suggest-source", "--url", "https://npci.org.in", "--reason", "please")  # stays dismissed
+        self.cli("add-source", "--url", "https://npci.org.in", "--note", "user wants it")  # the user can still add it
+        self.assertEqual(self.studio.sources()[0]["status"], "approved")
+        self.assertEqual(len(self.studio.sources()), 1)
+
+    def test_findings_link_to_your_sources_and_can_be_dismissed(self):
+        self.cli("add-topic", "--name", "UPI")
+        self.cli("add-source", "--url", "https://rbi.org.in/press")
+        self.run_with_findings([{"title": "Limit raised", "topics": ["UPI"],
+                                 "sources": ["https://www.rbi.org.in/press/123", "https://rbi.org.in/other", "https://news.com/x"]}])
+        finding = self.studio.findings()[0]
+        self.assertEqual([s["source_id"] for s in finding["sources"]], ["rbi-org-in-press", None, None])
+        self.studio.set_dismissed(finding["id"], True)
+        self.assertIn("dismissed_at", self.studio.findings()[0])
+        self.assertIn("Findings: 0", self.cli("status"))
+        self.studio.set_dismissed(finding["id"], False)
+        self.assertNotIn("dismissed_at", self.studio.findings()[0])
+
+    def test_explainer_scripts_link_topics(self):
+        self.cli("add-topic", "--name", "Chips")
+        self.cli("new-script", "--title", "How do chip fabs work?", "--topic", "chips")
+        script = self.studio.scripts()[0]
+        self.assertEqual((script["topics"], script["findings"]), (["chips"], []))
+        self.assertIn("material but no draft", self.cli("status"))
+        with self.assertRaises(SystemExit):
+            self.cli("new-script", "--title", "x", "--topic", "nope")
+        self.studio.delete_topic("chips")
+        self.assertEqual(self.studio.scripts()[0]["topics"], [])
+
+    def test_settings_validation(self):
+        self.studio.update_settings({"name": "Explained", "schedule": {"times": ["19:00", "07:00", "07:00"]}})
+        self.assertEqual(self.studio.settings()["schedule"]["times"], ["07:00", "19:00"])
+        for bad in ({"schedule": {"times": ["7am"]}}, {"name": " "}, {"owner_secret": "x"}):
+            with self.assertRaises(ValueError):
+                self.studio.update_settings(bad)
+
+    def test_sql(self):
+        self.cli("add-topic", "--name", "UPI")
+        self.run_with_findings([{"title": "F", "topics": ["UPI"], "sources": ["https://a.com/1", "https://b.com/1"]}])
+        self.assertIn("F\t2", self.cli("sql", "SELECT f.title, count(*) FROM findings f JOIN finding_sources s ON s.finding_id = f.id GROUP BY f.id"))
+        with self.assertRaises(SystemExit):
+            self.cli("sql", "DELETE FROM findings")
+
+    def test_web_api(self):
         server = studio.ThreadingHTTPServer(("127.0.0.1", 0), studio.make_handler(self.ws))
         threading.Thread(target=server.serve_forever, daemon=True).start()
         self.addCleanup(server.shutdown)
-        (self.root / "secret.txt").write_text("secret")
 
-        def get(path, host="localhost"):
+        def call(method, path, body=None, host="localhost", headers=None):
             connection = http.client.HTTPConnection("127.0.0.1", server.server_port)
-            connection.request("GET", path, headers={"Host": host})
+            sent = {"Host": host, **(headers if headers is not None else {"X-Vid-Studio": "1", "Content-Type": "application/json"})}
+            connection.request(method, path, body=json.dumps(body) if body is not None else None, headers=sent)
             response = connection.getresponse()
-            return response.status, response.read().decode()
+            raw = response.read().decode()
+            return response.status, (json.loads(raw) if raw.startswith(("{", "[")) else raw)
 
-        self.run_cli("add-topic", "--title", "Live topic", "--mode", "once")
-        status, body = get("/")
-        self.assertEqual(status, 200)
-        self.assertIn("Live topic", body)
-        self.assertEqual(get("/studio.json")[0], 200)
-        self.assertEqual(get("/../secret.txt")[0], 404)
-        self.assertEqual(get("/%2e%2e/secret.txt")[0], 404)
-        self.assertEqual(get("/studio.db")[0], 404)
-        self.assertEqual(get("/", host="evil.example")[0], 403)
+        self.assertEqual(call("GET", "/")[0], 200)
+        self.assertEqual(call("GET", "/api/health")[1], str(self.ws))
+        status, topic = call("POST", "/api/topics", {"name": "UPI", "description": "d"})
+        self.assertEqual((status, topic["name"]), (200, "UPI"))
+        self.assertEqual(call("POST", "/api/topics", {"name": ""})[0], 400)
+        self.assertEqual(call("PUT", "/api/topics/nope", {"name": "x"})[0], 404)
+        status, script = call("POST", "/api/scripts", {"title": "S"})
+        status, saved = call("PUT", f"/api/scripts/{script['id']}", {"script": "hi", "version": script["version"]})
+        self.assertEqual((status, saved["script"]), (200, "hi"))
+        self.assertEqual(call("PUT", f"/api/scripts/{script['id']}", {"script": "x", "version": script["version"]})[0], 409)
+        self.assertEqual(call("GET", "/api/scripts/..%2f..%2fetc")[0], 404)
+        status, linked = call("POST", "/api/scripts", {"title": "E", "topics": [topic["id"]]})
+        self.assertEqual(linked["topics"], [topic["id"]])
+        self.assertEqual(call("PUT", "/api/findings/nope", {"dismissed": True})[0], 404)
+        self.assertEqual(call("PUT", "/api/sources/nope", {"status": "approved"})[0], 404)
+        state = call("GET", "/api/state")[1]
+        self.assertEqual([t["name"] for t in state["topics"]], ["UPI"])
+        # Requests from other sites, or writes without the custom header, are refused.
+        self.assertEqual(call("GET", "/api/state", host="evil.example")[0], 403)
+        self.assertEqual(call("POST", "/api/topics", {"name": "Y"}, headers={"Content-Type": "text/plain"})[0], 403)
 
 
 if __name__ == "__main__":

@@ -1,48 +1,16 @@
 # Setup
 
-Goal: a filled `studio.json`, a first set of sources, and a first set of topics. Aim for about 10 minutes of the user's time.
+Goal: a named channel with a few good topics and sources, and the studio open. Keep it quick: the user can refine everything later in the UI.
 
-## 1. Create the workspace
+1. Run `studio.py init`. It never overwrites existing files. If the user wants the workspace somewhere other than `~/vid-studio`, suggest they set `VID_STUDIO_HOME`, or include the path in their prompts.
+2. In one short message, ask for:
+   - the channel name and what it covers
+   - the audience
+   - the language
+   - the timezone
+   - the subjects they want to follow
 
-Ask where the workspace should live only if the user cares; default to `~/vid-studio`. Then run `studio.py init`. Init never overwrites existing files, so it is safe to rerun.
-
-If the user picks a non-default path, tell them to set `VID_STUDIO_HOME` in their shell profile, or pass `--workspace` every time. Scheduled runs need one or the other.
-
-## 2. Interview
-
-Ask in two or three short rounds, not one long form. Offer a sensible default for each question so the user can just say "yes".
-
-Round 1, who and what:
-- Their name and the channel or brand name.
-- Audience: who watches, and what they already know.
-- Language for scripts and posts. Country and region, which set `locale` for Google News and Trends.
-- Timezone.
-- Interests: 3-8 subject areas, as specific as possible. "Indian fintech regulation" is better than "finance".
-- Topics or sources to avoid.
-
-Round 2, format (show the default `format` from `studio.json` and ask what to change):
-- Video length and aspect ratio.
-- Tone, and title style.
-- The beat structure. The default is Hook → Context → How it works → Evidence → So what → Takeaway.
-- WhatsApp post style: length, emoji use, and structure.
-- One or two example scripts, posts, or creators they like. Store paths or URLs in `format.examples`, and describe what to copy from each.
-
-Round 3, research and automation:
-- Trusted sources and blocked sources.
-- How deep and how fresh research should be, in their own words. Save it to `research.notes`.
-- Which review gates they want. The default is to approve new topics and the final script, and nothing else.
-- Whether to schedule a daily run.
-
-## 3. Save
-
-Write the answers into `studio.json`. Keep any fields the user already customised. Set `setup_complete: true` once owner, audience, language, timezone, and interests are filled.
-
-Show a five-line summary of the profile and the format. Apply corrections.
-
-## 4. Continue without being asked
-
-Go straight on to [discover.md](discover.md): propose sources, then topics. Then offer the daily schedule from [schedule.md](schedule.md).
-
-## Changing preferences later
-
-Edit `studio.json` directly when the user asks for a change. Projects that already exist keep their drafts. New work uses the new settings. If they want an open project updated, redo only its affected files.
+   Save the answers to `studio.json`: `name`, `description`, `audience`, `language`, and `timezone`. The default `script_format` and `post_format` are fine unless they have a house style; if they share example scripts or posts, write that style into those fields.
+3. **Propose topics.** Suggest 3–8 topics, each with a description of what matters and what to ignore. Topics are subjects, not single stories. Add the ones they accept with `studio.py add-topic --name N --description D`.
+4. **Suggest sources.** Find about 5–15 sites worth checking on every run: official bodies, data publishers, and outlets with original reporting. Open each one first to confirm it's live and relevant. Add each with `studio.py suggest-source --url U --reason "why"`. The user approves or dismisses them in the Sources tab. If the user approves in chat instead, use `studio.py add-source --url U --note N`, which adds the source as approved.
+5. Run `studio.py serve --background` and share the link. Offer a first research run and a daily schedule ([schedule.md](schedule.md)).

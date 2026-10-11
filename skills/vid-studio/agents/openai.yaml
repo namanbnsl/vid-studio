@@ -1,4 +1,4 @@
 interface:
   display_name: "Vid Studio"
-  short_description: "Monitor sources, research topics with verified claims, write explainer scripts and WhatsApp posts"
-  default_prompt: "Use $vid-studio to pick up where my research studio left off."
+  short_description: "Research news for your channel's topics and draft video scripts and WhatsApp posts"
+  default_prompt: "Use $vid-studio to research now."
