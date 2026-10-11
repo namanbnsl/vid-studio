@@ -1,6 +1,8 @@
 # Vid Studio
 
-Vid Studio is one skill for an AI agent. It sets up a local research studio and prepares content for approval.
+A skill pack for automating explainer-video research with any AI agent that supports [skills](https://skills.sh/), such as Claude Code, Codex, and others. It is a single skill, `vid-studio`, so you never have to remember which one to call. Ask in plain language and it routes itself.
+
+All data stays local in a workspace folder (default `~/vid-studio`).
 
 ## Install
 
@@ -8,32 +10,45 @@ Vid Studio is one skill for an AI agent. It sets up a local research studio and 
 npx skills add namanbnsl/vid-studio
 ```
 
-## Start
+## Use
 
-> Use vid-studio. Set up my research studio at /path/to/studio.
+> Use vid-studio.
 
-The first invocation starts this sequence:
+The first run sets up your profile, proposes sources and topics, and offers a daily schedule. After that, ask for anything:
 
-1. Learn your name, taste, language, audience, branding, and research interests.
-2. Find and propose websites to monitor. Use available search, LLM tools, and optional Google Alerts inputs.
-3. Find and propose topics from websites, LLM tools, and optional Google Trends data.
-4. Recommend one-time or daily monitors from context. Configure approved schedules through the available host scheduler.
-5. Break approved topics into questions and research them.
-6. Verify claims with sources. Save research and evidence locally.
-7. Generate a WhatsApp post and video script from approved research.
-8. Include title, structure, script, visual strategy, charts, data, and proposed real assets.
-9. Apply your edits and obtain approval. Stop at the approved post and script.
+- "Use vid-studio — what's new today?"
+- "Use vid-studio to monitor RBI press releases and Google News for UPI."
+- "Use vid-studio to research how India's semiconductor subsidies work."
+- "Use vid-studio — make the hook punchier and approve the script."
+- "Use vid-studio — run the daily routine." (this is what the scheduler sends)
 
-The agent prepares each next task proactively. You approve applicable stages before advancement. Preferences and monitors remain editable. Research-only output is also supported.
+## What it does
 
-## Files and tools
+**Research workspace**
 
-[SKILL.md](skills/vid-studio/SKILL.md) is the entry point. The [studio guide](skills/vid-studio/references/studio.md) covers setup and monitors. The [research guide](skills/vid-studio/references/research.md) covers research, verification, posts, and scripts.
+1. **Sources.** Websites (RSS auto-discovered), Google News searches, Google Alerts RSS feeds, and Google Trends by country. A scan pulls new items into a dated inbox and skips duplicates.
+2. **Topics.** Found from the inbox, Trends, and your interests. Each topic is `once` (one explainer) or `daily` (checked every day; a video is made only when there's real news).
+3. **Research.** Plan the subtopics, search, go upstream to primary sources, and save every cited source locally. Build a claim ledger with exact quotes. Cross-check the key facts, then write a cited brief with chart data and asset ideas.
+4. **Write.** A WhatsApp post and a video script in your standard structure. The script includes a visual plan for each beat (charts, real assets, graphics), with every fact tagged to a verified claim.
+5. **Review.** You edit and approve the script. `studio.py check` blocks review while citations are unsupported.
 
-Shared settings live in studio.json. STATUS.md records progress. monitoring/ contains definitions, checkpoints, and findings. Each project keeps its preferences, evidence, outputs, and approval notes.
+**Video workspace.** Not built yet. The approved `script.md` and its `data/` folder are the hand-off.
 
-The agent uses your available tools and services. Alerts and Trends integrations are optional. A saved cadence is not a running schedule. Files stay local; external processing needs approval.
+## Files
 
-The workflow ends at approved posts and scripts. It does not produce videos, send posts, or publish content.
+```
+skills/vid-studio/
+  SKILL.md              entry point and router
+  references/           setup, discover, research, write, schedule playbooks
+  scripts/studio.py     workspace helper (Python 3 stdlib): init, status, add-source, add-topic,
+                        scan, lead, triaged, new-project, no-news, snapshot, check, stage
+  assets/               workspace and project templates
+```
 
-The two Python helpers create missing workspace files and resolve project preferences. They use the Python standard library.
+Scheduling: [schedule.md](skills/vid-studio/references/schedule.md) covers cron or launchd running a headless agent locally, host-app scheduled tasks, and why cloud schedulers (ChatGPT Tasks and similar) can't write to your local workspace.
+
+## Develop
+
+```sh
+python3 -m unittest discover tests
+```
