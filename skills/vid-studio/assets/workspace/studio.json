@@ -5,12 +5,14 @@
   "channel": "",
   "audience": "",
   "language": "",
-  "locale": {"language": "en", "country": "US"},
+  "locale": {
+    "language": "en",
+    "country": "US"
+  },
   "timezone": "",
   "interests": [],
   "avoid": [],
   "research": {
-    "depth": "standard",
     "freshness_days": 30,
     "trusted_sources": [],
     "blocked_sources": [],
@@ -31,17 +33,46 @@
     "tone": "clear, curious, no hype",
     "title_rules": "Under 60 characters. Concrete and specific. No clickbait the video cannot pay off.",
     "structure": [
-      {"beat": "Hook", "seconds": 5, "purpose": "A surprising fact, number, or question that makes the viewer stay."},
-      {"beat": "Context", "seconds": 15, "purpose": "What happened or what this is, and why it matters now."},
-      {"beat": "How it works", "seconds": 30, "purpose": "The core mechanism, in 2-3 simple steps."},
-      {"beat": "Evidence", "seconds": 20, "purpose": "The key numbers, shown as a chart or data card."},
-      {"beat": "So what", "seconds": 15, "purpose": "What it means for the viewer, including the main caveat."},
-      {"beat": "Takeaway", "seconds": 5, "purpose": "One memorable line. Optional call to action."}
+      {
+        "beat": "Hook",
+        "seconds": 5,
+        "purpose": "A surprising fact, number, or question that makes the viewer stay."
+      },
+      {
+        "beat": "Context",
+        "seconds": 15,
+        "purpose": "What happened or what this is, and why it matters now."
+      },
+      {
+        "beat": "How it works",
+        "seconds": 30,
+        "purpose": "The core mechanism, in 2-3 simple steps."
+      },
+      {
+        "beat": "Evidence",
+        "seconds": 20,
+        "purpose": "The key numbers, shown as a chart or data card."
+      },
+      {
+        "beat": "So what",
+        "seconds": 15,
+        "purpose": "What it means for the viewer, including the main caveat."
+      },
+      {
+        "beat": "Takeaway",
+        "seconds": 5,
+        "purpose": "One memorable line. Optional call to action."
+      }
     ],
     "whatsapp": {
       "max_words": 180,
       "emoji": "minimal",
-      "structure": ["Bold title", "2-4 short paragraphs or bullets", "One-line takeaway", "Sources"]
+      "structure": [
+        "Bold title",
+        "2-4 short paragraphs or bullets",
+        "One-line takeaway",
+        "Sources"
+      ]
     },
     "examples": []
   },

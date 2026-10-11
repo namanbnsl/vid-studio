@@ -9,7 +9,7 @@ TODO: 3-5 sentences. Every factual sentence cites claims like [C1].
 TODO: for daily topics, what changed since the previous project. Otherwise remove.
 
 ## Findings
-TODO: one section per subtopic, each sentence with claim IDs.
+TODO: what you found, organised however suits the topic. Cite claim IDs.
 
 ## Key numbers
 

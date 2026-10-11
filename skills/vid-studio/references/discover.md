@@ -15,19 +15,11 @@ Add `--why "..."` to every source so later runs know what it is for.
 
 ### Finding sources
 
-For each interest in `studio.json`:
+Find sources that will keep surfacing relevant, trustworthy stories for the user's interests. Go primary where you can: official bodies, data publishers, original reporting. Mix them as you see fit with feeds, Google News queries, Alerts, and Trends.
 
-1. **Primary sources.** These are regulators, ministries, statistics offices, central banks, standards bodies, company newsrooms and investor-relations pages, journals, and preprint servers. They are what you will cite most.
-2. **Quality secondary sources.** Specialist outlets, reputable newspapers' section feeds, analyst newsletters, and research blogs. Prefer sources with original reporting over aggregators.
-3. **One or two Google News queries per interest.** Use specific phrases and the names of key entities. Use operators where useful, such as `"RBI" digital lending` or `site:gov.in`.
-4. **Google Alerts** for narrow terms Google News misses, like company names or bill numbers. Draft the exact queries for the user.
-5. **One Trends feed** for the user's country, if they make timely content.
-
-After adding a Google News query, run `studio.py scan --source ID --limit 10` and read the results. A bare acronym can match unrelated outlets: "UPI" also matches stories from upi.com. If the results are noisy, make the query more specific and re-add it.
-
-Use web search to find candidates. Open each one to confirm it is live, relevant, and updated recently. A model's suggestion is only a lead until you have opened it.
-
-Present 10-20 candidates in one table with columns name, kind, why, and feed found (yes/no). The user can approve all of them, remove some, or add their own. Then run `add-source` for each approved row. If the user said not to gate sources, add them and just report the list.
+- Only propose sources you have actually opened and confirmed are live.
+- After adding a Google News query, scan it once (`studio.py scan --source ID --limit 10`) and check the results are on-topic. Bare acronyms often match unrelated outlets.
+- Show the candidates with a reason for each. Add the ones the user approves. If the user said not to gate sources, add them all and report the list.
 
 ### Google Alerts setup (user does this)
 
@@ -54,21 +46,9 @@ Choose the mode from context and say why. If the user specifies a mode, use it.
 
 ### Finding topics
 
-Pull candidates from:
-- The inbox, as recurring stories across sources.
-- Trends feeds, cross-checked against the user's interests.
-- The interests themselves. Brainstorm "what does my audience misunderstand about X?" and "what changed in X this month?", then confirm each idea with a quick search.
-- Gaps in existing projects, such as follow-ups and open questions in earlier briefs.
+Propose topics this audience will care about, with something real to explain and enough evidence to show. Draw on the inbox, Trends, the user's interests, gaps in past projects, or anything else you judge useful. Skip any that duplicate active topics or past projects (check `topics.json` and `projects/`).
 
-Score each candidate on four questions:
-1. **Fit:** does this audience care?
-2. **Explainability:** is there a mechanism or story to explain, not just a headline?
-3. **Evidence:** are there sources and data to show?
-4. **Timing:** why now?
-
-Drop weak candidates. Also skip any that duplicate active topics or past projects (check `topics.json` and `projects/`).
-
-Propose 5-10 topics in a table with columns title, mode, angle, why now, and the best sources. Add each one with `add-topic --title T --mode once|daily --angle A --why W --query Q... --source ID... --status proposed`. Use `--status active` if `review.topics` is false or the user already approved it.
+For each topic, give a mode (`once` or `daily`), an angle, and why now. Add each one with `add-topic --title T --mode once|daily --angle A --why W [--query Q]... [--source ID]... --status proposed`. Use `--status active` if `review.topics` is false or the user already approved it.
 
 When the user approves topics, set their `status` to `active` in `topics.json`. Other statuses are `paused`, `used` (a once topic already researched), and `archived`.
 

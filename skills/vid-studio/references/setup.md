@@ -29,7 +29,7 @@ Round 2, format (show the default `format` from `studio.json` and ask what to ch
 
 Round 3, research and automation:
 - Trusted sources and blocked sources.
-- Depth: `quick` (5-8 sources), `standard` (10-15), or `deep` (20+).
+- How deep and how fresh research should be, in their own words. Save it to `research.notes`.
 - Which review gates they want. The default is to approve new topics and the final script, and nothing else.
 - Whether to schedule a daily run.
 
