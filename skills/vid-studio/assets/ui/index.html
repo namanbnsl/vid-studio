@@ -19,6 +19,7 @@
   --shadow: 0 1px 2px rgba(17,17,16,.06), 0 8px 24px rgba(17,17,16,.06);
 }
 * { box-sizing: border-box; }
+[hidden] { display: none !important; }
 html { -webkit-text-size-adjust: 100%; background: var(--bg); }
 body { margin: 0; background: var(--bg); color: var(--ink); font: 14px/1.55 var(--sans); -webkit-font-smoothing: antialiased; font-synthesis: none; }
 a { color: inherit; }
@@ -28,15 +29,29 @@ button, input, textarea, select { font: inherit; color: inherit; }
 .wrap { max-width: 1040px; margin: 0 auto; padding: 0 32px 140px; }
 
 .topbar { display: flex; align-items: center; justify-content: space-between; height: 60px; border-bottom: 1px solid var(--line); margin-bottom: 48px; }
-.brand { display: flex; align-items: center; gap: 10px; font-weight: 650; font-size: 15px; letter-spacing: -.01em; }
+.brand { display: flex; align-items: center; gap: 10px; font-weight: 650; font-size: 15px; letter-spacing: -.01em; text-decoration: none; }
 .brand svg { width: 24px; height: 24px; }
+.topbar-left { display: flex; align-items: center; gap: 10px; min-width: 0; }
+.slash { color: var(--line-2); font-size: 20px; font-weight: 300; }
+.switcher { position: relative; }
+.switch-btn { display: inline-flex; align-items: center; gap: 6px; height: 32px; padding: 0 8px 0 10px; border: 0; border-radius: 8px; background: transparent; font-weight: 600; font-size: 14px; cursor: pointer; max-width: 260px; }
+.switch-btn:hover { background: var(--surface-2); }
+.switch-btn svg { width: 14px; height: 14px; color: var(--ink-3); flex: none; }
+.menu { position: absolute; top: 38px; left: 0; z-index: 20; min-width: 260px; background: var(--bg); border: 1px solid var(--line); border-radius: 12px; box-shadow: var(--shadow); padding: 6px; }
+.menu-label { font-size: 12.5px; color: var(--ink-3); padding: 8px 10px 4px; }
+.menu-item { display: flex; align-items: center; justify-content: space-between; gap: 10px; width: 100%; padding: 8px 10px; border: 0; border-radius: 8px; background: transparent; text-decoration: none; font-size: 13.5px; font-weight: 550; cursor: pointer; text-align: left; }
+.menu-item:hover { background: var(--surface); }
+.menu-item.on { background: var(--surface-2); }
+button.menu-item { justify-content: flex-start; color: var(--ink-2); margin-top: 4px; }
+button.menu-item svg { width: 14px; height: 14px; }
+
 
 .head { display: flex; justify-content: space-between; gap: 24px; flex-wrap: wrap; align-items: flex-end; margin-bottom: 32px; }
-.eyebrow { font: 500 10.5px/1 var(--mono); letter-spacing: .16em; text-transform: uppercase; color: var(--ink-3); margin-bottom: 12px; }
 h1 { font-size: 34px; line-height: 1.1; font-weight: 650; letter-spacing: -.035em; margin: 0; }
 .lede { color: var(--ink-2); margin: 10px 0 0; max-width: 560px; font-size: 15px; }
 .head-actions { display: flex; flex-direction: column; align-items: flex-end; gap: 10px; }
-.head-actions .row-buttons { display: flex; gap: 8px; flex-wrap: wrap; justify-content: flex-end; }
+.link-btn { border: 0; background: none; padding: 0; font: inherit; color: var(--ink-2); cursor: pointer; text-decoration: underline; text-decoration-color: var(--line-2); text-underline-offset: 3px; }
+.link-btn:hover { color: var(--ink); text-decoration-color: currentColor; }
 .run-status { font-size: 12.5px; color: var(--ink-3); display: flex; align-items: center; gap: 6px; }
 .run-status .dot { width: 6px; height: 6px; border-radius: 50%; background: #16a34a; }
 .run-status .dot.idle { background: var(--line-2); }
@@ -69,19 +84,24 @@ h1 { font-size: 34px; line-height: 1.1; font-weight: 650; letter-spacing: -.035e
 h2 { font-size: 19px; font-weight: 650; letter-spacing: -.02em; margin: 0; }
 .section-head p { margin: 4px 0 0; color: var(--ink-2); max-width: 620px; }
 
-.list { border-top: 1px solid var(--line); }
-.item { display: flex; gap: 16px; padding: 20px 4px; border-bottom: 1px solid var(--line); align-items: flex-start; }
-.item .glyph { width: 34px; height: 34px; border-radius: 9px; background: var(--surface-2); display: grid; place-items: center; color: var(--ink-2); flex: none; }
-.item .glyph svg { width: 16px; height: 16px; }
+.list { display: grid; gap: 8px; }
+.item { display: flex; gap: 14px; align-items: flex-start; padding: 16px 16px 16px 20px; border: 1px solid var(--line); border-radius: 12px; background: var(--bg); transition: border-color .12s; }
+.item[data-card] { cursor: pointer; }
+.item[data-card]:hover { border-color: #cfcdc8; }
+.item[data-card]:focus-visible { outline-offset: 1px; border-radius: 12px; }
+.item.is-selected, .item.is-selected:hover { border-color: var(--ink); }
 .item .body { flex: 1; min-width: 0; }
 .item h3 { font-size: 15px; font-weight: 600; margin: 0; letter-spacing: -.012em; line-height: 1.4; }
 .item h3 a { text-decoration: none; }
 .item h3 a:hover { text-decoration: underline; text-underline-offset: 3px; }
 .item p { margin: 4px 0 0; color: var(--ink-2); max-width: 700px; overflow-wrap: anywhere; }
-.item .tools { display: flex; gap: 2px; opacity: 0; transition: opacity .12s; }
-.item:hover .tools, .item:focus-within .tools { opacity: 1; }
+.item .tools { flex: none; display: flex; gap: 6px; align-items: center; margin: -4px -6px 0 0; opacity: 0; transition: opacity .12s; }
+.item:hover .tools, .item:focus-within .tools, .item.suggestion .tools, .item.is-dismissed .tools { opacity: 1; }
 @media (hover: none) { .item .tools { opacity: 1; } }
-.meta { font: 500 10.5px/1.4 var(--mono); letter-spacing: .06em; text-transform: uppercase; color: var(--ink-3); margin-top: 10px; }
+.item .tools .icon-btn { width: 28px; height: 28px; }
+.item .tools .btn.small { height: 28px; }
+.icon-btn.delete:hover { color: var(--danger); background: #fdf1ec; }
+.meta { font-size: 12.5px; color: var(--ink-3); margin-top: 8px; }
 .muted { color: var(--ink-3); }
 
 .chips { display: flex; gap: 6px; flex-wrap: wrap; margin-bottom: 22px; }
@@ -123,28 +143,57 @@ h2 { font-size: 19px; font-weight: 650; letter-spacing: -.02em; margin: 0; }
 .editor { display: grid; grid-template-columns: minmax(0, 1fr) 300px; gap: 40px; align-items: start; }
 .title-input { width: 100%; border: 0; background: transparent; font-size: 30px; font-weight: 650; letter-spacing: -.035em; padding: 2px 0; margin-bottom: 16px; border-radius: 6px; }
 .title-input:focus { outline: none; }
-.subtabs { display: flex; gap: 4px; margin-bottom: 12px; flex-wrap: wrap; }
+.subtabs { display: flex; gap: 12px; margin-bottom: 12px; flex-wrap: wrap; justify-content: space-between; align-items: center; }
+.subtabs > div { display: flex; gap: 4px; flex-wrap: wrap; }
 textarea.doc { display: block; width: 100%; min-height: 480px; resize: vertical; border: 1px solid var(--line-2); border-radius: 12px; padding: 20px 22px; background: var(--bg); font: 15px/1.75 var(--sans); color: var(--ink); }
 textarea.doc::placeholder { color: var(--ink-3); }
+textarea.doc.short { min-height: 260px; }
+.md { min-height: 480px; border: 1px solid var(--line); border-radius: 12px; padding: 20px 22px; background: var(--bg); font: 15px/1.75 var(--sans); overflow-wrap: anywhere; cursor: text; }
+.md > :first-child { margin-top: 0; }
+.md > :last-child { margin-bottom: 0; }
+.md h1, .md h2, .md h3, .md h4, .md h5, .md h6 { letter-spacing: -.02em; line-height: 1.3; margin: 1.6em 0 .5em; font-weight: 650; }
+.md h1 { font-size: 24px; } .md h2 { font-size: 19px; } .md h3 { font-size: 16.5px; } .md h4, .md h5, .md h6 { font-size: 15px; }
+.md p, .md ul, .md ol, .md blockquote, .md pre, .md table { margin: 0 0 1em; }
+.md ul, .md ol { padding-left: 22px; }
+.md li { margin: 3px 0; }
+.md li::marker { color: var(--ink-3); }
+.md blockquote { border-left: 3px solid var(--line-2); padding: 2px 0 2px 16px; color: var(--ink-2); }
+.md hr { border: 0; border-top: 1px solid var(--line); margin: 1.6em 0; }
+.md a { color: var(--focus); text-underline-offset: 2px; }
+.md pre { background: var(--surface); border: 1px solid var(--line); border-radius: 10px; padding: 12px 14px; overflow-x: auto; }
+.md pre code { background: none; padding: 0; font-size: 13px; }
+.md table { border-collapse: collapse; width: 100%; font-size: 14px; display: block; overflow-x: auto; }
+.md th, .md td { border: 1px solid var(--line); padding: 7px 10px; text-align: left; vertical-align: top; }
+.md th { background: var(--surface); font-weight: 600; }
+.md .cite { font-size: 11px; color: var(--ink-3); vertical-align: super; }
+.md-empty { color: var(--ink-3); }
+.md em { font-synthesis: style; }
 textarea.doc:focus { outline: none; border-color: #c9c7c2; box-shadow: 0 0 0 4px var(--surface-2); }
-.editor-actions { display: flex; gap: 8px; align-items: center; margin-top: 12px; flex-wrap: wrap; }
-.save-state { font-size: 12.5px; color: var(--ink-3); margin-left: 6px; }
+.doc-tools { display: flex; align-items: center; gap: 8px; }
+.doc-tools .btn.small { height: 32px; }
+.doc-tools .btn.ghost:last-child { margin-right: -10px; }
+#save-area { display: inline-flex; align-items: center; gap: 10px; }
+.save-state { display: inline-flex; align-items: center; gap: 5px; font-size: 12.5px; color: var(--ink-3); }
 .save-state.dirty { color: var(--ink-2); }
 .banner { display: flex; gap: 12px; align-items: center; justify-content: space-between; flex-wrap: wrap; border: 1px solid #f1d8a8; background: #fff8eb; border-radius: 10px; padding: 10px 14px; margin-bottom: 14px; font-size: 13px; }
 .side { position: sticky; top: 24px; }
-.side h4 { font: 500 10.5px/1 var(--mono); letter-spacing: .14em; text-transform: uppercase; color: var(--ink-3); margin: 10px 0 14px; display: flex; justify-content: space-between; align-items: center; }
-.side h4 .btn { font-family: var(--sans); letter-spacing: 0; text-transform: none; }
-.ref { border: 1px solid var(--line); border-radius: 10px; padding: 12px 12px 10px 14px; margin-bottom: 10px; background: var(--bg); }
+.draft-btn { width: 100%; height: 40px; margin: 6px 0 28px; }
+.side section + section { margin-top: 22px; }
+.side h4 { font-size: 13px; font-weight: 600; color: var(--ink-2); margin: 0 0 8px; display: flex; justify-content: space-between; align-items: center; }
+.side h4 .btn { margin-right: -10px; }
+.ref { padding: 12px 14px; border: 1px solid var(--line); border-radius: 10px; margin-bottom: 8px; }
 .ref-top { display: flex; gap: 8px; justify-content: space-between; align-items: flex-start; }
 .ref b { font-size: 13.5px; font-weight: 600; line-height: 1.4; }
-.ref p { margin: 4px 0 0; font-size: 12.5px; color: var(--ink-2); }
-.ref ul { margin: 8px 0 0; padding: 8px 0 0; list-style: none; font-size: 12px; border-top: 1px solid var(--line); }
-.ref li { padding: 2px 0; overflow-wrap: anywhere; }
-.ref li a { color: var(--ink-2); text-underline-offset: 2px; }
-.ref li a:hover { color: var(--ink); }
-.ref .icon-btn { width: 26px; height: 26px; flex: none; margin: -3px -4px 0 0; }
-.side .hint { font-size: 13px; color: var(--ink-3); border: 1px dashed var(--line-2); border-radius: 10px; padding: 14px; }
-.preview-label { font: 500 10.5px/1 var(--mono); letter-spacing: .14em; text-transform: uppercase; color: var(--ink-3); margin: 28px 0 10px; }
+.ref p { margin: 6px 0 0; font-size: 12.5px; line-height: 1.55; color: var(--ink-2); }
+.ref ul { margin: 8px 0 0; padding: 0; list-style: none; font-size: 12px; }
+.ref li { padding: 1px 0; overflow-wrap: anywhere; }
+.ref li a { color: var(--ink-3); text-decoration: none; }
+.ref li a:hover { color: var(--ink); text-decoration: underline; text-underline-offset: 2px; }
+.ref .icon-btn { width: 24px; height: 24px; flex: none; margin: -3px -6px 0 0; opacity: 0; }
+.ref:hover .icon-btn, .ref:focus-within .icon-btn { opacity: 1; }
+@media (hover: none) { .ref .icon-btn { opacity: 1; } }
+.ref .icon-btn svg { width: 14px; height: 14px; }
+.preview-label { font-size: 13px; font-weight: 600; color: var(--ink-2); margin: 24px 0 8px; }
 .phone { background: #efe7de; border-radius: 14px; padding: 18px; }
 .bubble { background: #fff; color: #111; border-radius: 4px 10px 10px 10px; padding: 10px 12px 8px; max-width: 420px; font: 14.5px/1.45 var(--sans); box-shadow: 0 1px 1px rgba(0,0,0,.1); white-space: pre-wrap; overflow-wrap: anywhere; }
 .bubble:empty::before { content: "Nothing to preview yet."; color: var(--ink-3); }
@@ -183,30 +232,22 @@ dialog .sub { margin: 0 0 20px; color: var(--ink-2); font-size: 13.5px; }
 .toast { background: var(--primary); color: var(--primary-ink); padding: 10px 14px; border-radius: 10px; font-size: 13px; font-weight: 550; box-shadow: var(--shadow); max-width: 380px; animation: toast-in .18s ease-out; }
 .toast.error { background: var(--danger); }
 @keyframes toast-in { from { transform: translateY(6px); opacity: 0; } }
-.row-actions { display: flex; align-items: center; gap: 6px; }
 .meta-link { color: inherit; text-decoration: none; }
 .meta-link:hover { color: var(--ink); text-decoration: underline; text-underline-offset: 3px; }
 .warn { color: var(--danger); }
 .badge { font: 600 10.5px/1 var(--sans); color: #fff; background: var(--focus); border-radius: 99px; padding: 3px 7px; }
 .pill { font: 500 11px/1 var(--mono); background: var(--surface-2); border-radius: 5px; padding: 3px 6px; color: var(--ink-2); }
-.suggestions { border: 1px solid #cfe0fb; background: #f5f9ff; border-radius: 14px; padding: 6px 16px; margin-bottom: 28px; }
-.label-row { display: flex; align-items: center; gap: 8px; font: 500 10.5px/1 var(--mono); letter-spacing: .14em; text-transform: uppercase; color: #3d5f99; padding: 12px 0 6px; }
-.suggestion { display: flex; gap: 16px; align-items: flex-start; justify-content: space-between; padding: 14px 0; border-top: 1px solid #dde8fa; }
-.suggestion:first-of-type { border-top: 0; }
-.suggestion h3 { margin: 0; font-size: 14.5px; font-weight: 600; }
-.suggestion h3 a { text-decoration: none; }
-.suggestion h3 a:hover { text-decoration: underline; text-underline-offset: 3px; }
-.suggestion p { margin: 3px 0 0; color: var(--ink-2); }
-.suggestion .inline { flex: none; }
+.suggestions { margin-bottom: 28px; }
+.suggestion { border-color: #cfe0fb; background: #f7faff; }
+.label-row { display: flex; align-items: center; gap: 8px; font-size: 13px; font-weight: 600; color: var(--ink-2); margin-bottom: 10px; }
 .dismissed { margin-top: 20px; color: var(--ink-3); font-size: 13px; }
 .dismissed summary { cursor: pointer; }
 .dismissed-row { display: flex; align-items: center; justify-content: space-between; padding: 6px 0; border-bottom: 1px solid var(--line); }
 .finding.is-dismissed { opacity: .5; }
-.finding { padding: 16px 4px; gap: 14px; }
-.finding h3 { font-size: 15px; }
-.finding p { margin-top: 3px; }
+.finding .check { margin-top: 2px; }
+.finding.is-dismissed { cursor: default; }
 .finding-meta { display: flex; flex-wrap: wrap; align-items: center; gap: 4px 0; margin-top: 8px; font-size: 12.5px; color: var(--ink-3); }
-.finding-meta > span + span::before { content: "·"; margin: 0 8px; }
+.finding-meta > span + span::before { content: "·"; margin: 0 6px; }
 .finding-meta .links a { color: var(--ink-2); text-decoration: none; }
 .finding-meta .links a + a::before { content: ", "; color: var(--ink-3); }
 .finding-meta .links a:hover { color: var(--ink); text-decoration: underline; text-underline-offset: 3px; }
@@ -215,11 +256,11 @@ dialog .sub { margin: 0 0 20px; color: var(--ink-2); font-size: 13.5px; }
 .field select { appearance: none; background: var(--bg) url("data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' width='12' height='12' viewBox='0 0 24 24' fill='none' stroke='%238f8c86' stroke-width='2'%3E%3Cpath d='m6 9 6 6 6-6'/%3E%3C/svg%3E") no-repeat right 12px center; padding-right: 32px; }
 .text-btn { border: 0; background: none; color: var(--ink-3); font-size: 13px; padding: 14px 4px; cursor: pointer; }
 .text-btn:hover { color: var(--ink); text-decoration: underline; text-underline-offset: 3px; }
-.topic-links { display: flex; flex-wrap: wrap; gap: 6px; margin-bottom: 26px; }
+.topic-links { display: flex; flex-wrap: wrap; gap: 6px; }
 .tag.removable { padding-right: 2px; gap: 2px; }
-.tag.removable .icon-btn { width: 20px; height: 20px; }
+.tag.removable { height: 26px; padding-left: 10px; }
+.tag.removable .icon-btn { width: 22px; height: 22px; border-radius: 5px; }
 .tag.removable .icon-btn svg { width: 12px; height: 12px; }
-.small-text { font-size: 13px; }
 .toast-action { margin-left: 10px; background: transparent; border: 0; color: #9cc1ff; font-weight: 650; cursor: pointer; padding: 0; }
 .loading { color: var(--ink-3); padding: 80px 0; text-align: center; }
 code { font: 12.5px var(--mono); background: var(--surface-2); border-radius: 5px; padding: 1px 5px; }
@@ -233,14 +274,17 @@ code { font: 12.5px var(--mono); background: var(--surface-2); border-radius: 5p
   .head-actions { align-items: flex-start; }
   h1 { font-size: 28px; }
   .title-input { font-size: 24px; }
-  textarea.doc { min-height: 360px; }
+  textarea.doc, .md { min-height: 360px; }
+  .md { padding: 20px; }
 }
 </style>
 </head>
 <body>
 <div class="wrap">
   <header class="topbar">
-    <div class="brand"><svg viewBox="0 0 24 24" aria-hidden="true"><rect width="24" height="24" rx="7" fill="#111110"/><path d="M9.5 7.8v8.4a.6.6 0 0 0 .9.5l6.7-4.2a.6.6 0 0 0 0-1l-6.7-4.2a.6.6 0 0 0-.9.5Z" fill="#fff"/></svg>Vid Studio</div>
+    <div class="topbar-left"><a class="brand" href="#/" aria-label="Vid Studio home"><svg viewBox="0 0 24 24" aria-hidden="true"><rect width="24" height="24" rx="7" fill="#111110"/><path d="M9.5 7.8v8.4a.6.6 0 0 0 .9.5l6.7-4.2a.6.6 0 0 0 0-1l-6.7-4.2a.6.6 0 0 0-.9.5Z" fill="#fff"/></svg>Vid Studio</a>
+      <span class="slash">/</span>
+      <div class="switcher" id="switcher"></div></div>
     <button class="btn ghost small" data-action="settings" id="settings-btn">Settings</button>
   </header>
   <main id="app"><div class="loading">Loading…</div></main>
@@ -265,6 +309,7 @@ const ICONS = {
   spark: '<path d="M12 3v4M12 17v4M3 12h4M17 12h4M6 6l2.5 2.5M15.5 15.5 18 18M6 18l2.5-2.5M15.5 8.5 18 6"/>',
   back: '<path d="M19 12H5M12 19l-7-7 7-7"/>',
   check: '<path d="M20 6 9 17l-5-5"/>',
+  chevron: '<path d="m6 9 6 6 6-6"/>',
   external: '<path d="M7 17 17 7M8 7h9v9"/>',
   copy: '<rect x="9" y="9" width="12" height="12" rx="2"/><path d="M5 15V5a2 2 0 0 1 2-2h10"/>',
 };
@@ -292,6 +337,12 @@ async function api(method, path, body) {
   if (!response.ok) { const error = new Error(data.error || `Request failed (${response.status})`); error.status = response.status; throw error; }
   return data;
 }
+
+let CHANNELS = [];
+let CH = null;  // current channel ID
+const base = (channel = CH) => "#/" + encodeURIComponent(channel);
+const capi = (method, path, body) => api(method, `c/${encodeURIComponent(CH)}/${path}`, body);
+const channelName = () => (CHANNELS.find(c => c.id === CH) || {}).name || CH;
 
 function toast(message, kind = "") {
   const el = document.createElement("div");
@@ -362,9 +413,9 @@ const suggestedCount = () => S.sources.filter(s => s.status === "suggested").len
 const runningRun = () => [...S.runs].reverse().find(r => r.status === "running");
 const workspaceSuffix = () => S.default_workspace ? "" : ` Workspace: ${S.workspace}`;
 const PROMPTS = {
-  research: () => `Use the vid-studio skill to research now.${workspaceSuffix()}`,
-  scheduled: () => `Use the vid-studio skill to research now. This is a scheduled run.${workspaceSuffix()}`,
-  draft: s => `Use the vid-studio skill to write the draft for the script "${s.title}" (${s.id}).${workspaceSuffix()}`,
+  research: () => `Use the vid-studio skill to research now for the channel "${channelName()}".${workspaceSuffix()}`,
+  scheduled: () => `Use the vid-studio skill to research now for the channel "${channelName()}". This is a scheduled run.${workspaceSuffix()}`,
+  draft: s => `Use the vid-studio skill to write the draft for the script "${s.title}" (${s.id}) in the channel "${channelName()}".${workspaceSuffix()}`,
 };
 
 function showPrompt(title, text, explain) {
@@ -378,7 +429,7 @@ function showPrompt(title, text, explain) {
 }
 
 async function refresh(force = false) {
-  const next = await api("GET", "state");
+  const next = await capi("GET", "state");
   const json = JSON.stringify(next);
   if (!force && json === lastStateJson) return false;
   lastStateJson = json; S = next;
@@ -388,9 +439,10 @@ async function refresh(force = false) {
 }
 
 // ------------------------------------------------------------------ render
-const route = () => { const [tab = "", id = ""] = location.hash.replace(/^#\/?/, "").split("/").map(decodeURIComponent); return { tab, id }; };
+const route = () => { const [channel = "", tab = "", id = ""] = location.hash.replace(/^#\/?/, "").split("/").map(decodeURIComponent); return { channel, tab, id }; };
 
 function render() {
+  if (!CH || !S) return renderNoChannels();
   const { tab: rawTab, id } = route();
   const tab = ["topics", "sources", "findings", "scripts"].includes(rawTab) ? rawTab : (S.findings.length ? "findings" : "topics");
   document.title = (S.settings.name || "Vid Studio") + " · Vid Studio";
@@ -402,23 +454,20 @@ function render() {
   app.innerHTML = `
     <section class="head">
       <div>
-        <div class="eyebrow">Channel</div>
         <h1>${esc(S.settings.name || "Untitled channel")}</h1>
         <p class="lede">${esc(S.settings.description || "Follow the subjects that matter, collect strong evidence, and shape it into scripts.")}</p>
       </div>
       <div class="head-actions">
-        <div class="row-buttons">
-          <button class="btn" data-action="schedule">${icon("clock")}${times.length ? esc(times.join(", ")) : "Schedule"}</button>
-          <button class="btn primary" data-action="research">${icon("refresh")}Research now</button>
-        </div>
-        <div class="run-status"><span class="dot ${active ? "running" : run ? "" : "idle"}"></span>${active ? `Research running since ${when(active.started)}…`
-          : run ? `Last research ${when(run.finished)}${run.status === "failed" ? " · failed" : ` · ${run.findings || 0} new`}${(run.sources || []).length ? ` · ${Object.keys(run.checked || {}).length}/${run.sources.length} sources checked` : ""}` : "No research yet"}</div>
+        <button class="btn primary" data-action="research">${icon("refresh")}Research now</button>
+        <div class="run-status"><span class="dot ${active ? "running" : run ? "" : "idle"}"></span>${active ? `Running since ${when(active.started)}…`
+          : run ? `Last run ${when(run.finished)}${run.status === "failed" ? " · failed" : ` · ${run.findings || 0} new`}` : "No research yet"}
+          · <button class="link-btn" data-action="schedule" title="Change the research schedule">${times.length ? `Daily at ${esc(times.join(", "))}` : "Set a schedule"}</button></div>
       </div>
     </section>
     <nav class="tabs" aria-label="Sections">
       ${[["topics", "Topics", S.topics.length], ["sources", "Sources", S.sources.filter(s => s.status === "approved").length],
          ["findings", "Findings", S.findings.filter(f => !f.dismissed_at).length], ["scripts", "Scripts", S.scripts.length]]
-        .map(([key, label, count]) => `<a href="#/${key}" class="${tab === key ? "on" : ""}" ${tab === key ? 'aria-current="page"' : ""}>${label}<span class="count">${count || ""}</span>${
+        .map(([key, label, count]) => `<a href="${base()}/${key}" class="${tab === key ? "on" : ""}" ${tab === key ? 'aria-current="page"' : ""}>${label}<span class="count">${count || ""}</span>${
           key === "sources" && suggestedCount() ? `<span class="badge" title="Suggested sources waiting for you">${suggestedCount()} new</span>` : ""}</a>`).join("")}
     </nav>
     <section id="panel">${({ topics: topicsPanel, sources: sourcesPanel, findings: findingsPanel, scripts: scriptsPanel })[tab]()}</section>
@@ -430,15 +479,12 @@ function topicsPanel() {
   const findingCount = id => S.findings.filter(f => !f.dismissed_at && (f.topics || []).includes(id)).length;
   const scriptCount = id => S.scripts.filter(s => s.topics.includes(id) || s.findings.some(fid => (findingById(fid)?.topics || []).includes(id))).length;
   return `<div class="section-head"><div><h2>Topics</h2><p>What you make videos about. Descriptions guide what research considers relevant.</p></div>
-      <button class="btn primary" data-action="new-topic">${icon("plus")}New topic</button></div>
+      <button class="btn" data-action="new-topic">${icon("plus")}New topic</button></div>
     ${S.topics.length ? `<div class="list">${S.topics.map(t => `
-      <article class="item"><div class="glyph">${icon("search")}</div>
+      <article class="item" data-card="edit-topic" data-id="${esc(t.id)}" tabindex="0">
         <div class="body"><h3>${esc(t.name)}</h3><p>${esc(t.description) || '<span class="muted">No description</span>'}</p>
-          <div class="meta"><a href="#/findings" data-action="filter" data-id="${esc(t.id)}" class="meta-link">${findingCount(t.id)} findings</a> · ${scriptCount(t.id)} scripts</div></div>
-        <div class="row-actions">
-          <div class="tools"><button class="icon-btn" data-action="edit-topic" data-id="${esc(t.id)}" aria-label="Edit ${esc(t.name)}">${icon("edit")}</button>
-            <button class="icon-btn" data-action="delete-topic" data-id="${esc(t.id)}" aria-label="Delete ${esc(t.name)}">${icon("trash")}</button></div>
-        </div>
+          <div class="meta"><a href="${base()}/findings" data-action="filter" data-id="${esc(t.id)}" class="meta-link">${findingCount(t.id)} finding${findingCount(t.id) === 1 ? "" : "s"}</a> · ${scriptCount(t.id)} script${scriptCount(t.id) === 1 ? "" : "s"}</div></div>
+        <div class="tools"><button class="icon-btn delete" data-action="delete-topic" data-id="${esc(t.id)}" aria-label="Delete ${esc(t.name)}" title="Delete">${icon("trash")}</button></div>
       </article>`).join("")}</div>`
     : empty("Name what you want videos about", "Add a topic with a short description of what matters and what to ignore.", "new-topic", "New topic")}`;
 }
@@ -450,22 +496,21 @@ function sourcesPanel() {
   const run = lastRun();
   const checked = s => run && (run.checked || {})[s.id];
   return `<div class="section-head"><div><h2>Sources</h2><p>Sites research must check on every run, for all topics. It also searches the wider web, and suggests new sources here when it finds good ones.</p></div>
-      <button class="btn primary" data-action="new-source">${icon("plus")}Add source</button></div>
-    ${suggested.length ? `<div class="suggestions"><div class="label-row">Suggested by research <span class="pill">${suggested.length}</span></div>
-      ${suggested.map(s => `<article class="suggestion">
+      <button class="btn" data-action="new-source">${icon("plus")}Add source</button></div>
+    ${suggested.length ? `<div class="suggestions"><div class="label-row">Suggested by research <span class="pill">${suggested.length}</span></div><div class="list">
+      ${suggested.map(s => `<article class="item suggestion">
         <div class="body"><h3><a href="${safeUrl(s.url)}" target="_blank" rel="noopener noreferrer">${esc(shortUrl(s.url))}</a></h3>
           <p>${esc(s.reason)}</p>${s.note ? `<div class="meta">${esc(s.note)}</div>` : ""}</div>
-        <div class="inline"><button class="btn ghost small" data-action="dismiss-source" data-id="${esc(s.id)}">Dismiss</button>
-          <button class="btn primary small" data-action="approve-source" data-id="${esc(s.id)}">${icon("check")}Approve</button></div>
-      </article>`).join("")}</div>` : ""}
+        <div class="tools"><button class="btn ghost small" data-action="dismiss-source" data-id="${esc(s.id)}">Dismiss</button>
+          <button class="btn small" data-action="approve-source" data-id="${esc(s.id)}">${icon("check")}Approve</button></div>
+      </article>`).join("")}</div></div>` : ""}
     ${approved.length ? `<div class="list">${approved.map(s => `
-      <article class="item"><div class="glyph">${icon("globe")}</div>
+      <article class="item" data-card="edit-source" data-id="${esc(s.id)}" tabindex="0">
         <div class="body"><h3><a href="${safeUrl(s.url)}" target="_blank" rel="noopener noreferrer">${esc(shortUrl(s.url))}</a></h3>
           ${s.note ? `<p>${esc(s.note)}</p>` : ""}
           <div class="meta">${!run ? "Not researched yet" : !(run.sources || []).includes(s.id) ? "Added after the last run"
             : checked(s) ? `Checked ${esc(when(checked(s).at))}${checked(s).note ? " · " + esc(checked(s).note) : ""}` : '<span class="warn">Not checked in the last run</span>'}</div></div>
-        <div class="tools"><button class="icon-btn" data-action="edit-source" data-id="${esc(s.id)}" aria-label="Edit note for ${esc(shortUrl(s.url))}">${icon("edit")}</button>
-          <button class="icon-btn" data-action="delete-source" data-id="${esc(s.id)}" aria-label="Remove ${esc(shortUrl(s.url))}">${icon("trash")}</button></div>
+        <div class="tools"><button class="icon-btn delete" data-action="delete-source" data-id="${esc(s.id)}" aria-label="Remove ${esc(shortUrl(s.url))}" title="Remove">${icon("trash")}</button></div>
       </article>`).join("")}</div>`
     : suggested.length ? "" : empty("Add a site you trust", "Official sites, newsrooms, and publications. Research must check every one of them on every run.", "new-source", "Add source")}
     ${dismissed.length ? `<details class="dismissed"><summary>Dismissed suggestions (${dismissed.length})</summary>
@@ -490,7 +535,7 @@ function findingsPanel() {
         ${S.topics.map(t => `<option value="${esc(t.id)}" ${topicFilter === t.id ? "selected" : ""}>${esc(t.name)} (${counts[t.id] || 0})</option>`).join("")}
       </select></div>
     <div class="list">${shown.map(f => `
-      <article class="item finding ${f.dismissed_at ? "is-dismissed" : ""}">
+      <article class="item finding ${f.dismissed_at ? "is-dismissed" : ""} ${selected.has(f.id) ? "is-selected" : ""}" ${f.dismissed_at ? "" : `data-card="toggle-finding" data-id="${esc(f.id)}"`}>
         <input type="checkbox" class="check" data-action="select" data-id="${esc(f.id)}" ${selected.has(f.id) ? "checked" : ""} ${f.dismissed_at ? "disabled" : ""} aria-label="Select ${esc(f.title)}">
         <div class="body">
           <h3>${esc(f.title)}</h3>
@@ -509,13 +554,13 @@ function findingsPanel() {
 
 function scriptsPanel() {
   return `<div class="section-head"><div><h2>Scripts</h2><p>Each script holds the video script, a WhatsApp post, and research notes, built from its findings and topics.</p></div>
-      <button class="btn primary" data-action="new-script">${icon("plus")}New script</button></div>
+      <button class="btn" data-action="new-script">${icon("plus")}New script</button></div>
     ${S.scripts.length ? `<div class="list">${S.scripts.map(s => `
-      <article class="item"><div class="glyph">${icon("file")}</div>
+      <article class="item" data-card="open-script" data-id="${esc(s.id)}">
         <div class="body">
-          <h3><a href="#/scripts/${encodeURIComponent(s.id)}">${esc(s.title)}</a></h3>
-          <div class="meta">${s.topics.length ? esc(s.topics.map(topicName).join(", ")) + " · " : ""}${s.findings.length} finding${s.findings.length === 1 ? "" : "s"} · ${s.drafted ? "drafted" : "no draft yet"}${s.has_post ? " · post ready" : ""} · updated ${esc(when(s.updated))}</div></div>
-        <div class="tools"><button class="icon-btn" data-action="delete-script" data-id="${esc(s.id)}" aria-label="Delete ${esc(s.title)}">${icon("trash")}</button></div>
+          <h3><a href="${base()}/scripts/${encodeURIComponent(s.id)}">${esc(s.title)}</a></h3>
+          <div class="meta">${s.drafted ? "Drafted" : "No draft yet"}${s.has_post ? " · post ready" : ""} · ${s.topics.length ? esc(s.topics.map(topicName).join(", ")) + " · " : ""}${s.findings.length} finding${s.findings.length === 1 ? "" : "s"} · updated ${esc(when(s.updated))}</div></div>
+        <div class="tools"><button class="icon-btn delete" data-action="delete-script" data-id="${esc(s.id)}" aria-label="Delete ${esc(s.title)}" title="Delete">${icon("trash")}</button></div>
       </article>`).join("")}</div>`
     : empty("Start a script", "Select findings and choose Add to script, or start a script here and link a topic.", "new-script", "New script")}`;
 }
@@ -535,52 +580,123 @@ const PLACEHOLDERS = {
 async function renderEditor(id) {
   const app = document.getElementById("app");
   if (!editor || editor.data.id !== id) {
-    try { editor = { data: await api("GET", "scripts/" + encodeURIComponent(id)), tab: "script", dirty: false, remoteChanged: false }; }
-    catch (e) { app.innerHTML = `<a class="back" href="#/scripts">${icon("back")}Scripts</a><div class="empty"><h3>Script not found</h3><p>${esc(e.message)}</p></div>`; return; }
+    try { editor = { data: await capi("GET", "scripts/" + encodeURIComponent(id)), tab: "script", dirty: false, remoteChanged: false }; editor.view = defaultView(); }
+    catch (e) { app.innerHTML = `<a class="back" href="${base()}/scripts">${icon("back")}Scripts</a><div class="empty"><h3>Script not found</h3><p>${esc(e.message)}</p></div>`; return; }
   }
   const s = editor.data;
   const attached = s.findings.map(findingById).filter(Boolean);
+  const hasPreview = editor.tab !== "post", preview = hasPreview && editor.view === "preview";
   app.innerHTML = `
-    <a class="back" href="#/scripts">${icon("back")}Scripts</a>
+    <a class="back" href="${base()}/scripts">${icon("back")}Scripts</a>
     <div class="editor">
       <div>
         ${editor.remoteChanged ? `<div class="banner"><span>Your agent changed this script while you were editing.</span>
           <span class="inline"><button class="btn" data-action="reload-script">Load their version</button><button class="btn ghost" data-action="keep-mine">Keep mine</button></span></div>` : ""}
         <input class="title-input" id="script-title" value="${esc(s.title)}" aria-label="Script title">
-        <div class="subtabs" role="tablist">${EDITOR_TABS.map(([key, label]) => `<button class="chip ${editor.tab === key ? "on" : ""}" role="tab" aria-selected="${editor.tab === key}" data-action="editor-tab" data-id="${key}">${label}</button>`).join("")}</div>
-        <textarea class="doc" id="script-text" aria-label="${esc(EDITOR_TABS.find(t => t[0] === editor.tab)[1])}" placeholder="${esc(PLACEHOLDERS[editor.tab])}">${esc(s[editor.tab])}</textarea>
-        <div class="editor-actions">
-          <button class="btn primary" data-action="write-draft">${icon("spark")}Write draft</button>
-          <button class="btn" data-action="save-script" id="save-btn" ${editor.dirty ? "" : "disabled"}>Save</button>
-          <span class="save-state ${editor.dirty ? "dirty" : ""}" id="save-state">${editor.dirty ? "Unsaved changes" : "All changes saved"}</span>
-        </div>
+        <div class="subtabs"><div role="tablist">${EDITOR_TABS.map(([key, label]) => `<button class="chip ${editor.tab === key ? "on" : ""}" role="tab" aria-selected="${editor.tab === key}" data-action="editor-tab" data-id="${key}">${label}</button>`).join("")}</div>
+          <div class="doc-tools"><span id="save-area">${saveArea()}</span>${hasPreview && s[editor.tab].trim() ? (preview
+            ? `<button class="btn ghost small" data-action="editor-view" data-id="edit">${icon("edit")}Edit</button>`
+            : `<button class="btn ghost small" data-action="editor-view" data-id="preview">${icon("check")}Done</button>`) : ""}</div></div>
+        ${preview ? `<div class="md" id="md-preview" title="Double-click to edit">${s[editor.tab].trim() ? markdown(s[editor.tab]) : `<p class="md-empty">${esc(PLACEHOLDERS[editor.tab])}</p>`}</div>` : ""}
+        <textarea class="doc ${editor.tab === "post" ? "short" : ""}" id="script-text" ${preview ? "hidden" : ""} aria-label="${esc(EDITOR_TABS.find(t => t[0] === editor.tab)[1])}" placeholder="${esc(PLACEHOLDERS[editor.tab])}">${esc(s[editor.tab])}</textarea>
         ${editor.tab === "post" ? `<div class="preview-label">WhatsApp preview</div><div class="phone"><div class="bubble" id="post-preview"></div></div>` : ""}
       </div>
       <aside class="side">
-        <h4>Topics <button class="btn ghost small" data-action="link-topic">${icon("plus")}Link</button></h4>
-        <div class="topic-links">${s.topics.length ? s.topics.map(t => `<span class="tag removable">${esc(topicName(t))}<button class="icon-btn" data-action="unlink-topic" data-id="${esc(t)}" aria-label="Unlink ${esc(topicName(t))}">${icon("x")}</button></span>`).join("")
-          : `<span class="muted small-text">Link a topic to make this an explainer: the draft researches the topic itself.</span>`}</div>
-        <h4>Attached findings <button class="btn ghost small" data-action="attach">${icon("plus")}Attach</button></h4>
-        ${attached.length ? attached.map(f => `<div class="ref">
-            <div class="ref-top"><b>${esc(f.title)}</b><button class="icon-btn" data-action="detach" data-id="${esc(f.id)}" aria-label="Detach ${esc(f.title)}">${icon("x")}</button></div>
+        <button class="btn primary draft-btn" data-action="write-draft">${icon("spark")}Write draft</button>
+        <section><h4>Topics <button class="btn ghost small" data-action="link-topic">${icon("plus")}Add</button></h4>
+        ${s.topics.length ? `<div class="topic-links">${s.topics.map(t => `<span class="tag removable">${esc(topicName(t))}<button class="icon-btn" data-action="unlink-topic" data-id="${esc(t)}" aria-label="Unlink ${esc(topicName(t))}" title="Unlink">${icon("x")}</button></span>`).join("")}</div>` : ""}</section>
+        <section><h4>Findings <button class="btn ghost small" data-action="attach">${icon("plus")}Add</button></h4>
+        ${attached.map(f => `<div class="ref">
+            <div class="ref-top"><b>${esc(f.title)}</b><button class="icon-btn" data-action="detach" data-id="${esc(f.id)}" aria-label="Detach ${esc(f.title)}" title="Detach">${icon("x")}</button></div>
             ${f.summary ? `<p>${esc(f.summary)}</p>` : ""}
             <ul>${f.sources.map(src => `<li><a href="${safeUrl(src.url)}" target="_blank" rel="noopener noreferrer">${esc(src.publisher || host(src.url))}${src.title ? ": " + esc(src.title) : ""}</a></li>`).join("")}</ul>
-          </div>`).join("") : `<div class="hint">${s.topics.length ? "No findings attached. That's fine for an explainer; attach findings to tie it to recent news." : "No findings attached yet. Attach findings, or link a topic for an explainer."}</div>`}
+          </div>`).join("")}</section>
       </aside>
     </div>`;
   const text = document.getElementById("script-text");
   const title = document.getElementById("script-title");
-  const preview = () => { const p = document.getElementById("post-preview"); if (p) p.innerHTML = whatsapp(text.value); };
+  const postPreview = () => { const p = document.getElementById("post-preview"); if (p) p.innerHTML = whatsapp(text.value); };
   const markDirty = () => {
+    const wasDirty = editor.dirty;
     editor.data[editor.tab] = text.value; editor.data.title = title.value; editor.dirty = true;
-    document.getElementById("save-btn").disabled = false;
-    const state = document.getElementById("save-state");
-    state.textContent = "Unsaved changes"; state.classList.add("dirty");
-    preview();
+    if (!wasDirty) document.getElementById("save-area").innerHTML = saveArea();
+    postPreview();
   };
   text.addEventListener("input", markDirty);
   title.addEventListener("input", markDirty);
-  preview();
+  document.getElementById("md-preview")?.addEventListener("dblclick", () => actions["editor-view"]("edit"));
+  postPreview();
+}
+
+const saveArea = () => editor.dirty
+  ? `<span class="save-state dirty">Unsaved</span><button class="btn small" data-action="save-script">Save</button>`
+  : "";
+
+const defaultView = () => editor.data[editor.tab].trim() ? "preview" : "edit";
+
+// Enough markdown for scripts and notes. Single newlines stay line breaks, and [1]-style citations are set small.
+function markdown(src) {
+  const lines = String(src).replace(/\r\n?/g, "\n").split("\n");
+  const bullet = /^\s*([-*+]|\d+[.)])\s+(.*)$/, rule = /^\s*([-*_])(\s*\1){2,}\s*$/, tableSep = /^\s*\|?\s*:?-+:?\s*(\|\s*:?-+:?\s*)*\|?\s*$/;
+  const isTable = i => lines[i].includes("|") && i + 1 < lines.length && tableSep.test(lines[i + 1]) && lines[i + 1].includes("-");
+  const starts = i => /^(#{1,6}\s|```|>)/.test(lines[i]) || bullet.test(lines[i]) || rule.test(lines[i]) || isTable(i);
+  const cells = row => row.trim().replace(/^\||\|$/g, "").split("|").map(c => inline(c.trim()));
+  const out = [];
+  let i = 0, m;
+  while (i < lines.length) {
+    const line = lines[i];
+    if (!line.trim()) { i++; continue; }
+    if (/^```/.test(line)) {
+      const code = []; i++;
+      while (i < lines.length && !/^```/.test(lines[i])) code.push(lines[i++]);
+      i++; out.push(`<pre><code>${esc(code.join("\n"))}</code></pre>`);
+    } else if ((m = line.match(/^(#{1,6})\s+(.*?)\s*#*\s*$/))) {
+      out.push(`<h${m[1].length}>${inline(m[2])}</h${m[1].length}>`); i++;
+    } else if (rule.test(line)) {
+      out.push("<hr>"); i++;
+    } else if (/^>/.test(line)) {
+      const quote = [];
+      while (i < lines.length && /^>/.test(lines[i])) quote.push(lines[i++].replace(/^>\s?/, ""));
+      out.push(`<blockquote>${markdown(quote.join("\n"))}</blockquote>`);
+    } else if ((m = line.match(bullet))) {
+      const ordered = /\d/.test(m[1]), items = [];
+      while (i < lines.length && lines[i].trim()) {
+        const b = lines[i].match(bullet);
+        if (b && /\d/.test(b[1]) === ordered) items.push(b[2]);
+        else if (!b && items.length && !starts(i)) items[items.length - 1] += "\n" + lines[i].trim();
+        else break;
+        i++;
+      }
+      const li = items.map(t => `<li>${t.split("\n").map(inline).join("<br>")}</li>`).join("");
+      out.push(ordered ? `<ol start="${parseInt(m[1], 10)}">${li}</ol>` : `<ul>${li}</ul>`);
+    } else if (isTable(i)) {
+      const head = cells(lines[i]); i += 2;
+      const rows = [];
+      while (i < lines.length && lines[i].includes("|") && lines[i].trim()) rows.push(cells(lines[i++]));
+      out.push(`<table><thead><tr>${head.map(c => `<th>${c}</th>`).join("")}</tr></thead><tbody>${
+        rows.map(r => `<tr>${r.map(c => `<td>${c}</td>`).join("")}</tr>`).join("")}</tbody></table>`);
+    } else {
+      const para = [lines[i++]];
+      while (i < lines.length && lines[i].trim() && !starts(i)) para.push(lines[i++]);
+      out.push(`<p>${para.map(inline).join("<br>")}</p>`);
+    }
+  }
+  return out.join("");
+}
+
+function inline(text) {
+  const codes = [];
+  return esc(text)
+    .replace(/`([^`]+)`/g, (_, c) => `\u0000${codes.push(c) - 1}\u0000`)
+    .replace(/\[([^\]]+)\]\((https?:\/\/[^\s)]+)\)/g, '<a href="$2" target="_blank" rel="noopener noreferrer">$1</a>')
+    .replace(/(^|[\s(])(https?:\/\/[^\s<]*[^\s<.,;:!?)])/g, '$1<a href="$2" target="_blank" rel="noopener noreferrer">$2</a>')
+    .replace(/\*\*(?=\S)(.+?)\*\*/g, "<strong>$1</strong>")
+    .replace(/(^|[^\w])__(?=\S)(.+?)__(?!\w)/g, "$1<strong>$2</strong>")
+    .replace(/(^|[^\w*])\*(?=\S)([^*]+?)\*(?![\w*])/g, "$1<em>$2</em>")
+    .replace(/(^|[^\w])_(?=\S)([^_]+?)_(?!\w)/g, "$1<em>$2</em>")
+    .replace(/~~(?=\S)(.+?)~~/g, "<s>$1</s>")
+    .replace(/\[(\d+(?:\s*[,–-]\s*\d+)*)\](?!\()/g, '<span class="cite">[$1]</span>')
+    .replace(/\u0000(\d+)\u0000/g, (_, n) => `<code>${codes[n]}</code>`);
 }
 
 function whatsapp(text) {
@@ -595,7 +711,7 @@ async function saveScript() {
   if (!editor || !editor.dirty) return;
   const { id, title, script, post, notes, version } = editor.data;
   try {
-    editor.data = await api("PUT", "scripts/" + encodeURIComponent(id), { title, script, post, notes, version });
+    editor.data = await capi("PUT", "scripts/" + encodeURIComponent(id), { title, script, post, notes, version });
     editor.dirty = false; editor.remoteChanged = false;
     await refresh(true); renderEditor(id); toast("Saved");
   } catch (e) {
@@ -606,7 +722,7 @@ async function saveScript() {
 
 async function updateAttachments(changes) {
   const s = editor.data;
-  const fresh = await api("PUT", "scripts/" + encodeURIComponent(s.id), changes);
+  const fresh = await capi("PUT", "scripts/" + encodeURIComponent(s.id), changes);
   // Keep unsaved text; links change only script.json, so the new version is safe to adopt.
   editor.data = editor.dirty ? { ...editor.data, findings: fresh.findings, topics: fresh.topics, version: fresh.version } : fresh;
   await refresh(true); renderEditor(s.id);
@@ -629,7 +745,7 @@ const actions = {
         + field("Research notes", `<textarea name="research_notes" rows="3" placeholder="Anything research should always do or avoid">${esc(st.research_notes)}</textarea>`),
       onSubmit: async form => {
         const values = Object.fromEntries(new FormData(form));
-        await api("PUT", "settings", values); await refresh(true); render(); toast("Settings saved");
+        await capi("PUT", "settings", values); await loadChannels(); await refresh(true); render(); toast("Settings saved");
       },
     });
   },
@@ -662,17 +778,22 @@ const actions = {
         form.querySelector("#copy-schedule").onclick = () => copyText(PROMPTS.scheduled()).then(ok => ok && toast("Prompt copied"));
       },
       onSubmit: async form => {
-        await api("PUT", "settings", { schedule: { times }, timezone: form.timezone.value.trim() });
+        await capi("PUT", "settings", { schedule: { times }, timezone: form.timezone.value.trim() });
         await refresh(true); render(); toast("Schedule saved");
       },
     });
   },
   "new-topic"() { topicDialog(); },
+  "new-channel"() { document.getElementById("channel-menu")?.setAttribute("hidden", ""); newChannelDialog(); },
+  async "toggle-switcher"() {
+    if (document.getElementById("channel-menu").hidden) { await loadChannels(); document.getElementById("channel-menu").hidden = false; }
+    else document.getElementById("channel-menu").hidden = true;
+  },
   "edit-topic"(id) { topicDialog(S.topics.find(t => t.id === id)); },
   "delete-topic"(id) {
     const t = S.topics.find(x => x.id === id);
     openDialog({ title: `Delete “${t.name}”?`, sub: "Findings stay; they just lose this topic tag.", body: "", submit: "Delete", danger: true,
-      onSubmit: async () => { await api("DELETE", "topics/" + encodeURIComponent(id)); if (topicFilter === id) topicFilter = "all"; await refresh(true); render(); } });
+      onSubmit: async () => { await capi("DELETE", "topics/" + encodeURIComponent(id)); if (topicFilter === id) topicFilter = "all"; await refresh(true); render(); } });
   },
   "new-source"() {
     openDialog({
@@ -680,20 +801,20 @@ const actions = {
       body: field("Website URL", `<input name="url" placeholder="https://example.com/news" inputmode="url" required>`)
         + field("Note", `<input name="note" placeholder="Optional, e.g. press releases">`),
       submit: "Add source",
-      onSubmit: async form => { await api("POST", "sources", { url: form.url.value, note: form.note.value }); await refresh(true); render(); },
+      onSubmit: async form => { await capi("POST", "sources", { url: form.url.value, note: form.note.value }); await refresh(true); render(); },
     });
   },
   "edit-source"(id) {
     const s = S.sources.find(x => x.id === id);
     openDialog({ title: shortUrl(s.url), body: field("Note", `<input name="note" value="${esc(s.note)}">`),
-      onSubmit: async form => { await api("PUT", "sources/" + encodeURIComponent(id), { note: form.note.value }); await refresh(true); render(); } });
+      onSubmit: async form => { await capi("PUT", "sources/" + encodeURIComponent(id), { note: form.note.value }); await refresh(true); render(); } });
   },
   "delete-source"(id) {
     const s = S.sources.find(x => x.id === id);
     openDialog({ title: `Remove ${shortUrl(s.url)}?`, body: "", submit: "Remove", danger: true,
-      onSubmit: async () => { await api("DELETE", "sources/" + encodeURIComponent(id)); await refresh(true); render(); } });
+      onSubmit: async () => { await capi("DELETE", "sources/" + encodeURIComponent(id)); await refresh(true); render(); } });
   },
-  filter(id) { topicFilter = id; if (route().tab !== "findings") location.hash = "#/findings"; else render(); },
+  filter(id) { topicFilter = id; if (route().tab !== "findings") location.hash = base() + "/findings"; else render(); },
   select(id, el) { el.checked ? selected.add(id) : selected.delete(id); render(); },
   "clear-selection"() { selected.clear(); render(); },
   "add-to-script"() {
@@ -710,22 +831,28 @@ const actions = {
         form.querySelectorAll("[data-mode]").forEach(block => block.hidden = block.dataset.mode !== radio.value)),
       onSubmit: async form => {
         const mode = (form.querySelector('input[name="mode"]:checked') || form.querySelector('input[name="mode"]')).value;
-        const script = mode === "new" ? await api("POST", "scripts", { title: form.title.value, findings: ids })
-          : await api("PUT", "scripts/" + encodeURIComponent(form.script.value), { add_findings: ids });
-        selected.clear(); await refresh(true); location.hash = "#/scripts/" + encodeURIComponent(script.id);
+        const script = mode === "new" ? await capi("POST", "scripts", { title: form.title.value, findings: ids })
+          : await capi("PUT", "scripts/" + encodeURIComponent(form.script.value), { add_findings: ids });
+        selected.clear(); await refresh(true); location.hash = base() + "/scripts/" + encodeURIComponent(script.id);
       },
     });
   },
   "new-script"() {
     openDialog({ title: "New script", body: field("Title", `<input name="title" placeholder="Untitled script">`), submit: "Create",
-      onSubmit: async form => { const s = await api("POST", "scripts", { title: form.title.value }); await refresh(true); location.hash = "#/scripts/" + encodeURIComponent(s.id); } });
+      onSubmit: async form => { const s = await capi("POST", "scripts", { title: form.title.value }); await refresh(true); location.hash = base() + "/scripts/" + encodeURIComponent(s.id); } });
   },
   "delete-script"(id) {
     const s = S.scripts.find(x => x.id === id);
     openDialog({ title: `Delete “${s.title}”?`, sub: "The script moves to scripts/.trash in your workspace.", body: "", submit: "Delete", danger: true,
-      onSubmit: async () => { await api("DELETE", "scripts/" + encodeURIComponent(id)); await refresh(true); render(); } });
+      onSubmit: async () => { await capi("DELETE", "scripts/" + encodeURIComponent(id)); await refresh(true); render(); } });
   },
-  "editor-tab"(id) { editor.tab = id; renderEditor(editor.data.id); },
+  "editor-tab"(id) { editor.tab = id; editor.view = defaultView(); renderEditor(editor.data.id); },
+  "editor-view"(id) {
+    editor.view = id; renderEditor(editor.data.id);
+    if (id === "edit") document.getElementById("script-text").focus();
+  },
+  "open-script"(id) { location.hash = base() + "/scripts/" + encodeURIComponent(id); },
+  "toggle-finding"(id) { selected.has(id) ? selected.delete(id) : selected.add(id); render(); },
   "save-script"() { saveScript(); },
   async "reload-script"() { editor = null; render(); },
   "keep-mine"() { editor.remoteChanged = false; editor.data.version = undefined; renderEditor(editor.data.id); toast("Saving will overwrite your agent's version"); },
@@ -764,14 +891,14 @@ const actions = {
       },
     });
   },
-  async "approve-source"(id) { await api("PUT", "sources/" + encodeURIComponent(id), { status: "approved" }); await refresh(true); render(); toast("Source approved. Research will check it every run"); },
-  async "dismiss-source"(id) { await api("PUT", "sources/" + encodeURIComponent(id), { status: "dismissed" }); await refresh(true); render(); },
+  async "approve-source"(id) { await capi("PUT", "sources/" + encodeURIComponent(id), { status: "approved" }); await refresh(true); render(); toast("Source approved. Research will check it every run"); },
+  async "dismiss-source"(id) { await capi("PUT", "sources/" + encodeURIComponent(id), { status: "dismissed" }); await refresh(true); render(); },
   async "dismiss-finding"(id) {
-    await api("PUT", "findings/" + encodeURIComponent(id), { dismissed: true });
+    await capi("PUT", "findings/" + encodeURIComponent(id), { dismissed: true });
     selected.delete(id); await refresh(true); render();
-    undoToast("Finding dismissed", async () => { await api("PUT", "findings/" + encodeURIComponent(id), { dismissed: false }); await refresh(true); render(); });
+    undoToast("Finding dismissed", async () => { await capi("PUT", "findings/" + encodeURIComponent(id), { dismissed: false }); await refresh(true); render(); });
   },
-  async "restore-finding"(id) { await api("PUT", "findings/" + encodeURIComponent(id), { dismissed: false }); await refresh(true); render(); },
+  async "restore-finding"(id) { await capi("PUT", "findings/" + encodeURIComponent(id), { dismissed: false }); await refresh(true); render(); },
   "toggle-dismissed"() { showDismissed = !showDismissed; render(); },
   "filter-select"(_, el) { topicFilter = el.value; render(); },
 };
@@ -784,7 +911,7 @@ function topicDialog(topic) {
     submit: topic ? "Save" : "Add topic",
     onSubmit: async form => {
       const body = { name: form.name.value, description: form.description.value };
-      topic ? await api("PUT", "topics/" + encodeURIComponent(topic.id), body) : await api("POST", "topics", body);
+      topic ? await capi("PUT", "topics/" + encodeURIComponent(topic.id), body) : await capi("POST", "topics", body);
       await refresh(true); render();
     },
   });
@@ -796,6 +923,15 @@ document.addEventListener("click", event => {
   if (el.tagName !== "INPUT") event.preventDefault();
   Promise.resolve(actions[el.dataset.action](el.dataset.id, el)).catch(e => toast(e.message, "error"));
 });
+// Clicking anywhere on a card (outside its own links and controls) does the card's main action.
+function cardAction(event) {
+  const card = event.target.closest("[data-card]");
+  if (!card || event.target.closest("a, button, input, select, textarea, label, summary") || getSelection().toString()) return;
+  if (event.type === "keydown") { if (event.key !== "Enter" || event.target !== card) return; event.preventDefault(); }
+  Promise.resolve(actions[card.dataset.card](card.dataset.id, card)).catch(e => toast(e.message, "error"));
+}
+document.addEventListener("click", cardAction);
+document.addEventListener("keydown", cardAction);
 document.addEventListener("change", event => {
   const el = event.target.closest('select[data-action]');
   if (el && actions[el.dataset.action]) actions[el.dataset.action](el.dataset.id, el);
@@ -803,19 +939,79 @@ document.addEventListener("change", event => {
 document.addEventListener("keydown", event => {
   if ((event.ctrlKey || event.metaKey) && event.key === "s" && editor) { event.preventDefault(); saveScript(); }
 });
-let lastHash = location.hash;
-window.addEventListener("hashchange", () => {
-  if (editor && editor.dirty && !confirm("You have unsaved changes in this script. Leave anyway?")) { history.replaceState(null, "", lastHash); return; }
-  lastHash = location.hash; editor = null; render();
+async function loadChannels() {
+  CHANNELS = (await api("GET", "channels")).channels;
+  renderSwitcher();
+}
+
+function renderSwitcher() {
+  const el = document.getElementById("switcher");
+  if (!CHANNELS.length) { el.innerHTML = ""; return; }
+  el.innerHTML = `<button class="switch-btn" data-action="toggle-switcher" aria-haspopup="true">${esc(channelName() || "Choose channel")}${icon("chevron")}</button>
+    <div class="menu" id="channel-menu" hidden>
+      <div class="menu-label">Channels</div>
+      ${CHANNELS.map(c => `<a class="menu-item ${c.id === CH ? "on" : ""}" href="${base(c.id)}/findings"><span>${esc(c.name)}</span>
+        <span class="muted">${c.suggested_sources ? `${c.suggested_sources} new source${c.suggested_sources === 1 ? "" : "s"}` : ""}</span></a>`).join("")}
+      <button class="menu-item" data-action="new-channel">${icon("plus")}<span>New channel</span></button>
+    </div>`;
+}
+document.addEventListener("click", event => {
+  const menu = document.getElementById("channel-menu");
+  if (menu && !menu.hidden && !event.target.closest("#switcher")) menu.hidden = true;
 });
+
+function newChannelDialog() {
+  openDialog({
+    title: "New channel", sub: "Each channel has its own topics, sources, findings, scripts, and schedule.",
+    body: field("Channel name", `<input name="name" placeholder="e.g. Pipe Gyaan" required>`)
+      + field("What it covers", `<input name="description" placeholder="Optional">`)
+      + field("Language", `<select name="language">${["English", "Hindi", "Hinglish"].map(l => `<option>${l}</option>`).join("")}</select>`),
+    submit: "Create channel",
+    onSubmit: async form => {
+      const created = await api("POST", "channels", { name: form.name.value, description: form.description.value, language: form.language.value });
+      await loadChannels(); location.hash = base(created.id) + "/topics";
+    },
+  });
+}
+
+function renderNoChannels() {
+  document.getElementById("app").innerHTML = `<div class="empty" style="margin-top:40px"><h3>Create your first channel</h3>
+    <p>A channel is one YouTube channel, Instagram account, or WhatsApp channel, with its own topics, sources, findings, and scripts.</p>
+    <button class="btn primary" data-action="new-channel">${icon("plus")}New channel</button></div>`;
+}
+
+// Pick the channel from the URL, else the last one used, else the first.
+async function enterChannel() {
+  if (!CHANNELS.length) { CH = null; renderSwitcher(); renderNoChannels(); return false; }
+  if (!CHANNELS.some(c => c.id === route().channel)) {
+    const last = localStorage.getItem("vid-studio-channel");
+    const next = CHANNELS.some(c => c.id === last) ? last : CHANNELS[0].id;
+    history.replaceState(null, "", base(next) + "/" + (route().tab || ""));
+  }
+  if (CH !== route().channel) {
+    CH = route().channel; localStorage.setItem("vid-studio-channel", CH);
+    S = null; lastStateJson = ""; selected.clear(); topicFilter = "all"; showDismissed = false; editor = null;
+    renderSwitcher();
+    await refresh(true);
+  }
+  return true;
+}
+
+let lastHash = location.hash;
+window.addEventListener("hashchange", async () => {
+  if (editor && editor.dirty && !confirm("You have unsaved changes in this script. Leave anyway?")) { history.replaceState(null, "", lastHash); return; }
+  lastHash = location.hash; editor = null;
+  if (await enterChannel()) render();
+});
+
 window.addEventListener("beforeunload", event => { if (editor && editor.dirty) { event.preventDefault(); event.returnValue = ""; } });
 
 // Pick up changes your agent makes to the files while the page is open.
 async function poll() {
-  if (document.visibilityState === "visible" && !dialog.open) {
+  if (document.visibilityState === "visible" && !dialog.open && CH) {
     try {
       if (editor) {
-        const remote = await api("GET", "scripts/" + encodeURIComponent(editor.data.id));
+        const remote = await capi("GET", "scripts/" + encodeURIComponent(editor.data.id));
         if (editor.data.version && remote.version !== editor.data.version) {
           if (editor.dirty) { if (!editor.remoteChanged) { editor.remoteChanged = true; renderEditor(editor.data.id); } }
           else { editor.data = remote; renderEditor(remote.id); toast("Updated by your agent"); }
@@ -823,7 +1019,7 @@ async function poll() {
         await refresh();
       } else if (await refresh()) {
         const focused = document.activeElement;
-        if (!focused || focused === document.body || focused.dataset.action) render();
+        if (!focused || focused === document.body || focused.dataset.action || focused.dataset.card) render();
       }
     } catch { /* server stopped; keep the page as it is */ }
   }
@@ -831,7 +1027,7 @@ async function poll() {
 }
 
 document.getElementById("settings-btn").insertAdjacentHTML("afterbegin", icon("gear"));
-refresh(true).then(() => { render(); poll(); })
+loadChannels().then(enterChannel).then(ok => { if (ok) render(); poll(); })
   .catch(e => { document.getElementById("app").innerHTML = `<div class="empty"><h3>Can't reach the studio</h3><p>${esc(e.message)}. Start it with <code>studio.py serve</code>.</p></div>`; });
 </script>
 </body>

@@ -1,12 +1,14 @@
-# Vid Studio workspace
+# Vid Studio
 
-One channel's research, managed by the `vid-studio` skill. Open the studio with `python3 <skill>/scripts/studio.py serve`, or ask your agent: "Use vid-studio, open the studio".
+Research for your video channels, managed by the `vid-studio` skill. Open the studio with `python3 <skill>/scripts/studio.py serve`, or ask your agent: "Use vid-studio, open the studio".
+
+Each channel has its own folder in `channels/<channel>/`:
 
 - `studio.json`: channel name, audience, language, research schedule, and your script and WhatsApp post formats.
-- `topics.json`: what you follow. Each topic has a name and a description; the description guides relevance.
-- `sources.json`: websites checked on every research run, for all topics.
-- `findings.json`: what research found. Each finding has a summary, its topics, and its sources.
+- `topics.json`: what the channel makes videos about.
+- `sources.json`: websites every research run must check, plus sources research has suggested.
+- `findings.json`: what research found, each finding linked to its topics and sources.
 - `runs.json`: the history of research runs.
-- `scripts/<id>/`: one folder per script, containing `script.json` (title and attached findings), `script.md`, `post.md`, and `notes.md` (research notes and sources).
+- `scripts/<id>/`: one folder per script, containing `script.json`, `script.md`, `post.md`, and `notes.md`.
 
-All of these are plain files, so you can edit them by hand.
+To delete a channel, delete its folder. Everything here is plain files, so you can edit them by hand.

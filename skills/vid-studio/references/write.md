@@ -13,10 +13,10 @@ A script can be one of three kinds:
 
 ## Steps
 
-1. Read the linked findings and topics, along with `studio.json`: `audience`, `language`, `script_format`, and `post_format`. Write the script and post in that language, following the language rule in SKILL.md. If nothing is linked, work from the title.
+1. Read the linked findings and topics, along with `studio.json`: `audience`, `language`, `script_format`, and `post_format`. Write the script and post in that language, following the language rule in SKILL.md. The notes stay in English. If nothing is linked, work from the title.
 2. **Research in depth.** Open the findings' sources, and go further wherever the story needs it: primary documents, data, background, opposing views. Check the facts the script will rely on, especially numbers and dates.
-3. **Write `notes.md`.** Record what you learned, organised however suits the story. End with a numbered source list (`[1] Publisher, title, date, URL`) covering every source you cite. Note anything uncertain or disputed.
-4. **Write `script.md`.** Follow `script_format`: its structure, length, tone, and visual notes. Cite facts inline with the source numbers, like `[1]`. Present contested points as contested.
+3. **Write `notes.md`** in English, as markdown. Record what you learned, organised however suits the story. End with a numbered source list (`[1] Publisher, title, date, URL`) covering every source you cite. Note anything uncertain or disputed.
+4. **Write `script.md`** as markdown (the studio renders it). Follow `script_format`: its structure, length, tone, and visual notes. Cite facts inline with the source numbers, like `[1]`. Present contested points as contested.
 5. **Write `post.md`.** Follow `post_format`, using WhatsApp formatting only: `*bold*`, `_italic_`, and plain URLs. The post must stand alone, and should end with source links.
 6. **Respect the user's edits.** If `script.md` or `post.md` already has text the user wrote, rewrite only when the prompt asks for a rewrite. Otherwise, improve what's there and keep their wording where it works.
 7. Reply with a two-line summary and the studio link. The UI picks up the new files on its own.

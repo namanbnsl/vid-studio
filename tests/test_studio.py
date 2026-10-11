@@ -21,8 +21,10 @@ class StudioTest(unittest.TestCase):
     def setUp(self):
         self.tmp = tempfile.TemporaryDirectory()
         self.root = Path(self.tmp.name)
-        self.ws = self.root / "ws"
+        self.home = self.root / "ws"
         self.cli("init")
+        self.cli("new-channel", "--name", "Test Channel")
+        self.ws = self.home / "channels" / "test-channel"
         self.studio = studio.Studio(self.ws)
 
     def tearDown(self):
@@ -35,7 +37,7 @@ class StudioTest(unittest.TestCase):
             sys.stdin = io.StringIO(stdin)
         try:
             with contextlib.redirect_stdout(output):
-                studio.main(["--workspace", str(self.ws), *args])
+                studio.main(["--workspace", str(self.home), *args])
         finally:
             sys.stdin = old_stdin
         return output.getvalue()
@@ -185,6 +187,37 @@ class StudioTest(unittest.TestCase):
         self.studio.delete_topic("chips")
         self.assertEqual(self.studio.scripts()[0]["topics"], [])
 
+    def test_channels(self):
+        self.cli("new-channel", "--name", "Pipe Gyaan", "--language", "Hinglish")
+        with self.assertRaises(SystemExit):
+            self.cli("add-topic", "--name", "Pipes")  # two channels now: which one?
+        self.cli("add-topic", "--name", "Pipes", "--channel", "pipe gyaan")  # by name, any case
+        self.cli("add-topic", "--name", "Other", "--channel", "test-channel")  # by ID
+        pipe = studio.Studio(self.home / "channels" / "pipe-gyaan")
+        self.assertEqual([t["name"] for t in pipe.topics()], ["Pipes"])
+        self.assertEqual([t["name"] for t in self.studio.topics()], ["Other"])
+        self.assertEqual(pipe.settings()["language"], "Hinglish")
+        self.assertIn("Pipe Gyaan", self.cli("channels"))
+        self.assertIn("Several channels", self.cli("status"))
+        with self.assertRaises(SystemExit):
+            self.cli("new-channel", "--name", "pipe gyaan")
+
+    def test_single_channel_workspace_is_migrated(self):
+        old = self.root / "old"
+        old.mkdir()
+        (old / "studio.json").write_text(json.dumps({"name": "Old Channel"}))
+        (old / "topics.json").write_text(json.dumps({"topics": [{"id": "a", "name": "A", "description": ""}]}))
+        (old / "scripts" / "s1").mkdir(parents=True)
+        output = io.StringIO()
+        with contextlib.redirect_stdout(output), contextlib.redirect_stderr(io.StringIO()):
+            studio.main(["--workspace", str(old), "status"])
+        folder = old / "channels" / "old-channel"
+        self.assertFalse((old / "studio.json").exists())
+        self.assertEqual(studio.Studio(folder).topics()[0]["name"], "A")
+        self.assertTrue((folder / "scripts" / "s1").is_dir())
+        self.assertTrue((folder / "findings.json").is_file())  # missing files filled from templates
+        self.assertIn("Old Channel", output.getvalue())
+
     def test_settings_validation(self):
         self.studio.update_settings({"name": "Explained", "schedule": {"times": ["19:00", "07:00", "07:00"]}})
         self.assertEqual(self.studio.settings()["schedule"]["times"], ["07:00", "19:00"])
@@ -192,15 +225,8 @@ class StudioTest(unittest.TestCase):
             with self.assertRaises(ValueError):
                 self.studio.update_settings(bad)
 
-    def test_sql(self):
-        self.cli("add-topic", "--name", "UPI")
-        self.run_with_findings([{"title": "F", "topics": ["UPI"], "sources": ["https://a.com/1", "https://b.com/1"]}])
-        self.assertIn("F\t2", self.cli("sql", "SELECT f.title, count(*) FROM findings f JOIN finding_sources s ON s.finding_id = f.id GROUP BY f.id"))
-        with self.assertRaises(SystemExit):
-            self.cli("sql", "DELETE FROM findings")
-
     def test_web_api(self):
-        server = studio.ThreadingHTTPServer(("127.0.0.1", 0), studio.make_handler(self.ws))
+        server = studio.ThreadingHTTPServer(("127.0.0.1", 0), studio.make_handler(self.home))
         threading.Thread(target=server.serve_forever, daemon=True).start()
         self.addCleanup(server.shutdown)
 
@@ -213,25 +239,29 @@ class StudioTest(unittest.TestCase):
             return response.status, (json.loads(raw) if raw.startswith(("{", "[")) else raw)
 
         self.assertEqual(call("GET", "/")[0], 200)
-        self.assertEqual(call("GET", "/api/health")[1], str(self.ws))
-        status, topic = call("POST", "/api/topics", {"name": "UPI", "description": "d"})
+        channels = call("GET", "/api/channels")[1]
+        self.assertEqual([c["name"] for c in channels["channels"]], ["Test Channel"])
+        self.assertEqual(call("POST", "/api/channels", {"name": "Second"})[1]["id"], "second")
+        self.assertEqual(call("GET", "/api/c/nope/state")[0], 404)
+        self.assertEqual(call("GET", "/api/health")[1], str(self.home))
+        status, topic = call("POST", "/api/c/test-channel/topics", {"name": "UPI", "description": "d"})
         self.assertEqual((status, topic["name"]), (200, "UPI"))
-        self.assertEqual(call("POST", "/api/topics", {"name": ""})[0], 400)
-        self.assertEqual(call("PUT", "/api/topics/nope", {"name": "x"})[0], 404)
-        status, script = call("POST", "/api/scripts", {"title": "S"})
-        status, saved = call("PUT", f"/api/scripts/{script['id']}", {"script": "hi", "version": script["version"]})
+        self.assertEqual(call("POST", "/api/c/test-channel/topics", {"name": ""})[0], 400)
+        self.assertEqual(call("PUT", "/api/c/test-channel/topics/nope", {"name": "x"})[0], 404)
+        status, script = call("POST", "/api/c/test-channel/scripts", {"title": "S"})
+        status, saved = call("PUT", f"/api/c/test-channel/scripts/{script['id']}", {"script": "hi", "version": script["version"]})
         self.assertEqual((status, saved["script"]), (200, "hi"))
-        self.assertEqual(call("PUT", f"/api/scripts/{script['id']}", {"script": "x", "version": script["version"]})[0], 409)
-        self.assertEqual(call("GET", "/api/scripts/..%2f..%2fetc")[0], 404)
-        status, linked = call("POST", "/api/scripts", {"title": "E", "topics": [topic["id"]]})
+        self.assertEqual(call("PUT", f"/api/c/test-channel/scripts/{script['id']}", {"script": "x", "version": script["version"]})[0], 409)
+        self.assertEqual(call("GET", "/api/c/test-channel/scripts/..%2f..%2fetc")[0], 404)
+        status, linked = call("POST", "/api/c/test-channel/scripts", {"title": "E", "topics": [topic["id"]]})
         self.assertEqual(linked["topics"], [topic["id"]])
-        self.assertEqual(call("PUT", "/api/findings/nope", {"dismissed": True})[0], 404)
-        self.assertEqual(call("PUT", "/api/sources/nope", {"status": "approved"})[0], 404)
-        state = call("GET", "/api/state")[1]
+        self.assertEqual(call("PUT", "/api/c/test-channel/findings/nope", {"dismissed": True})[0], 404)
+        self.assertEqual(call("PUT", "/api/c/test-channel/sources/nope", {"status": "approved"})[0], 404)
+        state = call("GET", "/api/c/test-channel/state")[1]
         self.assertEqual([t["name"] for t in state["topics"]], ["UPI"])
         # Requests from other sites, or writes without the custom header, are refused.
-        self.assertEqual(call("GET", "/api/state", host="evil.example")[0], 403)
-        self.assertEqual(call("POST", "/api/topics", {"name": "Y"}, headers={"Content-Type": "text/plain"})[0], 403)
+        self.assertEqual(call("GET", "/api/c/test-channel/state", host="evil.example")[0], 403)
+        self.assertEqual(call("POST", "/api/c/test-channel/topics", {"name": "Y"}, headers={"Content-Type": "text/plain"})[0], 403)
 
 
 if __name__ == "__main__":

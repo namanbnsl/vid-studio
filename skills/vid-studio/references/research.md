@@ -18,7 +18,7 @@ Goal: new findings in the feed. A finding is a real development since the last r
 ```
 
    - Keep findings short: a headline (110 characters at most) and a one-sentence summary (240 at most). The helper rejects longer ones. Detail belongs in scripts.
-   - Write titles and summaries in the channel's `language` (see the language rule in SKILL.md).
+   - Write titles and summaries in English, whatever the channel's `language`. Only scripts and posts use it.
    - Every finding needs at least one topic and at least one page you opened. Prefer original pages, such as the regulator, the company, or the dataset.
    - Coverage of the same development from several outlets is **one** finding with several sources. If a URL is already in the feed, the helper merges into that finding.
    - The UI labels each finding "Your source" or "Found on the web" automatically, from the URLs.

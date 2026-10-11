@@ -16,7 +16,6 @@ import os
 import re
 import shutil
 import signal
-import sqlite3
 import subprocess
 import sys
 import time
@@ -260,8 +259,9 @@ SETTING_KEYS = {"name", "description", "audience", "language", "timezone", "rese
 class Studio:
     """All reads and writes of the workspace files. Raises ValueError for bad input."""
 
-    def __init__(self, ws: Path):
-        self.ws = ws
+    def __init__(self, ws: Path, root: Path | None = None):
+        self.ws = ws  # this channel's folder
+        self.root = root or ws.parent.parent
 
     def path(self, *parts: str) -> Path:
         return self.ws.joinpath(*parts)
@@ -588,8 +588,8 @@ class Studio:
 
     def state(self) -> dict:
         runs = self.runs()
-        return {"workspace": str(self.ws), "default_workspace": self.ws == workspace_path(None) and not os.environ.get("VID_STUDIO_HOME"),
-                "settings": self.settings(), "topics": self.topics(), "sources": self.sources(),
+        return {"workspace": str(self.root), "default_workspace": self.root == workspace_path(None) and not os.environ.get("VID_STUDIO_HOME"),
+                "channel": self.ws.name, "settings": self.settings(), "topics": self.topics(), "sources": self.sources(),
                 "findings": self.findings(), "runs": runs[-20:], "scripts": self.scripts()}
 
     # helpers
@@ -617,31 +617,136 @@ class Studio:
         return list(dict.fromkeys(topic_ids))
 
 
+# ---------------------------------------------------------------- channels: <root>/channels/<id>/
+
+CHANNEL_FILES = ["studio.json", "topics.json", "sources.json", "findings.json", "runs.json", "scripts", ".cache"]
+
+
+def channel_dirs(root: Path) -> list[Path]:
+    return sorted(p.parent for p in (root / "channels").glob("*/studio.json"))
+
+
+def channels_overview(root: Path) -> list[dict]:
+    listed = []
+    for folder in channel_dirs(root):
+        studio = Studio(folder, root)
+        settings = studio.settings()
+        listed.append({"id": folder.name, "name": settings.get("name") or folder.name,
+                       "description": settings.get("description", ""), "language": settings.get("language", ""),
+                       "findings": sum(1 for f in studio.findings() if not f.get("dismissed_at")),
+                       "suggested_sources": sum(1 for x in studio.sources() if x["status"] == "suggested")})
+    return listed
+
+
+def find_channel(root: Path, value: str | None) -> Path:
+    """A channel by ID or name; with no value, the only channel there is."""
+    value = value or os.environ.get("VID_STUDIO_CHANNEL")
+    folders = channel_dirs(root)
+    if not folders:
+        raise KeyError("No channels yet. Create one with `studio.py new-channel --name NAME`.")
+    if value:
+        wanted = value.strip().casefold()
+        for folder in folders:
+            if wanted in (folder.name, str(load(folder / "studio.json").get("name", "")).strip().casefold()):
+                return folder
+        raise KeyError(f"No channel {value!r}. Channels: {', '.join(c['name'] for c in channels_overview(root))}")
+    if len(folders) == 1:
+        return folders[0]
+    raise KeyError("Several channels exist; pass --channel with one of: " + ", ".join(c["name"] for c in channels_overview(root)))
+
+
+def fill_templates(folder: Path) -> None:
+    templates = ASSETS / "channel"
+    for source in sorted(templates.iterdir()):
+        target = folder / source.name
+        if source.is_file() and not target.exists():
+            shutil.copyfile(source, target)
+    (folder / "scripts").mkdir(parents=True, exist_ok=True)
+
+
+def create_channel(root: Path, name: str, description: str = "", language: str = "") -> Path:
+    name = (name or "").strip()
+    if not name:
+        raise ValueError("A channel needs a name")
+    if any(c["name"].casefold() == name.casefold() for c in channels_overview(root)):
+        raise ValueError(f"A channel called {name!r} already exists")
+    existing = {p.name for p in (root / "channels").glob("*")}
+    folder = root / "channels" / unique_id(slugify(name, 40), existing)
+    folder.mkdir(parents=True)
+    fill_templates(folder)
+    settings = load(folder / "studio.json")
+    settings.update(name=name, description=(description or "").strip())
+    if language:
+        settings["language"] = language
+    save(folder / "studio.json", settings)
+    return folder
+
+
+def migrate_single_channel(root: Path) -> None:
+    """Move a workspace from the one-channel layout (files at the root) into channels/<id>/."""
+    if not (root / "studio.json").is_file():
+        return
+    name = str(load(root / "studio.json").get("name") or "").strip() or "Main"
+    existing = {p.name for p in (root / "channels").glob("*")}
+    folder = root / "channels" / unique_id(slugify(name, 40), existing)
+    folder.mkdir(parents=True)
+    (root / "studio.db").unlink(missing_ok=True)  # an old derived query index; the JSON files are the data
+    for item in CHANNEL_FILES:
+        if item == ".cache":
+            seen = root / ".cache" / "seen.json"
+            if seen.is_file():
+                (folder / ".cache").mkdir(exist_ok=True)
+                seen.rename(folder / ".cache" / "seen.json")
+        elif (root / item).exists():
+            (root / item).rename(folder / item)
+    fill_templates(folder)
+    readme = root / "README.md"
+    if readme.is_file() and readme.read_text(encoding="utf-8").startswith("# Vid Studio workspace"):
+        shutil.copyfile(ASSETS / "README.md", readme)  # the old one-channel README no longer applies
+    print(f"Moved your channel into {folder} (the studio now supports several channels).", file=sys.stderr)
+
+
 # ---------------------------------------------------------------- commands
 
-def cmd_init(ws: Path, args) -> None:
-    created = []
-    templates = ASSETS / "workspace"
-    for source in sorted(templates.rglob("*")):
-        target = ws / source.relative_to(templates)
-        if source.is_file() and not target.exists():
-            target.parent.mkdir(parents=True, exist_ok=True)
-            shutil.copyfile(source, target)
-            created.append(str(target.relative_to(ws)))
-    (ws / "scripts").mkdir(parents=True, exist_ok=True)
-    print(f"Workspace: {ws}")
-    print(f"Created: {', '.join(created) or 'nothing (already set up)'}")
+def cmd_init(root: Path, args) -> None:
+    (root / "channels").mkdir(parents=True, exist_ok=True)
+    if not (root / "README.md").exists():
+        shutil.copyfile(ASSETS / "README.md", root / "README.md")
+    print(f"Studio: {root}")
+    channels = channels_overview(root)
+    print(f"Channels: {', '.join(c['name'] for c in channels) or 'none yet (studio.py new-channel --name NAME)'}")
 
 
-def cmd_status(ws: Path, args) -> None:
-    if not (ws / "studio.json").exists():
-        print(f"No workspace at {ws}. Run `studio.py init`, then set up the channel (references/setup.md).")
+def cmd_channels(root: Path, args) -> None:
+    channels = channels_overview(root)
+    if not channels:
+        print("No channels yet. Create one with `studio.py new-channel --name NAME`.")
+    for channel in channels:
+        extra = f", {channel['suggested_sources']} suggested sources" if channel["suggested_sources"] else ""
+        print(f"{channel['id']} · {channel['name']} · {channel['findings']} findings{extra}")
+
+
+def cmd_new_channel(root: Path, args) -> None:
+    folder = create_channel(root, args.name, args.description or "", args.language or "")
+    print(f"Channel {folder.name}: {folder}")
+
+
+def cmd_status(root: Path, args) -> None:
+    if not channel_dirs(root):
+        print(f"No channels in {root}. Run `studio.py init`, then set up a channel (references/setup.md).")
         return
-    studio = Studio(ws)
+    try:
+        ws = find_channel(root, args.channel)
+    except KeyError as error:
+        print(error.args[0])
+        print(f"UI: {(running_server(root) or {}).get('url') or 'not running (studio.py serve --background)'}")
+        return
+    studio = Studio(ws, root)
     settings, topics, sources, scripts = studio.settings(), studio.topics(), studio.sources(), studio.scripts()
     runs = studio.runs()
     last = next((r for r in reversed(runs) if r.get("status") in ("completed", "failed")), None)
-    print(f"Channel: {settings.get('name') or '(unnamed)'} · workspace {ws}")
+    others = [c["name"] for c in channels_overview(root) if c["id"] != ws.name]
+    print(f"Channel: {settings.get('name') or '(unnamed)'} ({ws.name}) · studio {root}" + (f" · other channels: {', '.join(others)}" if others else ""))
     print(f"Topics: {', '.join(t['name'] for t in topics) or 'none'}")
     approved = [s for s in sources if s["status"] == "approved"]
     suggested = [s for s in sources if s["status"] == "suggested"]
@@ -655,8 +760,8 @@ def cmd_status(ws: Path, args) -> None:
         state = "drafted" if script["drafted"] else "not drafted"
         links = [f"{len(script['findings'])} findings"] + [f"topic {t}" for t in script["topics"]]
         print(f"  {script['id']} · {script['title']} · {', '.join(links)} · {state}")
-    server = running_server(ws)
-    print(f"UI: {server['url'] if server else 'not running (studio.py serve --background)'}")
+    server = running_server(root)
+    print(f"UI: {server['url'] + '#/' + ws.name if server else 'not running (studio.py serve --background)'}")
     hints = []
     if not settings.get("name") or not topics:
         hints.append("Set up the channel: name, topics, sources (references/setup.md).")
@@ -772,61 +877,6 @@ def cmd_new_script(ws: Path, args) -> None:
     print(f"Script: {ws / 'scripts' / script['id']}")
 
 
-def cmd_sql(ws: Path, args) -> None:
-    state = Studio(ws).state()
-    db_path = ws / "studio.db"
-    temporary = db_path.with_suffix(".db.tmp")
-    temporary.unlink(missing_ok=True)
-    db = sqlite3.connect(temporary)
-    db.executescript("""
-        CREATE TABLE topics(id TEXT PRIMARY KEY, name TEXT, description TEXT, created TEXT);
-        CREATE TABLE sources(id TEXT PRIMARY KEY, url TEXT, note TEXT, status TEXT, reason TEXT, feed TEXT, created TEXT);
-        CREATE TABLE findings(id TEXT PRIMARY KEY, title TEXT, summary TEXT, found_at TEXT, dismissed_at TEXT);
-        CREATE TABLE finding_topics(finding_id TEXT, topic_id TEXT);
-        CREATE TABLE finding_sources(finding_id TEXT, url TEXT, title TEXT, publisher TEXT, published TEXT, source_id TEXT);
-        CREATE TABLE scripts(id TEXT PRIMARY KEY, title TEXT, created TEXT, updated TEXT, drafted INTEGER);
-        CREATE TABLE script_findings(script_id TEXT, finding_id TEXT);
-        CREATE TABLE script_topics(script_id TEXT, topic_id TEXT);
-        CREATE TABLE runs(id TEXT PRIMARY KEY, trigger TEXT, status TEXT, started TEXT, finished TEXT, findings INTEGER, note TEXT);
-    """)
-    db.executemany("INSERT INTO topics VALUES (?,?,?,?)", [(t["id"], t["name"], t.get("description"), t.get("created")) for t in state["topics"]])
-    db.executemany("INSERT INTO sources VALUES (?,?,?,?,?,?,?)", [(s["id"], s["url"], s.get("note"), s["status"], s.get("reason"), s.get("feed"),
-                                                                  s.get("created")) for s in state["sources"]])
-    for f in state["findings"]:
-        db.execute("INSERT INTO findings VALUES (?,?,?,?,?)", (f["id"], f["title"], f.get("summary"), f.get("found_at"), f.get("dismissed_at")))
-        db.executemany("INSERT INTO finding_topics VALUES (?,?)", [(f["id"], t) for t in f.get("topics", [])])
-        db.executemany("INSERT INTO finding_sources VALUES (?,?,?,?,?,?)",
-                       [(f["id"], s["url"], s.get("title"), s.get("publisher"), s.get("published"), s.get("source_id")) for s in f.get("sources", [])])
-    for s in state["scripts"]:
-        db.execute("INSERT INTO scripts VALUES (?,?,?,?,?)", (s["id"], s["title"], s.get("created"), s.get("updated"), int(s["drafted"])))
-        db.executemany("INSERT INTO script_findings VALUES (?,?)", [(s["id"], f) for f in s["findings"]])
-        db.executemany("INSERT INTO script_topics VALUES (?,?)", [(s["id"], t) for t in s["topics"]])
-    db.executemany("INSERT INTO runs VALUES (?,?,?,?,?,?,?)", [(r["id"], r.get("trigger"), r.get("status"), r.get("started"),
-                                                                r.get("finished"), r.get("findings"), r.get("note")) for r in load(ws / "runs.json")["runs"]])
-    db.commit()
-    db.close()
-    temporary.replace(db_path)
-
-    db = sqlite3.connect(f"{db_path.as_uri()}?mode=ro", uri=True)
-    try:
-        if not args.query:
-            for (statement,) in db.execute("SELECT sql FROM sqlite_master WHERE type = 'table'"):
-                print(statement.strip() + ";")
-            return
-        try:
-            cursor = db.execute(args.query)
-        except sqlite3.Error as error:
-            raise SystemExit(f"SQL error: {error}")
-        print("\t".join(column[0] for column in cursor.description or []))
-        rows = cursor.fetchmany(args.limit + 1)
-        for row in rows[: args.limit]:
-            print("\t".join("" if value is None else str(value).replace("\t", " ").replace("\n", " ") for value in row))
-        if len(rows) > args.limit:
-            print(f"… more rows; raise --limit (now {args.limit})")
-    finally:
-        db.close()
-
-
 # ---------------------------------------------------------------- web UI server
 
 def running_server(ws: Path) -> dict | None:
@@ -843,7 +893,6 @@ def running_server(ws: Path) -> dict | None:
 def make_handler(ws: Path):
     import threading
     lock = threading.Lock()
-    studio = Studio(ws)
     page = ASSETS / "ui" / "index.html"
 
     class Handler(BaseHTTPRequestHandler):
@@ -893,10 +942,17 @@ def make_handler(ws: Path):
                         return self.reply(200, font.read_bytes(), "font/woff2")
                 if parts == ["api", "health"]:
                     return self.reply(200, str(ws).encode(), "text/plain; charset=utf-8")
-                if parts[:1] != ["api"]:
-                    return self.reply(404, {"error": "Not found"})
                 with lock:
-                    result = self.api(method, parts[1:], body)
+                    if parts == ["api", "channels"] and method == "GET":
+                        result = {"workspace": str(ws), "default_workspace": ws == workspace_path(None) and not os.environ.get("VID_STUDIO_HOME"),
+                                  "channels": channels_overview(ws)}
+                    elif parts == ["api", "channels"] and method == "POST":
+                        folder = create_channel(ws, body.get("name", ""), body.get("description", ""), body.get("language", ""))
+                        result = {"id": folder.name}
+                    elif parts[:2] == ["api", "c"] and len(parts) >= 3:
+                        result = self.api(method, parts[3:], body, Studio(find_channel(ws, parts[2]), ws))
+                    else:
+                        return self.reply(404, {"error": "Not found"})
                 return self.reply(200, result)
             except KeyError as error:
                 return self.reply(404, {"error": str(error.args[0] if error.args else error)})
@@ -907,7 +963,7 @@ def make_handler(ws: Path):
             except (SystemExit, OSError) as error:
                 return self.reply(500, {"error": str(error)})
 
-        def api(self, method: str, parts: list[str], body: dict):
+        def api(self, method: str, parts: list[str], body: dict, studio: Studio):
             resource, item = (parts + [None, None])[:2]
             if method == "GET" and resource == "state":
                 return studio.state()
@@ -1012,9 +1068,12 @@ def main(argv=None) -> None:
     workspace_help = "Workspace directory (default: $VID_STUDIO_HOME or ~/vid-studio)"
     parser = argparse.ArgumentParser(description=__doc__)
     parser.add_argument("--workspace", help=workspace_help)
+    parser.add_argument("--channel", help="Channel ID or name (default: $VID_STUDIO_CHANNEL, or the only channel)")
     # Accept --workspace after the subcommand too, without clobbering one given before it.
     common = argparse.ArgumentParser(add_help=False)
     common.add_argument("--workspace", default=argparse.SUPPRESS, help=workspace_help)
+    common.add_argument("--channel", default=argparse.SUPPRESS,
+                        help="Channel ID or name (default: $VID_STUDIO_CHANNEL, or the only channel)")
     commands = parser.add_subparsers(dest="command", required=True)
 
     def command(name, handler, help_text):
@@ -1022,7 +1081,12 @@ def main(argv=None) -> None:
         sub.set_defaults(handler=handler)
         return sub
 
-    command("init", cmd_init, "Create the workspace; never overwrites files")
+    command("init", cmd_init, "Create the studio folder; never overwrites files")
+    command("channels", cmd_channels, "List channels")
+    sub = command("new-channel", cmd_new_channel, "Create a channel")
+    sub.add_argument("--name", required=True)
+    sub.add_argument("--description")
+    sub.add_argument("--language", choices=["English", "Hindi", "Hinglish"])
     command("status", cmd_status, "Show the channel, research runs, scripts, and suggestions")
 
     sub = command("serve", cmd_serve, "Run the studio web UI at http://localhost")
@@ -1069,16 +1133,14 @@ def main(argv=None) -> None:
     sub.add_argument("--finding", action="append", help="Finding ID; repeatable")
     sub.add_argument("--topic", action="append", help="Topic ID, for explainers; repeatable")
 
-    sub = command("sql", cmd_sql, "Query a SQLite copy of the studio; no query prints the schema")
-    sub.add_argument("query", nargs="?")
-    sub.add_argument("--limit", type=int, default=200)
-
     args = parser.parse_args(argv)
-    workspace = workspace_path(args.workspace)
-    if args.command not in ("init", "status") and not (workspace / "studio.json").exists():
-        raise SystemExit(f"No workspace at {workspace}. Run: studio.py init")
+    root = workspace_path(args.workspace)
     try:
-        args.handler(workspace, args)
+        migrate_single_channel(root)
+        if args.command in ("init", "channels", "new-channel", "status", "serve"):
+            args.handler(root, args)
+        else:
+            args.handler(find_channel(root, args.channel), args)
     except (ValueError, KeyError, RuntimeError) as error:
         raise SystemExit(f"Error: {error.args[0] if error.args else error}")
 
