@@ -28,7 +28,18 @@ button, input, textarea, select { font: inherit; color: inherit; }
 ::selection { background: #dbe7fb; }
 .wrap { max-width: 1040px; margin: 0 auto; padding: 0 32px 140px; }
 
-.topbar { display: flex; align-items: center; justify-content: space-between; height: 60px; border-bottom: 1px solid var(--line); margin-bottom: 48px; }
+.topbar { display: flex; align-items: center; justify-content: space-between; gap: 20px; min-height: 72px; border-bottom: 1px solid var(--line); margin-bottom: 28px; }
+.global-tabs { display:flex; gap:6px; align-self:stretch; }
+.global-tabs a { display:flex; align-items:center; gap:7px; padding:0 14px; text-decoration:none; color:var(--ink-3); font-size:14px; font-weight:600; }
+.global-tabs a.on { color:var(--ink); box-shadow:inset 0 -2px 0 var(--ink); }
+.research-context { display:flex; align-items:center; justify-content:space-between; gap:12px; margin-bottom:28px; }
+.research-context[hidden], #settings-btn[hidden] { display:none; }
+.flow-note { display:flex; flex-wrap:wrap; gap:8px 14px; align-items:center; margin:0 0 28px; padding:14px 16px; border:1px solid var(--line); border-radius:10px; background:var(--surface); font-size:13px; color:var(--ink-2); }
+.flow-note a { font-weight:600; text-underline-offset:3px; }
+.board-filters { display:flex; gap:8px; flex-wrap:wrap; }
+.card-origin { display:flex; flex-wrap:wrap; gap:5px 10px; margin-top:10px; font-size:12px; color:var(--ink-3); }
+.card-origin a { text-underline-offset:3px; }
+@media(max-width:700px) { .topbar { gap:8px; flex-wrap:wrap; padding-top:14px; } .global-tabs { min-height:48px; width:100%; } .global-tabs a { flex:1; justify-content:center; padding:0 8px; } }
 .brand { display: flex; align-items: center; gap: 10px; font-weight: 650; font-size: 15px; letter-spacing: -.01em; text-decoration: none; }
 .brand svg { width: 24px; height: 24px; }
 .topbar-left { display: flex; align-items: center; gap: 10px; min-width: 0; }
@@ -145,10 +156,11 @@ h2 { font-size: 19px; font-weight: 650; letter-spacing: -.02em; margin: 0; }
 .title-input:focus { outline: none; }
 .subtabs { display: flex; gap: 12px; margin-bottom: 12px; flex-wrap: wrap; justify-content: space-between; align-items: center; }
 .subtabs > div { display: flex; gap: 4px; flex-wrap: wrap; }
-textarea.doc { display: block; width: 100%; min-height: 480px; resize: vertical; border: 1px solid var(--line-2); border-radius: 12px; padding: 20px 22px; background: var(--bg); font: 15px/1.75 var(--sans); color: var(--ink); }
+textarea.doc, .md { display: block; width: 100%; height: 480px; overflow: auto; scrollbar-gutter: stable; border: 1px solid var(--line-2); border-radius: 12px; padding: 20px 22px; background: var(--bg); font: 15px/1.75 var(--sans); color: var(--ink); overflow-wrap: anywhere; }
+textarea.doc { resize: none; }
 textarea.doc::placeholder { color: var(--ink-3); }
-textarea.doc.short { min-height: 260px; }
-.md { min-height: 480px; border: 1px solid var(--line); border-radius: 12px; padding: 20px 22px; background: var(--bg); font: 15px/1.75 var(--sans); overflow-wrap: anywhere; cursor: text; }
+textarea.doc.short { height: 260px; }
+.md { cursor: text; }
 .md > :first-child { margin-top: 0; }
 .md > :last-child { margin-bottom: 0; }
 .md h1, .md h2, .md h3, .md h4, .md h5, .md h6 { letter-spacing: -.02em; line-height: 1.3; margin: 1.6em 0 .5em; font-weight: 650; }
@@ -273,12 +285,9 @@ dialog .sub { margin: 0 0 20px; color: var(--ink-2); font-size: 13.5px; }
 code { font: 12.5px var(--mono); background: var(--surface-2); border-radius: 5px; padding: 1px 5px; }
 
 /* research / production */
-.modes { display: inline-flex; gap: 2px; background: var(--surface-2); border-radius: 10px; padding: 3px; margin-bottom: 14px; }
-.modes:has(+ .tabs[hidden]) { margin-bottom: 32px; }
-.modes a { display: inline-flex; align-items: center; gap: 7px; height: 32px; padding: 0 16px; border-radius: 7px; font-weight: 600; font-size: 13.5px; color: var(--ink-3); text-decoration: none; }
-.modes a:hover { color: var(--ink); }
-.modes a.on { background: var(--bg); color: var(--ink); box-shadow: 0 1px 2px rgba(17,17,16,.1); }
-.modes .count { font: 500 11px/1 var(--mono); color: var(--ink-3); }
+.project-head .head-actions { min-width: 300px; min-height: 72px; }
+.project-head .head-actions.placeholder { visibility: hidden; }
+@media (max-width: 700px) { .project-head .head-actions { min-width: 0; width: 100%; } }
 .board { display: grid; grid-template-columns: repeat(3, minmax(0, 1fr)); gap: 14px; align-items: start; }
 .column { background: var(--surface); border: 1px solid var(--line); border-radius: 12px; padding: 10px; display: grid; gap: 8px; }
 .column .label-row { margin: 4px 6px 2px; }
@@ -309,13 +318,138 @@ a.ref-link:hover { border-color: #cfcdc8; }
 .comment-tools .btn.small { height: 26px; }
 .comment-tools .icon-btn { width: 26px; height: 26px; }
 .dismissed .comment { opacity: .7; }
+.beats-md .cue { display: inline-flex; gap: 8px; align-items: baseline; font: 12.5px/1.6 var(--mono); color: var(--ink-2); background: var(--surface); border-radius: 6px; padding: 1px 8px; margin: 3px 0; }
+.beats-md .cue b { font-weight: 600; font-size: 10.5px; text-transform: uppercase; letter-spacing: .04em; color: var(--ink-3); }
+.beats-md .cue-text { background: #eef4ff; }
+.beats-md .cue-note { background: transparent; border: 1px dashed var(--line-2); }
 .md mark { background: #fff1bf; box-shadow: inset 0 -2px 0 #e9b949; color: inherit; border-radius: 2px; cursor: pointer; }
 .md mark.flash { background: #ffe58a; }
 .quote-box { border-left: 3px solid #e9b949; background: #fff7dc; border-radius: 4px; padding: 8px 12px; font-size: 13px; margin-bottom: 16px; white-space: pre-wrap; max-height: 120px; overflow: auto; }
 .danger-text:hover { color: var(--danger); }
 
+/* channel look and voice */
+.stepper { display: flex; gap: 8px; list-style: none; padding: 0; margin: 0 0 28px; counter-reset: step; }
+.stepper li { display: flex; align-items: center; gap: 8px; font-size: 13.5px; font-weight: 600; color: var(--ink-3); }
+.stepper li + li::before { content: ""; width: 28px; height: 1px; background: var(--line-2); margin-right: 4px; }
+.stepper .step-n { width: 24px; height: 24px; border-radius: 50%; display: grid; place-items: center; background: var(--surface-2); font: 600 12px/1 var(--mono); }
+.stepper .step-n svg { width: 13px; height: 13px; }
+.stepper li.on { color: var(--ink); }
+.stepper li.on .step-n { background: var(--ink); color: var(--bg); }
+.stepper li.done .step-n { background: #dcfce7; color: #15803d; }
+.setup-next { position: sticky; bottom: 0; display: flex; justify-content: space-between; align-items: center; gap: 12px; padding: 14px 0; margin-top: 24px; background: linear-gradient(transparent, var(--bg) 30%); }
+.tabs a svg { width: 15px; height: 15px; }
+.studio-split { display: grid; grid-template-columns: minmax(0, 1fr) 380px; gap: 40px; align-items: start; }
+.controls { display: grid; gap: 0; }
+.ctl { padding: 18px 0; border-top: 1px solid var(--line); }
+.ctl:first-child { border-top: 0; padding-top: 0; }
+.ctl h4 { font-size: 13px; font-weight: 650; margin: 0 0 12px; display: flex; justify-content: space-between; align-items: center; }
+details.ctl summary { list-style: none; cursor: pointer; }
+details.ctl summary::-webkit-details-marker { display: none; }
+details.ctl summary h4 { margin: 0; color: var(--ink-2); }
+details.ctl[open] summary h4 { margin-bottom: 12px; }
+.ctl.two { display: grid; grid-template-columns: 1fr 1fr; gap: 16px; }
+.row { display: grid; grid-template-columns: 150px minmax(0, 1fr); align-items: center; gap: 12px; margin-bottom: 10px; font-size: 13px; color: var(--ink-2); }
+.row .seg { justify-self: start; flex-wrap: wrap; }
+.ctl > .seg { flex-wrap: wrap; }
+.slider { display: flex; align-items: center; gap: 12px; }
+.slider input { flex: 1; accent-color: var(--ink); }
+.slider output { font: 500 12px var(--mono); color: var(--ink-2); min-width: 64px; text-align: right; }
+.presets { display: grid; grid-template-columns: repeat(auto-fill, minmax(150px, 1fr)); gap: 8px; }
+.preset { display: grid; gap: 4px; text-align: left; padding: 8px 8px 10px; border: 1px solid var(--line); border-radius: 10px; background: var(--bg); cursor: pointer; font-size: 12px; line-height: 1.4; }
+.preset:hover { border-color: #cfcdc8; }
+.preset.on { border-color: var(--ink); box-shadow: inset 0 0 0 1px var(--ink); }
+.preset b { font-size: 13px; margin-top: 4px; }
+.preset .muted { display: -webkit-box; -webkit-line-clamp: 2; -webkit-box-orient: vertical; overflow: hidden; }
+.swatches { display: flex; gap: 4px; align-items: center; height: 38px; padding: 0 10px; border-radius: 6px; border: 1px solid rgba(0,0,0,.06); }
+.swatches i { width: 16px; height: 16px; border-radius: 50%; box-shadow: 0 0 0 1px rgba(255,255,255,.15), 0 0 0 2px rgba(0,0,0,.05); }
+.colors { display: grid; grid-template-columns: repeat(auto-fill, minmax(140px, 1fr)); gap: 8px; }
+.color { display: grid; grid-template-columns: 34px 1fr; grid-template-rows: auto auto; column-gap: 10px; align-items: center; padding: 8px; border: 1px solid var(--line); border-radius: 10px; cursor: pointer; font-size: 12.5px; font-weight: 600; }
+.color input { grid-row: span 2; width: 34px; height: 34px; padding: 0; border: 0; border-radius: 8px; background: none; cursor: pointer; }
+.color input::-webkit-color-swatch-wrapper { padding: 0; }
+.color input::-webkit-color-swatch { border: 1px solid rgba(0,0,0,.1); border-radius: 8px; }
+.color code { background: none; padding: 0; color: var(--ink-3); font-size: 11.5px; }
+.font-select, .text-input { height: 34px; border: 1px solid var(--line-2); border-radius: 8px; padding: 0 10px; background: var(--bg); font-size: 13px; width: 100%; max-width: 320px; }
+.text-input { max-width: none; }
+.text-area, .code-input { width: 100%; border: 1px solid var(--line-2); border-radius: 8px; padding: 9px 11px; background: var(--bg); font-size: 13px; line-height: 1.5; resize: vertical; }
+.text-area.mono, .code-input { font: 12.5px/1.6 var(--mono); }
+.text-input:focus, .text-area:focus, .code-input:focus, .font-select:focus { outline: none; border-color: #b9b7b1; box-shadow: 0 0 0 4px var(--surface-2); }
+.preview-col { position: sticky; top: 20px; display: grid; gap: 12px; }
+.device { position: relative; margin: 0 auto; width: 100%; background: #0b0b0c; border-radius: 18px; overflow: hidden; box-shadow: 0 0 0 1px rgba(0,0,0,.08), 0 18px 40px rgba(17,17,16,.16); }
+.device.aspect-9x16 { aspect-ratio: 9 / 16; max-width: 300px; }
+.device.aspect-16x9 { aspect-ratio: 16 / 9; border-radius: 12px; }
+.device.aspect-1x1 { aspect-ratio: 1; max-width: 340px; }
+.device.aspect-4x5 { aspect-ratio: 4 / 5; max-width: 320px; }
+.side .device.aspect-9x16 { max-width: 240px; }
+.player-frame { position: absolute; inset: 0; width: 100%; height: 100%; border: 0; display: block; }
+.player-error { position: absolute; inset: auto 10px 10px; padding: 8px 10px; border-radius: 8px; background: rgba(194,65,12,.92); color: #fff; font-size: 12px; }
+.player-bar { display: flex; align-items: center; gap: 8px; max-width: 380px; width: 100%; margin: 0 auto; }
+.player-bar .icon-btn { color: var(--ink); background: var(--surface-2); border-radius: 50%; width: 34px; height: 34px; flex: none; }
+.player-bar .icon-btn svg { width: 14px; height: 14px; }
+.scrub { flex: 1; accent-color: var(--ink); }
+.ptime { font: 500 12px var(--mono); color: var(--ink-3); min-width: 74px; text-align: right; }
+.preview-opts { display: flex; align-items: center; justify-content: center; gap: 14px; flex-wrap: wrap; }
+.check-label { display: inline-flex; align-items: center; gap: 6px; font-size: 13px; color: var(--ink-2); cursor: pointer; }
+.check-label input { accent-color: var(--ink); }
+.save-note { margin: 0; text-align: center; font-size: 12px; color: var(--ink-3); min-height: 18px; }
+.ask { border: 1px solid var(--line); border-radius: 12px; padding: 14px; background: var(--surface); display: grid; gap: 10px; }
+.ask h4 { margin: 0; font-size: 13px; display: flex; align-items: center; gap: 6px; }
+.ask h4 svg { width: 15px; height: 15px; }
+.ask textarea { width: 100%; border: 1px solid var(--line-2); border-radius: 8px; padding: 9px 11px; background: var(--bg); font-size: 13px; resize: vertical; }
+.ask textarea:focus { outline: none; border-color: #b9b7b1; }
+.ask .btn { justify-self: start; }
+.ask p { margin: 0; }
+.ask-chips, .toggle-chips { display: flex; flex-wrap: wrap; gap: 6px; }
+.chip.small { height: 26px; padding: 0 9px; font-size: 12px; border-color: var(--line); background: var(--bg); }
+.toggle-chips .chip { border-color: var(--line-2); }
+.toggle-chips .chip.on { background: var(--ink); color: var(--bg); border-color: var(--ink); }
+.tone { display: grid; grid-template-columns: 70px 1fr 70px; align-items: center; gap: 12px; font-size: 12.5px; color: var(--ink-2); margin-bottom: 8px; }
+.tone span:last-child { text-align: right; }
+.tone input { accent-color: var(--ink); }
+.example { border: 1px solid var(--line); border-radius: 10px; padding: 10px 12px; margin-bottom: 8px; }
+.example p { margin: 4px 0; }
+.example pre { margin: 6px 0 0; white-space: pre-wrap; font: 12px/1.5 var(--mono); color: var(--ink-2); max-height: 120px; overflow: hidden; }
+.voice-card { border: 1px solid var(--line); border-radius: 12px; padding: 16px; }
+.voice-card h4 { margin: 0 0 8px; font-size: 13px; color: var(--ink-2); }
+.voice-line { font-size: 15px; font-weight: 550; margin: 0 0 12px; letter-spacing: -.01em; }
+.facts { display: grid; grid-template-columns: 90px 1fr; gap: 6px 10px; margin: 0; font-size: 13px; }
+.facts dt { color: var(--ink-3); }
+.facts dd { margin: 0; }
+/* script preview, hooks, quality */
+.timing { font: 500 11.5px var(--mono); color: var(--ink-3); background: var(--surface-2); border-radius: 5px; padding: 2px 6px; margin-left: 6px; }
+.side-tabs { display: flex; gap: 2px; border-bottom: 1px solid var(--line); margin: 22px 0 14px; }
+.side-tabs button { flex: 1; border: 0; background: none; padding: 8px 2px; font-size: 12.5px; font-weight: 600; color: var(--ink-3); cursor: pointer; display: inline-flex; justify-content: center; gap: 4px; }
+.side-tabs button.on { color: var(--ink); box-shadow: inset 0 -1.5px 0 var(--ink); }
+.side-tabs .n { font: 500 10.5px var(--mono); color: var(--ink-3); }
+#side-panel { display: grid; gap: 10px; }
+#side-panel .player-bar { max-width: 260px; }
+.beats { display: grid; gap: 2px; }
+.beat { display: grid; grid-template-columns: 64px 1fr auto; align-items: center; gap: 8px; border: 0; background: none; text-align: left; padding: 6px 8px; border-radius: 7px; cursor: pointer; font-size: 12.5px; }
+.beat:hover { background: var(--surface); }
+.beat.on { background: var(--surface-2); }
+.beat-type { font: 500 10.5px var(--mono); text-transform: uppercase; color: var(--ink-3); }
+.beat b { font-weight: 600; overflow: hidden; text-overflow: ellipsis; white-space: nowrap; }
+.beat-warn { margin: 4px 0 0; font-size: 12px; color: var(--danger); }
+.angle { border: 1px solid var(--line); border-radius: 10px; padding: 12px; display: grid; gap: 6px; justify-items: start; }
+.angle.on { border-color: var(--ink); }
+.angle p { margin: 0; }
+.angle .hook { font-size: 14px; font-weight: 600; line-height: 1.45; }
+.angle .why { font-size: 12.5px; color: var(--ink-2); }
+.score-head { display: flex; align-items: baseline; gap: 10px; }
+.score-big { font-size: 34px; font-weight: 650; letter-spacing: -.03em; }
+.score-row { display: grid; grid-template-columns: 82px 1fr 22px; align-items: center; gap: 10px; font-size: 12.5px; }
+.score-row b { text-align: right; font: 600 12px var(--mono); }
+.meter { height: 6px; border-radius: 3px; background: var(--surface-2); overflow: hidden; }
+.meter i { display: block; height: 100%; background: #16a34a; border-radius: 3px; }
+.meter i.low { background: #e9b949; }
+.review-summary { font-size: 13px; margin: 6px 0 0; }
+.review-notes { margin: 0; padding-left: 18px; font-size: 12.5px; color: var(--ink-2); }
+
 @media (max-width: 820px) {
   .board { grid-template-columns: 1fr; }
+  .studio-split { grid-template-columns: 1fr; }
+  .preview-col { position: static; order: -1; }
+  .row { grid-template-columns: 1fr; gap: 6px; }
+  .ctl.two { grid-template-columns: 1fr; }
   .wrap { padding: 0 18px 140px; }
   .topbar { margin-bottom: 32px; }
   .editor { grid-template-columns: 1fr; gap: 28px; }
@@ -324,8 +458,7 @@ a.ref-link:hover { border-color: #cfcdc8; }
   .head-actions { align-items: flex-start; }
   h1 { font-size: 28px; }
   .title-input { font-size: 24px; }
-  textarea.doc, .md { min-height: 360px; }
-  .md { padding: 20px; }
+  textarea.doc, .md { height: 360px; padding: 20px; }
 }
 </style>
 </head>
@@ -333,11 +466,13 @@ a.ref-link:hover { border-color: #cfcdc8; }
 <div class="wrap">
   <header class="topbar">
     <div class="topbar-left"><a class="brand" href="#/" aria-label="Vid Studio home"><svg viewBox="0 0 24 24" aria-hidden="true"><rect width="24" height="24" rx="7" fill="#111110"/><path d="M9.5 7.8v8.4a.6.6 0 0 0 .9.5l6.7-4.2a.6.6 0 0 0 0-1l-6.7-4.2a.6.6 0 0 0-.9.5Z" fill="#fff"/></svg>Vid Studio</a>
-      <span class="slash">/</span>
-      <div class="switcher" id="switcher"></div></div>
-    <div class="inline"><button class="btn ghost small" data-action="open-channels" id="channels-btn">Channels</button>
-      <button class="btn ghost small" data-action="settings" id="settings-btn">Settings</button></div>
+    </div>
+    <nav class="global-tabs" id="global-tabs" aria-label="Studio sections">
+      <a href="#/research" data-section="research">Research</a><a href="#/production" data-section="production">Production</a><a href="#/channels" data-section="channels">Channels</a>
+    </nav>
   </header>
+  <div class="research-context" id="research-context" hidden><div class="inline"><span class="muted small">Project</span><div class="switcher" id="switcher"></div></div>
+    <button class="btn ghost small" data-action="settings" id="settings-btn">Project settings</button></div>
   <main id="app"><div class="loading">Loading…</div></main>
 </div>
 <div class="toasts" id="toasts" role="status" aria-live="polite"></div>
@@ -362,6 +497,10 @@ const ICONS = {
   check: '<path d="M20 6 9 17l-5-5"/>',
   chevron: '<path d="m6 9 6 6 6-6"/>',
   external: '<path d="M7 17 17 7M8 7h9v9"/>',
+  play: '<path d="M7 4.5v15a1 1 0 0 0 1.5.86l12-7.5a1 1 0 0 0 0-1.72l-12-7.5A1 1 0 0 0 7 4.5Z" fill="currentColor" stroke="none"/>',
+  pause: '<rect x="6" y="4.5" width="4" height="15" rx="1" fill="currentColor" stroke="none"/><rect x="14" y="4.5" width="4" height="15" rx="1" fill="currentColor" stroke="none"/>',
+  palette: '<circle cx="13.5" cy="6.5" r="1.5"/><circle cx="17.5" cy="10.5" r="1.5"/><circle cx="8.5" cy="7.5" r="1.5"/><circle cx="6.5" cy="12.5" r="1.5"/><path d="M12 2a10 10 0 0 0 0 20c1.1 0 2-.9 2-2 0-.5-.2-1-.5-1.3-.3-.4-.5-.8-.5-1.3 0-1.1.9-2 2-2h2.4A5.6 5.6 0 0 0 22 9.8C22 5.5 17.5 2 12 2Z"/>',
+  mic: '<rect x="9" y="3" width="6" height="11" rx="3"/><path d="M5 11a7 7 0 0 0 14 0M12 18v3"/>',
   comment: '<path d="M21 15a2 2 0 0 1-2 2H7l-4 4V5a2 2 0 0 1 2-2h14a2 2 0 0 1 2 2Z"/>',
   send: '<path d="M22 2 11 13M22 2l-7 20-4-9-9-4Z"/>',
   copy: '<rect x="9" y="9" width="12" height="12" rx="2"/><path d="M5 15V5a2 2 0 0 1 2-2h10"/>',
@@ -393,8 +532,14 @@ async function api(method, path, body) {
 }
 
 let PROJECTS = [];
-let PROJECT = null;  // current project ID
-const base = (project = PROJECT) => "#/" + encodeURIComponent(project);
+let PROJECT = null;  // selected Research project or the open script's owner
+let GLOBAL = null, lastGlobalJson = "";
+let productionProjectFilter = "all";
+let RESEARCH_PROJECT = null;
+const base = (project = PROJECT) => "#/research" + (project ? "/" + encodeURIComponent(project) : "");
+const scriptHref = (id, project = PROJECT) => `#/production/${encodeURIComponent(project)}/${encodeURIComponent(id)}`;
+const storyHref = (id, project = PROJECT) => `${base(project)}/stories/${encodeURIComponent(id)}`;
+const channelHref = (id = "", tab = "") => "#/channels" + (id ? "/" + encodeURIComponent(id) : "") + (tab ? "/" + tab : "");
 const papi = (method, path, body) => api(method, `p/${encodeURIComponent(PROJECT)}/${path}`, body);
 const projectName = () => (PROJECTS.find(c => c.id === PROJECT) || {}).name || PROJECT;
 
@@ -460,24 +605,24 @@ let selected = new Set();   // selected finding IDs
 let topicFilter = "all";
 let channelFilter = "all";
 let editor = null;          // open story or script: { kind, data, view, dirty, remoteChanged }
-const lastTab = { research: "", production: "scripts", any: "" };
+const lastTab = { research: "" };
 
 const topicName = id => (S.topics.find(t => t.id === id) || {}).name || id;
 const findingById = id => S.findings.find(f => f.id === id);
 const storyById = id => S.stories.find(s => s.id === id);
-const channelById = id => S.channels.find(c => c.id === id);
+const channels = () => GLOBAL?.channels || S?.channels || [];
+const channelById = id => channels().find(c => c.id === id);
 const channelLabel = id => (channelById(id) || {}).name || id;
 const enc = encodeURIComponent;
 const plural = (n, word) => `${n} ${word}${n === 1 ? "" : "s"}`;
 const RESEARCH_TABS = [["topics", "Topics"], ["sources", "Sources"], ["findings", "Findings"], ["stories", "Stories"]];
-const PRODUCTION_TABS = [["scripts", "Scripts"]];
 const STAGES = [["script", "Script"], ["ready", "Ready"], ["published", "Published"]];
 const LANGUAGES = ["English", "Hindi", "Hinglish"];
 const openComments = s => (s.comments || []).filter(c => !c.resolved_at);
 const lastRun = () => [...S.runs].reverse().find(r => r.status !== "running");
 const suggestedCount = () => S.sources.filter(s => s.status === "suggested").length;
 const runningRun = () => [...S.runs].reverse().find(r => r.status === "running");
-const workspaceSuffix = () => S.default_workspace ? "" : ` Workspace: ${S.workspace}`;
+const workspaceSuffix = () => (S || GLOBAL)?.default_workspace ? "" : ` Workspace: ${(S || GLOBAL)?.workspace || ""}`;
 const DAYS = ["mon", "tue", "wed", "thu", "fri", "sat", "sun"];
 const DAY_NAMES = { mon: "Mon", tue: "Tue", wed: "Wed", thu: "Thu", fri: "Fri", sat: "Sat", sun: "Sun" };
 // Matches describe_schedule in studio.py, e.g. "weekdays at 07:00 and 19:00".
@@ -492,8 +637,11 @@ const PROMPTS = {
   research: () => `Use the vid-studio skill to research now for the project "${projectName()}".${workspaceSuffix()}`,
   setSchedule: (schedule, timezone) => `Use the vid-studio skill to set up scheduled research for the project "${projectName()}": ${describeSchedule(schedule)}${timezone ? ` (${timezone})` : ""}. Create the scheduled task now, replacing any earlier one for this project. Don't run research now.${workspaceSuffix()}`,
   stopSchedule: () => `Use the vid-studio skill to turn off scheduled research for the project "${projectName()}". Delete its scheduled task. Don't run research now.${workspaceSuffix()}`,
+  look: (c, request) => `Use the vid-studio skill to change the look of the channel "${c.name}": ${request}${workspaceSuffix()}`,
+  voice: (c, request) => `Use the vid-studio skill to tune the voice of the channel "${c.name}": ${request}${workspaceSuffix()}`,
+  rewriteAngle: (s, a) => `Use the vid-studio skill to rewrite the script "${s.title}" (${s.id}) in the project "${projectName()}" with the chosen angle: "${a.hook}".${workspaceSuffix()}`,
   researchStory: s => `Use the vid-studio skill to research the story "${s.title}" (${s.id}) in the project "${projectName()}".${workspaceSuffix()}`,
-  draftScripts: (story, ids) => `Use the vid-studio skill to write the scripts for the story "${story.title}" (${story.id}) in the project "${projectName()}": ${ids.join(", ")}.${workspaceSuffix()}`,
+  draftScripts: (story, ids, name = projectName(), suffix = workspaceSuffix()) => `Use the vid-studio skill to write the scripts for the story "${story.title}" (${story.id}) in the project "${name}": ${ids.join(", ")}.${suffix}`,
   draft: s => {
     const n = openComments(s).length;
     return n ? `Use the vid-studio skill to revise the script "${s.title}" (${s.id}) in the project "${projectName()}": address its ${plural(n, "open comment")}.${workspaceSuffix()}`
@@ -504,7 +652,7 @@ const PROMPTS = {
 function showPrompt(title, text, explain) {
   copyText(text).then(ok => ok && toast("Prompt copied"));
   openDialog({
-    title, sub: explain, submit: "Done", cancel: "",
+    title, sub: esc(explain), submit: "Done", cancel: "",
     body: `<div class="prompt-box">${esc(text)}</div>
       <div class="dialog-actions" style="justify-content:flex-start;margin-top:10px"><button type="button" class="btn" id="copy-again">${icon("copy")}Copy again</button></div>`,
     onOpen: form => form.querySelector("#copy-again").onclick = () => copyText(text).then(ok => ok && toast("Prompt copied")),
@@ -512,7 +660,9 @@ function showPrompt(title, text, explain) {
 }
 
 async function refresh(force = false) {
+  const project = PROJECT;
   const next = await papi("GET", "state");
+  if (project !== PROJECT) return false;
   const json = JSON.stringify(next);
   if (!force && json === lastStateJson) return false;
   lastStateJson = json; S = next;
@@ -522,19 +672,50 @@ async function refresh(force = false) {
 }
 
 // ------------------------------------------------------------------ render
-const route = () => { const [project = "", tab = "", id = ""] = location.hash.replace(/^#\/?/, "").split("/").map(decodeURIComponent); return { project, tab, id }; };
+const route = () => {
+  const parts = location.hash.replace(/^#\/?/, "").split("/").map(decodeURIComponent);
+  if (parts[0] === "research") return { scope: "research", project: parts[1] || "", tab: parts[2] || "", id: parts[3] || "", sub: "" };
+  if (parts[0] === "production") return { scope: "production", project: parts[1] || "", tab: "scripts", id: parts[2] || "", sub: "" };
+  if (parts[0] === "channels") return { scope: "channels", project: "", tab: "channels", id: parts[1] || "", sub: parts[2] || "" };
+  return { scope: "legacy", project: parts[0] || "", tab: parts[1] || "", id: parts[2] || "", sub: parts[3] || "" };
+};
+function renderGlobalNavigation() {
+  const current = route().scope;
+  document.querySelectorAll("#global-tabs a").forEach(a => {
+    const on = a.dataset.section === current;
+    a.classList.toggle("on", on);
+    if (on) a.setAttribute("aria-current", "page"); else a.removeAttribute("aria-current");
+    if (a.dataset.section === "research") a.href = base(PROJECTS.some(p => p.id === RESEARCH_PROJECT) ? RESEARCH_PROJECT : null) + (RESEARCH_PROJECT && lastTab.research ? "/" + lastTab.research : "");
+  });
+  document.getElementById("research-context").hidden = current !== "research";
+  document.getElementById("settings-btn").hidden = !PROJECT || !S || current !== "research";
+  renderSwitcher();
+}
+async function refreshGlobal(force = false) {
+  const next = await api("GET", "production"), json = JSON.stringify(next);
+  if (!force && json === lastGlobalJson) return false;
+  GLOBAL = next; lastGlobalJson = json; PROJECTS = next.projects;
+  if (productionProjectFilter !== "all" && !next.projects.some(p => p.id === productionProjectFilter)) productionProjectFilter = "all";
+  if (channelFilter !== "all" && !next.channels.some(c => c.id === channelFilter)) channelFilter = "all";
+  if (S) S.channels = next.channels;
+  return true;
+}
 
 function render() {
+  renderGlobalNavigation();
+  const { scope, tab: rawTab, id, sub } = route();
+  if (scope !== "channels") CV = null;
+  if (scope === "channels") return id ? renderChannel(id, sub) : renderChannels();
+  if (scope === "production") {
+    if (id && (!S || PROJECT !== route().project)) return renderUnavailableProject();
+    return id ? renderEditor("script", id) : renderProduction();
+  }
   if (!PROJECT || !S) return renderNoProjects();
-  const { tab: rawTab, id } = route();
-  if (rawTab === "channels") return renderChannels();
-  const known = [...RESEARCH_TABS, ...PRODUCTION_TABS].map(t => t[0]);
+  const known = RESEARCH_TABS.map(t => t[0]);
   const tab = known.includes(rawTab) ? rawTab : (S.findings.length ? "findings" : "topics");
-  const mode = PRODUCTION_TABS.some(t => t[0] === tab) ? "production" : "research";
-  lastTab[mode] = tab; lastTab.any = tab;
+  lastTab.research = tab;
   document.title = (S.settings.name || "Vid Studio") + " · Vid Studio";
   if (tab === "stories" && id) return renderEditor("story", id);
-  if (tab === "scripts" && id) return renderEditor("script", id);
   editor = null;
   const app = document.getElementById("app");
   const run = lastRun(), active = runningRun();
@@ -542,24 +723,20 @@ function render() {
   const counts = { topics: S.topics.length, sources: S.sources.filter(s => s.status === "approved").length,
     findings: S.findings.filter(f => !f.dismissed_at).length, stories: S.stories.length, scripts: S.scripts.length };
   app.innerHTML = `
-    <section class="head">
+    <section class="head project-head">
       <div>
         <h1>${esc(S.settings.name || "Untitled project")}</h1>
         <p class="lede">${esc(S.settings.description || "Follow the subjects that matter, collect strong evidence, and shape it into stories.")}</p>
       </div>
-      ${mode === "research" ? `<div class="head-actions">
+      <div class="head-actions">
         <button class="btn primary" data-action="research">${icon("refresh")}Research now</button>
         <div class="run-status"><span class="dot ${active ? "running" : run ? "" : "idle"}"></span>${active ? `Running since ${when(active.started)}…`
           : run ? `Last run completed: ${when(run.finished)}${run.status === "failed" ? " · failed" : ` · ${run.findings || 0} new`}` : "No research yet"}
           · <button class="link-btn" data-action="schedule" title="Change the research schedule">${scheduleText ? esc(scheduleText[0].toUpperCase() + scheduleText.slice(1)) : "Set a schedule"}</button></div>
-      </div>` : ""}
+      </div>
     </section>
-    <nav class="modes" aria-label="Research or production">
-      <a href="${base()}/${lastTab.research || (S.findings.length ? "findings" : "topics")}" class="${mode === "research" ? "on" : ""}">Research</a>
-      <a href="${base()}/${lastTab.production}" class="${mode === "production" ? "on" : ""}">Production<span class="count">${S.scripts.length || ""}</span></a>
-    </nav>
-    <nav class="tabs" aria-label="Sections" ${mode === "production" && PRODUCTION_TABS.length === 1 ? "hidden" : ""}>
-      ${(mode === "research" ? RESEARCH_TABS : PRODUCTION_TABS).map(([key, label]) => `<a href="${base()}/${key}" class="${tab === key ? "on" : ""}" ${tab === key ? 'aria-current="page"' : ""}>${label}<span class="count">${counts[key] || ""}</span>${
+    <nav class="tabs" aria-label="Sections">
+      ${RESEARCH_TABS.map(([key, label]) => `<a href="${base()}/${key}" class="${tab === key ? "on" : ""}" ${tab === key ? 'aria-current="page"' : ""}>${label}<span class="count">${counts[key] || ""}</span>${
           key === "sources" && suggestedCount() ? `<span class="badge" title="Suggested sources waiting for you">${suggestedCount()} new</span>` : ""}</a>`).join("")}
     </nav>
     <section id="panel">${({ topics: topicsPanel, sources: sourcesPanel, findings: findingsPanel, stories: storiesPanel, scripts: scriptsPanel })[tab]()}</section>
@@ -659,26 +836,33 @@ function storiesPanel() {
     : empty("Start a story", "Select findings and choose Add to story, or start a story here and link a topic for an explainer.", "new-story", "New story")}`;
 }
 
+function renderUnavailableProject() {
+  document.getElementById("app").innerHTML = `<div class="empty"><h3>Project not found</h3><p>This script's research project is no longer available.</p><a class="btn" href="#/production">Back to production</a></div>`;
+}
+function renderProduction() {
+  editor = null;
+  document.title = "Production · Vid Studio";
+  document.getElementById("app").innerHTML = `<section class="head"><div><h1>Production</h1><p class="lede">Every script, across every research project and channel.</p></div></section>
+    ${scriptsPanel()}`;
+}
 function scriptsPanel() {
-  const head = (extra = "") => `<div class="section-head"><div><h2>Scripts</h2><p>One per story and channel, written in that channel's language and format. Send stories here from Research → Stories.</p></div>${extra}</div>`;
-  if (!S.channels.length) return head() + empty("Add a channel first", "A channel is where scripts get published: a YouTube channel, an Instagram account, or a WhatsApp channel. Each has its own language and format.", "new-channel", "New channel");
-  if (!S.scripts.length) return head() + empty("Nothing in production yet", "Open a story in Research and choose Send to production.", "go-stories", "Go to stories", "back");
-  const shown = S.scripts.filter(s => channelFilter === "all" || s.channel === channelFilter);
+  const data = GLOBAL || { projects: PROJECTS, channels: channels(), scripts: S?.scripts || [], stories: S?.stories || [] };
+  const head = extra => `<div class="section-head"><div><h2>Scripts</h2><p>Track drafts from first script to publication. Open a card to edit, review, and preview.</p></div>${extra || ""}</div>`;
+  if (!data.channels.length) return head() + empty("Set up a publishing channel", "Choose its language, voice, format, and look. Then send a researched story to production.", "open-channels", "Set up channels", "palette");
+  if (!data.scripts.length) return head() + empty("Send your first story to production", "Research a story, then create a separate script for each channel. One story can feed many videos.", "go-stories", "Find a story", "back");
+  const shown = data.scripts.filter(s => (channelFilter === "all" || s.channel === channelFilter) && (productionProjectFilter === "all" || s.project === productionProjectFilter));
   const card = s => {
-    const c = channelById(s.channel) || {};
-    return `<article class="item card" data-card="open-script" data-id="${esc(s.id)}">
-      <div class="body"><h3><a href="${base()}/scripts/${enc(s.id)}">${esc(s.title)}</a></h3>
-        <div class="meta">${esc(c.name || s.channel)}${c.language ? " · " + esc(c.language) : ""}${s.drafted ? "" : " · no draft yet"}${s.open_comments ? ` · ${plural(s.open_comments, "comment")}` : ""}</div></div>
+    const c = channelById(s.channel) || {}, owner = s.project || PROJECT;
+    const story = data.stories.find(x => x.project === owner && x.id === s.story);
+    return `<article class="item card" data-card="open-script" data-id="${esc(s.id)}" data-project="${esc(owner)}" tabindex="0">
+      <div class="body"><h3><a href="${scriptHref(s.id, owner)}">${esc(s.title)}</a></h3>
+        <div class="meta"><a href="${channelHref(s.channel)}">${esc(c.name || s.channel)}</a>${c.language ? " · " + esc(c.language) : ""}${s.drafted ? (s.duration ? " · " + fmtTime(s.duration) : "") : " · no draft yet"}${s.open_comments ? ` · ${plural(s.open_comments, "comment")}` : ""}</div>
+        <div class="card-origin"><a href="${base(owner)}/stories">${esc(s.project_name || data.projects.find(p => p.id === owner)?.name || owner)}</a><span>← ${story ? `<a href="${storyHref(story.id, owner)}">${esc(story.title)}</a>` : "Source story removed"}</span></div></div>
     </article>`;
   };
-  return head(`<select class="topic-select" data-action="filter-channel" aria-label="Filter by channel">
-        <option value="all">All channels (${S.scripts.length})</option>
-        ${S.channels.map(c => `<option value="${esc(c.id)}" ${channelFilter === c.id ? "selected" : ""}>${esc(c.name)} (${S.scripts.filter(s => s.channel === c.id).length})</option>`).join("")}
-      </select>`)
-    + `<div class="board">${STAGES.map(([key, label]) => {
-      const items = shown.filter(s => s.stage === key);
-      return `<div class="column"><div class="label-row">${label} <span class="pill">${items.length}</span></div>${items.map(card).join("") || `<p class="muted small col-empty">None</p>`}</div>`;
-    }).join("")}</div>`;
+  return head(`<div class="board-filters"><select class="topic-select" data-action="filter-production-project" aria-label="Filter by research project"><option value="all">All projects</option>${data.projects.map(p => `<option value="${esc(p.id)}" ${productionProjectFilter === p.id ? "selected" : ""}>${esc(p.name)}</option>`).join("")}</select>
+      <select class="topic-select" data-action="filter-channel" aria-label="Filter by channel"><option value="all">All channels</option>${data.channels.map(c => `<option value="${esc(c.id)}" ${channelFilter === c.id ? "selected" : ""}>${esc(c.name)}</option>`).join("")}</select></div>`)
+    + `<div class="board">${STAGES.map(([key, label]) => { const items = shown.filter(s => s.stage === key); return `<div class="column"><div class="label-row">${label} <span class="pill">${items.length}</span></div>${items.map(card).join("") || `<p class="muted small col-empty">None</p>`}</div>`; }).join("")}</div>`;
 }
 
 function renderChannels() {
@@ -686,12 +870,11 @@ function renderChannels() {
   document.title = "Channels · Vid Studio";
   const kindLabel = c => c.kind === "post" ? "Text post" : "Video script";
   document.getElementById("app").innerHTML = `
-    <a class="back" href="${base()}/${lastTab.any || ""}">${icon("back")}${esc(projectName())}</a>
-    <section class="head"><div><h1>Channels</h1><p class="lede">Where scripts get published. Each channel has its own language and format, and every project can use it.</p></div>
+    <section class="head"><div><h1>Channels</h1><p class="lede">Publishing destinations, shared across all projects. Set the voice, format, and look once; every script for that channel follows them.</p></div>
       <div class="head-actions"><button class="btn primary" data-action="new-channel">${icon("plus")}New channel</button></div></section>
-    ${S.channels.length ? `<div class="list">${S.channels.map(c => `
-      <article class="item" data-card="edit-channel" data-id="${esc(c.id)}" tabindex="0">
-        <div class="body"><h3>${esc(c.name)}</h3><p>${esc([c.platform, kindLabel(c), c.language].filter(Boolean).join(" · "))}</p>
+    ${channels().length ? `<div class="list">${channels().map(c => `
+      <article class="item" data-card="open-channel" data-id="${esc(c.id)}" tabindex="0">
+        <div class="body"><h3><a href="${channelHref(c.id)}">${esc(c.name)}</a></h3><p>${esc([c.platform, kindLabel(c), c.language].filter(Boolean).join(" · "))}</p>
           <div class="meta">${esc((c.format || "").split("\n")[0]) || "No format yet"}</div></div>
         <div class="tools"><button class="icon-btn delete" data-action="delete-channel" data-id="${esc(c.id)}" aria-label="Delete ${esc(c.name)}" title="Delete">${icon("trash")}</button></div>
       </article>`).join("")}</div>`
@@ -701,6 +884,382 @@ function renderChannels() {
 function empty(title, text, action, label, iconName = action === "research" ? "refresh" : "plus") {
   return `<div class="empty"><h3>${esc(title)}</h3><p>${esc(text)}</p><button class="btn primary" data-action="${action}">${icon(iconName)}${esc(label)}</button></div>`;
 }
+
+// ------------------------------------------------------------------ scenes: parser and preview player
+// Mirrors parse_scenes in studio.py (see references/scenes.md), so previews update while you type.
+const SCENE_TYPES = ["title", "stat", "bars", "compare", "list", "quote", "timeline", "text", "image", "end"];
+const spokenText = t => String(t).replace(/!?\[([^\]]+)\]\([^)]*\)/g, "$1").replace(/\[(\d+(?:\s*[,–—-]\s*\d+)*)\](?!\()/g, "")
+  .replace(/\*\*|__|[*_`]/g, "").replace(/\s+/g, " ").trim();
+const wordCount = t => t.split(/\s+/).filter(w => /[\p{L}\p{N}]/u.test(w)).length;
+const fmtTime = sec => { const s = Math.round(sec || 0); return s >= 60 ? `${Math.floor(s / 60)}:${String(s % 60).padStart(2, "0")}` : `${s}s`; };
+
+function parseScenes(src, wpm = 160) {
+  const beats = [];
+  let beat = null;
+  for (const raw of String(src || "").replace(/\r\n?/g, "\n").split("\n")) {
+    const line = raw.trim();
+    const heading = line.match(/^##\s+(.*)$/);
+    if (heading) { beat = { beat: heading[1].replace(/[#*_]/g, "").trim(), vo: [], visual: null, text: "", note: "" }; beats.push(beat); continue; }
+    if (!beat || !line || /^#/.test(line)) continue;
+    const label = line.replace(/^[-*]\s+/, "").match(/^[*_]{0,2}(visual|text|note)[*_]{0,2}\s*:[*_]{0,2}\s*(.*)$/i);
+    if (label) beat[label[1].toLowerCase()] = label[2].trim();
+    else beat.vo.push(line);
+  }
+  return beats.map(b => {
+    const vo = spokenText(b.vo.join(" "));
+    const [type, data] = sceneData(b.visual, vo);
+    const scene = { beat: b.beat, type, duration: Math.max(1.5, Math.floor(wordCount(vo) * 600 / wpm + 0.5) / 10), vo, text: b.text, data };
+    if (b.note) scene.note = b.note;
+    return scene;
+  });
+}
+
+function sceneData(visual, vo) {
+  if (!visual) return ["text", { text: vo }];
+  const parts = visual.split("|").map(x => x.trim()), f = parts.slice(1), type = parts[0].toLowerCase();
+  const pair = (x, first) => { const i = first ? x.indexOf(":") : x.lastIndexOf(":"); return i > 0 && x.slice(i + 1).trim() ? [x.slice(0, i).trim(), x.slice(i + 1).trim()] : [x, ""]; };
+  const v = i => f[i] || "";
+  switch (SCENE_TYPES.includes(type) ? type : "") {
+    case "title": return [type, { title: v(0), subtitle: v(1), kicker: v(2) }];
+    case "stat": return [type, { value: v(0), label: v(1), context: v(2) }];
+    case "bars": case "compare": return [type, { title: v(0), items: f.slice(1).map(x => { const [label, value] = pair(x, false); return { label, value }; }) }];
+    case "list": return [type, { title: v(0), items: f.slice(1) }];
+    case "quote": return [type, { quote: v(0), source: v(1) }];
+    case "timeline": return [type, { title: v(0), items: f.slice(1).map(x => { const [date, label] = pair(x, true); return { date, label }; }) }];
+    case "text": return [type, { text: v(0) || vo }];
+    case "image": return [type, { description: v(0), url: v(1) }];
+    case "end": return [type, { title: v(0), cta: v(1) }];
+    default: return ["image", { description: visual, url: "" }];
+  }
+}
+
+// One preview at a time: an iframe running /scenes/player.html, fed over postMessage.
+const PLAYER = { frame: null, ready: false, pending: null, duration: 0, time: 0, playing: false, scene: -1, scenes: [], scrubbing: false };
+function mountPlayer(host, payload) {
+  host.innerHTML = `<iframe class="player-frame" src="/scenes/player.html" title="Video preview"></iframe>`;
+  Object.assign(PLAYER, { frame: host.querySelector("iframe"), ready: false, pending: payload, duration: 0, time: 0, playing: false, scene: -1, scenes: [] });
+}
+const playerSend = message => PLAYER.frame?.contentWindow?.postMessage(message, location.origin);
+function playerLoad(payload) {
+  if (!PLAYER.frame) return;
+  if (PLAYER.ready) playerSend({ type: "load", ...payload }); else PLAYER.pending = payload;
+}
+// Rebuild after an edit without losing your place.
+function playerReload(design, scenes, extra = {}) {
+  playerLoad({ design, scenes, options: { autoplay: PLAYER.playing, loop: true, captions: true, startAt: PLAYER.time, ...extra } });
+}
+window.addEventListener("message", event => {
+  if (!PLAYER.frame || event.source !== PLAYER.frame.contentWindow) return;
+  const m = event.data || {};
+  if (m.type === "ready") { PLAYER.ready = true; if (PLAYER.pending) { playerSend({ type: "load", ...PLAYER.pending }); PLAYER.pending = null; } }
+  else if (m.type === "loaded") { PLAYER.duration = m.duration || 0; PLAYER.scenes = m.scenes || []; document.querySelector(".player-error")?.remove(); updatePlayerBar(); }
+  else if (m.type === "time") { Object.assign(PLAYER, { time: m.time, playing: m.playing, scene: m.scene }); updatePlayerBar(); }
+  else if (m.type === "error") {
+    const host = PLAYER.frame.parentElement;
+    if (!host.querySelector(".player-error")) host.insertAdjacentHTML("beforeend", `<div class="player-error"></div>`);
+    host.querySelector(".player-error").textContent = m.message;
+  }
+});
+const playerBar = () => `<div class="player-bar"><button type="button" class="icon-btn play-btn" data-action="player-toggle" aria-label="Play">${icon("play")}</button>
+    <input type="range" class="scrub" id="scrub" min="0" max="1000" value="0" aria-label="Seek"><span class="ptime" id="ptime">0s</span></div>`;
+function updatePlayerBar() {
+  const btn = document.querySelector(".play-btn");
+  if (btn) { btn.innerHTML = icon(PLAYER.playing ? "pause" : "play"); btn.setAttribute("aria-label", PLAYER.playing ? "Pause" : "Play"); }
+  const scrub = document.getElementById("scrub");
+  if (scrub && !PLAYER.scrubbing) scrub.value = PLAYER.duration ? Math.round(PLAYER.time / PLAYER.duration * 1000) : 0;
+  const time = document.getElementById("ptime");
+  if (time) time.textContent = `${fmtTime(PLAYER.time)} / ${fmtTime(PLAYER.duration)}`;
+  document.querySelectorAll("[data-beat-index]").forEach(el => el.classList.toggle("on", Number(el.dataset.beatIndex) === PLAYER.scene));
+}
+document.addEventListener("input", event => {
+  if (event.target.id !== "scrub") return;
+  PLAYER.scrubbing = true;
+  playerSend({ type: "seek", time: event.target.value / 1000 * PLAYER.duration });
+});
+document.addEventListener("change", event => { if (event.target.id === "scrub") PLAYER.scrubbing = false; });
+
+// ------------------------------------------------------------------ channel: look and voice
+let CV = null;              // open channel: { id, design, voice, setup, sample, savedDesign, savedVoice, safeArea }
+let CATALOG = null;         // { presets, fonts, sample }
+let setupChannel = null;    // the channel being set up right after creating it
+const timers = {};
+const debounce = (key, ms, fn) => { clearTimeout(timers[key]); timers[key] = setTimeout(() => { delete timers[key]; fn(); }, ms); };
+const channelViews = new Map(), saveQueues = new Map();
+let channelRenderToken = 0, editorRenderToken = 0;
+const channelRoute = id => route().scope === "channels" && route().id === id;
+const channelKey = (view, resource) => `channel:${view.id}:${resource}`;
+const channelDirty = view => JSON.stringify(view.design) !== view.savedDesign || JSON.stringify(view.voice) !== view.savedVoice || JSON.stringify(view.fields) !== view.savedFields;
+// Queue immutable snapshots: edits on another channel cannot cancel or redirect a pending write.
+function queueChannelSave(view, resource, snapshot) {
+  const key = channelKey(view, resource), body = structuredClone(snapshot);
+  const next = (saveQueues.get(key) || Promise.resolve()).catch(() => {}).then(async () => {
+    const saved = await api("PUT", `channels/${enc(view.id)}${resource === "fields" ? "" : "/" + resource}`, body);
+    const marker = resource === "design" ? "savedDesign" : resource === "voice" ? "savedVoice" : "savedFields";
+    view[marker] = JSON.stringify(resource === "fields" ? body : saved);
+    if (JSON.stringify(view[resource]) === JSON.stringify(body) && resource !== "fields") view[resource] = saved;
+    if (CV === view && channelRoute(view.id)) { const note = document.getElementById("save-note"); if (note) note.textContent = channelDirty(view) ? "Saving…" : "Saved"; }
+    return saved;
+  }).catch(e => { if (CV === view) { const note = document.getElementById("save-note"); if (note) note.textContent = "Couldn't save"; } toast(e.message, "error"); throw e; });
+  saveQueues.set(key, next);
+  next.finally(() => { if (saveQueues.get(key) === next) saveQueues.delete(key); }).catch(() => {});
+  return next;
+}
+function scheduleChannelSave(view, resource) {
+  const snapshot = structuredClone(view[resource]);
+  debounce(channelKey(view, resource), 700, () => queueChannelSave(view, resource, snapshot).catch(() => {}));
+}
+function focusSnapshot() {
+  const el = document.activeElement;
+  if (!el || !document.getElementById("app").contains(el)) return null;
+  const key = ["design", "voice", "voiceLines", "channelField"].find(k => el.dataset[k]);
+  const selector = el.id ? `#${CSS.escape(el.id)}` : key ? `[data-${key.replace(/[A-Z]/g, x => "-" + x.toLowerCase())}="${CSS.escape(el.dataset[key])}"]` : null;
+  return selector ? { selector, start: el.selectionStart, end: el.selectionEnd, scroll: el.scrollTop, value: el.value } : null;
+}
+function restoreFocus(saved) {
+  const el = saved && document.querySelector(saved.selector);
+  if (!el) return;
+  if (el.id === "published-url") el.value = saved.value;
+  el.focus({ preventScroll: true });
+  if (saved.start !== null && saved.start !== undefined && typeof el.setSelectionRange === "function") { try { el.setSelectionRange(saved.start, saved.end); } catch {} }
+  el.scrollTop = saved.scroll;
+}
+const getPath = (obj, path) => path.split(".").reduce((o, k) => o?.[k], obj);
+function setPath(obj, path, value) { const keys = path.split("."); let o = obj; keys.slice(0, -1).forEach(k => o = o[k] ??= {}); o[keys.at(-1)] = value; }
+
+async function loadCatalog() {
+  if (CATALOG) return;
+  const [presets, fonts, sample] = await Promise.all([api("GET", "presets"), api("GET", "fonts"),
+    fetch("/scenes/sample.json").then(r => r.ok ? r.json() : {}).catch(() => ({}))]);
+  CATALOG = { presets: Array.isArray(presets) ? presets : presets.presets || [], fonts: fonts.fonts || [], sample };
+}
+const sampleScenes = () => CATALOG.sample[CV.sample] || CATALOG.sample.en || [];
+const lookPayload = () => ({ design: CV.design, scenes: sampleScenes(), options: { autoplay: true, loop: true, captions: true, safeArea: CV.safeArea } });
+
+async function renderChannel(id, tab) {
+  const token = ++channelRenderToken, hash = location.hash, focus = focusSnapshot();
+  const current = () => token === channelRenderToken && location.hash === hash && channelRoute(id);
+  const app = document.getElementById("app");
+  const c = channelById(id);
+  editor = null;
+  if (!c) { app.innerHTML = `<a class="back" href="${channelHref()}">${icon("back")}Channels</a><div class="empty"><h3>Channel not found</h3></div>`; return; }
+  try {
+    await loadCatalog();
+    if (!current()) return;
+    if (!CV || CV.id !== id) {
+      CV = channelViews.get(id) || null;
+    }
+    if (!CV) {
+      const [design, voice] = await Promise.all([api("GET", `channels/${enc(id)}/design`), api("GET", `channels/${enc(id)}/voice`)]);
+      if (!current()) return;
+      CV = { id, design, voice, fields: { format: c.format || "" }, savedFields: JSON.stringify({ format: c.format || "" }), ask: {}, setup: setupChannel === id, sample: c.language === "English" ? "en" : "hi",
+        savedDesign: JSON.stringify(design), savedVoice: JSON.stringify(voice), safeArea: false };
+      channelViews.set(id, CV);
+    }
+  } catch (e) { if (!current()) return; app.innerHTML = `<div class="empty"><h3>Couldn't open this channel</h3><p>${esc(e.message)}</p></div>`; return; }
+  const tabs = c.kind === "video" ? [["look", "Look"], ["voice", "Voice"]] : [["voice", "Voice"]];
+  if (!tabs.some(t => t[0] === tab)) tab = tabs[0][0];
+  CV.tab = tab;
+  document.title = `${c.name} · Vid Studio`;
+  const steps = [["basics", "Basics"], ...tabs];
+  app.innerHTML = `
+    <a class="back" href="${channelHref()}">${icon("back")}Channels</a>
+    <section class="head"><div><h1>${esc(c.name)}</h1><p class="lede">${esc([c.platform, c.kind === "post" ? "Text post" : "Video script", c.language].filter(Boolean).join(" · "))}</p></div>
+      <div class="head-actions"><button class="btn" data-action="edit-channel" data-id="${esc(c.id)}">${icon("edit")}Basics</button></div></section>
+    ${CV.setup ? `<ol class="stepper">${steps.map(([key, label], i) => {
+      const at = steps.findIndex(x => x[0] === tab), state = i < at ? "done" : i === at ? "on" : "";
+      return `<li class="${state}"><span class="step-n">${state === "done" ? icon("check") : i + 1}</span>${label}</li>`; }).join("")}</ol>`
+      : `<nav class="tabs" aria-label="Channel">${tabs.map(([key, label]) => `<a href="${channelHref(c.id, key)}" class="${tab === key ? "on" : ""}">${icon(key === "look" ? "palette" : "mic")}${label}</a>`).join("")}</nav>`}
+    <section id="channel-panel">${tab === "look" ? lookPanel(c) : voicePanel(c)}</section>
+    ${CV.setup ? `<div class="setup-next"><span class="muted small">Everything saves as you go, and you can change it any time.</span>${tab === "look"
+      ? `<a class="btn primary" href="${channelHref(c.id, "voice")}">Next: Voice</a>` : `<button class="btn primary" data-action="finish-setup">Finish setup</button>`}</div>` : ""}`;
+  if (tab === "look") mountPlayer(document.getElementById("look-player"), lookPayload());
+  restoreFocus(focus);
+}
+
+// Look ----------------------------------------------------------------
+const seg = (path, options, value) => `<div class="seg" role="group">${options.map(([v, label]) =>
+  `<button type="button" class="${String(value) === String(v) ? "on" : ""}" data-action="set-design" data-path="${path}" data-id="${esc(v)}">${label}</button>`).join("")}</div>`;
+const slider = (path, min, max, step, value, show) => `<div class="slider"><input type="range" min="${min}" max="${max}" step="${step}" value="${esc(value)}" data-design="${path}" data-number><output data-show="${path}">${esc(show(value))}</output></div>`;
+const SHOW = {
+  "type.scale": v => `${Math.round(v * 100)}%`, "type.display_weight": v => v, "type.tracking": v => `${Number(v).toFixed(2)} em`,
+  "radius": v => `${v}px`, "captions.max_words": v => `${v} word${v == 1 ? "" : "s"}`,
+};
+const COLOR_ROLES = [["background", "Background"], ["surface", "Cards"], ["text", "Text"], ["muted", "Muted text"], ["accent", "Accent"], ["accent2", "Second accent"], ["negative", "Negative"]];
+
+function lookPanel(c) {
+  const d = CV.design, hindi = c.language !== "English";
+  const fontSelect = role => {
+    const groups = {};
+    CATALOG.fonts.filter(f => role !== "mono" || f.category === "mono").forEach(f => (groups[f.category] ??= []).push(f));
+    const current = d.fonts?.[role];
+    return `<select class="font-select" data-design="fonts.${role}" aria-label="${role} font">${Object.entries(groups).map(([cat, list]) => `<optgroup label="${esc(cat)}">${list.map(f =>
+      `<option value="${esc(f.family)}" ${f.family === current ? "selected" : ""} ${hindi && role !== "mono" && !f.devanagari ? "disabled" : ""}>${esc(f.family)}${f.devanagari ? " · हिंदी" : ""}</option>`).join("")}</optgroup>`).join("")}
+      ${CATALOG.fonts.some(f => f.family === current) ? "" : `<option selected>${esc(current || "")}</option>`}</select>`;
+  };
+  return `<div class="studio-split">
+    <div class="controls">
+      <section class="ctl"><h4>Start from a style</h4>
+        <div class="presets">${CATALOG.presets.map(p => `<button type="button" class="preset ${d.preset === p.id ? "on" : ""}" data-action="pick-preset" data-id="${esc(p.id)}">
+          <span class="swatches" style="background:${esc(p.design.colors?.background)}">${["surface", "text", "accent", "accent2"].map(k => `<i style="background:${esc(p.design.colors?.[k])}"></i>`).join("")}</span>
+          <b>${esc(p.name)}</b><span class="muted">${esc(p.description)}</span></button>`).join("") || `<p class="muted small">No presets yet.</p>`}</div></section>
+      <section class="ctl"><h4>Format</h4>${seg("aspect", [["9:16", "9:16 vertical"], ["16:9", "16:9 wide"], ["1:1", "1:1"], ["4:5", "4:5"]], d.aspect)}</section>
+      <section class="ctl"><h4>Colors</h4><div class="colors">${COLOR_ROLES.map(([key, label]) => `<label class="color"><input type="color" data-design="colors.${key}" value="${esc(d.colors?.[key] || "#000000")}"><span>${label}</span><code data-show="colors.${key}">${esc(d.colors?.[key] || "")}</code></label>`).join("")}</div></section>
+      <section class="ctl"><h4>Typography</h4>
+        <div class="row"><span>Titles &amp; numbers</span>${fontSelect("display")}</div>
+        <div class="row"><span>Labels &amp; captions</span>${fontSelect("body")}</div>
+        <div class="row"><span>Data</span>${fontSelect("mono")}</div>
+        ${hindi ? `<p class="muted small">This channel writes in ${esc(c.language)}, so title and caption fonts must support Hindi (marked हिंदी).</p>` : ""}
+        <div class="row"><span>Size</span>${slider("type.scale", 0.8, 1.3, 0.05, d.type?.scale ?? 1, SHOW["type.scale"])}</div>
+        <div class="row"><span>Title weight</span>${slider("type.display_weight", 400, 900, 100, d.type?.display_weight ?? 800, SHOW["type.display_weight"])}</div>
+        <div class="row"><span>Letter spacing</span>${slider("type.tracking", -0.05, 0.1, 0.01, d.type?.tracking ?? 0, SHOW["type.tracking"])}</div>
+        <div class="row"><span>Title case</span>${seg("type.display_case", [["upper", "UPPER"], ["title", "Title"], ["none", "As written"]], d.type?.display_case)}</div></section>
+      <section class="ctl"><h4>Motion</h4>
+        <div class="row"><span>Energy</span>${seg("motion.energy", [["calm", "Calm"], ["medium", "Medium"], ["high", "High"]], d.motion?.energy)}</div>
+        <div class="row"><span>Easing</span>${seg("motion.easing", [["smooth", "Smooth"], ["snappy", "Snappy"], ["bouncy", "Bouncy"]], d.motion?.easing)}</div>
+        <div class="row"><span>Transitions</span>${seg("motion.transition", [["cut", "Cut"], ["fade", "Fade"], ["slide", "Slide"], ["zoom", "Zoom"], ["wipe", "Wipe"]], d.motion?.transition)}</div></section>
+      <section class="ctl"><h4>Captions</h4>
+        <div class="row"><span>Style</span>${seg("captions.style", [["none", "Off"], ["plain", "Plain"], ["boxed", "Boxed"], ["karaoke", "Karaoke"], ["pop", "Pop"]], d.captions?.style)}</div>
+        <div class="row"><span>Position</span>${seg("captions.position", [["upper", "Top"], ["middle", "Middle"], ["lower", "Bottom"]], d.captions?.position)}</div>
+        <div class="row"><span>Highlight</span>${seg("captions.highlight", [["accent", "Accent"], ["accent2", "Second accent"], ["text", "Text"]], d.captions?.highlight)}</div>
+        <div class="row"><span>Words at a time</span>${slider("captions.max_words", 1, 8, 1, d.captions?.max_words ?? 4, SHOW["captions.max_words"])}</div></section>
+      <section class="ctl"><h4>Background &amp; shape</h4>
+        <div class="row"><span>Texture</span>${seg("background.style", [["solid", "Solid"], ["gradient", "Gradient"], ["grain", "Grain"], ["paper", "Paper"]], d.background?.style)}</div>
+        <div class="row"><span>Pattern</span>${seg("background.pattern", [["none", "None"], ["grid", "Grid"], ["dots", "Dots"], ["lines", "Lines"]], d.background?.pattern)}</div>
+        <div class="row"><span>Corners</span>${slider("radius", 0, 48, 2, d.radius ?? 18, SHOW.radius)}</div></section>
+      <section class="ctl"><h4>Logo</h4>
+        <div class="row"><span>Wordmark</span><input class="text-input" data-design="logo.text" value="${esc(d.logo?.text || "")}" placeholder="Shown small on every scene"></div>
+        <div class="row"><span>Corner</span>${seg("logo.position", [["top-left", "Top left"], ["top-right", "Top right"], ["bottom-left", "Bottom left"], ["bottom-right", "Bottom right"]], d.logo?.position)}</div></section>
+      <details class="ctl"><summary><h4>Custom CSS</h4></summary>
+        <textarea class="code-input" data-design="custom_css" rows="6" spellcheck="false" placeholder=".scene-stat .value { text-shadow: 0 0 40px var(--accent); }">${esc(d.custom_css || "")}</textarea>
+        <p class="muted small">For anything the controls can't do. Scenes expose variables like <code>--accent</code> and classes like <code>.scene-stat</code>.</p></details>
+    </div>
+    <div class="preview-col">
+      <div class="device aspect-${esc((d.aspect || "9:16").replace(":", "x"))}" id="look-player"></div>
+      ${playerBar()}
+      <div class="preview-opts">${seg("ui.sample", [["en", "English sample"], ["hi", "हिंदी sample"]], CV.sample).replaceAll('data-action="set-design"', 'data-action="set-sample"')}
+        <label class="check-label"><input type="checkbox" data-action="toggle-safe" ${CV.safeArea ? "checked" : ""}> Safe area</label></div>
+      <p class="save-note" id="save-note"></p>
+      ${askBox("look", ["Make it feel more premium", "More energy, louder captions", "Use my brand colors: ", "Calmer, for longer explainers"])}
+    </div></div>`;
+}
+
+function askBox(kind, suggestions) {
+  return `<div class="ask"><h4>${icon("spark")}Ask your agent</h4>
+    <textarea id="ask-text" rows="3" placeholder="${kind === "look" ? "Describe the change, e.g. make it feel like Bloomberg, but warmer" : "e.g. Sound like a friend explaining money over chai"}">${esc(CV.ask[kind] || "")}</textarea>
+    <div class="ask-chips">${suggestions.map(x => `<button type="button" class="chip small" data-action="ask-fill" data-id="${esc(x)}">${esc(x.replace(/: $/, "…"))}</button>`).join("")}</div>
+    <button type="button" class="btn" data-action="ask-agent" data-id="${kind}">${icon("copy")}Copy prompt</button>
+    <p class="muted small">Your agent edits this channel's ${kind}; the ${kind === "look" ? "preview" : "settings"} update here when it's done.</p></div>`;
+}
+
+function designChanged(path) {
+  const show = document.querySelector(`[data-show="${CSS.escape(path)}"]`);
+  const value = getPath(CV.design, path);
+  if (show) show.textContent = SHOW[path] ? SHOW[path](value) : value;
+  const view = CV, design = structuredClone(view.design), scenes = structuredClone(sampleScenes());
+  debounce(channelKey(view, "preview"), 120, () => { if (CV === view && channelRoute(view.id) && view.tab === "look") playerReload(design, scenes, { safeArea: view.safeArea }); });
+  scheduleChannelSave(view, "design");
+  const note = document.getElementById("save-note"); if (note) note.textContent = "Saving…";
+}
+function saveDesign(view = CV) {
+  clearTimeout(timers[channelKey(view, "design")]); delete timers[channelKey(view, "design")];
+  return queueChannelSave(view, "design", view.design).catch(() => null);
+}
+
+// Voice ---------------------------------------------------------------
+const TONES = [["playful", "Serious", "Playful"], ["casual", "Formal", "Casual"], ["intensity", "Calm", "Intense"]];
+const HOOK_STYLES = [["question", "Question"], ["surprising-stat", "Surprising number"], ["myth-bust", "Myth-bust"], ["story", "Story"], ["stakes", "Stakes"], ["contrast", "Contrast"]];
+function voicePanel(c) {
+  const v = CV.voice, words = Math.round((v.length_seconds || 60) / 60 * (v.words_per_minute || 160));
+  const lines = key => esc((v[key] || []).join("\n"));
+  const vRange = (key, min, max, step, show) => `<div class="slider"><input type="range" min="${min}" max="${max}" step="${step}" value="${esc(getPath(v, key))}" data-voice="${key}" data-number><output data-voice-show="${key}">${esc(show(getPath(v, key)))}</output></div>`;
+  return `<div class="studio-split">
+    <div class="controls">
+      <section class="ctl"><h4>Length &amp; pace</h4>
+        ${c.kind === "video" ? `<div class="row"><span>Target length</span>${vRange("length_seconds", 15, 180, 5, x => fmtTime(x))}</div>
+        <div class="row"><span>Speaking pace</span>${vRange("words_per_minute", 100, 220, 5, x => `${x} wpm`)}</div>
+        <p class="muted small" id="word-budget">About ${words} spoken words. Hindi and Hinglish voiceovers usually run 140–170 words a minute.</p>`
+        : `<p class="muted small">Posts have no timing. The format below sets their length.</p>`}</section>
+      <section class="ctl"><h4>Persona</h4>
+        <textarea class="text-area" data-voice="persona" rows="3" placeholder="Who is talking? e.g. A sharp older sibling who works in finance and hates jargon.">${esc(v.persona || "")}</textarea></section>
+      <section class="ctl"><h4>Tone</h4>${TONES.map(([key, low, high]) => `<div class="tone"><span>${low}</span>
+        <input type="range" min="0" max="100" step="5" value="${esc(v.tone?.[key] ?? 50)}" data-voice="tone.${key}" data-number aria-label="${low} to ${high}"><span>${high}</span></div>`).join("")}</section>
+      <section class="ctl"><h4>Hooks your agent may use</h4>
+        <div class="toggle-chips">${HOOK_STYLES.map(([key, label]) => `<button type="button" class="chip ${(v.hook_styles || []).includes(key) ? "on" : ""}" data-action="toggle-hook" data-id="${key}">${label}</button>`).join("")}</div>
+        <p class="muted small">Each draft comes with 3–5 hooks in these styles; you pick the winner.</p></section>
+      <section class="ctl"><h4>Structure</h4>
+        <textarea class="text-area mono" data-channel-field="format" rows="8">${esc(CV.fields.format)}</textarea>
+        <p class="muted small">The beats every script follows, with rough seconds. Your agent fits each story to it.</p></section>
+      <section class="ctl two"><div><h4>Always</h4><textarea class="text-area" data-voice-lines="do" rows="5" placeholder="One rule per line">${lines("do")}</textarea></div>
+        <div><h4>Never</h4><textarea class="text-area" data-voice-lines="dont" rows="5" placeholder="One rule per line">${lines("dont")}</textarea></div></section>
+      <section class="ctl"><h4>Signature lines</h4>
+        <div class="row"><span>Opening</span><input class="text-input" data-voice="open" value="${esc(v.open || "")}" placeholder="Optional, said after the hook"></div>
+        <div class="row"><span>Sign-off</span><input class="text-input" data-voice="close" value="${esc(v.close || "")}" placeholder="Optional"></div>
+        <div class="row"><span>Call to action</span><input class="text-input" data-voice="cta" value="${esc(v.cta || "")}" placeholder="e.g. Follow for one money rule a day"></div></section>
+      <section class="ctl"><h4>Scripts you love <button type="button" class="btn ghost small" data-action="add-example">${icon("plus")}Add</button></h4>
+        ${(v.examples || []).map((x, i) => `<div class="example"><div class="ref-top"><b>${esc(x.title || "Example")}</b><button type="button" class="icon-btn" data-action="remove-example" data-id="${i}" aria-label="Remove">${icon("x")}</button></div>
+          ${x.why ? `<p class="muted small">${esc(x.why)}</p>` : ""}<pre>${esc(x.text.slice(0, 400))}${x.text.length > 400 ? "…" : ""}</pre></div>`).join("")
+          || `<p class="muted small">Paste scripts from creators (or your own) whose voice you want. Your agent studies their rhythm and wording, never their facts.</p>`}</section>
+    </div>
+    <div class="preview-col">
+      <div class="voice-card" id="voice-card">${voiceSummary(c)}</div>
+      <p class="save-note" id="save-note"></p>
+      ${askBox("voice", ["Punchier, shorter sentences", "Learn my style from my example scripts", "More like a friend, less like news", "Add a recurring sign-off"])}
+    </div></div>`;
+}
+
+function voiceSummary(c) {
+  const v = CV.voice, t = v.tone || {};
+  const word = (x, low, mid, high) => x < 35 ? low : x > 65 ? high : mid;
+  const words = Math.round((v.length_seconds || 60) / 60 * (v.words_per_minute || 160));
+  return `<h4>What your agent will write</h4>
+    <p class="voice-line">${esc(v.persona || "A clear, confident explainer.")}</p>
+    <dl class="facts"><dt>Tone</dt><dd>${[word(t.playful ?? 50, "Serious", "A little playful", "Playful"), word(t.casual ?? 50, "formal", "conversational", "very casual"),
+      word(t.intensity ?? 50, "calm", "steady", "high-energy")].join(", ")}</dd>${c.kind === "video" ? `<dt>Length</dt><dd>${fmtTime(v.length_seconds)} · about ${words} words</dd>` : ""}
+      <dt>Language</dt><dd>${esc(c.language)}</dd>
+      <dt>Hooks</dt><dd>${esc((v.hook_styles || []).map(h => (HOOK_STYLES.find(x => x[0] === h) || [h, h])[1]).join(", ") || "Any")}</dd>
+      ${v.cta ? `<dt>Ends with</dt><dd>${esc(v.cta)}</dd>` : ""}
+      <dt>Learns from</dt><dd>${(v.examples || []).length ? plural(v.examples.length, "example script") : "No examples yet"}</dd></dl>`;
+}
+
+function voiceChanged() {
+  const card = document.getElementById("voice-card"); if (card) card.innerHTML = voiceSummary(channelById(CV.id));
+  const budget = document.getElementById("word-budget");
+  if (budget) budget.textContent = `About ${Math.round(CV.voice.length_seconds / 60 * CV.voice.words_per_minute)} spoken words. Hindi and Hinglish voiceovers usually run 140–170 words a minute.`;
+  const note = document.getElementById("save-note"); if (note) note.textContent = "Saving…";
+  scheduleChannelSave(CV, "voice");
+}
+function saveVoice(view = CV) {
+  clearTimeout(timers[channelKey(view, "voice")]); delete timers[channelKey(view, "voice")];
+  return queueChannelSave(view, "voice", view.voice).catch(() => null);
+}
+
+// Controls write straight into the open channel's look or voice, then save on their own.
+document.addEventListener("input", event => {
+  if (!CV) return;
+  const el = event.target;
+  if (el.dataset.design) {
+    setPath(CV.design, el.dataset.design, el.dataset.number !== undefined ? Number(el.value) : el.value);
+    if (el.type === "color") { const code = document.querySelector(`[data-show="${CSS.escape(el.dataset.design)}"]`); if (code) code.textContent = el.value; }
+    designChanged(el.dataset.design);
+  } else if (el.dataset.voice) {
+    setPath(CV.voice, el.dataset.voice, el.dataset.number !== undefined ? Number(el.value) : el.value);
+    const show = document.querySelector(`[data-voice-show="${CSS.escape(el.dataset.voice)}"]`);
+    if (show) show.textContent = el.dataset.voice === "length_seconds" ? fmtTime(el.value) : `${el.value} wpm`;
+    voiceChanged();
+  } else if (el.dataset.voiceLines) {
+    CV.voice[el.dataset.voiceLines] = el.value.split("\n").map(x => x.trim()).filter(Boolean);
+    voiceChanged();
+  } else if (el.dataset.channelField) {
+    CV.fields[el.dataset.channelField] = el.value;
+    scheduleChannelSave(CV, "fields");
+    const note = document.getElementById("save-note"); if (note) note.textContent = "Saving…";
+  } else if (el.id === "ask-text") {
+    CV.ask[CV.tab] = el.value;
+  }
+});
+document.addEventListener("change", event => {
+  if (CV && event.target.matches("select[data-design]")) { setPath(CV.design, event.target.dataset.design, event.target.value); designChanged(event.target.dataset.design); }
+});
 
 // ------------------------------------------------------------------ story and script editor
 const EDITORS = {
@@ -716,24 +1275,41 @@ const canPreview = () => !isPost() && docText().trim();
 const rerender = () => renderEditor(editor.kind, editor.data.id);
 
 async function renderEditor(kind, id) {
+  const owner = PROJECT;
+  if (kind === "script" && (!owner || route().scope !== "production" || route().project !== owner)) return renderUnavailableProject();
+  const token = ++editorRenderToken, hash = location.hash, focus = focusSnapshot();
+  const current = () => token === editorRenderToken && hash === location.hash && route().id === id && route().tab === EDITORS[kind].back && route().project === owner && PROJECT === owner;
   const app = document.getElementById("app");
   const E = EDITORS[kind];
-  if (!editor || editor.kind !== kind || editor.data.id !== id) {
-    try { editor = { kind, data: await papi("GET", E.path(id)), dirty: false, remoteChanged: false }; editor.view = canPreview() ? "preview" : "edit"; }
-    catch (e) { app.innerHTML = `<a class="back" href="${base()}/${E.back}">${icon("back")}${E.backLabel}</a><div class="empty"><h3>Not found</h3><p>${esc(e.message)}</p></div>`; return; }
+  if (!editor || editor.kind !== kind || editor.data.id !== id || editor.project !== owner) {
+    try {
+      const data = await papi("GET", E.path(id));
+      if (!current()) return;
+      editor = { kind, project: owner, data, dirty: false, remoteChanged: false };
+      editor.view = canPreview() ? "preview" : "edit";
+      if (kind === "script" && !isPost()) {
+        const channel = enc(editor.data.channel);
+        const view = editor;
+        const [design, voice] = await Promise.all([api("GET", `channels/${channel}/design`), api("GET", `channels/${channel}/voice`)]).catch(() => [null, null]);
+        if (!current() || editor !== view) return;
+        Object.assign(view, { design, voice });
+        editor.sideTab = docText().trim() ? "preview" : "hooks";
+      }
+    }
+    catch (e) { if (!current()) return; app.innerHTML = `<a class="back" href="${kind === "script" ? "#/production" : base() + "/stories"}">${icon("back")}${E.backLabel}</a><div class="empty"><h3>Not found</h3><p>${esc(e.message)}</p></div>`; return; }
   }
   const d = editor.data, preview = canPreview() && editor.view === "preview";
   app.innerHTML = `
-    <a class="back" href="${base()}/${E.back}">${icon("back")}${E.backLabel}</a>
+    <a class="back" href="${kind === "script" ? "#/production" : base() + "/stories"}">${icon("back")}${E.backLabel}</a>
     <div class="editor">
       <div>
         ${editor.remoteChanged ? `<div class="banner"><span>Your agent changed this ${kind} while you were editing.</span>
           <span class="inline"><button class="btn" data-action="reload-doc">Load their version</button><button class="btn ghost" data-action="keep-mine">Keep mine</button></span></div>` : ""}
         <input class="title-input" id="doc-title" value="${esc(d.title)}" aria-label="Title">
         ${kind === "script" ? scriptHeader() : ""}
-        <div class="subtabs"><div class="doc-label">${isPost() ? "Post" : E.label}</div>
+        <div class="subtabs"><div class="doc-label">${isPost() ? "Post" : E.label}${kind === "script" && !isPost() ? ` <span class="timing" id="timing">${timingLabel()}</span>` : ""}</div>
           <div class="doc-tools" id="doc-tools">${docTools()}</div></div>
-        ${preview ? `<div class="md" id="md-preview" title="Double-click to edit">${markdown(docText())}</div>` : ""}
+        ${preview ? `<div class="md ${kind === "script" && !isPost() ? "beats-md" : ""}" id="md-preview" title="Double-click to edit">${kind === "script" && !isPost() ? scriptMarkdown(docText()) : markdown(docText())}</div>` : ""}
         <textarea class="doc ${isPost() ? "short" : ""}" id="doc-text" ${preview ? "hidden" : ""} aria-label="${esc(E.label)}" placeholder="${esc(E.placeholder)}">${esc(docText())}</textarea>
         ${isPost() ? `<div class="preview-label">WhatsApp preview</div><div class="phone"><div class="bubble" id="post-preview"></div></div>` : ""}
       </div>
@@ -747,14 +1323,17 @@ async function renderEditor(kind, id) {
     editor.data[docKey()] = text.value; editor.data.title = title.value; editor.dirty = true;
     if (!wasDirty) document.getElementById("doc-tools").innerHTML = docTools();
     postPreview();
+    if (editor.kind === "script" && !isPost()) scriptTextChanged();
   };
   text.addEventListener("input", markDirty);
   title.addEventListener("input", markDirty);
   const md = document.getElementById("md-preview");
   md?.addEventListener("dblclick", event => { if (!event.target.closest("mark")) actions["editor-view"]("edit"); });
-  md?.addEventListener("click", event => { const mark = event.target.closest("mark[data-comment]"); if (mark) flashComment(mark.dataset.comment); });
+  md?.addEventListener("click", event => { const mark = event.target.closest("mark[data-comment]"); if (mark) { editor.sideTab = "comments"; rerender(); flashComment(mark.dataset.comment); } });
   if (md && kind === "script") highlightComments(md);
+  if (editor.sideTab === "preview" && editor.design) mountPlayer(document.getElementById("script-player"), { ...scriptPayload(), options: { autoplay: false, loop: true, captions: true } });
   postPreview();
+  restoreFocus(focus);
 }
 
 // One button finishes editing: Save when there are changes (then shows the preview), Done when there are none.
@@ -769,8 +1348,8 @@ function docTools() {
 
 function scriptHeader() {
   const d = editor.data, c = channelById(d.channel) || { name: d.channel }, story = storyById(d.story);
-  return `<div class="script-meta"><span>For <b>${esc(c.name)}</b>${[c.platform, c.language].filter(Boolean).map(x => " · " + esc(x)).join("")}</span>
-    <span>From ${story ? `<a href="${base()}/stories/${enc(story.id)}">${esc(story.title)}</a>` : "a deleted story"}</span></div>`;
+  return `<div class="script-meta"><span>For <b><a href="${channelHref(d.channel)}">${esc(c.name)}</a></b>${[c.platform, c.language].filter(Boolean).map(x => " · " + esc(x)).join("")}</span>
+    <span>From <a href="${base()}/stories">${esc(projectName())}</a> → ${story ? `<a href="${storyHref(story.id)}">${esc(story.title)}</a>` : "a deleted story"}</span></div>`;
 }
 
 function storySide() {
@@ -781,7 +1360,7 @@ function storySide() {
       <button class="btn primary" data-action="research-story">${icon("spark")}Research story</button>
       <button class="btn" data-action="send-to-production">${icon("send")}Send to production…</button></div>
     <section><h4>In production</h4>
-      ${made.map(x => `<a class="ref ref-link" href="${base()}/scripts/${enc(x.id)}"><b>${esc(channelLabel(x.channel))}</b><span class="pill">${esc(STAGES.find(st => st[0] === x.stage)?.[1] || x.stage)}</span></a>`).join("")
+      ${made.map(x => `<a class="ref ref-link" href="${scriptHref(x.id)}"><b>${esc(channelLabel(x.channel))}</b><span class="pill">${esc(STAGES.find(st => st[0] === x.stage)?.[1] || x.stage)}</span></a>`).join("")
         || `<p class="muted small">Not yet. Research the story, then send it to production for each channel.</p>`}</section>
     <section><h4>Topics <button class="btn ghost small" data-action="link-topic">${icon("plus")}Add</button></h4>
     ${d.topics.length ? `<div class="topic-links">${d.topics.map(t => `<span class="tag removable">${esc(topicName(t))}<button class="icon-btn" data-action="unlink-topic" data-id="${esc(t)}" aria-label="Unlink ${esc(topicName(t))}" title="Unlink">${icon("x")}</button></span>`).join("")}</div>` : ""}</section>
@@ -793,7 +1372,80 @@ function storySide() {
       </div>`).join("")}</section>`;
 }
 
+const wpm = () => editor.voice?.words_per_minute || 160;
+const scriptScenes = () => parseScenes(docText(), wpm());
+const scriptPayload = () => ({ design: editor.design, scenes: scriptScenes() });
+function timingLabel() {
+  const total = scriptScenes().reduce((sum, x) => sum + x.duration, 0), target = editor.voice?.length_seconds;
+  return total ? `${fmtTime(total)}${target ? ` of ${fmtTime(target)}` : ""}` : "";
+}
+function scriptTextChanged() {
+  const timing = document.getElementById("timing"); if (timing) timing.textContent = timingLabel();
+  const beats = document.getElementById("beat-list"); if (beats) beats.innerHTML = beatList();
+  const view = editor;
+  if (view.sideTab === "preview") debounce("script-preview", 500, () => { if (editor === view && route().id === view.data.id && view.sideTab === "preview") playerReload(view.design, scriptScenes()); });
+}
+
+const SCORE_LABELS = [["hook", "Hook"], ["clarity", "Clarity"], ["retention", "Retention"], ["specificity", "Specificity"], ["voice", "Voice"], ["accuracy", "Accuracy"]];
 function scriptSide() {
+  const d = editor.data, open = openComments(d);
+  const tabs = isPost() ? [] : [["preview", "Preview"], ["hooks", "Hooks"], ["quality", "Quality"], ["comments", "Comments"]];
+  const badge = { hooks: (d.angles || []).length, comments: open.length, quality: d.review ? avgScore(d.review).toFixed(1) : "" };
+  const tab = isPost() ? "comments" : editor.sideTab || "preview";
+  return `<div class="side-actions"><button class="btn primary" data-action="write-draft">${icon("spark")}${open.length ? `Revise with ${plural(open.length, "comment")}` : "Write draft"}</button></div>
+    <section><h4>Stage</h4>
+      <div class="seg stage-seg">${STAGES.map(([key, label]) => `<button type="button" class="${d.stage === key ? "on" : ""}" data-action="set-stage" data-id="${key}">${label}</button>`).join("")}</div>
+      ${d.stage === "published" ? `<div class="published"><input class="url-input" id="published-url" value="${esc(d.published_url)}" placeholder="Paste the published link" inputmode="url">
+        <button class="btn small" data-action="save-url">Save</button></div>
+        ${d.published_url ? `<a class="small-link" href="${safeUrl(d.published_url)}" target="_blank" rel="noopener noreferrer">${esc(shortUrl(d.published_url))}${icon("external")}</a>` : ""}` : ""}</section>
+    ${tabs.length ? `<div class="side-tabs" role="tablist">${tabs.map(([key, label]) => `<button type="button" role="tab" aria-selected="${tab === key}" class="${tab === key ? "on" : ""}" data-action="side-tab" data-id="${key}">${label}${badge[key] ? `<span class="n">${badge[key]}</span>` : ""}</button>`).join("")}</div>` : ""}
+    <div id="side-panel">${({ preview: previewTab, hooks: hooksTab, quality: qualityTab, comments: commentsTab })[tab]()}</div>
+    <section><button class="text-btn danger-text" data-action="delete-script" data-id="${esc(d.id)}">Delete script</button></section>`;
+}
+
+function previewTab() {
+  if (!editor.design) return `<p class="muted small">Couldn't load this channel's look.</p>`;
+  return `<div class="device aspect-${esc((editor.design.aspect || "9:16").replace(":", "x"))}" id="script-player"></div>${playerBar()}
+    <div class="beats" id="beat-list">${beatList()}</div>
+    <a class="small-link" href="${channelHref(editor.data.channel, "look")}">${icon("palette")}Edit ${esc(channelLabel(editor.data.channel))}'s look</a>`;
+}
+
+function beatList() {
+  const scenes = scriptScenes();
+  if (!scenes.length) return `<p class="muted small">Write the script as beats (## headings) with Visual: lines, and each beat plays here in the channel's look.</p>`;
+  const warnings = [];
+  scenes.forEach(x => { if (x.duration > 12) warnings.push(`“${x.beat}” runs ${x.duration}s. Split it, or the screen sits still too long.`); });
+  if (scenes.at(-1).type !== "end") warnings.push("The last beat isn't an end scene.");
+  const total = scenes.reduce((sum, x) => sum + x.duration, 0), target = editor.voice?.length_seconds;
+  if (target && Math.abs(total - target) > target * 0.10) warnings.push(`${fmtTime(total)} is ${total > target ? "over" : "under"} the ${fmtTime(target)} target.`);
+  return scenes.map((x, i) => `<button type="button" class="beat" data-action="seek-beat" data-id="${i}" data-beat-index="${i}">
+      <span class="beat-type">${esc(x.type)}</span><b>${esc(x.beat)}</b><span class="muted">${x.duration}s</span></button>`).join("")
+    + warnings.map(w => `<p class="beat-warn">${esc(w)}</p>`).join("");
+}
+
+function hooksTab() {
+  const angles = editor.data.angles || [];
+  if (!angles.length) return `<p class="muted small">Every draft comes with 3–5 hooks, each a different angle on the story. They show up here, and you can swap in a different one.</p>`;
+  return angles.map(a => `<div class="angle ${a.chosen ? "on" : ""}">
+      <p class="hook">${esc(a.hook)}</p>
+      ${a.angle ? `<p class="muted small">${esc(a.angle)}</p>` : ""}
+      ${a.why ? `<p class="why">${esc(a.why)}</p>` : ""}
+      ${a.chosen ? `<span class="pill">In the script</span>` : `<button type="button" class="btn small" data-action="choose-angle" data-id="${esc(a.id)}">Use this hook</button>`}
+    </div>`).join("");
+}
+
+const reviewScore = v => typeof v === "number" && Number.isFinite(v) ? Math.max(0, Math.min(10, v)) : null;
+const avgScore = review => { const v = Object.values(review.scores || {}).map(reviewScore).filter(v => v !== null); return v.length ? v.reduce((a, b) => a + b, 0) / v.length : 0; };
+function qualityTab() {
+  const r = editor.data.review;
+  if (!r) return `<p class="muted small">Your agent scores each draft on six things (hook, clarity, retention, specificity, voice, accuracy) and revises until every one is 8 or more. The scores show up here.</p>`;
+  return `<div class="score-head"><span class="score-big">${avgScore(r).toFixed(1)}</span><span class="muted small">average${r.at ? ` · reviewed ${esc(when(r.at))}` : ""}</span></div>
+    ${SCORE_LABELS.map(([key, label]) => { const v = reviewScore(r.scores?.[key]); return `<div class="score-row"><span>${label}</span><span class="meter"><i class="${v < 8 ? "low" : ""}" style="width:${(v || 0) * 10}%"></i></span><b>${esc(v ?? "–")}</b></div>`; }).join("")}
+    ${r.summary ? `<p class="review-summary">${esc(r.summary)}</p>` : ""}
+    ${r.notes?.length ? `<ul class="review-notes">${r.notes.map(n => `<li>${esc(n)}</li>`).join("")}</ul>` : ""}`;
+}
+
+function commentsTab() {
   const d = editor.data, open = openComments(d), resolved = d.comments.filter(c => c.resolved_at);
   const commentCard = c => `<div class="comment ${c.quote && c.position < 0 ? "orphan" : ""}" data-comment="${esc(c.id)}">
       ${c.quote ? `<button class="quote" data-action="goto-comment" data-id="${esc(c.id)}" title="${c.position < 0 ? "This text is no longer in the script" : "Show in the script"}">${esc(c.quote)}</button>`
@@ -805,16 +1457,15 @@ function scriptSide() {
           : `<button class="btn ghost small" data-action="resolve-comment" data-id="${esc(c.id)}">${icon("check")}Resolve</button>`}
         <button class="icon-btn delete" data-action="delete-comment" data-id="${esc(c.id)}" aria-label="Delete comment" title="Delete">${icon("trash")}</button></div>
     </div>`;
-  return `<div class="side-actions"><button class="btn primary" data-action="write-draft">${icon("spark")}${open.length ? `Revise with ${plural(open.length, "comment")}` : "Write draft"}</button></div>
-    <section><h4>Stage</h4>
-      <div class="seg stage-seg">${STAGES.map(([key, label]) => `<button type="button" class="${d.stage === key ? "on" : ""}" data-action="set-stage" data-id="${key}">${label}</button>`).join("")}</div>
-      ${d.stage === "published" ? `<div class="published"><input class="url-input" id="published-url" value="${esc(d.published_url)}" placeholder="Paste the published link" inputmode="url">
-        <button class="btn small" data-action="save-url">Save</button></div>
-        ${d.published_url ? `<a class="small-link" href="${safeUrl(d.published_url)}" target="_blank" rel="noopener noreferrer">${esc(shortUrl(d.published_url))}${icon("external")}</a>` : ""}` : ""}</section>
-    <section><h4>Comments <button class="btn ghost small" data-action="add-comment" data-keep-selection>${icon("plus")}Add</button></h4>
+  return `<section><h4>Comments <button class="btn ghost small" data-action="add-comment" data-keep-selection>${icon("plus")}Add</button></h4>
       ${open.map(commentCard).join("") || `<p class="muted small">Select text in the ${isPost() ? "post" : "script"} and click Comment. Your agent addresses open comments in order when it revises.</p>`}
-      ${resolved.length ? `<details class="dismissed"><summary>Resolved (${resolved.length})</summary>${resolved.map(commentCard).join("")}</details>` : ""}</section>
-    <section><button class="text-btn danger-text" data-action="delete-script" data-id="${esc(d.id)}">Delete script</button></section>`;
+      ${resolved.length ? `<details class="dismissed"><summary>Resolved (${resolved.length})</summary>${resolved.map(commentCard).join("")}</details>` : ""}</section>`;
+}
+
+// Beat scripts: Visual, Text, and Note lines show as cues under the spoken lines, not as more voiceover.
+function scriptMarkdown(src) {
+  return markdown(src).replace(/(^|<br>|<p>)\s*(?:<em>|<strong>)?(Visual|Text|Note)(?:<\/em>|<\/strong>)?\s*:\s*(?:<\/em>|<\/strong>)?\s*(.*?)(?=<br>|<\/p>)/gi,
+    (_, lead, label, rest) => `${lead}<span class="cue cue-${label.toLowerCase()}"><b>${label}</b>${rest}</span>`);
 }
 
 // Marks each open comment's quote in the rendered preview. Quotes spanning formatting are listed but not marked.
@@ -939,15 +1590,19 @@ function whatsapp(text) {
 
 async function saveDoc(finish = false) {
   if (!editor || !editor.dirty) return true;
-  const { id, title, version } = editor.data;
+  const view = editor, project = PROJECT, key = EDITORS[view.kind].key;
+  const { id, title, version } = view.data, text = view.data[key];
   try {
-    editor.data = await papi("PUT", EDITORS[editor.kind].path(id), { title, [docKey()]: docText(), version });
-    editor.dirty = false; editor.remoteChanged = false;
-    if (finish && canPreview()) editor.view = "preview";
-    await refresh(true); rerender(); toast("Saved");
-    return true;
+    const fresh = await api("PUT", `p/${enc(project)}/${EDITORS[view.kind].path(id)}`, { title, [key]: text, version });
+    const unchanged = view.data.title === title && view.data[key] === text;
+    view.data = unchanged ? fresh : { ...fresh, title: view.data.title, [key]: view.data[key] };
+    view.dirty = !unchanged; view.remoteChanged = false;
+    if (finish && unchanged && editor === view && canPreview()) view.view = "preview";
+    if (editor === view && PROJECT === project) { await refresh(true); if (editor === view) rerender(); }
+    toast("Saved");
+    return unchanged && !view.dirty;
   } catch (e) {
-    if (e.status === 409) { editor.remoteChanged = true; rerender(); }
+    if (e.status === 409) { view.remoteChanged = true; if (editor === view) rerender(); }
     toast(e.message, "error");
     return false;
   }
@@ -955,15 +1610,17 @@ async function saveDoc(finish = false) {
 
 // Changes that don't touch the text (links, stage, URL): keep unsaved text and adopt the new version.
 async function updateMeta(changes) {
-  const fresh = await papi("PUT", EDITORS[editor.kind].path(editor.data.id), changes);
-  editor.data = editor.dirty ? { ...fresh, title: editor.data.title, [docKey()]: docText() } : fresh;
-  await refresh(true); rerender();
+  const view = editor, project = PROJECT, key = EDITORS[view.kind].key;
+  const fresh = await api("PUT", `p/${enc(project)}/${EDITORS[view.kind].path(view.data.id)}`, changes);
+  view.data = view.dirty ? { ...fresh, title: view.data.title, [key]: view.data[key] } : fresh;
+  if (editor === view && PROJECT === project) { await refresh(true); if (editor === view) rerender(); }
 }
 
 async function reloadComments() {
-  const fresh = await papi("GET", EDITORS.script.path(editor.data.id));
-  editor.data.comments = fresh.comments;
-  await refresh(true); rerender();
+  const view = editor, project = PROJECT;
+  const fresh = await api("GET", `p/${enc(project)}/${EDITORS.script.path(view.data.id)}`);
+  view.data.comments = fresh.comments;
+  if (editor === view && PROJECT === project) { await refresh(true); if (editor === view) rerender(); }
 }
 
 // ------------------------------------------------------------------ actions
@@ -1113,15 +1770,15 @@ const actions = {
   "delete-script"(id) {
     const s = S.scripts.find(x => x.id === id);
     openDialog({ title: `Delete the ${channelLabel(s.channel)} script?`, sub: "It moves to scripts/.trash in your workspace. The story stays.", body: "", submit: "Delete", danger: true,
-      onSubmit: async () => { await papi("DELETE", "scripts/" + enc(id)); editor = null; await refresh(true); location.hash = base() + "/scripts"; } });
+      onSubmit: async () => { await papi("DELETE", "scripts/" + enc(id)); editor = null; await refresh(true); location.hash = "#/production"; } });
   },
   "editor-view"(id) {
     editor.view = id; rerender();
     if (id === "edit") document.getElementById("doc-text").focus();
   },
   "open-story"(id) { location.hash = base() + "/stories/" + enc(id); },
-  "open-script"(id) { location.hash = base() + "/scripts/" + enc(id); },
-  "go-stories"() { location.hash = base() + "/stories"; },
+  "open-script"(id, el) { location.hash = scriptHref(id, el?.dataset.project || PROJECT); },
+  "go-stories"() { const project = PROJECTS.find(p => p.id === PROJECT)?.id || PROJECTS[0]?.id; location.hash = project ? base(project) + "/stories" : "#/research"; },
   "toggle-finding"(id) { selected.has(id) ? selected.delete(id) : selected.add(id); render(); },
   "save-doc"() { saveDoc(true); },
   "reload-doc"() { const kind = editor.kind; editor = null; renderEditor(kind, route().id); },
@@ -1133,8 +1790,11 @@ const actions = {
       ? "Paste this into Claude or ChatGPT. Your agent researches the attached findings and topics in depth and writes the research notes. They appear here when it's done."
       : "Tip: attach findings or link a topic first so research has material. Paste this into Claude or ChatGPT and your agent will research from the title alone.");
   },
-  "send-to-production"() {
-    const story = editor.data, taken = new Set(S.scripts.filter(x => x.story === story.id).map(x => x.channel));
+  async "send-to-production"() {
+    const view = editor, owner = PROJECT, ownerName = projectName(), suffix = workspaceSuffix();
+    if (view.dirty && !(await saveDoc())) return;
+    if (editor !== view || PROJECT !== owner) return;
+    const story = view.data, taken = new Set(S.scripts.filter(x => x.story === story.id).map(x => x.channel));
     if (!S.channels.length) return actions["new-channel"]();
     openDialog({
       title: "Send to production", sub: "Creates a script for each channel you pick, written in that channel's language and format.",
@@ -1146,11 +1806,12 @@ const actions = {
         const ids = [...form.querySelectorAll('input[name="c"]:checked:not(:disabled)')].map(i => i.value);
         if (!ids.length) throw new Error("Pick at least one channel");
         const made = [];
-        for (const channel of ids) made.push((await papi("POST", "scripts", { story: story.id, channel })).id);
-        await refresh(true);
-        setTimeout(() => showPrompt("Write the drafts", PROMPTS.draftScripts(story, made),
+        for (const channel of ids) made.push((await api("POST", `p/${enc(owner)}/scripts`, { story: story.id, channel })).id);
+        if (PROJECT === owner) await refresh(true);
+        const prompt = PROMPTS.draftScripts(story, made, ownerName, suffix);
+        setTimeout(() => showPrompt("Write the drafts", prompt,
           "Paste this into Claude or ChatGPT. Your agent writes each script from the story's research, in each channel's language and format. They appear in Production when it's done."));
-        location.hash = base() + "/scripts";
+        location.hash = "#/production";
       },
     });
   },
@@ -1192,14 +1853,99 @@ const actions = {
   async "reopen-comment"(id) { await papi("PUT", `scripts/${enc(editor.data.id)}/comments/${enc(id)}`, { resolved: false }); await reloadComments(); },
   async "delete-comment"(id) { await papi("DELETE", `scripts/${enc(editor.data.id)}/comments/${enc(id)}`); await reloadComments(); },
   "new-channel"() { channelDialog(); },
-  "open-channels"() { if (PROJECT) location.hash = base() + "/channels"; },
+  "set-design"(value, el) {
+    const path = el.dataset.path;
+    setPath(CV.design, path, value);
+    el.parentElement.querySelectorAll("button").forEach(b => b.classList.toggle("on", b === el));
+    if (path === "aspect") { const device = document.getElementById("look-player"); device.className = `device aspect-${value.replace(":", "x")}`; }
+    designChanged(path);
+  },
+  "pick-preset"(id) {
+    const preset = CATALOG.presets.find(p => p.id === id), before = structuredClone(CV.design);
+    if (channelById(CV.id).language !== "English" && !CATALOG.fonts.some(f => f.devanagari)) return toast("Load a Hindi-compatible font before applying a style", "error");
+    const view = CV;
+    CV.design = { preset: id, ...structuredClone(preset.design), logo: { ...preset.design.logo, text: before.logo?.text ?? "" } };
+    if (channelById(CV.id).language !== "English") {
+      const fallback = CATALOG.fonts.find(f => f.devanagari)?.family;
+      for (const role of ["display", "body"]) {
+        if (!CATALOG.fonts.some(f => f.family === CV.design.fonts[role] && f.devanagari)) CV.design.fonts[role] = CATALOG.fonts.some(f => f.family === before.fonts[role] && f.devanagari) ? before.fonts[role] : fallback;
+      }
+    }
+    renderChannel(CV.id, "look");
+    saveDesign();
+    undoToast(`Switched to ${preset.name}`, async () => { view.design = before; await saveDesign(view); if (CV === view && channelRoute(view.id)) renderChannel(view.id, "look"); });
+  },
+  "set-sample"(value, el) {
+    CV.sample = value;
+    el.parentElement.querySelectorAll("button").forEach(b => b.classList.toggle("on", b === el));
+    playerLoad(lookPayload());
+  },
+  "toggle-safe"(_, el) { CV.safeArea = el.checked; playerReload(CV.design, sampleScenes(), { safeArea: CV.safeArea }); },
+  "ask-fill"(text) { CV.ask[CV.tab] = text; const box = document.getElementById("ask-text"); box.value = text; box.focus(); box.setSelectionRange(text.length, text.length); },
+  "ask-agent"(kind) {
+    const request = document.getElementById("ask-text").value.trim();
+    if (!request) return toast("Describe the change first");
+    const c = channelById(CV.id);
+    showPrompt(kind === "look" ? "Change the look" : "Tune the voice", PROMPTS[kind](c, request),
+      `Paste this into Claude or ChatGPT. Your agent edits ${c.name}'s ${kind}, and the ${kind === "look" ? "preview" : "settings"} here update when it's done.`);
+  },
+  "toggle-hook"(key, el) {
+    const on = !(CV.voice.hook_styles || []).includes(key);
+    if (!on && CV.voice.hook_styles.length === 1) return toast("Keep at least one hook style");
+    CV.voice.hook_styles = HOOK_STYLES.map(h => h[0]).filter(h => h === key ? on : CV.voice.hook_styles.includes(h));
+    el.classList.toggle("on", on);
+    voiceChanged();
+  },
+  "add-example"() {
+    const view = CV;
+    openDialog({
+      title: "Add a script you love", sub: "Your agent studies its rhythm, wording, and structure. It never reuses its facts.",
+      body: field("Title", `<input name="title" placeholder="e.g. Varun Mayya on credit scores">`)
+        + field("Script", `<textarea name="text" rows="8" placeholder="Paste the script or a transcript" required></textarea>`)
+        + field("What you like about it", `<input name="why" placeholder="e.g. The hook, the pace, the jokes">`),
+      submit: "Add",
+      onSubmit: async form => {
+        if (!form.text.value.trim()) throw new Error("Paste the script first");
+        view.voice.examples = [...(view.voice.examples || []), { title: form.title.value.trim(), text: form.text.value.trim(), why: form.why.value.trim() }];
+        await saveVoice(view); if (CV === view && channelRoute(view.id)) renderChannel(view.id, "voice");
+      },
+    });
+  },
+  async "remove-example"(index) { const view = CV; view.voice.examples = view.voice.examples.filter((_, i) => i !== Number(index)); await saveVoice(view); if (CV === view && channelRoute(view.id)) renderChannel(view.id, "voice"); },
+  "finish-setup"() {
+    setupChannel = null; CV.setup = false;
+    toast("Channel ready. Send a story to production to write its first script");
+    location.hash = `${channelHref()}`;
+  },
+  "player-toggle"() { playerSend({ type: PLAYER.playing ? "pause" : "play" }); },
+  "seek-beat"(index) { playerSend({ type: "seekScene", index: Number(index) }); },
+  "side-tab"(key) { editor.sideTab = key; rerender(); },
+  async "choose-angle"(id) {
+    const view = editor, project = PROJECT;
+    if (view.dirty && !(await saveDoc())) return;
+    if (editor !== view || PROJECT !== project) return;
+    const path = `p/${enc(project)}/${EDITORS.script.path(view.data.id)}`;
+    const fresh = await api("PUT", path, { chosen_angle: id });
+    if (editor !== view || PROJECT !== project) return;
+    view.data = view.dirty ? { ...fresh, title: view.data.title, text: view.data.text } : fresh;
+    rerender();
+    // New typing during the hook request must reach disk before the rewrite prompt.
+    if (view.dirty && !(await saveDoc())) return;
+    if (editor !== view || PROJECT !== project) return;
+    const angle = view.data.angles.find(a => a.id === id);
+    showPrompt("Rewrite with this hook", PROMPTS.rewriteAngle(editor.data, angle),
+      "Paste this into Claude or ChatGPT. Your agent rewrites the script around this hook and angle, keeps the facts, and scores the new draft.");
+  },
+  "open-channels"() { location.hash = channelHref(); },
   "edit-channel"(id) { channelDialog(channelById(id)); },
+  "open-channel"(id) { location.hash = `${channelHref()}/${enc(id)}`; },
   "delete-channel"(id) {
     const c = channelById(id);
     openDialog({ title: `Delete “${c.name}”?`, sub: "Every project shares this channel.", body: "", submit: "Delete", danger: true,
-      onSubmit: async () => { await api("DELETE", "channels/" + enc(id)); await refresh(true); render(); } });
+      onSubmit: async () => { await api("DELETE", "channels/" + enc(id)); await refreshGlobal(true); render(); } });
   },
   "filter-channel"(_, el) { channelFilter = el.value; render(); },
+  "filter-production-project"(_, el) { productionProjectFilter = el.value; render(); },
   attach() {
     const s = editor.data;
     const available = S.findings.filter(f => !s.findings.includes(f.id) && !f.dismissed_at);
@@ -1256,8 +2002,15 @@ function channelDialog(channel) {
     onOpen: form => form.platform.oninput = () => { if (/whatsapp|linkedin|^x$/i.test(form.platform.value.trim())) form.kind.value = "post"; },
     onSubmit: async form => {
       const values = Object.fromEntries(new FormData(form));
-      channel ? await api("PUT", "channels/" + enc(channel.id), values) : await api("POST", "channels", values);
-      await refresh(true);
+      if (channel) await api("PUT", "channels/" + enc(channel.id), values);
+      else {
+        const created = await api("POST", "channels", values);
+        await refreshGlobal(true);
+        setupChannel = created.id;
+        location.hash = `${channelHref()}/${enc(created.id)}/${created.kind === "post" ? "voice" : "look"}`;
+        return;
+      }
+      await refreshGlobal(true);
       if (editor?.kind === "story") rerender(); else render();
     },
   });
@@ -1308,7 +2061,8 @@ async function loadProjects() {
 
 function renderSwitcher() {
   const el = document.getElementById("switcher");
-  if (!PROJECTS.length) { el.innerHTML = ""; return; }
+  if (route().scope !== "research") { el.innerHTML = ""; return; }
+  if (!PROJECTS.length) { el.innerHTML = `<button class="switch-btn" data-action="new-project">${icon("plus")}New project</button>`; return; }
   el.innerHTML = `<button class="switch-btn" data-action="toggle-switcher" aria-haspopup="true">${esc(projectName() || "Choose project")}${icon("chevron")}</button>
     <div class="menu" id="project-menu" hidden>
       <div class="menu-label">Projects</div>
@@ -1324,7 +2078,7 @@ document.addEventListener("click", event => {
 
 function newProjectDialog() {
   openDialog({
-    title: "New project", sub: "Each project has its own topics, sources, findings, scripts, and schedule.",
+    title: "New project", sub: "Each research project has its own topics, sources, findings, stories, and schedule. Production and channels are shared across projects.",
     body: field("Project name", `<input name="name" placeholder="e.g. Plumbing &amp; bathrooms" required>`)
       + field("What it covers", `<input name="description" placeholder="Optional">`)
 ,
@@ -1338,24 +2092,40 @@ function newProjectDialog() {
 
 function renderNoProjects() {
   document.getElementById("app").innerHTML = `<div class="empty" style="margin-top:40px"><h3>Create your first project</h3>
-    <p>A project is one subject area you research, such as plumbing products or Indian tech news, with its own topics, sources, findings, and scripts.</p>
+    <p>A project is one subject area you research, such as plumbing products or Indian tech news, with its own topics, sources, findings, and stories. Production and Channels work across all projects.</p>
     <button class="btn primary" data-action="new-project">${icon("plus")}New project</button></div>`;
 }
 
-// Pick the project from the URL, else the last one used, else the first.
+// Global sections are valid independently of any research project.
 async function enterProject() {
-  if (!PROJECTS.length) { PROJECT = null; renderSwitcher(); renderNoProjects(); return false; }
-  if (!PROJECTS.some(c => c.id === route().project)) {
-    const last = localStorage.getItem("vid-studio-project");
-    const next = PROJECTS.some(c => c.id === last) ? last : PROJECTS[0].id;
-    history.replaceState(null, "", base(next) + "/" + (route().tab || ""));
+  let r = route();
+  if (r.scope === "legacy") {
+    const canonical = r.tab === "channels" ? channelHref(r.id, r.sub) : r.tab === "scripts" ? (r.id ? scriptHref(r.id, r.project) : "#/production") : base(r.project) + (r.tab ? "/" + r.tab : "") + (r.id ? "/" + enc(r.id) : "");
+    history.replaceState(null, "", canonical); r = route();
   }
-  if (PROJECT !== route().project) {
-    PROJECT = route().project; localStorage.setItem("vid-studio-project", PROJECT);
+  const hash = location.hash;
+  await refreshGlobal();
+  if (location.hash !== hash) return false;
+  if (r.scope === "channels" || (r.scope === "production" && !r.id)) { renderGlobalNavigation(); return true; }
+  if (r.scope === "research" && !PROJECTS.length) { PROJECT = null; S = null; renderGlobalNavigation(); return true; }
+  if (r.scope === "research" && !PROJECTS.some(p => p.id === r.project)) {
+    const saved = RESEARCH_PROJECT || localStorage.getItem("vid-studio-project");
+    const next = PROJECTS.some(p => p.id === saved) ? saved : PROJECTS[0].id;
+    history.replaceState(null, "", base(next) + "/" + (r.tab || "findings")); r = route();
+  }
+  if (!PROJECTS.some(p => p.id === r.project)) {
+    PROJECT = null; S = null; editor = null;
+    renderGlobalNavigation(); renderUnavailableProject(); return false;
+  }
+  if (r.scope === "research") { RESEARCH_PROJECT = r.project; localStorage.setItem("vid-studio-project", r.project); }
+  if (PROJECT !== r.project || !S) {
+    PROJECT = r.project;
     S = null; lastStateJson = ""; selected.clear(); topicFilter = "all"; showDismissed = false; editor = null;
-    renderSwitcher();
+    const expected = location.hash;
     await refresh(true);
+    if (location.hash !== expected) return false;
   }
+  renderGlobalNavigation();
   return true;
 }
 
@@ -1370,30 +2140,61 @@ window.addEventListener("beforeunload", event => { if (editor && editor.dirty) {
 
 // Pick up changes your agent makes to the files while the page is open.
 async function poll() {
-  if (document.visibilityState === "visible" && !dialog.open && PROJECT) {
+  if (document.visibilityState === "visible" && !dialog.open && (PROJECT || ["channels", "production"].includes(route().scope))) {
     try {
-      if (editor) {
-        const remote = await papi("GET", EDITORS[editor.kind].path(editor.data.id));
-        const typing = ["doc-text", "doc-title", "published-url"].includes(document.activeElement?.id);
-        if (editor.data.version && remote.version !== editor.data.version) {
-          if (editor.dirty) { if (!editor.remoteChanged) { editor.remoteChanged = true; rerender(); } }
-          else { editor.data = remote; rerender(); toast("Updated by your agent"); }
-        } else if (editor.kind === "script" && JSON.stringify(remote.comments) !== JSON.stringify(editor.data.comments)) {
-          editor.data.comments = remote.comments;  // your agent resolved some
-          if (!typing) rerender();
+      const hash = location.hash, project = PROJECT, view = editor, channel = CV;
+      const current = () => hash === location.hash && project === PROJECT;
+      if (view) {
+        const remote = await papi("GET", EDITORS[view.kind].path(view.data.id));
+        if (!current() || editor !== view) return;
+        let changed = false;
+        if (view.data.version && remote.version !== view.data.version) {
+          if (view.dirty) { if (!view.remoteChanged) { view.remoteChanged = true; changed = true; } }
+          else { view.data = remote; changed = true; toast("Updated by your agent"); }
         }
-        await refresh();
-      } else if (await refresh()) {
+        if (view.kind === "script") {
+          const metadata = ["comments", "angles", "review"];
+          if (JSON.stringify(metadata.map(k => remote[k])) !== JSON.stringify(metadata.map(k => view.data[k]))) {
+            for (const key of metadata) view.data[key] = remote[key];
+            changed = true;
+          }
+          if (!isPost()) {
+            const id = enc(view.data.channel);
+            const [design, voice] = await Promise.all([api("GET", `channels/${id}/design`), api("GET", `channels/${id}/voice`)]);
+            if (!current() || editor !== view) return;
+            if (JSON.stringify([design, voice]) !== JSON.stringify([view.design, view.voice])) { Object.assign(view, { design, voice }); changed = true; }
+          }
+        }
+        if (await refresh()) changed = true;
+        if (view.kind === "script" && await refreshGlobal()) changed = true;
+        if (current() && editor === view && changed) rerender();
+      } else if (channel && channelRoute(channel.id)) {
+        const [design, voice] = await Promise.all([api("GET", `channels/${enc(channel.id)}/design`), api("GET", `channels/${enc(channel.id)}/voice`)]);
+        if (!current() || CV !== channel) return;
+        let changed = false;
+        for (const [resource, remote, marker] of [["design", design, "savedDesign"], ["voice", voice, "savedVoice"]]) {
+          if (!timers[channelKey(channel, resource)] && !saveQueues.has(channelKey(channel, resource)) && JSON.stringify(channel[resource]) === channel[marker] && JSON.stringify(remote) !== channel[marker]) {
+            channel[resource] = remote; channel[marker] = JSON.stringify(remote); changed = true;
+          }
+        }
+        if (await refreshGlobal()) changed = true;
+        if (!current() || CV !== channel) return;
+        const format = channelById(channel.id)?.format || "";
+        if (!timers[channelKey(channel, "fields")] && !saveQueues.has(channelKey(channel, "fields")) && JSON.stringify(channel.fields) === channel.savedFields) {
+          channel.fields.format = format; channel.savedFields = JSON.stringify(channel.fields);
+        }
+        if (changed) renderChannel(channel.id, channel.tab);
+      } else if (await (["production", "channels"].includes(route().scope) ? refreshGlobal() : PROJECT ? refresh() : Promise.resolve(false))) {
+        if (!current()) return;
         const focused = document.activeElement;
         if (!focused || focused === document.body || focused.dataset.action || focused.dataset.card) render();
       }
     } catch { /* server stopped; keep the page as it is */ }
-  }
-  setTimeout(poll, 4000);
+    finally { setTimeout(poll, 4000); }
+  } else setTimeout(poll, 4000);
 }
 
 document.getElementById("settings-btn").insertAdjacentHTML("afterbegin", icon("gear"));
-document.getElementById("channels-btn").insertAdjacentHTML("afterbegin", icon("send"));
 loadProjects().then(enterProject).then(ok => { if (ok) render(); poll(); })
   .catch(e => { document.getElementById("app").innerHTML = `<div class="empty"><h3>Can't reach the studio</h3><p>${esc(e.message)}. Start it with <code>studio.py serve</code>.</p></div>`; });
 </script>

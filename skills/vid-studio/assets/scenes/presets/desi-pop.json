@@ -1,0 +1,49 @@
+{
+  "id": "desi-pop",
+  "name": "Desi Pop",
+  "description": "Mango yellow, rani pink and rounded Baloo type with bouncy motion and pop captions. Playful, made for Hinglish.",
+  "design": {
+    "aspect": "9:16",
+    "colors": {
+      "background": "#FFC93C",
+      "surface": "#FFF4D6",
+      "text": "#1F0A2E",
+      "muted": "#6B3F2A",
+      "accent": "#B3005A",
+      "accent2": "#006B4F",
+      "negative": "#C81E1E"
+    },
+    "fonts": {
+      "display": "Baloo 2",
+      "body": "Mukta",
+      "mono": "Rajdhani"
+    },
+    "type": {
+      "scale": 1.05,
+      "display_case": "none",
+      "display_weight": 800,
+      "tracking": -0.015
+    },
+    "motion": {
+      "energy": "high",
+      "easing": "bouncy",
+      "transition": "zoom"
+    },
+    "captions": {
+      "style": "pop",
+      "position": "lower",
+      "highlight": "accent",
+      "max_words": 2
+    },
+    "background": {
+      "style": "gradient",
+      "pattern": "dots"
+    },
+    "radius": 36,
+    "logo": {
+      "text": "",
+      "position": "top-left"
+    },
+    "custom_css": ""
+  }
+}

@@ -1,0 +1,539 @@
+{
+ "fonts": [
+  {
+   "family": "Anton",
+   "category": "display",
+   "devanagari": false,
+   "weights": [
+    400
+   ]
+  },
+  {
+   "family": "Bebas Neue",
+   "category": "display",
+   "devanagari": false,
+   "weights": [
+    400
+   ]
+  },
+  {
+   "family": "Archivo Black",
+   "category": "display",
+   "devanagari": false,
+   "weights": [
+    400
+   ]
+  },
+  {
+   "family": "Oswald",
+   "category": "display",
+   "devanagari": false,
+   "weights": [
+    200,
+    300,
+    400,
+    500,
+    600,
+    700
+   ]
+  },
+  {
+   "family": "Unbounded",
+   "category": "display",
+   "devanagari": false,
+   "weights": [
+    200,
+    300,
+    400,
+    500,
+    600,
+    700,
+    800,
+    900
+   ]
+  },
+  {
+   "family": "Syne",
+   "category": "display",
+   "devanagari": false,
+   "weights": [
+    400,
+    500,
+    600,
+    700,
+    800
+   ]
+  },
+  {
+   "family": "Teko",
+   "category": "display",
+   "devanagari": true,
+   "weights": [
+    300,
+    400,
+    500,
+    600,
+    700
+   ]
+  },
+  {
+   "family": "Rajdhani",
+   "category": "display",
+   "devanagari": true,
+   "weights": [
+    300,
+    400,
+    500,
+    600,
+    700
+   ]
+  },
+  {
+   "family": "Khand",
+   "category": "display",
+   "devanagari": true,
+   "weights": [
+    300,
+    400,
+    500,
+    600,
+    700
+   ]
+  },
+  {
+   "family": "Yatra One",
+   "category": "display",
+   "devanagari": true,
+   "weights": [
+    400
+   ]
+  },
+  {
+   "family": "Rozha One",
+   "category": "display",
+   "devanagari": true,
+   "weights": [
+    400
+   ]
+  },
+  {
+   "family": "Baloo 2",
+   "category": "display",
+   "devanagari": true,
+   "weights": [
+    400,
+    500,
+    600,
+    700,
+    800
+   ]
+  },
+  {
+   "family": "Gotu",
+   "category": "display",
+   "devanagari": true,
+   "weights": [
+    400
+   ]
+  },
+  {
+   "family": "DM Serif Display",
+   "category": "serif",
+   "devanagari": false,
+   "weights": [
+    400
+   ]
+  },
+  {
+   "family": "Fraunces",
+   "category": "serif",
+   "devanagari": false,
+   "weights": [
+    100,
+    200,
+    300,
+    400,
+    500,
+    600,
+    700,
+    800,
+    900
+   ]
+  },
+  {
+   "family": "Playfair Display",
+   "category": "serif",
+   "devanagari": false,
+   "weights": [
+    400,
+    500,
+    600,
+    700,
+    800,
+    900
+   ]
+  },
+  {
+   "family": "Instrument Serif",
+   "category": "serif",
+   "devanagari": false,
+   "weights": [
+    400
+   ]
+  },
+  {
+   "family": "Tiro Devanagari Hindi",
+   "category": "serif",
+   "devanagari": true,
+   "weights": [
+    400
+   ]
+  },
+  {
+   "family": "Noto Serif Devanagari",
+   "category": "serif",
+   "devanagari": true,
+   "weights": [
+    100,
+    200,
+    300,
+    400,
+    500,
+    600,
+    700,
+    800,
+    900
+   ]
+  },
+  {
+   "family": "Martel",
+   "category": "serif",
+   "devanagari": true,
+   "weights": [
+    200,
+    300,
+    400,
+    600,
+    700,
+    800,
+    900
+   ]
+  },
+  {
+   "family": "Eczar",
+   "category": "serif",
+   "devanagari": true,
+   "weights": [
+    400,
+    500,
+    600,
+    700,
+    800
+   ]
+  },
+  {
+   "family": "Laila",
+   "category": "serif",
+   "devanagari": true,
+   "weights": [
+    300,
+    400,
+    500,
+    600,
+    700
+   ]
+  },
+  {
+   "family": "Karma",
+   "category": "serif",
+   "devanagari": true,
+   "weights": [
+    300,
+    400,
+    500,
+    600,
+    700
+   ]
+  },
+  {
+   "family": "Kurale",
+   "category": "serif",
+   "devanagari": true,
+   "weights": [
+    400
+   ]
+  },
+  {
+   "family": "Inter",
+   "category": "sans",
+   "devanagari": false,
+   "weights": [
+    100,
+    200,
+    300,
+    400,
+    500,
+    600,
+    700,
+    800,
+    900
+   ]
+  },
+  {
+   "family": "Space Grotesk",
+   "category": "sans",
+   "devanagari": false,
+   "weights": [
+    300,
+    400,
+    500,
+    600,
+    700
+   ]
+  },
+  {
+   "family": "Sora",
+   "category": "sans",
+   "devanagari": false,
+   "weights": [
+    100,
+    200,
+    300,
+    400,
+    500,
+    600,
+    700,
+    800
+   ]
+  },
+  {
+   "family": "Manrope",
+   "category": "sans",
+   "devanagari": false,
+   "weights": [
+    200,
+    300,
+    400,
+    500,
+    600,
+    700,
+    800
+   ]
+  },
+  {
+   "family": "Bricolage Grotesque",
+   "category": "sans",
+   "devanagari": false,
+   "weights": [
+    200,
+    300,
+    400,
+    500,
+    600,
+    700,
+    800
+   ]
+  },
+  {
+   "family": "Mukta",
+   "category": "sans",
+   "devanagari": true,
+   "weights": [
+    200,
+    300,
+    400,
+    500,
+    600,
+    700,
+    800
+   ]
+  },
+  {
+   "family": "Hind",
+   "category": "sans",
+   "devanagari": true,
+   "weights": [
+    300,
+    400,
+    500,
+    600,
+    700
+   ]
+  },
+  {
+   "family": "Poppins",
+   "category": "sans",
+   "devanagari": true,
+   "weights": [
+    100,
+    200,
+    300,
+    400,
+    500,
+    600,
+    700,
+    800,
+    900
+   ]
+  },
+  {
+   "family": "Noto Sans Devanagari",
+   "category": "sans",
+   "devanagari": true,
+   "weights": [
+    100,
+    200,
+    300,
+    400,
+    500,
+    600,
+    700,
+    800,
+    900
+   ]
+  },
+  {
+   "family": "Anek Devanagari",
+   "category": "sans",
+   "devanagari": true,
+   "weights": [
+    100,
+    200,
+    300,
+    400,
+    500,
+    600,
+    700,
+    800
+   ]
+  },
+  {
+   "family": "Palanquin",
+   "category": "sans",
+   "devanagari": true,
+   "weights": [
+    100,
+    200,
+    300,
+    400,
+    500,
+    600,
+    700
+   ]
+  },
+  {
+   "family": "Sarala",
+   "category": "sans",
+   "devanagari": true,
+   "weights": [
+    400,
+    700
+   ]
+  },
+  {
+   "family": "Martel Sans",
+   "category": "sans",
+   "devanagari": true,
+   "weights": [
+    200,
+    300,
+    400,
+    600,
+    700,
+    800,
+    900
+   ]
+  },
+  {
+   "family": "Yantramanav",
+   "category": "sans",
+   "devanagari": true,
+   "weights": [
+    100,
+    300,
+    400,
+    500,
+    700,
+    900
+   ]
+  },
+  {
+   "family": "JetBrains Mono",
+   "category": "mono",
+   "devanagari": false,
+   "weights": [
+    100,
+    200,
+    300,
+    400,
+    500,
+    600,
+    700,
+    800
+   ]
+  },
+  {
+   "family": "IBM Plex Mono",
+   "category": "mono",
+   "devanagari": false,
+   "weights": [
+    100,
+    200,
+    300,
+    400,
+    500,
+    600,
+    700
+   ]
+  },
+  {
+   "family": "Space Mono",
+   "category": "mono",
+   "devanagari": false,
+   "weights": [
+    400,
+    700
+   ]
+  },
+  {
+   "family": "DM Mono",
+   "category": "mono",
+   "devanagari": false,
+   "weights": [
+    300,
+    400,
+    500
+   ]
+  },
+  {
+   "family": "Caveat",
+   "category": "hand",
+   "devanagari": false,
+   "weights": [
+    400,
+    500,
+    600,
+    700
+   ]
+  },
+  {
+   "family": "Kalam",
+   "category": "hand",
+   "devanagari": true,
+   "weights": [
+    300,
+    400,
+    700
+   ]
+  },
+  {
+   "family": "Amita",
+   "category": "hand",
+   "devanagari": true,
+   "weights": [
+    400,
+    700
+   ]
+  }
+ ]
+}

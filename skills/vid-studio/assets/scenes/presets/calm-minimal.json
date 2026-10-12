@@ -1,0 +1,49 @@
+{
+  "id": "calm-minimal",
+  "name": "Calm Minimal",
+  "description": "Soft stone neutrals, deep green accent, airy Poppins type and slow fades. Quiet confidence for personal finance and wellbeing.",
+  "design": {
+    "aspect": "9:16",
+    "colors": {
+      "background": "#EEEBE5",
+      "surface": "#F8F6F2",
+      "text": "#1F1E1B",
+      "muted": "#67635B",
+      "accent": "#2F5D50",
+      "accent2": "#93673F",
+      "negative": "#B0473A"
+    },
+    "fonts": {
+      "display": "Poppins",
+      "body": "Mukta",
+      "mono": "Anek Devanagari"
+    },
+    "type": {
+      "scale": 0.95,
+      "display_case": "none",
+      "display_weight": 600,
+      "tracking": -0.03
+    },
+    "motion": {
+      "energy": "calm",
+      "easing": "smooth",
+      "transition": "fade"
+    },
+    "captions": {
+      "style": "plain",
+      "position": "lower",
+      "highlight": "accent",
+      "max_words": 6
+    },
+    "background": {
+      "style": "gradient",
+      "pattern": "none"
+    },
+    "radius": 28,
+    "logo": {
+      "text": "",
+      "position": "top-left"
+    },
+    "custom_css": ""
+  }
+}

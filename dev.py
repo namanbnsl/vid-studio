@@ -56,6 +56,30 @@ def serve(home: Path, open_browser: bool) -> None:
 
 # ---------------------------------------------------------------- sample data
 
+SENSOR_SCRIPT = """## Hook
+₹6,500 का नल. और company कहती है ये आधा पानी बचाता है. [1]
+Visual: stat | ₹6,500 | Jaquar sensor faucet | starting price
+
+## The claim
+हाथ आगे करो, पानी चालू. हटाओ, बंद. Brush करते वक़्त नल खुला छूटता ही नहीं.
+Visual: list | कैसे बचता है पानी | हाथ हटते ही बंद | Battery से चलता है | कोई handle नहीं
+Text: Touchless
+
+## The catch
+पर ये 50% Jaquar का अपना दावा है. कोई independent test अभी तक नहीं. [1]
+Visual: compare | पानी की खपत | आम नल: 100 | Sensor नल: 50
+Text: Maker's claim
+
+## Who should buy
+Kitchen या guest bathroom, जहाँ नल सबसे ज़्यादा खुला रहता है, वहाँ ये सबसे जल्दी पैसा वसूल करेगा.
+Visual: text | जहाँ नल सबसे ज़्यादा चलता है, वहीं लगाओ
+
+## End
+Pipe Gyaan पर रोज़ एक smart घर वाली बात. Follow करो.
+Visual: end | पानी बचाओ, पैसा भी | Follow @pipegyaan
+"""
+
+
 def seed(home: Path) -> None:
     """Two projects with topics, sources, a finished run, findings, stories, and scripts on three channels."""
     (home / "projects").mkdir(parents=True, exist_ok=True)
@@ -94,12 +118,16 @@ def seed(home: Path) -> None:
                   "- The 50% water saving is the maker's claim; no independent test yet.\n\n"
                   "## Sources\n1. Jaquar, Sensor faucets, https://www.jaquar.com/news/sensor\n")})
     script = pipe.create_script(story["id"], "pipe-gyaan")
-    pipe.update_script(script["id"], {
-        "text": ("## HOOK (5s)\nएक नल जो छूने की ज़रूरत ही नहीं — पर क्या ये **पानी और पैसा** बचाता है? [1]\n\n"
-                   "*Visual:* tap close-up\n\n## CONTEXT (15s)\nJaquar के नए sensor faucets ₹6,500 से शुरू। [1]\n\n"
-                   "- Touchless, battery से चलते हैं\n- पानी की खपत लगभग 50% कम\n\n*Visual:* price card\n"),
-        "stage": "ready"})
-    pipe.add_comment(script["id"], "Say who made the 50% claim", "पानी की खपत लगभग 50% कम")
+    pipe.update_script(script["id"], {"stage": "ready", "text": SENSOR_SCRIPT})
+    pipe.save_angles(script["id"], [
+        {"hook": "₹6,500 का नल. और company कहती है ये आधा पानी बचाता है.", "angle": "Price vs claimed savings", "why": "Number first, claim second: the gap is the open loop.", "chosen": True},
+        {"hook": "आपका नल रोज़ कितना पानी बहा देता है? ये वाला कहता है, आधा कम.", "angle": "Your daily waste", "why": "Makes it about the viewer, but the answer isn't sourced yet."},
+        {"hook": "Touchless नल hospital के लिए बने थे. अब घर आ रहे हैं.", "angle": "Hospital tech goes home", "why": "Story hook; weaker stakes for a homeowner."}])
+    pipe.save_review(script["id"], {"scores": {"hook": 8, "clarity": 9, "retention": 7, "specificity": 8, "voice": 8, "accuracy": 7},
+                                    "summary": "Strong price-first hook; the 50% claim still needs clear attribution.",
+                                    "notes": ["Retention dips in the middle beat; add a re-hook before the payback math.",
+                                              "Say that the 50% figure is Jaquar's own claim."]})
+    pipe.add_comment(script["id"], "Can we name a real test, or show the payback math?", "कोई independent test अभी तक नहीं")
     post = pipe.create_script(story["id"], "pipe-gyaan-whatsapp")
     pipe.update_script(post["id"], {"text": "*Sensor taps: पैसा बचेगा?*\n\nJaquar के नए sensor faucets ₹6,500 से शुरू। [1]\n\nhttps://www.jaquar.com/news/sensor\n",
                                     "stage": "published", "published_url": "https://whatsapp.com/channel/example"})
@@ -110,12 +138,12 @@ def seed(home: Path) -> None:
     news.add_topic("UPI & payments", "Fees, NPCI rules, fraud, new features.")
     news.add_source("https://rbi.org.in", "Press releases")
     run, _, _ = news.start_run()
-    news.add_findings(run["id"], [{"title": "RBI raises UPI Lite wallet limit to ₹5,000",
-                                   "summary": "Higher per-payment cap and wallet balance from November 1.", "topics": ["UPI & payments"],
-                                   "sources": [{"url": "https://rbi.org.in/Scripts/BS_PressReleaseDisplay.aspx?prid=61234", "publisher": "RBI"}]}])
-    news.mark_checked(run["id"], run["sources"], "1 press release")
+    news.add_findings(run["id"], [{"title": "How UPI Lite's payment and wallet caps differ",
+                                   "summary": "An evergreen explainer: a PIN-free payment cap is different from the amount held in the Lite balance. Verify provider documentation before drafting.", "topics": ["UPI & payments"],
+                                   "sources": [{"url": "https://support.google.com/pay/india/answer/13327133?hl=en-IN", "publisher": "Google Pay Help"}]}])
+    news.mark_checked(run["id"], run["sources"], "demo fixture, not a live research run")
     news.finish_run(run["id"])
-    upi = news.create_story("UPI Lite limit goes to ₹5,000", [news.findings()[0]["id"]])
+    upi = news.create_story("UPI Lite: PIN-free payments, explained", [news.findings()[0]["id"]])
     news.create_script(upi["id"], "explained-in-90s")
 
 

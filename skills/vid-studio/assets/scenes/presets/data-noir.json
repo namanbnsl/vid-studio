@@ -1,0 +1,49 @@
+{
+  "id": "data-noir",
+  "name": "Data Noir",
+  "description": "Near-black terminal look: grotesk headlines, mono labels, signal-green figures on a faint grid. For markets, tech and numbers.",
+  "design": {
+    "aspect": "9:16",
+    "colors": {
+      "background": "#08090B",
+      "surface": "#12151A",
+      "text": "#E9EDF1",
+      "muted": "#7D8894",
+      "accent": "#4AF08F",
+      "accent2": "#38BDF8",
+      "negative": "#FF5C5C"
+    },
+    "fonts": {
+      "display": "Space Grotesk",
+      "body": "Inter",
+      "mono": "JetBrains Mono"
+    },
+    "type": {
+      "scale": 1.0,
+      "display_case": "none",
+      "display_weight": 700,
+      "tracking": -0.035
+    },
+    "motion": {
+      "energy": "medium",
+      "easing": "snappy",
+      "transition": "wipe"
+    },
+    "captions": {
+      "style": "plain",
+      "position": "lower",
+      "highlight": "accent",
+      "max_words": 5
+    },
+    "background": {
+      "style": "grain",
+      "pattern": "grid"
+    },
+    "radius": 6,
+    "logo": {
+      "text": "",
+      "position": "top-right"
+    },
+    "custom_css": ""
+  }
+}

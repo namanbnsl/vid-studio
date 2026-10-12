@@ -1,0 +1,49 @@
+{
+  "id": "neon-finance",
+  "name": "Neon Finance",
+  "description": "Deep navy with electric cyan and lime, squared-off Rajdhani caps and quick zooms. A markets-desk look that works in Hindi.",
+  "design": {
+    "aspect": "9:16",
+    "colors": {
+      "background": "#071430",
+      "surface": "#0E2149",
+      "text": "#EAF2FF",
+      "muted": "#8EA3C7",
+      "accent": "#22E4FF",
+      "accent2": "#B8FF3C",
+      "negative": "#FF4F7B"
+    },
+    "fonts": {
+      "display": "Rajdhani",
+      "body": "Hind",
+      "mono": "Khand"
+    },
+    "type": {
+      "scale": 1.0,
+      "display_case": "upper",
+      "display_weight": 700,
+      "tracking": 0.01
+    },
+    "motion": {
+      "energy": "high",
+      "easing": "snappy",
+      "transition": "zoom"
+    },
+    "captions": {
+      "style": "karaoke",
+      "position": "lower",
+      "highlight": "accent2",
+      "max_words": 3
+    },
+    "background": {
+      "style": "gradient",
+      "pattern": "lines"
+    },
+    "radius": 14,
+    "logo": {
+      "text": "",
+      "position": "top-left"
+    },
+    "custom_css": ""
+  }
+}

@@ -1,0 +1,49 @@
+{
+  "id": "bold-explainer",
+  "name": "Bold Explainer",
+  "description": "Dark, loud and fast: condensed all-caps headlines, hot-yellow numbers and karaoke captions. Built for Shorts that explain one thing hard.",
+  "design": {
+    "aspect": "9:16",
+    "colors": {
+      "background": "#0E0E10",
+      "surface": "#1A1A1F",
+      "text": "#F5F5F0",
+      "muted": "#9A9AA2",
+      "accent": "#FFD23F",
+      "accent2": "#3DDC97",
+      "negative": "#FF5A5F"
+    },
+    "fonts": {
+      "display": "Anton",
+      "body": "Mukta",
+      "mono": "JetBrains Mono"
+    },
+    "type": {
+      "scale": 1.0,
+      "display_case": "upper",
+      "display_weight": 800,
+      "tracking": -0.01
+    },
+    "motion": {
+      "energy": "high",
+      "easing": "snappy",
+      "transition": "slide"
+    },
+    "captions": {
+      "style": "karaoke",
+      "position": "lower",
+      "highlight": "accent",
+      "max_words": 4
+    },
+    "background": {
+      "style": "grain",
+      "pattern": "grid"
+    },
+    "radius": 18,
+    "logo": {
+      "text": "",
+      "position": "top-left"
+    },
+    "custom_css": ""
+  }
+}

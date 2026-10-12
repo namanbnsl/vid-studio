@@ -11,9 +11,13 @@ The studio holds one or more **projects**: each is a subject area the user resea
 - **Findings:** new developments that research found on your sources and across the web. Each finding is linked to its topics and to the exact pages it came from.
 - **Stories:** an angle for a video, linked to findings (news), topics (explainers), or both. Each holds research notes, researched once.
 
-That's the research half. In the production half, a story becomes **scripts**: one per **channel** the user sends it to. Channels (a YouTube channel, Instagram account, WhatsApp channel, and so on) are shared by every project and live in `channels.json` at the studio root. Each channel sets the script's language, kind (`video` script or text `post`), and format. The user moves scripts through stages (script → ready → published) and comments on passages for you to address.
+That's the research half. In the production half, a story becomes **scripts**: one per **channel** the user sends it to. Channels (a YouTube channel, Instagram account, WhatsApp channel, and so on) are shared by every project and live in `channels.json` at the studio root, with per-channel settings in `channels/<id>/`:
+- **Voice** (`voice.json`): length, pace, persona, tone, hook styles, rules, and example scripts the user loves. Together with the channel's language, kind (`video` script or text `post`), and format (beat structure), it shapes every script.
+- **Look** (`design.json`, video channels): colors, fonts, motion, captions. Video scripts are written as beats with `Visual:` lines that become animated scenes in this look; the studio previews them live and can export them for rendering.
 
-The user works in the studio UI. You do the thinking work: research runs, story research, and scripts.
+The user moves scripts through stages (script → ready → published) and comments on passages for you to address.
+
+The user works in three global UI tabs: **Research** (project topics, sources, findings, stories), **Production** (scripts across all projects), and **Channels** (shared destinations and their look/voice). A research story flows into production scripts, each linked to its source project/story and destination channel. Channels and Production do not require a selected research project. You do the thinking work: research runs, story research, and scripts.
 
 The helper is `python3 <this-skill-dir>/scripts/studio.py <command>`, and `--help` lists its commands. The studio folder is `$VID_STUDIO_HOME`, else `~/vid-studio`; each project lives in `projects/<id>/` inside it. If the prompt names a workspace ("Workspace: /path"), pass `--workspace /path` on every command.
 
@@ -30,6 +34,9 @@ Start with `studio.py status`.
 | "Research the story …" | [story.md](references/story.md) |
 | "Write the script(s) …", "revise the script …" (its comments), or edit a script | [write.md](references/write.md) |
 | Add or change channels | `studio.py add-channel` (`--kind video\|post`, `--language`, `--platform`, `--format`), or edit `channels.json` |
+| "Change the look of the channel …" | [look.md](references/look.md) |
+| "Tune the voice of the channel …" | Read `studio.py voice --channel C`, change what was asked (see the voice section of [script-craft.md](references/script-craft.md) for what each setting does), and save with `studio.py voice --channel C --file -`. If they share example scripts, add them to `examples` with a line on what to learn from each. |
+| Preview or render a script's video | `studio.py scenes --script S` checks beats and timing ([scenes.md](references/scenes.md)); `studio.py export --script S` writes a HyperFrames project to render |
 | Set up, change, or turn off a research schedule (never runs research) | [schedule.md](references/schedule.md) |
 | Open, show, or see the studio | Run `studio.py serve --background` and share the printed link (one server serves every project) |
 | Add, change, or remove topics or sources | Use `studio.py add-topic` / `add-source` (approved) / `suggest-source` (for the user to approve), or edit `topics.json` / `sources.json` |

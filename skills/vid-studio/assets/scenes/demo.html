@@ -1,0 +1,105 @@
+<!doctype html>
+<html lang="en">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width, initial-scale=1">
+<title>Vid Studio scenes · demo</title>
+<style>
+  :root { --bg: #fff; --surface: #f8f8f6; --surface-2: #f1f1ee; --line: #ebebe8; --line-2: #dddcd8; --ink: #111110; --ink-2: #5a5853; --ink-3: #8f8c86;
+          --sans: "Instrument Sans", system-ui, -apple-system, "Segoe UI", sans-serif; --mono: "IBM Plex Mono", ui-monospace, Menlo, monospace; }
+  * { box-sizing: border-box; }
+  body { margin: 0; height: 100vh; display: flex; flex-direction: column; background: var(--bg); color: var(--ink); font: 14px/1.5 var(--sans); -webkit-font-smoothing: antialiased; }
+  header { display: flex; align-items: center; gap: 22px; flex-wrap: wrap; padding: 14px 24px; border-bottom: 1px solid var(--line); }
+  h1 { font-size: 15px; font-weight: 650; margin: 0 12px 0 0; letter-spacing: -.01em; }
+  .group { display: flex; align-items: center; gap: 4px; }
+  .group span { font-size: 12px; color: var(--ink-3); margin-right: 6px; }
+  .group button { height: 30px; padding: 0 10px; border: 1px solid transparent; border-radius: 8px; background: transparent; color: var(--ink-2); font: 600 12.5px var(--sans); cursor: pointer; }
+  .group button:hover { background: var(--surface-2); color: var(--ink); }
+  .group button.on { background: var(--surface-2); border-color: var(--line); color: var(--ink); }
+  label { font-size: 12.5px; color: var(--ink-2); display: flex; gap: 6px; align-items: center; }
+  main { flex: 1; min-height: 0; display: grid; grid-template-columns: 1fr 320px; }
+  iframe { width: 100%; height: 100%; border: 0; background: var(--surface); }
+  aside { border-left: 1px solid var(--line); padding: 20px; overflow: auto; }
+  aside h2 { font-size: 14px; margin: 0 0 4px; }
+  aside p { color: var(--ink-2); margin: 0 0 16px; font-size: 13px; }
+  .sw { display: flex; gap: 6px; margin-bottom: 16px; }
+  .sw i { width: 26px; height: 26px; border-radius: 6px; border: 1px solid var(--line); }
+  pre { font: 11.5px/1.5 var(--mono); background: var(--surface); border: 1px solid var(--line); border-radius: 8px; padding: 10px; white-space: pre-wrap; color: var(--ink-2); }
+  #log { font: 11.5px/1.5 var(--mono); color: var(--ink-3); }
+</style>
+</head>
+<body>
+<header>
+  <h1>Scenes demo</h1>
+  <div class="group" id="presets"><span>Look</span></div>
+  <div class="group" id="aspects"><span>Aspect</span></div>
+  <div class="group" id="langs"><span>Sample</span></div>
+  <label><input type="checkbox" id="safe"> Safe area</label>
+  <label><input type="checkbox" id="caps" checked> Captions</label>
+</header>
+<main>
+  <iframe id="player" src="player.html?controls=1"></iframe>
+  <aside>
+    <h2 id="pname"></h2>
+    <p id="pdesc"></p>
+    <div class="sw" id="swatches"></div>
+    <pre id="pfonts"></pre>
+    <div id="log"></div>
+  </aside>
+</main>
+<script>
+  var PRESETS = ['bold-explainer', 'clean-newsroom', 'desi-pop', 'data-noir', 'paper-notebook', 'calm-minimal', 'neon-finance', 'chalk-bold'];
+  var ASPECTS = ['9:16', '16:9', '1:1', '4:5'];
+  var LANGS = [['en', 'English'], ['hi', 'Hindi / Hinglish']];
+  var q = new URLSearchParams(location.search);
+  var st = { preset: q.get('preset') || PRESETS[0], aspect: q.get('aspect') || '9:16', lang: q.get('lang') || 'en' };
+  var cache = {}, sample = null, ready = false;
+  var frame = document.getElementById('player');
+
+  function group(id, items, key) {
+    var g = document.getElementById(id);
+    items.forEach(function (it) {
+      var v = Array.isArray(it) ? it[0] : it, label = Array.isArray(it) ? it[1] : it;
+      var b = document.createElement('button');
+      b.textContent = label; b.dataset.v = v;
+      b.onclick = function () { st[key] = v; sync(); send(); };
+      g.appendChild(b);
+    });
+  }
+  function sync() {
+    [['presets', 'preset'], ['aspects', 'aspect'], ['langs', 'lang']].forEach(function (p) {
+      document.querySelectorAll('#' + p[0] + ' button').forEach(function (b) { b.classList.toggle('on', b.dataset.v === st[p[1]]); });
+    });
+    history.replaceState(null, '', '?preset=' + st.preset + '&aspect=' + encodeURIComponent(st.aspect) + '&lang=' + st.lang);
+  }
+  function getPreset(id) {
+    if (cache[id]) return Promise.resolve(cache[id]);
+    return fetch('presets/' + id + '.json').then(function (r) { return r.json(); }).then(function (p) { cache[id] = p; return p; });
+  }
+  function send() {
+    if (!ready) return;
+    Promise.all([getPreset(st.preset), sample ? sample : fetch('sample.json').then(function (r) { return r.json(); })]).then(function (r) {
+      sample = r[1];
+      var p = r[0], design = JSON.parse(JSON.stringify(p.design));
+      design.aspect = st.aspect;
+      document.getElementById('pname').textContent = p.name;
+      document.getElementById('pdesc').textContent = p.description;
+      document.getElementById('swatches').innerHTML = Object.keys(design.colors).map(function (k) { return '<i title="' + k + ' ' + design.colors[k] + '" style="background:' + design.colors[k] + '"></i>'; }).join('');
+      document.getElementById('pfonts').textContent = JSON.stringify({ fonts: design.fonts, type: design.type, motion: design.motion, captions: design.captions, background: design.background }, null, 1);
+      frame.contentWindow.postMessage({ type: 'load', design: design, scenes: sample[st.lang], options: {
+        autoplay: true, loop: true, captions: document.getElementById('caps').checked, safeArea: document.getElementById('safe').checked, startAt: 0 } }, '*');
+    });
+  }
+  window.addEventListener('message', function (e) {
+    var m = e.data || {};
+    if (m.type === 'ready') { ready = true; send(); }
+    if (m.type === 'loaded') document.getElementById('log').textContent = 'loaded · ' + m.duration.toFixed(1) + 's · ' + m.scenes.length + ' scenes';
+    if (m.type === 'error') document.getElementById('log').textContent = 'error: ' + m.message;
+  });
+  document.getElementById('safe').onchange = send;
+  document.getElementById('caps').onchange = send;
+  group('presets', PRESETS, 'preset'); group('aspects', ASPECTS, 'aspect'); group('langs', LANGS, 'lang');
+  sync();
+</script>
+</body>
+</html>

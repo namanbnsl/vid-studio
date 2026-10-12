@@ -1,0 +1,222 @@
+<!doctype html>
+<html lang="en">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width, initial-scale=1">
+<title>Vid Studio player</title>
+<link rel="stylesheet" href="engine.css">
+<style>
+  html, body { margin: 0; height: 100%; background: transparent; overflow: hidden; }
+  body { font: 13px/1.4 "Instrument Sans", system-ui, -apple-system, "Segoe UI", sans-serif; color: #111110; -webkit-font-smoothing: antialiased; }
+  #viewport { position: absolute; left: 0; right: 0; top: 0; bottom: 0; overflow: hidden; }
+  body.has-controls #viewport { bottom: 84px; }
+  #scaler { position: absolute; left: 0; top: 0; transform-origin: 0 0; }
+  #scaler > .vid-stage { box-shadow: 0 1px 2px rgba(17,17,16,.08), 0 10px 30px rgba(17,17,16,.12); }
+  #msg { position: absolute; inset: 0; display: grid; place-items: center; color: #8f8c86; font-size: 13px; pointer-events: none; }
+  #controls { position: absolute; left: 0; right: 0; bottom: 0; height: 84px; padding: 10px 14px 12px; display: none; flex-direction: column; gap: 8px; background: #fff; border-top: 1px solid #ebebe8; }
+  body.has-controls #controls { display: flex; }
+  .row { display: flex; align-items: center; gap: 10px; }
+  #play { width: 30px; height: 30px; border-radius: 8px; border: 1px solid #dddcd8; background: #fff; cursor: pointer; display: grid; place-items: center; padding: 0; flex: none; }
+  #play:hover { background: #f8f8f6; }
+  #play svg { width: 14px; height: 14px; }
+  #time { font: 500 12px/1 "IBM Plex Mono", ui-monospace, monospace; color: #5a5853; min-width: 92px; text-align: right; flex: none; }
+  #scrub { flex: 1; accent-color: #111110; }
+  #chips { display: flex; gap: 4px; overflow-x: auto; scrollbar-width: none; }
+  #chips::-webkit-scrollbar { display: none; }
+  #chips button { flex: none; height: 24px; padding: 0 9px; border-radius: 6px; border: 1px solid transparent; background: #f1f1ee; color: #5a5853; font: 600 11.5px/1 inherit; cursor: pointer; }
+  #chips button.on { background: #111110; color: #fff; }
+</style>
+</head>
+<body>
+<div id="viewport"><div id="scaler"></div><div id="msg">Loading…</div></div>
+<div id="controls">
+  <div class="row">
+    <button id="play" title="Play/pause (space)" aria-label="Play"></button>
+    <input id="scrub" type="range" min="0" max="1000" value="0" step="1" aria-label="Seek">
+    <span id="time">0.0 / 0.0</span>
+  </div>
+  <div id="chips"></div>
+</div>
+<script src="https://cdn.jsdelivr.net/npm/gsap@3.13.0/dist/gsap.min.js"></script>
+<script src="engine.js"></script>
+<script>
+(function () {
+  'use strict';
+  var params = new URLSearchParams(location.search);
+  var scaler = document.getElementById('scaler');
+  var viewport = document.getElementById('viewport');
+  var msg = document.getElementById('msg');
+  var playBtn = document.getElementById('play');
+  var scrub = document.getElementById('scrub');
+  var timeEl = document.getElementById('time');
+  var chipsEl = document.getElementById('chips');
+  var ICON_PLAY = '<svg viewBox="0 0 16 16"><path d="M4 2.5v11l9-5.5z" fill="currentColor"/></svg>';
+  var ICON_PAUSE = '<svg viewBox="0 0 16 16"><path d="M4 2.5h3v11H4zM9 2.5h3v11H9z" fill="currentColor"/></svg>';
+
+  var state = { tl: null, duration: 0, scenes: [], stage: null, playing: false, loop: true, time: 0, wall0: 0, t0: 0, lastPost: 0, lastScene: -1 };
+  var pending = null, building = false;
+
+  function post(m) { if (window.parent && window.parent !== window && location.origin !== 'null') window.parent.postMessage(m, location.origin); }
+  function sceneAt(t) {
+    if (!state.scenes.length) return -1;
+    for (var i = state.scenes.length - 1; i >= 0; i--) if (t >= state.scenes[i].start - 1e-6) return i;
+    return 0;
+  }
+  function fit() {
+    if (!state.stage || !state.scenes.length) return;
+    var W = state.stage.offsetWidth, H = state.stage.offsetHeight;
+    var vw = viewport.clientWidth, vh = viewport.clientHeight, pad = params.get('pad') != null ? Number(params.get('pad')) : 0;
+    var s = Math.min((vw - pad * 2) / W, (vh - pad * 2) / H);
+    var x = Math.round((vw - W * s) / 2), y = Math.round((vh - H * s) / 2);
+    scaler.style.width = W + 'px'; scaler.style.height = H + 'px';
+    scaler.style.transform = 'translate(' + x + 'px,' + y + 'px) scale(' + s + ')';
+  }
+  function setTime(t, report) {
+    if (!state.tl) return;
+    t = Math.max(0, Math.min(state.duration, t));
+    state.time = t;
+    state.tl.time(t, true);
+    ui();
+    if (report) sendTime(true);
+  }
+  function sendTime(force) {
+    var now = performance.now();
+    if (!force && now - state.lastPost < 100) return;
+    state.lastPost = now;
+    post({ type: 'time', time: Math.round(state.time * 1000) / 1000, playing: state.playing, scene: sceneAt(state.time) });
+  }
+  function ui() {
+    var d = state.duration || 1;
+    scrub.value = String(Math.round(state.time / d * 1000));
+    timeEl.textContent = state.time.toFixed(1) + ' / ' + state.duration.toFixed(1);
+    playBtn.innerHTML = state.playing ? ICON_PAUSE : ICON_PLAY;
+    playBtn.disabled = scrub.disabled = !state.scenes.length;
+    var si = sceneAt(state.time);
+    if (si !== state.lastScene) {
+      state.lastScene = si;
+      Array.prototype.forEach.call(chipsEl.children, function (c, i) { c.classList.toggle('on', i === si); });
+    }
+  }
+  function play() {
+    if (!state.tl || !state.scenes.length || state.duration <= 0) return;
+    if (state.time >= state.duration - 0.02) state.time = 0;
+    state.playing = true; state.t0 = state.time; state.wall0 = performance.now();
+    ui(); sendTime(true);
+  }
+  function pause() { state.playing = false; ui(); sendTime(true); }
+  function tick(now) {
+    if (state.playing && state.tl) {
+      var t = state.t0 + (now - state.wall0) / 1000;
+      if (t >= state.duration) {
+        if (state.loop) { state.t0 = 0; state.wall0 = now; t = 0; }
+        else { t = state.duration - 0.001; state.playing = false; setTime(t); sendTime(true); }
+      }
+      if (state.playing) { state.time = t; state.tl.time(t, true); ui(); sendTime(false); }
+    }
+    requestAnimationFrame(tick);
+  }
+  requestAnimationFrame(tick);
+
+  function renderChips() {
+    chipsEl.innerHTML = '';
+    state.scenes.forEach(function (s, i) {
+      var b = document.createElement('button');
+      b.textContent = (i + 1) + ' ' + (s.type || '');
+      b.onclick = function () { seekScene(i); };
+      chipsEl.appendChild(b);
+    });
+    state.lastScene = -1;
+  }
+  function seekScene(i) {
+    var s = state.scenes[i];
+    if (!s) return;
+    pause();
+    setTime(s.start + Math.min(1.8, s.duration * 0.6), true);
+  }
+
+  function load(m) {
+    pending = m;
+    if (building) return;
+    building = true;
+    var job = pending; pending = null;
+    var opts = job.options || {};
+    var wasPlaying = state.playing, prevTime = state.time;
+    VidScenes.build(scaler, job.design || {}, job.scenes || [], { captions: opts.captions !== false, safeArea: !!opts.safeArea })
+      .then(function (res) {
+        state.tl = res.timeline; state.duration = res.duration; state.stage = res.stage;
+        state.scenes = res.scenes.map(function (s) { return { start: s.start, duration: s.duration, type: s.type }; });
+        if (opts.loop != null) state.loop = !!opts.loop;
+        var empty = !state.scenes.length;
+        scaler.style.display = empty ? 'none' : '';
+        msg.textContent = empty ? 'No scenes yet' : '';
+        msg.style.display = empty ? '' : 'none';
+        if (!empty) fit();
+        renderChips();
+        var t = opts.startAt != null ? Number(opts.startAt) || 0 : Math.min(prevTime, Math.max(0, res.duration - 0.001));
+        state.playing = false;
+        setTime(t);
+        post({ type: 'loaded', duration: res.duration, scenes: state.scenes.map(function (s) { return { start: s.start, duration: s.duration }; }) });
+        var autoplay = opts.autoplay != null ? !!opts.autoplay : wasPlaying;
+        if (autoplay && !empty) play(); else sendTime(true);
+      })
+      .catch(function (err) {
+        if (!(err && err.cancelled)) { post({ type: 'error', message: String(err && err.message || err) }); msg.textContent = 'Error: ' + (err && err.message || err); msg.style.display = ''; }
+      })
+      .then(function () { building = false; if (pending) load(pending); });
+  }
+
+  window.addEventListener('message', function (ev) {
+    if (window.parent === window || ev.source !== window.parent || location.origin === 'null' || ev.origin !== location.origin) return;
+    var m = ev.data;
+    if (!m || typeof m !== 'object') return;
+    try {
+      if (m.type === 'load') load(m);
+      else if (m.type === 'play') play();
+      else if (m.type === 'pause') pause();
+      else if (m.type === 'seek') { if (state.playing) { state.t0 = Number(m.time) || 0; state.wall0 = performance.now(); } setTime(Number(m.time) || 0, true); }
+      else if (m.type === 'seekScene') seekScene(Number(m.index) || 0);
+    } catch (err) { post({ type: 'error', message: String(err && err.message || err) }); }
+  });
+  window.addEventListener('resize', fit);
+  window.addEventListener('error', function (e) { post({ type: 'error', message: String(e.message || 'error') }); });
+
+  // controls
+  playBtn.onclick = function () { state.playing ? pause() : play(); };
+  scrub.oninput = function () {
+    var t = Number(scrub.value) / 1000 * state.duration;
+    if (state.playing) { state.t0 = t; state.wall0 = performance.now(); }
+    setTime(t, true);
+  };
+  document.addEventListener('keydown', function (e) {
+    if (e.code === 'Space' && e.target === document.body) { e.preventDefault(); state.playing ? pause() : play(); }
+    if (e.code === 'ArrowRight') setTime(state.time + 1, true);
+    if (e.code === 'ArrowLeft') setTime(state.time - 1, true);
+  });
+  if (params.get('controls') === '1') document.body.classList.add('has-controls');
+  ui();
+
+  // standalone: ?preset=id&sample=1&lang=hi&aspect=16:9&t=12.5&autoplay=1&safe=1
+  if (params.get('preset') || params.get('sample')) {
+    var presetId = params.get('preset') || 'bold-explainer';
+    Promise.all([
+      fetch('presets/' + encodeURIComponent(presetId) + '.json').then(function (r) { return r.json(); }),
+      fetch('sample.json').then(function (r) { return r.json(); })
+    ]).then(function (res) {
+      var design = res[0].design || {};
+      if (params.get('aspect')) design.aspect = params.get('aspect');
+      if (params.get('captions')) design.captions = Object.assign({}, design.captions, { style: params.get('captions') });
+      var lang = params.get('lang') === 'hi' ? 'hi' : 'en';
+      load({ type: 'load', design: design, scenes: res[1][lang], options: {
+        autoplay: params.get('autoplay') === '1', loop: true, captions: params.get('nocaps') !== '1',
+        safeArea: params.get('safe') === '1', startAt: params.get('t') != null ? Number(params.get('t')) : 0 } });
+    }).catch(function (err) { msg.textContent = 'Could not load sample: ' + err.message; post({ type: 'error', message: String(err.message) }); });
+  } else {
+    msg.textContent = '';
+  }
+  post({ type: 'ready' });
+  // debugging/testing hook
+  window.__player = { state: state, setTime: setTime, play: play, pause: pause, load: load };
+})();
+</script>
+</body>
+</html>
