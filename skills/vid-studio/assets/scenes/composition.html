@@ -1,0 +1,56 @@
+<!doctype html>
+<html lang="en">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=1080, height=1920">
+<title>__VID_TITLE__</title>
+<link rel="stylesheet" href="engine.css">
+<style>
+  html, body { margin: 0; padding: 0; background: #000; overflow: hidden; }
+</style>
+<script src="https://cdn.jsdelivr.net/npm/gsap@3.13.0/dist/gsap.min.js"></script>
+<script src="engine.js"></script>
+<script>
+window.VID_DESIGN = __VID_DESIGN_JSON__;
+</script>
+<script>
+window.VID_SCENES = __VID_SCENES_JSON__;
+</script>
+</head>
+<body>
+<div id="stage" class="vid-stage" data-composition-id="vid" data-start="0" data-width="1080" data-height="1920"></div>
+<script>
+(function () {
+  // Synchronously size the root for the design's aspect and declare its total length, before the async build.
+  var stage = document.getElementById('stage');
+  var design = VidScenes.normalizeDesign(window.VID_DESIGN || {});
+  var dim = VidScenes.dimensions(design.aspect);
+  var total = VidScenes.totalDuration(window.VID_SCENES || []);
+  stage.setAttribute('data-width', String(dim.width));
+  stage.setAttribute('data-height', String(dim.height));
+  stage.setAttribute('data-duration', String(total));
+  stage.style.width = dim.width + 'px';
+  stage.style.height = dim.height + 'px';
+  var vp = document.querySelector('meta[name=viewport]');
+  if (vp) vp.setAttribute('content', 'width=' + dim.width + ', height=' + dim.height);
+  document.title = document.title || 'Vid';
+
+  // Build (waits for fonts, measures, fits), then registers window.__timelines["vid"] at the end.
+  window.__vidReady = VidScenes.build(document.body, window.VID_DESIGN || {}, window.VID_SCENES || [], {
+    stage: stage, captions: true, safeArea: false
+  }).then(function (res) {
+    // engine.build already registered it; repeated here (after the build) so the registration is visible to tooling
+    window.__timelines = window.__timelines || {};
+    window.__timelines["vid"] = res.timeline;
+    window.__vidScenes = res.scenes;
+    if (typeof window.__hfForceTimelineRebind === 'function') window.__hfForceTimelineRebind();
+    document.documentElement.setAttribute('data-vid-ready', '1');
+    return res;
+  }).catch(function (err) {
+    document.documentElement.setAttribute('data-vid-error', String(err && err.message || err));
+    console.error(err);
+  });
+})();
+</script>
+</body>
+</html>

@@ -1,5 +1,5 @@
 #!/usr/bin/env python3
-"""Vid Studio helper: one channel's topics, sources, findings, scripts, and the local web UI.
+"""Vid Studio helper: one project's topics, sources, findings, scripts, and the local web UI.
 
 Standard library only. The workspace is --workspace, else $VID_STUDIO_HOME, else ~/vid-studio.
 Every command prints what it did so the calling agent can continue from the output.
@@ -8,16 +8,19 @@ Every command prints what it did so the calling agent can continue from the outp
 from __future__ import annotations
 
 import argparse
+import base64
 import datetime as dt
 import hashlib
 import html
 import json
+import math
 import os
 import re
 import shutil
 import signal
 import subprocess
 import sys
+import threading
 import time
 import urllib.parse
 import urllib.request
@@ -28,13 +31,36 @@ from pathlib import Path
 
 SKILL_DIR = Path(__file__).resolve().parents[1]
 ASSETS = SKILL_DIR / "assets"
+SCENES_DIR = ASSETS / "scenes"
+PRESETS_DIR = SCENES_DIR / "presets"
+FONT_CATALOG = SCENES_DIR / "fonts.json"
+VOICE_DEFAULT_PATH = ASSETS / "voice-default.json"
 USER_AGENT = "Mozilla/5.0 (compatible; vid-studio/1.0)"
 FEED_PATHS = ["/feed", "/rss", "/feed.xml", "/rss.xml", "/atom.xml", "/index.xml", "/feeds/posts/default"]
 FIRST_RUN_LOOKBACK = dt.timedelta(days=7)
 RUN_OVERLAP = dt.timedelta(hours=6)
 MAX_FINDING_TITLE = 110
 MAX_FINDING_SUMMARY = 240
-SCRIPT_TEXTS = {"script": "script.md", "post": "post.md", "notes": "notes.md"}
+STAGES = ["script", "ready", "published"]
+
+DEFAULT_PRESET = "bold-explainer"
+DEFAULT_DESIGN = {
+    "preset": DEFAULT_PRESET, "aspect": "9:16",
+    "colors": {"background": "#0E0E10", "surface": "#1A1A1F", "text": "#F5F5F0", "muted": "#9A9AA2",
+               "accent": "#FFD23F", "accent2": "#3DDC97", "negative": "#FF5A5F"},
+    "fonts": {"display": "Anton", "body": "Mukta", "mono": "JetBrains Mono"},
+    "type": {"scale": 1.0, "display_case": "upper", "display_weight": 800, "tracking": -0.01},
+    "motion": {"energy": "high", "easing": "snappy", "transition": "slide"},
+    "captions": {"style": "karaoke", "position": "lower", "highlight": "accent", "max_words": 4, "size": "medium"},
+    "background": {"style": "grain", "pattern": "grid"}, "images": {"treatment": "dim"}, "sources": {"show": True}, "radius": 18,
+    "logo": {"text": "", "position": "top-left"}, "custom_css": "",
+}
+HOOK_STYLES = ["question", "surprising-stat", "myth-bust", "story", "stakes", "contrast"]
+DEFAULT_VOICE = {
+    "length_seconds": 60, "words_per_minute": 160, "persona": "",
+    "tone": {"playful": 50, "casual": 60, "intensity": 55}, "hook_styles": HOOK_STYLES,
+    "do": [], "dont": [], "open": "", "close": "", "cta": "", "examples": [],
+}
 
 
 # ---------------------------------------------------------------- basics
@@ -252,8 +278,7 @@ def discover_feed(url: str) -> tuple[str | None, str]:
 
 # ---------------------------------------------------------------- studio model (shared by CLI and web UI)
 
-SETTING_KEYS = {"name", "description", "audience", "language", "timezone", "research_notes",
-                "script_format", "post_format", "schedule"}
+SETTING_KEYS = {"name", "description", "audience", "timezone", "research_notes", "schedule"}
 
 
 DAYS = ["mon", "tue", "wed", "thu", "fri", "sat", "sun"]
@@ -284,7 +309,7 @@ class Studio:
     """All reads and writes of the workspace files. Raises ValueError for bad input."""
 
     def __init__(self, ws: Path, root: Path | None = None):
-        self.ws = ws  # this channel's folder
+        self.ws = ws  # this project's folder
         self.root = root or ws.parent.parent
 
     def path(self, *parts: str) -> Path:
@@ -306,7 +331,7 @@ class Studio:
                 raise ValueError(f"{key} must be text")
             settings[key] = value
         if not settings.get("name", "").strip():
-            raise ValueError("The channel needs a name")
+            raise ValueError("The project needs a name")
         save(self.path("studio.json"), settings)
         return settings
 
@@ -351,8 +376,8 @@ class Studio:
         for finding in findings["findings"]:
             finding["topics"] = [t for t in finding.get("topics", []) if t != topic_id]
         save(self.path("findings.json"), findings)
-        for script_id in self.script_ids():
-            meta_path = self.path("scripts", script_id, "script.json")
+        for story_id in self.story_ids():
+            meta_path = self.path("stories", story_id, "story.json")
             meta = load(meta_path)
             if topic_id in meta.get("topics", []):
                 meta["topics"] = [t for t in meta["topics"] if t != topic_id]
@@ -542,7 +567,64 @@ class Studio:
         save(self.path("findings.json"), data)
         return finding
 
-    # scripts: linked to findings (news), topics (explainers), or both
+    # stories (research): an angle built from findings (news), topics (explainers), or both, with research notes
+
+    def story_ids(self) -> list[str]:
+        return sorted(p.parent.name for p in self.path("stories").glob("*/story.json"))
+
+    def story(self, story_id: str) -> dict:
+        folder = self.path("stories", story_id)
+        if not re.fullmatch(r"[a-z0-9-]+", story_id or "") or not (folder / "story.json").is_file():
+            raise KeyError(f"Unknown story: {story_id}")
+        meta = {"findings": [], "topics": []} | load(folder / "story.json")
+        notes = (folder / "notes.md").read_text(encoding="utf-8") if (folder / "notes.md").is_file() else ""
+        version = hashlib.sha1(json.dumps([meta, notes], sort_keys=True).encode()).hexdigest()[:16]
+        return {**meta, "notes": notes, "version": version}
+
+    def stories(self) -> list[dict]:
+        listed = []
+        for story_id in self.story_ids():
+            item = self.story(story_id)
+            listed.append({key: item[key] for key in ("id", "title", "findings", "topics", "created", "updated", "version")}
+                          | {"researched": bool(item["notes"].strip())})
+        return sorted(listed, key=lambda s: s.get("updated", ""), reverse=True)
+
+    def create_story(self, title: str, finding_ids: list[str] | None = None, topic_ids: list[str] | None = None) -> dict:
+        title = (title or "").strip() or "Untitled story"
+        finding_ids, topic_ids = self._check_findings(finding_ids or []), self._check_topics(topic_ids or [])
+        story_id = unique_id(dt.date.today().isoformat() + "-" + slugify(title, 40), set(self.story_ids()))
+        folder = self.path("stories", story_id)
+        folder.mkdir(parents=True)
+        save(folder / "story.json", {"id": story_id, "title": title, "findings": finding_ids, "topics": topic_ids,
+                                     "created": now(), "updated": now()})
+        (folder / "notes.md").write_text("", encoding="utf-8")
+        return self.story(story_id)
+
+    def update_story(self, story_id: str, changes: dict, version: str | None = None) -> dict:
+        current = self.story(story_id)
+        if version is not None and version != current["version"]:
+            raise RuntimeError("This story changed since you opened it (probably your agent wrote notes). Reload to see it.")
+        folder = self.path("stories", story_id)
+        meta = {"findings": [], "topics": []} | load(folder / "story.json")
+        if "title" in changes:
+            meta["title"] = str(changes["title"]).strip() or "Untitled story"
+        if "findings" in changes:
+            meta["findings"] = self._check_findings(changes["findings"])
+        if "add_findings" in changes:
+            meta["findings"] = list(dict.fromkeys(meta["findings"] + self._check_findings(changes["add_findings"])))
+        if "topics" in changes:
+            meta["topics"] = self._check_topics(changes["topics"])
+        if "notes" in changes:
+            write_text(folder / "notes.md", str(changes["notes"]))
+        meta["updated"] = now()
+        save(folder / "story.json", meta)
+        return self.story(story_id)
+
+    def delete_story(self, story_id: str) -> None:
+        self.story(story_id)
+        self._trash("stories", story_id)
+
+    # scripts (production): one per story and channel; the text follows the channel's language and format
 
     def script_ids(self) -> list[str]:
         return sorted(p.parent.name for p in self.path("scripts").glob("*/script.json"))
@@ -551,30 +633,39 @@ class Studio:
         folder = self.path("scripts", script_id)
         if not re.fullmatch(r"[a-z0-9-]+", script_id or "") or not (folder / "script.json").is_file():
             raise KeyError(f"Unknown script: {script_id}")
-        meta = {"findings": [], "topics": []} | load(folder / "script.json")
-        texts = {key: (folder / name).read_text(encoding="utf-8") if (folder / name).is_file() else ""
-                 for key, name in SCRIPT_TEXTS.items()}
-        version = hashlib.sha1(json.dumps([meta, texts], sort_keys=True).encode()).hexdigest()[:16]
-        return {**meta, **texts, "version": version}
+        meta = {"stage": "script", "published_url": ""} | load(folder / "script.json")
+        text = (folder / "script.md").read_text(encoding="utf-8") if (folder / "script.md").is_file() else ""
+        # Comments are not part of the version, so adding or resolving one never looks like a conflicting edit.
+        version = hashlib.sha1(json.dumps([meta, text], sort_keys=True).encode()).hexdigest()[:16]
+        channel = find_channel(self.root, meta["channel"])
+        scenes = parse_scenes(text, channel_voice(self.root, channel["id"])["words_per_minute"]) if channel["kind"] == "video" else []
+        return {**meta, "text": text, "comments": self.comments(script_id, text), "version": version,
+                "scenes": scenes, "duration": total_duration(scenes), "media": self.media(script_id),
+                "video": self.video_status(script_id, scenes, channel) if channel["kind"] == "video" else None,
+                "angles": load(folder / "angles.json", {"angles": []})["angles"],
+                "review": load(folder / "review.json") if (folder / "review.json").is_file() else None}
 
     def scripts(self) -> list[dict]:
         listed = []
         for script_id in self.script_ids():
             item = self.script(script_id)
-            listed.append({key: item[key] for key in ("id", "title", "findings", "topics", "created", "updated", "version")}
-                          | {"drafted": bool(item["script"].strip()), "has_post": bool(item["post"].strip())})
+            listed.append({key: item[key] for key in ("id", "title", "story", "channel", "stage", "published_url", "created", "updated", "version", "duration")}
+                          | {"drafted": bool(item["text"].strip()), "open_comments": sum(1 for c in item["comments"] if not c.get("resolved_at")),
+                             "video": item["video"] and {k: item["video"][k] for k in ("status", "ready", "stale")}})
         return sorted(listed, key=lambda s: s.get("updated", ""), reverse=True)
 
-    def create_script(self, title: str, finding_ids: list[str] | None = None, topic_ids: list[str] | None = None) -> dict:
-        title = (title or "").strip() or "Untitled script"
-        finding_ids, topic_ids = self._check_findings(finding_ids or []), self._check_topics(topic_ids or [])
-        script_id = unique_id(dt.date.today().isoformat() + "-" + slugify(title, 40), set(self.script_ids()))
+    def create_script(self, story_id: str, channel_id: str, title: str = "") -> dict:
+        story, channel = self.story(story_id), find_channel(self.root, channel_id)
+        channel_folder(self.root, channel["id"])
+        if any(s["story"] == story_id and s["channel"] == channel["id"] for s in self.scripts()):
+            raise ValueError(f"The story already has a script for {channel['name']}")
+        title = (title or "").strip() or story["title"]
+        script_id = unique_id(slugify(story_id, 48) + "-" + channel["id"], set(self.script_ids()))
         folder = self.path("scripts", script_id)
         folder.mkdir(parents=True)
-        save(folder / "script.json", {"id": script_id, "title": title, "findings": finding_ids, "topics": topic_ids,
-                                      "created": now(), "updated": now()})
-        for name in SCRIPT_TEXTS.values():
-            (folder / name).write_text("", encoding="utf-8")
+        save(folder / "script.json", {"id": script_id, "title": title, "story": story_id, "channel": channel["id"],
+                                      "stage": "script", "published_url": "", "created": now(), "updated": now()})
+        (folder / "script.md").write_text("", encoding="utf-8")
         return self.script(script_id)
 
     def update_script(self, script_id: str, changes: dict, version: str | None = None) -> dict:
@@ -582,35 +673,268 @@ class Studio:
         if version is not None and version != current["version"]:
             raise RuntimeError("This script changed since you opened it (probably your agent wrote a draft). Reload to see it.")
         folder = self.path("scripts", script_id)
-        meta = {"findings": [], "topics": []} | load(folder / "script.json")
+        angles = None
+        if "chosen_angle" in changes:
+            angles = current["angles"]
+            self._find(angles, changes["chosen_angle"], "angle")
+            for angle in angles:
+                angle["chosen"] = angle["id"] == changes["chosen_angle"]
+        if not (set(changes) - {"chosen_angle"}):
+            if angles is not None:
+                save(folder / "angles.json", {"angles": angles})
+            return self.script(script_id)
+        meta = {"stage": "script", "published_url": ""} | load(folder / "script.json")
         if "title" in changes:
             meta["title"] = str(changes["title"]).strip() or "Untitled script"
-        if "findings" in changes:
-            meta["findings"] = self._check_findings(changes["findings"])
-        if "add_findings" in changes:
-            meta["findings"] = list(dict.fromkeys(meta["findings"] + self._check_findings(changes["add_findings"])))
-        if "topics" in changes:
-            meta["topics"] = self._check_topics(changes["topics"])
-        for key, name in SCRIPT_TEXTS.items():
-            if key in changes:
-                write_text(folder / name, str(changes[key]))
+        if "stage" in changes:
+            if changes["stage"] not in STAGES:
+                raise ValueError(f"Stage must be one of: {', '.join(STAGES)}")
+            meta["stage"] = changes["stage"]
+        if "published_url" in changes:
+            url = str(changes["published_url"] or "").strip()
+            meta["published_url"] = normalize_url(url) if url else ""
+        if "text" in changes:
+            write_text(folder / "script.md", str(changes["text"]))
         meta["updated"] = now()
         save(folder / "script.json", meta)
+        if angles is not None:
+            save(folder / "angles.json", {"angles": angles})
         return self.script(script_id)
+
+    def save_angles(self, script_id: str, angles) -> list[dict]:
+        self.script(script_id)
+        if isinstance(angles, dict):
+            check_keys(angles, {"angles"}, "angles file")
+            angles = angles.get("angles")
+        if not isinstance(angles, list) or not 2 <= len(angles) <= 6:
+            raise ValueError("angles must be a list of 2–6 hook options")
+        cleaned, ids = [], set()
+        for i, angle in enumerate(angles, 1):
+            check_keys(angle, {"id", "hook", "angle", "why", "chosen"}, f"angles[{i}]")
+            item = {"id": angle.get("id", f"a{i}"), "chosen": angle.get("chosen", False)}
+            for key in ("id", "hook", "angle", "why"):
+                item[key] = check_text(item[key] if key == "id" else angle.get(key), f"angles[{i}].{key}", 100 if key == "id" else 4000)
+            if not item["id"].strip() or item["id"] in ids:
+                raise ValueError(f"angles[{i}].id must be non-empty and unique")
+            if not isinstance(item["chosen"], bool):
+                raise ValueError(f"angles[{i}].chosen must be true or false")
+            ids.add(item["id"])
+            cleaned.append(item)
+        if sum(a["chosen"] for a in cleaned) > 1:
+            raise ValueError("Choose at most one angle")
+        if not any(a["chosen"] for a in cleaned):
+            cleaned[0]["chosen"] = True
+        save(self.path("scripts", script_id, "angles.json"), {"angles": cleaned})
+        return cleaned
+
+    def save_review(self, script_id: str, review: dict) -> dict:
+        self.script(script_id)
+        check_keys(review, {"scores", "summary", "notes", "at"}, "review")
+        scores = review.get("scores")
+        keys = {"hook", "clarity", "retention", "specificity", "voice", "natural", "value", "accuracy"}
+        check_keys(scores, keys, "review.scores")
+        for key in sorted(keys):
+            check_number(scores.get(key), f"review.scores.{key}", 1, 10, integer=True)
+        result = {"scores": dict(scores), "summary": check_text(review.get("summary"), "review.summary", 10000),
+                  "notes": check_strings(review.get("notes"), "review.notes"), "at": now()}
+        save(self.path("scripts", script_id, "review.json"), result)
+        return result
+
+    def export_script(self, script_id: str, out_dir: str | Path | None = None) -> Path:
+        script = self.script(script_id)
+        channel = find_channel(self.root, script["channel"])
+        if channel["kind"] != "video":
+            raise ValueError("Export requires a video channel; text posts have no scenes")
+        for name in ("engine.js", "engine.css", "composition.html"):
+            if not (SCENES_DIR / name).is_file():
+                raise RuntimeError(f"Missing scene asset {SCENES_DIR / name}; add the scene engine before exporting")
+        design = channel_design(self.root, channel["id"])
+        template = (SCENES_DIR / "composition.html").read_text(encoding="utf-8")
+        replacements = {"__VID_DESIGN_JSON__": script_json(design),
+                        "__VID_SCENES_JSON__": script_json(script["scenes"]), "__VID_TITLE__": html.escape(script["title"])}
+        # Substitute once: user text containing a token must remain literal.
+        template = re.sub("|".join(replacements), lambda match: replacements[match.group()], template)
+        # HyperFrames reads the canvas size and length from the root's attributes, before any script runs.
+        width, height = ASPECT_SIZES[design["aspect"]]
+        template = template.replace('data-width="1080" data-height="1920"',
+                                    f'data-width="{width}" data-height="{height}" data-duration="{total_duration(script["scenes"])}"', 1)
+        folder = Path(out_dir).expanduser().resolve() if out_dir is not None else self.path("scripts", script_id, "render")
+        folder.mkdir(parents=True, exist_ok=True)
+        for name in ("engine.js", "engine.css"):
+            target = folder / name
+            if target.resolve() != (SCENES_DIR / name).resolve():
+                shutil.copyfile(SCENES_DIR / name, target)
+        # Photos travel with the composition, at the same relative paths the script uses (media/…).
+        media = self.path("scripts", script_id, "media")
+        if (folder / "media").is_dir() and (folder / "media").resolve() != media.resolve():
+            for old in (folder / "media").iterdir():
+                if old.is_file() and re.fullmatch(r"[a-z0-9-]+\.(jpg|png|webp)", old.name) and not (media / old.name).is_file():
+                    old.unlink()
+        if media.is_dir() and (folder / "media").resolve() != media.resolve():
+            shutil.copytree(media, folder / "media", dirs_exist_ok=True)
+        write_text(folder / "index.html", template)
+        return folder
+
+    # media: photos for a script's beats, in scripts/<id>/media, listed with their credits in media.json
+
+    def media(self, script_id: str) -> list[dict]:
+        folder = self.path("scripts", script_id, "media")
+        listed = load(self.path("scripts", script_id, "media.json"), {"media": []})["media"]
+        return [item for item in listed if (folder / item.get("file", "")).is_file()]
+
+    def add_media(self, script_id: str, data: bytes, name: str = "", credit: str = "", source: str = "", license: str = "") -> dict:
+        self.script(script_id)
+        kind = image_kind(data)
+        if not kind:
+            raise ValueError("Not a JPEG, PNG, or WebP image")
+        if len(data) > MAX_MEDIA_BYTES:
+            raise ValueError(f"Images must be under {MAX_MEDIA_BYTES // 1_000_000} MB")
+        folder = self.path("scripts", script_id, "media")
+        folder.mkdir(parents=True, exist_ok=True)
+        existing = {p.name for p in folder.iterdir()}
+        stem = slugify(Path(name).stem if name else "image", 40) or "image"
+        file = unique_id(stem, {Path(n).stem for n in existing}) + "." + kind
+        (folder / file).write_bytes(data)
+        item = {"file": file, "path": f"media/{file}", "credit": clean_text(credit, 200), "source": source.strip(),
+                "license": clean_text(license, 80), "added": now()}
+        listed = [m for m in self.media(script_id) if m["file"] != file] + [item]
+        save(self.path("scripts", script_id, "media.json"), {"media": listed})
+        return item
+
+    def delete_media(self, script_id: str, file: str) -> None:
+        self.script(script_id)
+        if not re.fullmatch(r"[a-z0-9-]+\.(jpg|png|webp)", file or ""):
+            raise KeyError(f"Unknown media file: {file}")
+        target = self.path("scripts", script_id, "media", file)
+        if not target.is_file():
+            raise KeyError(f"Unknown media file: {file}")
+        target.unlink()
+        save(self.path("scripts", script_id, "media.json"), {"media": [m for m in self.media(script_id) if m["file"] != file]})
+
+    # rendering: scripts/<id>/render holds the exported composition, video.mp4, poster.jpg and render.json
+
+    def video_status(self, script_id: str, scenes: list, channel: dict) -> dict:
+        folder = self.path("scripts", script_id, "render")
+        status = load(folder / "render.json", {})
+        video = folder / "video.mp4"
+        state = status.get("status") or ("done" if video.is_file() else "none")
+        if state == "rendering" and status.get("pid") not in (None, os.getpid()) and not pid_alive(status.get("pid")):
+            state = "failed"
+            status["error"] = "The render stopped before it finished"
+        result = {"status": state, "progress": status.get("progress", 0), "error": status.get("error", ""),
+                  "finished": status.get("finished", ""), "seconds": status.get("seconds"),
+                  "ready": video.is_file(), "size": video.stat().st_size if video.is_file() else 0,
+                  "stale": False, "placeholders": []}
+        for scene in scenes:
+            src = (scene["data"].get("url") if scene["type"] == "image" else "") or (scene.get("image") or {}).get("src")
+            if (scene["type"] == "image" and not src) or (src and src.startswith("media/") and not self.path("scripts", script_id, src).is_file()):
+                result["placeholders"].append(scene["beat"])
+        if video.is_file() and status.get("fingerprint"):
+            result["stale"] = status["fingerprint"] != media_fingerprint(self.path("scripts", script_id), scenes, channel_design(self.root, channel["id"]))
+        return result
+
+    def render_script(self, script_id: str, quality: str = "high", progress=None) -> dict:
+        import render as renderer
+        script = self.script(script_id)
+        channel = find_channel(self.root, script["channel"])
+        if channel["kind"] != "video":
+            raise ValueError("Only video scripts render to MP4")
+        if not script["scenes"]:
+            raise ValueError("The script has no beats yet")
+        problems = renderer.missing_tools()
+        if problems:
+            raise RuntimeError("Rendering needs: " + "; ".join(problems))
+        folder = self.path("scripts", script_id, "render")
+        status_path = folder / "render.json"
+        fingerprint = media_fingerprint(self.path("scripts", script_id), script["scenes"], channel_design(self.root, channel["id"]))
+        # The previous video stays downloadable while this one renders, so keep what it was rendered from.
+        status = {"status": "rendering", "progress": 0, "pid": os.getpid(), "started": now(), "quality": quality,
+                  "fingerprint": load(status_path, {}).get("fingerprint")}
+        save(status_path, status)
+        last = [0.0]
+
+        def report(done, total):
+            if progress:
+                progress(done, total)
+            if time.monotonic() - last[0] > 0.5 or done == total:
+                last[0] = time.monotonic()
+                save(status_path, status | {"progress": round(done / total, 3)})
+
+        try:
+            self.export_script(script_id)
+            result = renderer.render(folder, folder / "video.mp4", quality=quality, progress=report, poster=folder / "poster.jpg")
+        except BaseException as error:
+            save(status_path, status | {"status": "failed", "error": str(error) or type(error).__name__, "finished": now()})
+            raise
+        save(status_path, status | {"status": "done", "progress": 1, "finished": now(), "seconds": result["seconds"],
+                                    "fingerprint": fingerprint, "duration": result["duration"]})
+        credits = [m for m in self.media(script_id) if m.get("credit")]
+        if credits:
+            write_text(folder / "credits.txt", "".join(f"{m['credit']}{' – ' + m['source'] if m.get('source') else ''}\n" for m in credits))
+        return result | {"credits": [m["credit"] for m in credits]}
 
     def delete_script(self, script_id: str) -> None:
         self.script(script_id)
-        trash = self.path("scripts", ".trash")
-        trash.mkdir(exist_ok=True)
-        self.path("scripts", script_id).rename(trash / f"{script_id}-{int(time.time())}")
+        self._trash("scripts", script_id)
+
+    # comments: anchored to a quote in the script text; open ones are read in the order they appear
+
+    def comments(self, script_id: str, text: str | None = None) -> list[dict]:
+        listed = load(self.path("scripts", script_id, "comments.json"), {"comments": []})["comments"]
+        text = self.path("scripts", script_id, "script.md").read_text(encoding="utf-8") if text is None else text
+        for comment in listed:
+            comment["position"] = comment_position(text, comment)
+        # Comments on the whole script (no quote) and ones whose quote was rewritten away come last.
+        return sorted(listed, key=lambda c: (c["position"] < 0, c["position"] if c["position"] >= 0 else 0, c.get("created", "")))
+
+    def add_comment(self, script_id: str, body: str, quote: str = "", offset: int | None = None) -> dict:
+        self.script(script_id)
+        body, quote = (body or "").strip(), (quote or "").strip()
+        if not body:
+            raise ValueError("A comment needs some text")
+        path = self.path("scripts", script_id, "comments.json")
+        data = load(path, {"comments": []})
+        comment = {"id": unique_id("c-" + dt.datetime.now().strftime("%m%d%H%M%S"), {c["id"] for c in data["comments"]}),
+                   "quote": quote, "offset": offset if isinstance(offset, int) and offset >= 0 else None,
+                   "body": body, "created": now()}
+        data["comments"].append(comment)
+        save(path, data)
+        return comment
+
+    def update_comment(self, script_id: str, comment_id: str, changes: dict) -> dict:
+        path = self.path("scripts", script_id, "comments.json")
+        data = load(path, {"comments": []})
+        comment = self._find(data["comments"], comment_id, "comment")
+        if "body" in changes:
+            if not str(changes["body"]).strip():
+                raise ValueError("A comment needs some text")
+            comment["body"] = str(changes["body"]).strip()
+        if "resolved" in changes:
+            if changes["resolved"]:
+                comment["resolved_at"] = now()
+                if changes.get("reply"):
+                    comment["reply"] = str(changes["reply"]).strip()
+            else:
+                comment.pop("resolved_at", None)
+                comment.pop("reply", None)
+        save(path, data)
+        return comment
+
+    def delete_comment(self, script_id: str, comment_id: str) -> None:
+        path = self.path("scripts", script_id, "comments.json")
+        data = load(path, {"comments": []})
+        self._find(data["comments"], comment_id, "comment")
+        data["comments"] = [c for c in data["comments"] if c["id"] != comment_id]
+        save(path, data)
 
     # whole state for the UI
 
     def state(self) -> dict:
         runs = self.runs()
         return {"workspace": str(self.root), "default_workspace": self.root == workspace_path(None) and not os.environ.get("VID_STUDIO_HOME"),
-                "channel": self.ws.name, "settings": self.settings(), "topics": self.topics(), "sources": self.sources(),
-                "findings": self.findings(), "runs": runs[-20:], "scripts": self.scripts()}
+                "project": self.ws.name, "settings": self.settings(), "topics": self.topics(), "sources": self.sources(),
+                "findings": self.findings(), "runs": runs[-20:], "stories": self.stories(), "scripts": self.scripts(),
+                "channels": channels(self.root)}
 
     # helpers
 
@@ -619,6 +943,11 @@ class Studio:
             if record.get("id") == record_id:
                 return record
         raise KeyError(f"Unknown {label}: {record_id}")
+
+    def _trash(self, kind: str, item_id: str) -> None:
+        trash = self.path(kind, ".trash")
+        trash.mkdir(exist_ok=True)
+        self.path(kind, item_id).rename(trash / f"{item_id}-{int(time.time())}")
 
     def _check_findings(self, finding_ids) -> list[str]:
         known = {f["id"] for f in self.findings()}
@@ -637,136 +966,528 @@ class Studio:
         return list(dict.fromkeys(topic_ids))
 
 
-# ---------------------------------------------------------------- channels: <root>/channels/<id>/
-
-CHANNEL_FILES = ["studio.json", "topics.json", "sources.json", "findings.json", "runs.json", "scripts", ".cache"]
+ASPECT_SIZES = {"9:16": (1080, 1920), "16:9": (1920, 1080), "1:1": (1080, 1080), "4:5": (1080, 1350)}
 
 
-def channel_dirs(root: Path) -> list[Path]:
-    return sorted(p.parent for p in (root / "channels").glob("*/studio.json"))
+# ---------------------------------------------------------------- channels: <root>/channels.json, shared by every project
+
+LANGUAGES = ["English", "Hindi", "Hinglish"]
+CHANNEL_KINDS = ["video", "post"]
+CHANNEL_KEYS = {"name", "platform", "kind", "language", "audience", "format"}
+DEFAULT_FORMATS = load(ASSETS / "channel-formats.json")  # a new channel starts with the format for its kind
 
 
-def channels_overview(root: Path) -> list[dict]:
+def channels(root: Path) -> list[dict]:
+    return load(root / "channels.json", {"channels": []})["channels"]
+
+
+def find_channel(root: Path, value: str) -> dict:
+    wanted = str(value or "").strip().casefold()
+    for channel in channels(root):
+        if wanted in (channel["id"], channel["name"].casefold()):
+            return channel
+    raise KeyError(f"No channel {value!r}. Channels: {', '.join(c['name'] for c in channels(root)) or 'none yet'}")
+
+
+def clean_channel(channel: dict, changes: dict) -> dict:
+    for key, value in changes.items():
+        if key not in CHANNEL_KEYS:
+            raise ValueError(f"Unknown channel setting: {key}")
+        channel[key] = str(value or "").strip()
+    if not channel.get("name"):
+        raise ValueError("A channel needs a name")
+    if channel.get("kind") not in CHANNEL_KINDS:
+        raise ValueError("Kind must be video (a script for a video) or post (a text post, like WhatsApp)")
+    return channel
+
+
+def add_channel(root: Path, changes: dict) -> dict:
+    data = load(root / "channels.json", {"channels": []})
+    kind = changes.get("kind") or "video"
+    changes = {key: value for key, value in changes.items() if key != "format" or str(value or "").strip()}  # empty: the default
+    channel = clean_channel({"platform": "", "language": "English", "audience": "", "format": DEFAULT_FORMATS.get(kind, "")},
+                            {"kind": kind} | changes)
+    if any(c["name"].casefold() == channel["name"].casefold() for c in data["channels"]):
+        raise ValueError(f"A channel called {channel['name']!r} already exists")
+    channel = {"id": unique_id(slugify(channel["name"], 40), {c["id"] for c in data["channels"]})} | channel | {"created": now()}
+    data["channels"].append(channel)
+    save(root / "channels.json", data)
+    channel_folder(root, channel["id"]).mkdir(parents=True, exist_ok=True)
+    return channel
+
+
+def update_channel(root: Path, channel_id: str, changes: dict) -> dict:
+    data = load(root / "channels.json", {"channels": []})
+    channel = next((c for c in data["channels"] if c["id"] == channel_id), None)
+    if not channel:
+        raise KeyError(f"Unknown channel: {channel_id}")
+    clean_channel(channel, changes)
+    if any(c["name"].casefold() == channel["name"].casefold() and c["id"] != channel_id for c in data["channels"]):
+        raise ValueError(f"A channel called {channel['name']!r} already exists")
+    save(root / "channels.json", data)
+    return channel
+
+
+def delete_channel(root: Path, channel_id: str) -> None:
+    folder = channel_folder(root, channel_id)
+    used = [f"{Studio(folder, root).settings().get('name')}: {s['title']}" for folder in project_dirs(root)
+            for s in Studio(folder, root).scripts() if s["channel"] == channel_id]
+    if used:
+        raise ValueError("Scripts still use this channel (" + "; ".join(used[:3]) + ("…" if len(used) > 3 else "") + "). Delete them first.")
+    data = load(root / "channels.json", {"channels": []})
+    data["channels"] = [c for c in data["channels"] if c["id"] != channel_id]
+    save(root / "channels.json", data)
+    if folder.is_dir():
+        shutil.rmtree(folder)
+
+
+# ---------------------------------------------------------------- channel looks and script-writing voice
+
+def deep_merge(base: dict, changes: dict) -> dict:
+    result = json.loads(json.dumps(base))
+    for key, value in changes.items():
+        result[key] = deep_merge(result[key], value) if isinstance(result.get(key), dict) and isinstance(value, dict) else value
+    return result
+
+
+def check_keys(value, allowed, label: str) -> None:
+    if not isinstance(value, dict):
+        raise ValueError(f"{label} must be a JSON object")
+    unknown = set(value) - set(allowed)
+    if unknown:
+        raise ValueError(f"Unknown {label} key: {', '.join(sorted(unknown))}. Allowed: {', '.join(sorted(allowed))}")
+
+
+def check_text(value, label: str, limit: int = 4000) -> str:
+    if not isinstance(value, str):
+        raise ValueError(f"{label} must be text")
+    if len(value) > limit:
+        raise ValueError(f"{label} must be at most {limit} characters")
+    return value
+
+
+def check_number(value, label: str, low, high, integer: bool = False) -> None:
+    if isinstance(value, bool) or not isinstance(value, (int, float)) or (integer and not isinstance(value, int)):
+        raise ValueError(f"{label} must be {'an integer' if integer else 'a number'} from {low} to {high}")
+    if not low <= value <= high or not math.isfinite(value):
+        raise ValueError(f"{label} must be from {low} to {high}")
+
+
+def check_strings(value, label: str, limit: int = 4000, count: int = 100) -> list[str]:
+    if not isinstance(value, list) or len(value) > count:
+        raise ValueError(f"{label} must be a list of at most {count} strings")
+    return [check_text(item, f"{label}[{i}]", limit) for i, item in enumerate(value, 1)]
+
+
+def channel_folder(root: Path, channel_id: str) -> Path:
+    if not isinstance(channel_id, str) or not re.fullmatch(r"[a-z0-9-]+", channel_id):
+        raise KeyError(f"Invalid channel id: {channel_id!r}; use a channel id containing lowercase letters, numbers, and hyphens")
+    channel = find_channel(root, channel_id)
+    if channel["id"] != channel_id:
+        raise KeyError(f"Unknown channel id: {channel_id}")
+    base = (root / "channels").resolve()
+    folder = base / channel_id
+    if not folder.resolve().is_relative_to(base):
+        raise ValueError(f"Channel folder must stay inside {base}")
+    return folder
+
+
+def presets() -> list[dict]:
+    listed = [load(path) for path in PRESETS_DIR.glob("*.json") if path.is_file()]
+    if not any(p["id"] == DEFAULT_PRESET for p in listed):
+        listed.append({"id": DEFAULT_PRESET, "name": "Bold Explainer", "description": "Bold numbers, energetic motion, and clear captions.",
+                       "design": {k: v for k, v in deep_merge(DEFAULT_DESIGN, {}).items() if k != "preset"}})
+    return sorted(listed, key=lambda p: (p["name"].casefold(), p["id"]))
+
+
+def fonts() -> dict:
+    return load(FONT_CATALOG, {"fonts": []})
+
+
+def merged_design(design: dict) -> dict:
+    named = next((p for p in presets() if p["id"] == design.get("preset", DEFAULT_PRESET)), None)
+    if named is None:
+        named = next(p for p in presets() if p["id"] == DEFAULT_PRESET)
+        design = design | {"preset": DEFAULT_PRESET}
+    return deep_merge(deep_merge(DEFAULT_DESIGN, named["design"] | {"preset": named["id"]}), design)
+
+
+HINDI_PRESET = "neon-finance"  # the default look must use Devanagari fonts when the channel writes in Hindi or Hinglish
+
+
+def language_design(root: Path, channel_id: str, design: dict) -> dict:
+    if not design.get("preset") and find_channel(root, channel_id).get("language", "").casefold() in ("hindi", "hinglish") \
+            and any(p["id"] == HINDI_PRESET for p in presets()):
+        design = design | {"preset": HINDI_PRESET}
+    return merged_design(design)
+
+
+def channel_design(root: Path, channel_id: str) -> dict:
+    return language_design(root, channel_id, load(channel_folder(root, channel_id) / "design.json", {}))
+
+
+def save_design(root: Path, channel_id: str, design: dict) -> dict:
+    folder = channel_folder(root, channel_id)
+    check_keys(design, DEFAULT_DESIGN, "design")
+    if "preset" in design and (not isinstance(design["preset"], str) or design["preset"] not in {p["id"] for p in presets()}):
+        raise ValueError("design.preset must be a preset id from studio.py presets")
+    design = language_design(root, channel_id, design)
+    for key, default in DEFAULT_DESIGN.items():
+        if isinstance(default, dict):
+            check_keys(design[key], default, f"design.{key}")
+    enums = {
+        "aspect": ["9:16", "16:9", "1:1", "4:5"], "type.display_case": ["upper", "title", "none"],
+        "motion.energy": ["calm", "medium", "high"], "motion.easing": ["smooth", "snappy", "bouncy"],
+        "motion.transition": ["cut", "fade", "slide", "zoom", "wipe"],
+        "captions.style": ["none", "plain", "boxed", "karaoke", "pop"], "captions.position": ["lower", "middle", "upper"],
+        "captions.highlight": ["accent", "accent2", "text"], "background.style": ["solid", "gradient", "grain", "paper"],
+        "background.pattern": ["none", "grid", "dots", "lines"], "logo.position": ["top-left", "top-right", "bottom-left", "bottom-right"],
+        "captions.size": ["small", "medium", "large"], "images.treatment": ["natural", "dim", "mono", "duotone"],
+    }
+    def value_at(key):
+        group, dot, sub = key.partition(".")
+        return design[group][sub] if dot else design[group]
+    for key, allowed in enums.items():
+        if value_at(key) not in allowed:
+            raise ValueError(f"design.{key} must be one of: {', '.join(allowed)}")
+    for key, low, high, integer in (("type.scale", 0.8, 1.3, False), ("type.display_weight", 400, 900, True),
+                                    ("type.tracking", -0.05, 0.1, False), ("captions.max_words", 1, 8, True), ("radius", 0, 48, False)):
+        check_number(value_at(key), f"design.{key}", low, high, integer)
+    for key, value in design["colors"].items():
+        if not isinstance(value, str) or not re.fullmatch(r"#(?:[0-9a-fA-F]{3}|[0-9a-fA-F]{6})", value):
+            raise ValueError(f"design.colors.{key} must be a hex color like #FC3 or #FFD23F")
+    catalog = {f["family"]: f for f in fonts()["fonts"]} if FONT_CATALOG.exists() else None
+    language = find_channel(root, channel_id)["language"].casefold()
+    for key, value in design["fonts"].items():
+        check_text(value, f"design.fonts.{key}", 200)
+        if catalog is not None:
+            if value not in catalog:
+                raise ValueError(f"design.fonts.{key}: unknown family {value!r}; choose a family from studio.py fonts")
+            if key in ("display", "body") and language in ("hindi", "hinglish") and not catalog[value]["devanagari"]:
+                raise ValueError(f"design.fonts.{key}: {value!r} does not support Devanagari; choose a family from studio.py fonts --devanagari for {language.title()}")
+    if not isinstance(design["sources"]["show"], bool):
+        raise ValueError("design.sources.show must be true or false")
+    check_text(design["logo"]["text"], "design.logo.text", 200)
+    css = check_text(design["custom_css"], "design.custom_css", 20000)
+    if re.search(r"</style|<script", css, re.I):
+        raise ValueError("design.custom_css cannot contain </style or <script; provide CSS only")
+    save(folder / "design.json", design)
+    return design
+
+
+def voice_defaults() -> dict:
+    return deep_merge(DEFAULT_VOICE, load(VOICE_DEFAULT_PATH, {}))
+
+
+def channel_voice(root: Path, channel_id: str) -> dict:
+    return deep_merge(voice_defaults(), load(channel_folder(root, channel_id) / "voice.json", {}))
+
+
+def save_voice(root: Path, channel_id: str, voice: dict) -> dict:
+    folder = channel_folder(root, channel_id)
+    check_keys(voice, DEFAULT_VOICE, "voice")
+    voice = deep_merge(voice_defaults(), voice)
+    check_number(voice["length_seconds"], "voice.length_seconds", 10, 600)
+    check_number(voice["words_per_minute"], "voice.words_per_minute", 80, 260)
+    check_keys(voice["tone"], DEFAULT_VOICE["tone"], "voice.tone")
+    for key, value in voice["tone"].items():
+        check_number(value, f"voice.tone.{key}", 0, 100)
+    for key in ("persona", "open", "close", "cta"):
+        check_text(voice[key], f"voice.{key}", 4000)
+    for key in ("hook_styles", "do", "dont"):
+        check_strings(voice[key], f"voice.{key}")
+    if any(style not in HOOK_STYLES for style in voice["hook_styles"]):
+        raise ValueError(f"voice.hook_styles must contain only: {', '.join(HOOK_STYLES)}")
+    if not isinstance(voice["examples"], list) or len(voice["examples"]) > 30:
+        raise ValueError("voice.examples must be a list of at most 30 examples")
+    for i, example in enumerate(voice["examples"], 1):
+        check_keys(example, {"title", "text", "why"}, f"voice.examples[{i}]")
+        for key in ("title", "text", "why"):
+            check_text(example.get(key), f"voice.examples[{i}].{key}", 20000 if key == "text" else 4000)
+    save(folder / "voice.json", voice)
+    return voice
+
+
+# ---------------------------------------------------------------- media and rendering
+
+MAX_MEDIA_BYTES = 15_000_000
+
+
+def image_kind(data: bytes) -> str | None:
+    if data[:3] == b"\xff\xd8\xff":
+        return "jpg"
+    if data[:8] == b"\x89PNG\r\n\x1a\n":
+        return "png"
+    if data[:4] == b"RIFF" and data[8:12] == b"WEBP":
+        return "webp"
+    return None
+
+
+def media_fingerprint(script_folder: Path, scenes: list, design: dict) -> str:
+    digest = hashlib.sha1(json.dumps([scenes, design], sort_keys=True).encode())
+    media = script_folder / "media"
+    for path in sorted(media.glob("*")) if media.is_dir() else []:
+        stat = path.stat()
+        digest.update(f"{path.name}:{stat.st_size}:{int(stat.st_mtime)}".encode())
+    return digest.hexdigest()[:16]
+
+
+def pid_alive(pid) -> bool:
+    try:
+        os.kill(int(pid), 0)
+        return True
+    except (OSError, ValueError, TypeError):
+        return False
+
+
+def fetch_image(url: str) -> tuple[bytes, str]:
+    """Download an image URL; returns (bytes, a file name to keep)."""
+    if not re.match(r"^https?://", url or ""):
+        raise ValueError("Image URLs must start with http:// or https://")
+    data, _, final = fetch(url, timeout=40)
+    name = Path(urllib.parse.urlsplit(final).path).name or "image"
+    return data, urllib.parse.unquote(name)
+
+
+# ---------------------------------------------------------------- script beats and scenes
+
+def spoken_text(text: str) -> str:
+    text = re.sub(r"!?\[([^\]]+)\]\([^)]*\)", r"\1", text)
+    text = re.sub(r"\[(\d+(?:\s*[,–—-]\s*\d+)*)\]", "", text)
+    text = re.sub(r"[*_`]", "", text)
+    return re.sub(r"\s+", " ", text).strip()
+
+
+def word_count(text: str) -> int:
+    return sum(any(char.isalnum() for char in word) for word in spoken_text(text).split())
+
+
+def total_duration(scenes: list[dict]) -> float:
+    return round(sum(scene["duration"] for scene in scenes), 1)
+
+
+def script_json(value) -> str:
+    text = json.dumps(value, ensure_ascii=False, allow_nan=False)
+    for char, escape in (("<", "\\u003c"), (">", "\\u003e"), ("&", "\\u0026"), ("\u2028", "\\u2028"), ("\u2029", "\\u2029")):
+        text = text.replace(char, escape)
+    return text
+
+
+def parse_scenes(text: str, words_per_minute=160) -> list[dict]:
+    if isinstance(words_per_minute, bool) or not isinstance(words_per_minute, (int, float)) or not math.isfinite(words_per_minute) or words_per_minute <= 0:
+        raise ValueError("words_per_minute must be a positive number")
+    beats, current = [], None
+    for line in text.splitlines():
+        line = line.strip()
+        heading = re.match(r"^##\s+(.*)$", line)
+        if heading:
+            current = {"beat": re.sub(r"[#*_]", "", heading[1]).strip(), "lines": []}
+            beats.append(current)
+        elif current is not None and line and not line.startswith("#"):
+            cue = re.sub(r"^[-*]\s+", "", line)
+            match = re.match(r"^[*_]{0,2}(visual|text|note|image|source|duration)[*_]{0,2}\s*:[*_]{0,2}\s*(.*)$", cue, re.I)
+            if match:
+                current[match[1].lower()] = match[2].strip()
+            elif line:
+                current["lines"].append(line)
+    scenes = []
+    fields = {"title": ("title", "subtitle", "kicker"), "stat": ("value", "label", "context"),
+              "quote": ("quote", "source"), "text": ("text",), "image": ("description", "url", "credit"), "end": ("title", "cta")}
+    for beat in beats:
+        vo = spoken_text(" ".join(beat["lines"]))
+        visual = beat.get("visual")
+        parts = [part.strip() for part in visual.split("|")] if visual else ["text", vo]
+        kind, values = parts[0].lower(), parts[1:]
+        if kind in fields:
+            data = {key: values[i] if i < len(values) else "" for i, key in enumerate(fields[kind])}
+            if kind == "text" and not data["text"]:
+                data["text"] = vo
+        elif kind in ("bars", "compare", "timeline", "list"):
+            items = []
+            for value in values[1:]:
+                if kind == "list":
+                    items.append(value)
+                else:
+                    left, separator, right = value.partition(":") if kind == "timeline" else value.rpartition(":")
+                    if not separator or not left or not right.strip():
+                        left, right = value, ""
+                    keys = ("date", "label") if kind == "timeline" else ("label", "value")
+                    items.append(dict(zip(keys, (left.strip(), right.strip()))))
+            data = {"title": values[0] if values else "", "items": items}
+        else:
+            kind, data = "image", {"description": visual or "", "url": "", "credit": ""}
+        duration = max(1.5, math.floor(word_count(vo) * 600 / words_per_minute + 0.5) / 10)  # halves round up, like the UI
+        fixed = re.fullmatch(r"(\d+(?:\.\d+)?)\s*s?", beat.get("duration", ""), re.I)
+        if fixed:
+            duration = min(60.0, max(1.0, math.floor(float(fixed[1]) * 10 + 0.5) / 10))
+        scene = {"beat": beat["beat"], "type": kind, "duration": duration, "vo": vo, "text": beat.get("text", ""), "data": data}
+        if beat.get("image"):
+            src, _, credit = beat["image"].partition("|")
+            scene["image"] = {"src": src.strip(), "credit": credit.strip()}
+        if beat.get("source"):
+            scene["source"] = beat["source"]
+        if beat.get("note"):
+            scene["note"] = beat["note"]
+        scenes.append(scene)
+    return scenes
+
+
+def comment_position(text: str, comment: dict) -> int:
+    """Where a comment's quote is in the text: the occurrence nearest its saved offset, or -1."""
+    quote = comment.get("quote") or ""
+    if not quote:
+        return -1
+    found, start = [], text.find(quote)
+    while start >= 0:
+        found.append(start)
+        start = text.find(quote, start + 1)
+    if not found:
+        return -1
+    offset = comment.get("offset")
+    return min(found, key=lambda i: abs(i - offset)) if isinstance(offset, int) else found[0]
+
+
+# ---------------------------------------------------------------- projects: <root>/projects/<id>/
+
+def project_dirs(root: Path) -> list[Path]:
+    return sorted(p.parent for p in (root / "projects").glob("*/studio.json"))
+
+
+def projects_overview(root: Path) -> list[dict]:
     listed = []
-    for folder in channel_dirs(root):
+    for folder in project_dirs(root):
         studio = Studio(folder, root)
         settings = studio.settings()
         listed.append({"id": folder.name, "name": settings.get("name") or folder.name,
-                       "description": settings.get("description", ""), "language": settings.get("language", ""),
+                       "description": settings.get("description", ""),
                        "findings": sum(1 for f in studio.findings() if not f.get("dismissed_at")),
                        "suggested_sources": sum(1 for x in studio.sources() if x["status"] == "suggested")})
     return listed
 
 
-def find_channel(root: Path, value: str | None) -> Path:
-    """A channel by ID or name; with no value, the only channel there is."""
-    value = value or os.environ.get("VID_STUDIO_CHANNEL")
-    folders = channel_dirs(root)
+def channel_looks(root: Path) -> dict:
+    """What each channel looks and sounds like at a glance, for lists."""
+    names = {p["id"]: p["name"] for p in presets()}
+    looks = {}
+    for channel in channels(root):
+        voice = channel_voice(root, channel["id"])
+        look = {"length_seconds": voice["length_seconds"]}
+        if channel["kind"] == "video":
+            design = channel_design(root, channel["id"])
+            look |= {"preset": names.get(design.get("preset"), ""), "aspect": design["aspect"], "colors": design["colors"],
+                     "display_font": design["fonts"]["display"]}
+        looks[channel["id"]] = look
+    return looks
+
+
+def production_overview(root: Path) -> dict:
+    """Production spans all research projects; IDs remain scoped to their owner."""
+    projects = projects_overview(root)
+    scripts, stories = [], []
+    for project in projects:
+        studio = Studio(root / "projects" / project["id"], root)
+        origin = {"project": project["id"], "project_name": project["name"]}
+        project_stories = studio.stories()
+        titles = {story["id"]: story["title"] for story in project_stories}
+        stories.extend(story | origin for story in project_stories)
+        scripts.extend(script | origin | {"story_title": titles.get(script["story"], "")}
+                       for script in studio.scripts())
+    return {"workspace": str(root),
+            "default_workspace": root == workspace_path(None) and not os.environ.get("VID_STUDIO_HOME"),
+            "projects": projects, "channels": channels(root), "looks": channel_looks(root),
+            "scripts": sorted(scripts, key=lambda script: script.get("updated", ""), reverse=True),
+            "stories": stories}
+
+
+def find_project(root: Path, value: str | None) -> Path:
+    """A project by ID or name; with no value, the only project there is."""
+    value = value or os.environ.get("VID_STUDIO_PROJECT")
+    folders = project_dirs(root)
     if not folders:
-        raise KeyError("No channels yet. Create one with `studio.py new-channel --name NAME`.")
+        raise KeyError("No projects yet. Create one with `studio.py new-project --name NAME`.")
     if value:
         wanted = value.strip().casefold()
         for folder in folders:
             if wanted in (folder.name, str(load(folder / "studio.json").get("name", "")).strip().casefold()):
                 return folder
-        raise KeyError(f"No channel {value!r}. Channels: {', '.join(c['name'] for c in channels_overview(root))}")
+        raise KeyError(f"No project {value!r}. Projects: {', '.join(c['name'] for c in projects_overview(root))}")
     if len(folders) == 1:
         return folders[0]
-    raise KeyError("Several channels exist; pass --channel with one of: " + ", ".join(c["name"] for c in channels_overview(root)))
+    raise KeyError("Several projects exist; pass --project with one of: " + ", ".join(c["name"] for c in projects_overview(root)))
 
 
 def fill_templates(folder: Path) -> None:
-    templates = ASSETS / "channel"
+    templates = ASSETS / "project"
     for source in sorted(templates.iterdir()):
         target = folder / source.name
         if source.is_file() and not target.exists():
             shutil.copyfile(source, target)
-    (folder / "scripts").mkdir(parents=True, exist_ok=True)
+    for kind in ("stories", "scripts"):
+        (folder / kind).mkdir(parents=True, exist_ok=True)
 
 
-def create_channel(root: Path, name: str, description: str = "", language: str = "") -> Path:
+def create_project(root: Path, name: str, description: str = "") -> Path:
     name = (name or "").strip()
     if not name:
-        raise ValueError("A channel needs a name")
-    if any(c["name"].casefold() == name.casefold() for c in channels_overview(root)):
-        raise ValueError(f"A channel called {name!r} already exists")
-    existing = {p.name for p in (root / "channels").glob("*")}
-    folder = root / "channels" / unique_id(slugify(name, 40), existing)
+        raise ValueError("A project needs a name")
+    if any(c["name"].casefold() == name.casefold() for c in projects_overview(root)):
+        raise ValueError(f"A project called {name!r} already exists")
+    existing = {p.name for p in (root / "projects").glob("*")}
+    folder = root / "projects" / unique_id(slugify(name, 40), existing)
     folder.mkdir(parents=True)
     fill_templates(folder)
     settings = load(folder / "studio.json")
     settings.update(name=name, description=(description or "").strip())
-    if language:
-        settings["language"] = language
     save(folder / "studio.json", settings)
     return folder
-
-
-def migrate_single_channel(root: Path) -> None:
-    """Move a workspace from the one-channel layout (files at the root) into channels/<id>/."""
-    if not (root / "studio.json").is_file():
-        return
-    name = str(load(root / "studio.json").get("name") or "").strip() or "Main"
-    existing = {p.name for p in (root / "channels").glob("*")}
-    folder = root / "channels" / unique_id(slugify(name, 40), existing)
-    folder.mkdir(parents=True)
-    (root / "studio.db").unlink(missing_ok=True)  # an old derived query index; the JSON files are the data
-    for item in CHANNEL_FILES:
-        if item == ".cache":
-            seen = root / ".cache" / "seen.json"
-            if seen.is_file():
-                (folder / ".cache").mkdir(exist_ok=True)
-                seen.rename(folder / ".cache" / "seen.json")
-        elif (root / item).exists():
-            (root / item).rename(folder / item)
-    fill_templates(folder)
-    readme = root / "README.md"
-    if readme.is_file() and readme.read_text(encoding="utf-8").startswith("# Vid Studio workspace"):
-        shutil.copyfile(ASSETS / "README.md", readme)  # the old one-channel README no longer applies
-    print(f"Moved your channel into {folder} (the studio now supports several channels).", file=sys.stderr)
 
 
 # ---------------------------------------------------------------- commands
 
 def cmd_init(root: Path, args) -> None:
-    (root / "channels").mkdir(parents=True, exist_ok=True)
+    (root / "projects").mkdir(parents=True, exist_ok=True)
     if not (root / "README.md").exists():
         shutil.copyfile(ASSETS / "README.md", root / "README.md")
     print(f"Studio: {root}")
-    channels = channels_overview(root)
-    print(f"Channels: {', '.join(c['name'] for c in channels) or 'none yet (studio.py new-channel --name NAME)'}")
+    projects = projects_overview(root)
+    print(f"Projects: {', '.join(c['name'] for c in projects) or 'none yet (studio.py new-project --name NAME)'}")
 
 
-def cmd_channels(root: Path, args) -> None:
-    channels = channels_overview(root)
-    if not channels:
-        print("No channels yet. Create one with `studio.py new-channel --name NAME`.")
-    for channel in channels:
-        extra = f", {channel['suggested_sources']} suggested sources" if channel["suggested_sources"] else ""
-        print(f"{channel['id']} · {channel['name']} · {channel['findings']} findings{extra}")
+def cmd_projects(root: Path, args) -> None:
+    projects = projects_overview(root)
+    if not projects:
+        print("No projects yet. Create one with `studio.py new-project --name NAME`.")
+    for project in projects:
+        extra = f", {project['suggested_sources']} suggested sources" if project["suggested_sources"] else ""
+        print(f"{project['id']} · {project['name']} · {project['findings']} findings{extra}")
 
 
-def cmd_new_channel(root: Path, args) -> None:
-    folder = create_channel(root, args.name, args.description or "", args.language or "")
-    print(f"Channel {folder.name}: {folder}")
+def cmd_new_project(root: Path, args) -> None:
+    folder = create_project(root, args.name, args.description or "")
+    print(f"Project {folder.name}: {folder}")
 
 
 def cmd_status(root: Path, args) -> None:
-    if not channel_dirs(root):
-        print(f"No channels in {root}. Run `studio.py init`, then set up a channel (references/setup.md).")
+    listed_channels = channels(root)
+    print("Channels:" + ("" if listed_channels else " none"))
+    for channel in listed_channels:
+        look = f" · look {channel_design(root, channel['id'])['preset']}" if channel["kind"] == "video" else ""
+        print(f"  {channel['id']} · {channel['name']} · {channel['language']} · {channel['kind']}{look}")
+    if not project_dirs(root):
+        print(f"No projects in {root}. Run `studio.py init`, then set up a project (references/setup.md).")
         return
     try:
-        ws = find_channel(root, args.channel)
+        ws = find_project(root, args.project)
     except KeyError as error:
         print(error.args[0])
         print(f"UI: {(running_server(root) or {}).get('url') or 'not running (studio.py serve --background)'}")
         return
     studio = Studio(ws, root)
-    settings, topics, sources, scripts = studio.settings(), studio.topics(), studio.sources(), studio.scripts()
+    settings, topics, sources, stories, scripts = studio.settings(), studio.topics(), studio.sources(), studio.stories(), studio.scripts()
     runs = studio.runs()
     last = next((r for r in reversed(runs) if r.get("status") in ("completed", "failed")), None)
-    others = [c["name"] for c in channels_overview(root) if c["id"] != ws.name]
-    print(f"Channel: {settings.get('name') or '(unnamed)'} ({ws.name}) · studio {root}" + (f" · other channels: {', '.join(others)}" if others else ""))
+    others = [c["name"] for c in projects_overview(root) if c["id"] != ws.name]
+    print(f"Project: {settings.get('name') or '(unnamed)'} ({ws.name}) · studio {root}" + (f" · other projects: {', '.join(others)}" if others else ""))
     print(f"Topics: {', '.join(t['name'] for t in topics) or 'none'}")
     approved = [s for s in sources if s["status"] == "approved"]
     suggested = [s for s in sources if s["status"] == "suggested"]
@@ -776,23 +1497,30 @@ def cmd_status(root: Path, args) -> None:
           + (f"{last['finished']} ({last['status']}, {last.get('findings', 0)} findings)" if last else "never"))
     print(f"Schedule: {describe_schedule(settings.get('schedule', {}))}"
           + (f" ({settings['timezone']})" if settings.get("timezone") and settings.get("schedule", {}).get("times") else ""))
+    print("Stories:" + ("" if stories else " none"))
+    for story in stories:
+        links = [f"{len(story['findings'])} findings"] + [f"topic {t}" for t in story["topics"]]
+        print(f"  {story['id']} · {story['title']} · {', '.join(links)} · {'researched' if story['researched'] else 'not researched'}")
+    names = {c["id"]: c["name"] for c in channels(root)}
     print("Scripts:" + ("" if scripts else " none"))
     for script in scripts:
-        state = "drafted" if script["drafted"] else "not drafted"
-        links = [f"{len(script['findings'])} findings"] + [f"topic {t}" for t in script["topics"]]
-        print(f"  {script['id']} · {script['title']} · {', '.join(links)} · {state}")
+        state = (script["stage"] if script["drafted"] else "not drafted") + (f", {script['open_comments']} open comment{'s' * (script['open_comments'] != 1)}" if script["open_comments"] else "")
+        if find_channel(root, script["channel"])["kind"] == "video":
+            state += f" · {script['duration']:.1f}s"
+        print(f"  {script['id']} · {script['title']} · for {names.get(script['channel'], script['channel'])} · story {script['story']} · {state}")
     server = running_server(root)
     print(f"UI: {server['url'] + '#/' + ws.name if server else 'not running (studio.py serve --background)'}")
     hints = []
     if not settings.get("name") or not topics:
-        hints.append("Set up the channel: name, topics, sources (references/setup.md).")
+        hints.append("Set up the project: name, topics, sources (references/setup.md).")
     elif not last:
         hints.append("Run research (references/research.md).")
     running = next((r for r in reversed(runs) if r.get("status") == "running"), None)
     if running:
         hints.append(f"Run {running['id']} is unfinished; sources not checked yet: {', '.join(studio.unchecked_sources(running)) or 'none'}.")
-    hints += [f"Script '{s['title']}' has material but no draft (references/write.md)." for s in scripts
-              if (s["findings"] or s["topics"]) and not s["drafted"]]
+    hints += [f"Script '{s['title']}' has no draft yet (references/write.md)." for s in scripts if not s["drafted"]]
+    hints += [f"Script '{s['title']}' has {s['open_comments']} open comment{'s' * (s['open_comments'] != 1)} to address (references/write.md)." for s in scripts
+              if s["drafted"] and s["open_comments"]]
     if hints:
         print("Suggestions:\n" + "\n".join(f"- {h}" for h in hints))
 
@@ -901,9 +1629,247 @@ def cmd_finish_run(ws: Path, args) -> None:
           + (f", {run['suggested_sources']} sources suggested" if run.get("suggested_sources") else ""))
 
 
+def cmd_new_story(ws: Path, args) -> None:
+    story = Studio(ws).create_story(args.title, args.finding or [], args.topic or [])
+    print(f"Story: {ws / 'stories' / story['id']}")
+
+
 def cmd_new_script(ws: Path, args) -> None:
-    script = Studio(ws).create_script(args.title, args.finding or [], args.topic or [])
+    script = Studio(ws).create_script(args.story, args.channel, args.title or "")
     print(f"Script: {ws / 'scripts' / script['id']}")
+
+
+def cmd_channels(root: Path, args) -> None:
+    listed = channels(root)
+    if not listed:
+        print("No channels yet. Create one with `studio.py add-channel --name NAME --kind video --language English`.")
+    for channel in listed:
+        print(f"{channel['id']} · {channel['name']} · {channel['platform'] or 'no platform'} · {channel['kind']} · {channel['language']}")
+
+
+def cmd_add_channel(root: Path, args) -> None:
+    changes = {key: value for key, value in vars(args).items() if key in CHANNEL_KEYS and value is not None}
+    channel = add_channel(root, changes)
+    print(f"Channel {channel['id']}: {channel['name']} ({channel['kind']}, {channel['language']})")
+
+
+def read_json_file(value: str):
+    try:
+        return json.loads(sys.stdin.read() if value == "-" else Path(value).expanduser().read_text(encoding="utf-8"))
+    except (OSError, json.JSONDecodeError) as error:
+        raise ValueError(f"Cannot read JSON from {value!r}: {error}")
+
+
+def cmd_channel_settings(root: Path, args) -> None:
+    channel = find_channel(root, args.channel)
+    reader, writer = (channel_design, save_design) if args.command == "design" else (channel_voice, save_voice)
+    before = reader(root, channel["id"])
+    if args.file is None:
+        print(json.dumps(before, indent=2, ensure_ascii=False))
+        return
+    after = writer(root, channel["id"], read_json_file(args.file))
+    changed = [key for key in after if before.get(key) != after[key]]
+    print(f"Saved {args.command} for {channel['name']}: changed {', '.join(changed) or 'no keys'}")
+
+
+def cmd_presets(root: Path, args) -> None:
+    for preset in presets():
+        print(f"{preset['id']} · {preset['name']} · {preset['description']}")
+
+
+def cmd_fonts(root: Path, args) -> None:
+    for font in fonts()["fonts"]:
+        if not args.devanagari or font["devanagari"]:
+            print(f"{font['family']} · {font['category']} · devanagari {'yes' if font['devanagari'] else 'no'}")
+
+
+def cmd_scenes(ws: Path, args) -> None:
+    studio = Studio(ws)
+    script = studio.script(args.script)
+    scenes = script["scenes"]
+    if args.json:
+        print(json.dumps(scenes, indent=2, ensure_ascii=False))
+        return
+    voice = channel_voice(studio.root, script["channel"])
+    for i, scene in enumerate(scenes, 1):
+        print(f"{i}. {scene['beat']} · {scene['type']} · {scene['duration']:.1f}s · {clean_text(scene['vo'], 60)}")
+    target = voice["length_seconds"]
+    print(f"Total {script['duration']:.1f}s (target {target:g}s)")
+    for scene in scenes:
+        if scene["duration"] > 12:
+            print(f"Warning: {scene['beat']} runs over 12s ({scene['duration']:.1f}s); split it into smaller beats")
+        if word_count(scene["text"]) > 8 or (scene["type"] == "text" and word_count(scene["data"]["text"]) > 8):
+            print(f"Warning: {scene['beat']} has more than 8 words of on-screen text; shorten it")
+    if not scenes or scenes[-1]["type"] != "end":
+        print("Warning: the last beat is missing an end scene")
+    if abs(script["duration"] - target) > target * 0.10:
+        print("Warning: total duration is more than 10% off the channel's target")
+
+
+def cmd_angles(ws: Path, args) -> None:
+    angles = Studio(ws).save_angles(args.script, read_json_file(args.file))
+    chosen = next(a["id"] for a in angles if a["chosen"])
+    print(f"Saved {len(angles)} angles for {args.script}; chosen {chosen}")
+
+
+def cmd_review(ws: Path, args) -> None:
+    review = Studio(ws).save_review(args.script, read_json_file(args.file))
+    scores = ', '.join(f"{key} {value}/10" for key, value in review["scores"].items())
+    print(f"Saved review for {args.script}: {scores}")
+
+
+def cmd_export(ws: Path, args) -> None:
+    folder = Studio(ws).export_script(args.script, args.out)
+    print(f"Exported: {folder}")
+    print("Next: run `npx hyperframes preview` or `npx hyperframes render` in that folder")
+
+
+OPEN_LICENSES = re.compile(r"^(cc0|pdm|public domain|pd\b|cc[ -]by(-sa)?([ -][\d.]+)?$|by(-sa)?$)", re.I)
+
+
+def search_openverse(query: str, limit: int, orientation: str) -> list[dict]:
+    params = {"q": query, "page_size": str(min(20, limit * 2)), "license_type": "commercial,modification", "mature": "false"}
+    if orientation in ("tall", "wide", "square"):
+        params["aspect_ratio"] = orientation
+    data, _, _ = fetch("https://api.openverse.org/v1/images/?" + urllib.parse.urlencode(params))
+    results = []
+    for item in json.loads(data).get("results", []):
+        license_name = ("CC0" if item.get("license") == "cc0" else "Public domain" if item.get("license") == "pdm"
+                        else f"CC {str(item.get('license', '')).upper()} {item.get('license_version') or ''}".strip())
+        creator = clean_text(item.get("creator") or "Unknown", 60)
+        provider = str(item.get("source") or item.get("provider") or "").replace("_", " ").title()
+        results.append({"title": clean_text(item.get("title") or "Untitled", 80), "url": item.get("url"),
+                        "thumbnail": item.get("thumbnail") or item.get("url"), "page": item.get("foreign_landing_url") or "",
+                        "width": item.get("width"), "height": item.get("height"), "license": license_name,
+                        "credit": f"Photo: {creator} / {provider}, {license_name}" if license_name not in ("CC0", "Public domain") else f"Photo: {creator} / {provider}"})
+    return results
+
+
+def search_commons(query: str, limit: int, orientation: str) -> list[dict]:
+    params = {"action": "query", "format": "json", "generator": "search", "gsrsearch": f"filetype:bitmap {query}", "gsrnamespace": "6",
+              "gsrlimit": str(min(30, limit * 3)), "prop": "imageinfo", "iiprop": "url|extmetadata|size", "iiurlwidth": "1600"}
+    data, _, _ = fetch("https://commons.wikimedia.org/w/api.php?" + urllib.parse.urlencode(params))
+    pages = sorted(json.loads(data).get("query", {}).get("pages", {}).values(), key=lambda p: p.get("index", 0))
+    results = []
+    for page in pages:
+        info = (page.get("imageinfo") or [{}])[0]
+        meta = info.get("extmetadata") or {}
+        value = lambda key: re.sub(r"<[^>]+>", "", html.unescape(str((meta.get(key) or {}).get("value", "")))).strip()
+        license_name = value("LicenseShortName")
+        if not OPEN_LICENSES.match(license_name) or info.get("width", 0) < 900:
+            continue
+        width, height = info.get("width") or 0, info.get("height") or 0
+        if orientation == "tall" and width > height or orientation == "wide" and height > width:
+            continue
+        creator = clean_text(value("Artist") or "Unknown", 60)
+        clean = lambda url: re.sub(r"\?utm_[^#]*$", "", url or "")
+        results.append({"title": clean_text(page.get("title", "").removeprefix("File:"), 80), "url": clean(info.get("thumburl") or info.get("url")),
+                        "thumbnail": info.get("thumburl") or info.get("url"), "page": info.get("descriptionurl") or "",
+                        "width": width, "height": height, "license": license_name,
+                        "credit": f"Photo: {creator} / Wikimedia Commons" + ("" if re.match(r"(?i)cc0|public domain|pd", license_name) else f", {license_name}")})
+    return results
+
+
+def cmd_images(ws: Path, args) -> None:
+    found, errors = [], []
+    for name, search in (("Wikimedia Commons", search_commons), ("Openverse", search_openverse)):
+        if args.provider not in ("all", name.split()[0].lower()):
+            continue
+        try:
+            found += search(args.query, args.limit, args.orientation)[: args.limit]
+        except Exception as error:  # one provider being down shouldn't hide the other
+            errors.append(f"{name}: {error}")
+    for error in errors:
+        print(f"Search failed on {error}")
+    if not found:
+        print("No openly licensed images found. Try a broader or more literal query (objects and places, not ideas).")
+        return
+    preview = Path(args.preview).expanduser() if args.preview else None
+    if preview:
+        preview.mkdir(parents=True, exist_ok=True)
+    for i, item in enumerate(found, 1):
+        print(f"{i}. {item['title']} · {item['width']}×{item['height']} · {item['license']}")
+        print(f"   credit: {item['credit']}")
+        print(f"   url: {item['url']}")
+        print(f"   page: {item['page']}")
+        if preview:
+            try:
+                data, _, _ = fetch(item["thumbnail"], timeout=20)
+                if image_kind(data):
+                    target = preview / f"{i:02d}.{image_kind(data)}"
+                    target.write_bytes(data)
+                    print(f"   preview: {target}")
+            except Exception:
+                pass
+    print('Next: look at the candidates, then `studio.py media --script ID --add URL --credit "…" --source PAGE`')
+
+
+def cmd_media(ws: Path, args) -> None:
+    studio = Studio(ws)
+    if args.remove:
+        studio.delete_media(args.script, args.remove)
+        print(f"Removed media/{args.remove}")
+        return
+    if args.add:
+        if re.match(r"^https?://", args.add):
+            data, name = fetch_image(args.add)
+            source = args.source or args.add
+        else:
+            path = Path(args.add).expanduser()
+            if not path.is_file():
+                raise ValueError(f"No such file: {path}")
+            data, name, source = path.read_bytes(), path.name, args.source or ""
+        item = studio.add_media(args.script, data, args.name or name, args.credit or "", source, args.license or "")
+        print(f"Saved {item['path']}")
+        cue = f"Image: {item['path']}" + (f" | {item['credit']}" if item["credit"] else "")
+        print(f"Use it on a beat with `{cue}`, or as `Visual: image | <what it shows> | {item['path']}`")
+        return
+    listed = studio.media(args.script)
+    print(f"{len(listed)} image{'s' * (len(listed) != 1)} for {args.script}" + (":" if listed else "."))
+    for item in listed:
+        print(f"- {item['path']}" + (f" · {item['credit']}" if item.get("credit") else "") + (f" · {item['source']}" if item.get("source") else ""))
+
+
+def cmd_render(ws: Path, args) -> None:
+    studio = Studio(ws)
+    script = studio.script(args.script)
+    for beat in (script.get("video") or {}).get("placeholders", []):
+        print(f"Warning: {beat} has no image yet; it renders as an 'Image needed' card")
+
+    def progress(done, total):
+        print(f"\rRendering {done}/{total} frames", end="", flush=True)
+
+    result = studio.render_script(args.script, "draft" if args.draft else "high", progress)
+    print()
+    target = Path(result["output"])
+    if args.out:
+        out = Path(args.out).expanduser()
+        if out.is_dir():
+            out = out / (slugify(script["title"], 60) + ".mp4")
+        shutil.copyfile(target, out)
+        target = out
+    print(f"Rendered {result['duration']:.1f}s at {result['width']}×{result['height']}, {result['fps']} fps in {result['seconds']:.0f}s: {target}")
+    if result.get("fonts") != "loaded":
+        print("Warning: web fonts didn't load (offline?), so system fonts were used")
+    if result["credits"]:
+        print("Image credits for the video description:")
+        for credit in result["credits"]:
+            print(f"- {credit}")
+
+
+def cmd_comments(ws: Path, args) -> None:
+    studio = Studio(ws)
+    script = studio.script(args.script)
+    open_comments = [c for c in script["comments"] if not c.get("resolved_at")]
+    print(f"{len(open_comments)} open comment{'s' * (len(open_comments) != 1)} on {script['title']}, in the order they appear in the text:" if open_comments else "No open comments.")
+    for comment in open_comments:
+        where = f'on "{comment["quote"]}"' if comment["position"] >= 0 else (f'on "{comment["quote"]}" (no longer in the text)' if comment["quote"] else "on the whole script")
+        print(f"- {comment['id']} {where}: {comment['body']}")
+
+
+def cmd_resolve(ws: Path, args) -> None:
+    comment = Studio(ws).update_comment(args.script, args.comment, {"resolved": True, "reply": args.reply or ""})
+    print(f"Resolved {comment['id']}")
 
 
 # ---------------------------------------------------------------- web UI server
@@ -919,8 +1885,45 @@ def running_server(ws: Path) -> dict | None:
         return None
 
 
+class Raw:
+    """A binary reply (an image or video) from the API, optionally as a download."""
+
+    def __init__(self, path: Path, content_type: str, filename: str = ""):
+        self.path, self.content_type, self.filename = path, content_type, filename
+
+
+RENDERS: dict[str, threading.Thread] = {}
+
+
+def start_render(studio: "Studio", script_id: str, quality: str = "high") -> dict:
+    key = f"{studio.ws}:{script_id}"
+    running = RENDERS.get(key)
+    if not (running and running.is_alive()):
+        script = studio.script(script_id)
+        if not script["scenes"]:
+            raise ValueError("Write the script's beats before rendering")
+        import render as renderer
+        problems = renderer.missing_tools()
+        if problems:
+            raise RuntimeError("Rendering needs " + "; ".join(problems))
+        status_path = studio.path("scripts", script_id, "render", "render.json")
+        save(status_path, {"status": "rendering", "progress": 0, "pid": os.getpid(), "started": now(),
+                           "fingerprint": load(status_path, {}).get("fingerprint")})
+
+        def run():
+            try:
+                Studio(studio.ws, studio.root).render_script(script_id, quality)
+            except BaseException as error:
+                # Setup may fail before render_script reaches its status handler.
+                status = load(status_path, {})
+                save(status_path, status | {"status": "failed", "error": str(error) or type(error).__name__, "finished": now()})
+
+        RENDERS[key] = threading.Thread(target=run, daemon=True)
+        RENDERS[key].start()
+    return studio.script(script_id)["video"]
+
+
 def make_handler(ws: Path):
-    import threading
     lock = threading.Lock()
     page = ASSETS / "ui" / "index.html"
 
@@ -938,6 +1941,22 @@ def make_handler(ws: Path):
             self.send_header("X-Content-Type-Options", "nosniff")
             self.end_headers()
             self.wfile.write(body)
+
+        def send_file(self, raw: Raw) -> None:
+            if not raw.path.is_file():
+                return self.reply(404, {"error": "Not found"})
+            size = raw.path.stat().st_size
+            self.send_response(200)
+            self.send_header("Content-Type", raw.content_type)
+            self.send_header("Content-Length", str(size))
+            self.send_header("Cache-Control", "no-store")
+            self.send_header("X-Content-Type-Options", "nosniff")
+            if raw.filename:
+                ascii_name = re.sub(r"[^A-Za-z0-9._-]+", "-", raw.filename).strip("-") or "video.mp4"
+                self.send_header("Content-Disposition", f"attachment; filename=\"{ascii_name}\"; filename*=UTF-8''{urllib.parse.quote(raw.filename)}")
+            self.end_headers()
+            with raw.path.open("rb") as handle:
+                shutil.copyfileobj(handle, self.wfile, 1 << 20)
 
         def allowed(self, write: bool) -> bool:
             # Only this machine may talk to the server (blocks DNS rebinding). Writes also need a custom
@@ -965,6 +1984,20 @@ def make_handler(ws: Path):
             try:
                 if method == "GET" and not parts:
                     return self.reply(200, page.read_bytes(), "text/html; charset=utf-8")
+                if method == "GET" and parts[0:1] == ["scenes"]:
+                    relative = urllib.parse.unquote(path[len("/scenes/"):]) if path.startswith("/scenes/") else ""
+                    if not relative or "\\" in relative or relative.startswith("/") or any(p.startswith(".") or not p for p in relative.split("/")):
+                        raise KeyError("Invalid scene asset path")
+                    base = SCENES_DIR.resolve()
+                    asset = (base / relative).resolve()
+                    if not asset.is_relative_to(base) or not asset.is_file():
+                        raise KeyError("Scene asset not found")
+                    if any(p.startswith(".") for p in asset.relative_to(base).parts):
+                        raise KeyError("Hidden scene assets are not served")
+                    content_types = {".js": "text/javascript; charset=utf-8", ".css": "text/css; charset=utf-8",
+                                     ".html": "text/html; charset=utf-8", ".json": "application/json; charset=utf-8",
+                                     ".svg": "image/svg+xml", ".woff2": "font/woff2", ".png": "image/png"}
+                    return self.reply(200, asset.read_bytes(), content_types.get(asset.suffix.lower(), "application/octet-stream"))
                 if method == "GET" and len(parts) == 2 and parts[0] == "fonts" and re.fullmatch(r"[a-z0-9-]+\.woff2", parts[1]):
                     font = page.parent / "fonts" / parts[1]
                     if font.is_file():
@@ -972,16 +2005,35 @@ def make_handler(ws: Path):
                 if parts == ["api", "health"]:
                     return self.reply(200, str(ws).encode(), "text/plain; charset=utf-8")
                 with lock:
-                    if parts == ["api", "channels"] and method == "GET":
+                    if parts == ["api", "projects"] and method == "GET":
                         result = {"workspace": str(ws), "default_workspace": ws == workspace_path(None) and not os.environ.get("VID_STUDIO_HOME"),
-                                  "channels": channels_overview(ws)}
-                    elif parts == ["api", "channels"] and method == "POST":
-                        folder = create_channel(ws, body.get("name", ""), body.get("description", ""), body.get("language", ""))
+                                  "projects": projects_overview(ws)}
+                    elif parts == ["api", "production"] and method == "GET":
+                        result = production_overview(ws)
+                    elif parts == ["api", "projects"] and method == "POST":
+                        folder = create_project(ws, body.get("name", ""), body.get("description", ""))
                         result = {"id": folder.name}
-                    elif parts[:2] == ["api", "c"] and len(parts) >= 3:
-                        result = self.api(method, parts[3:], body, Studio(find_channel(ws, parts[2]), ws))
+                    elif parts == ["api", "channels"] and method == "POST":
+                        result = add_channel(ws, body)
+                    elif parts == ["api", "channels"] and method == "GET":
+                        result = channels(ws)
+                    elif parts == ["api", "presets"] and method == "GET":
+                        result = presets()
+                    elif parts == ["api", "fonts"] and method == "GET":
+                        result = fonts()
+                    elif parts[:2] == ["api", "channels"] and len(parts) == 4 and parts[3] in ("design", "voice") and method in ("GET", "PUT"):
+                        reader, writer = (channel_design, save_design) if parts[3] == "design" else (channel_voice, save_voice)
+                        result = reader(ws, parts[2]) if method == "GET" else writer(ws, parts[2], body)
+                    elif parts[:2] == ["api", "channels"] and len(parts) == 3 and method == "PUT":
+                        result = update_channel(ws, parts[2], body)
+                    elif parts[:2] == ["api", "channels"] and len(parts) == 3 and method == "DELETE":
+                        result = delete_channel(ws, parts[2]) or {"ok": True}
+                    elif parts[:2] == ["api", "p"] and len(parts) >= 3:
+                        result = self.api(method, parts[3:], body, Studio(find_project(ws, parts[2]), ws))
                     else:
                         return self.reply(404, {"error": "Not found"})
+                if isinstance(result, Raw):
+                    return self.send_file(result)
                 return self.reply(200, result)
             except KeyError as error:
                 return self.reply(404, {"error": str(error.args[0] if error.args else error)})
@@ -1014,11 +2066,52 @@ def make_handler(ws: Path):
                     return studio.delete_source(item) or {"ok": True}
             if resource == "findings" and method == "PUT" and item and "dismissed" in body:
                 return studio.set_dismissed(item, bool(body["dismissed"]))
-            if resource == "scripts":
+            if resource == "stories":
+                if method == "GET" and item:
+                    return studio.story(item)
+                if method == "POST":
+                    return studio.create_story(body.get("title", ""), body.get("findings", []), body.get("topics", []))
+                if method == "PUT" and item:
+                    version = body.pop("version", None)
+                    return studio.update_story(item, body, version)
+                if method == "DELETE" and item:
+                    return studio.delete_story(item) or {"ok": True}
+            if resource == "scripts" and item and len(parts) >= 3 and parts[2] in ("media", "render", "video", "poster.jpg"):
+                folder = studio.path("scripts", item)
+                studio.script(item)
+                if parts[2] == "media" and method == "GET" and len(parts) == 4:
+                    if not re.fullmatch(r"[a-z0-9-]+\.(jpg|png|webp)", parts[3]):
+                        raise KeyError("Unknown media file")
+                    kinds = {"jpg": "image/jpeg", "png": "image/png", "webp": "image/webp"}
+                    return Raw(folder / "media" / parts[3], kinds[parts[3].rsplit(".", 1)[1]])
+                if parts[2] == "media" and method == "POST" and len(parts) == 3:
+                    try:
+                        data = base64.b64decode(str(body.get("data", "")).split(",")[-1], validate=True)
+                    except ValueError:
+                        raise ValueError("The upload was not valid base64")
+                    return studio.add_media(item, data, body.get("name", ""), body.get("credit", ""), body.get("source", ""))
+                if parts[2] == "media" and method == "DELETE" and len(parts) == 4:
+                    return studio.delete_media(item, parts[3]) or {"ok": True}
+                if parts[2] == "render" and method == "POST":
+                    return start_render(studio, item, "draft" if body.get("draft") else "high")
+                if parts[2] == "video" and method == "GET":
+                    title = studio.script(item)["title"]
+                    return Raw(folder / "render" / "video.mp4", "video/mp4", (slugify(title, 60) or item) + ".mp4")
+                if parts[2] == "poster.jpg" and method == "GET":
+                    return Raw(folder / "render" / "poster.jpg", "image/jpeg")
+            if resource == "scripts" and len(parts) >= 3 and parts[2] == "comments":
+                comment = parts[3] if len(parts) > 3 else None
+                if method == "POST" and not comment:
+                    return studio.add_comment(item, body.get("body", ""), body.get("quote", ""), body.get("offset"))
+                if method == "PUT" and comment:
+                    return studio.update_comment(item, comment, body)
+                if method == "DELETE" and comment:
+                    return studio.delete_comment(item, comment) or {"ok": True}
+            elif resource == "scripts":
                 if method == "GET" and item:
                     return studio.script(item)
                 if method == "POST":
-                    return studio.create_script(body.get("title", ""), body.get("findings", []), body.get("topics", []))
+                    return studio.create_script(body.get("story", ""), body.get("channel", ""), body.get("title", ""))
                 if method == "PUT" and item:
                     version = body.pop("version", None)
                     return studio.update_script(item, body, version)
@@ -1097,12 +2190,12 @@ def main(argv=None) -> None:
     workspace_help = "Workspace directory (default: $VID_STUDIO_HOME or ~/vid-studio)"
     parser = argparse.ArgumentParser(description=__doc__)
     parser.add_argument("--workspace", help=workspace_help)
-    parser.add_argument("--channel", help="Channel ID or name (default: $VID_STUDIO_CHANNEL, or the only channel)")
+    parser.add_argument("--project", help="Project ID or name (default: $VID_STUDIO_PROJECT, or the only project)")
     # Accept --workspace after the subcommand too, without clobbering one given before it.
     common = argparse.ArgumentParser(add_help=False)
     common.add_argument("--workspace", default=argparse.SUPPRESS, help=workspace_help)
-    common.add_argument("--channel", default=argparse.SUPPRESS,
-                        help="Channel ID or name (default: $VID_STUDIO_CHANNEL, or the only channel)")
+    common.add_argument("--project", default=argparse.SUPPRESS,
+                        help="Project ID or name (default: $VID_STUDIO_PROJECT, or the only project)")
     commands = parser.add_subparsers(dest="command", required=True)
 
     def command(name, handler, help_text):
@@ -1111,12 +2204,11 @@ def main(argv=None) -> None:
         return sub
 
     command("init", cmd_init, "Create the studio folder; never overwrites files")
-    command("channels", cmd_channels, "List channels")
-    sub = command("new-channel", cmd_new_channel, "Create a channel")
+    command("projects", cmd_projects, "List projects")
+    sub = command("new-project", cmd_new_project, "Create a project")
     sub.add_argument("--name", required=True)
     sub.add_argument("--description")
-    sub.add_argument("--language", choices=["English", "Hindi", "Hinglish"])
-    command("status", cmd_status, "Show the channel, research runs, scripts, and suggestions")
+    command("status", cmd_status, "Show the project, research runs, scripts, and suggestions")
 
     sub = command("serve", cmd_serve, "Run the studio web UI at http://localhost")
     sub.add_argument("--port", type=int, default=8765)
@@ -1163,19 +2255,79 @@ def main(argv=None) -> None:
     sub.add_argument("--note")
     sub.add_argument("--failed", metavar="REASON")
 
-    sub = command("new-script", cmd_new_script, "Create a script, optionally with findings attached")
+    sub = command("new-story", cmd_new_story, "Create a story, optionally with findings or topics attached")
     sub.add_argument("--title", required=True)
     sub.add_argument("--finding", action="append", help="Finding ID; repeatable")
     sub.add_argument("--topic", action="append", help="Topic ID, for explainers; repeatable")
 
+    sub = command("new-script", cmd_new_script, "Send a story to production: a script for one channel")
+    sub.add_argument("--story", required=True, help="Story ID")
+    sub.add_argument("--channel", required=True, help="Channel ID or name")
+    sub.add_argument("--title", help="Defaults to the story's title")
+
+    command("channels", cmd_channels, "List channels (shared by every project)")
+    sub = command("add-channel", cmd_add_channel, "Add a channel: where scripts get published")
+    sub.add_argument("--name", required=True)
+    sub.add_argument("--kind", choices=CHANNEL_KINDS, default="video", help="video (a video script) or post (a text post, like WhatsApp)")
+    sub.add_argument("--platform", help="e.g. YouTube Shorts, Instagram Reels, WhatsApp channel")
+    sub.add_argument("--language", choices=LANGUAGES)
+    sub.add_argument("--audience")
+    sub.add_argument("--format", help="Length, structure, tone; defaults to a format for the kind")
+
+    for name in ("design", "voice"):
+        sub = command(name, cmd_channel_settings, f"Read or save a channel's {name}")
+        sub.add_argument("--channel", required=True, help="Channel ID or name")
+        sub.add_argument("--file", help="JSON file, or - for stdin; omitted to read")
+    command("presets", cmd_presets, "List channel look presets")
+    sub = command("fonts", cmd_fonts, "List scene font families")
+    sub.add_argument("--devanagari", action="store_true")
+    sub = command("scenes", cmd_scenes, "Inspect script beats, timing, and production warnings")
+    sub.add_argument("--script", required=True)
+    sub.add_argument("--json", action="store_true")
+    for name, handler in (("angles", cmd_angles), ("review", cmd_review)):
+        sub = command(name, handler, f"Validate and save a script's {name}")
+        sub.add_argument("--script", required=True)
+        sub.add_argument("--file", required=True, help="JSON file, or - for stdin")
+    sub = command("export", cmd_export, "Export a video script for HyperFrames")
+    sub.add_argument("--script", required=True)
+    sub.add_argument("--out", help="Output folder (default: the script's render folder)")
+
+    sub = command("render", cmd_render, "Render a video script to MP4 on this machine (needs Chrome and ffmpeg)")
+    sub.add_argument("--script", required=True)
+    sub.add_argument("--out", help="Also copy the MP4 here (a file or folder)")
+    sub.add_argument("--draft", action="store_true", help="Faster, smaller, lower quality")
+
+    sub = command("images", cmd_images, "Search openly licensed photos (Wikimedia Commons, Openverse) for a beat")
+    sub.add_argument("query", help="What should be in the photo: concrete objects, places, people's roles")
+    sub.add_argument("--limit", type=int, default=6, help="Results per provider")
+    sub.add_argument("--orientation", choices=["any", "tall", "wide", "square"], default="any")
+    sub.add_argument("--provider", choices=["all", "wikimedia", "openverse"], default="all")
+    sub.add_argument("--preview", metavar="DIR", help="Download small previews here so you can look at them")
+
+    sub = command("media", cmd_media, "List, add, or remove a script's images")
+    sub.add_argument("--script", required=True)
+    sub.add_argument("--add", metavar="FILE_OR_URL", help="An image file you made or downloaded, or an image URL")
+    sub.add_argument("--name", help="File name to keep (default: from the file or URL)")
+    sub.add_argument("--credit", help='On-screen credit, e.g. "Photo: Jane Doe / Wikimedia Commons, CC BY-SA 4.0"')
+    sub.add_argument("--source", help="Page the image came from")
+    sub.add_argument("--license")
+    sub.add_argument("--remove", metavar="FILE", help="File name in media/ to remove")
+
+    sub = command("comments", cmd_comments, "List a script's open comments in the order they appear")
+    sub.add_argument("--script", required=True)
+
+    sub = command("resolve", cmd_resolve, "Resolve a comment after addressing it")
+    sub.add_argument("--script", required=True)
+    sub.add_argument("--comment", required=True)
+    sub.add_argument("--reply", help="One line on what you changed")
+
     args = parser.parse_args(argv)
     root = workspace_path(args.workspace)
     try:
-        migrate_single_channel(root)
-        if args.command in ("init", "channels", "new-channel", "status", "serve"):
+        if args.command in ("init", "projects", "new-project", "status", "serve", "channels", "add-channel", "design", "voice", "presets", "fonts", "images"):
             args.handler(root, args)
         else:
-            args.handler(find_channel(root, args.channel), args)
+            args.handler(find_project(root, args.project), args)
     except (ValueError, KeyError, RuntimeError) as error:
         raise SystemExit(f"Error: {error.args[0] if error.args else error}")
 

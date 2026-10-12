@@ -28,7 +28,20 @@ button, input, textarea, select { font: inherit; color: inherit; }
 ::selection { background: #dbe7fb; }
 .wrap { max-width: 1040px; margin: 0 auto; padding: 0 32px 140px; }
 
-.topbar { display: flex; align-items: center; justify-content: space-between; height: 60px; border-bottom: 1px solid var(--line); margin-bottom: 48px; }
+.topbar { display: flex; align-items: center; justify-content: space-between; gap: 20px; min-height: 72px; border-bottom: 1px solid var(--line); margin-bottom: 28px; }
+.global-tabs { display:flex; gap:6px; align-self:stretch; }
+.global-tabs a { display:flex; align-items:center; gap:7px; padding:0 14px; text-decoration:none; color:var(--ink-3); font-size:14px; font-weight:600; }
+.global-tabs a.on { color:var(--ink); box-shadow:inset 0 -2px 0 var(--ink); }
+.research-context { display:flex; align-items:center; justify-content:space-between; gap:12px; margin-bottom:28px; }
+.research-context[hidden], #settings-btn[hidden] { display:none; }
+.flow-note { display:flex; flex-wrap:wrap; gap:8px 14px; align-items:center; margin:0 0 28px; padding:14px 16px; border:1px solid var(--line); border-radius:10px; background:var(--surface); font-size:13px; color:var(--ink-2); }
+.flow-note a { font-weight:600; text-underline-offset:3px; }
+.board-filters { display:flex; gap:8px; flex-wrap:wrap; }
+.card-origin { display:flex; flex-wrap:wrap; gap:5px 10px; margin-top:10px; font-size:12px; color:var(--ink-3); }
+.card-origin a, .item.card .meta a { color: inherit; text-decoration: none; }
+.card-origin a:hover, .item.card .meta a:hover { text-decoration: underline; text-underline-offset: 3px; }
+.card-origin a[title="Source story"] { overflow: hidden; text-overflow: ellipsis; white-space: nowrap; max-width: 100%; }
+@media(max-width:700px) { .topbar { gap:8px; flex-wrap:wrap; padding-top:14px; } .global-tabs { min-height:48px; width:100%; } .global-tabs a { flex:1; justify-content:center; padding:0 8px; } }
 .brand { display: flex; align-items: center; gap: 10px; font-weight: 650; font-size: 15px; letter-spacing: -.01em; text-decoration: none; }
 .brand svg { width: 24px; height: 24px; }
 .topbar-left { display: flex; align-items: center; gap: 10px; min-width: 0; }
@@ -140,15 +153,17 @@ h2 { font-size: 19px; font-weight: 650; letter-spacing: -.02em; margin: 0; }
 .back { display: inline-flex; align-items: center; gap: 6px; color: var(--ink-3); text-decoration: none; font-size: 13px; font-weight: 550; margin-bottom: 20px; }
 .back:hover { color: var(--ink); }
 .back svg { width: 15px; height: 15px; }
-.editor { display: grid; grid-template-columns: minmax(0, 1fr) 300px; gap: 40px; align-items: start; }
+.editor { display: grid; grid-template-columns: minmax(0, 1fr) 320px; gap: 40px; align-items: start; }
 .title-input { width: 100%; border: 0; background: transparent; font-size: 30px; font-weight: 650; letter-spacing: -.035em; padding: 2px 0; margin-bottom: 16px; border-radius: 6px; }
 .title-input:focus { outline: none; }
 .subtabs { display: flex; gap: 12px; margin-bottom: 12px; flex-wrap: wrap; justify-content: space-between; align-items: center; }
 .subtabs > div { display: flex; gap: 4px; flex-wrap: wrap; }
-textarea.doc { display: block; width: 100%; min-height: 480px; resize: vertical; border: 1px solid var(--line-2); border-radius: 12px; padding: 20px 22px; background: var(--bg); font: 15px/1.75 var(--sans); color: var(--ink); }
+textarea.doc, .md { display: block; width: 100%; height: max(480px, calc(100vh - 300px)); overflow: auto; scrollbar-gutter: stable; border: 1px solid var(--line-2); border-radius: 12px; padding: 20px 22px; background: var(--bg); font: 15px/1.75 var(--sans); color: var(--ink); overflow-wrap: anywhere; }
+textarea.doc { resize: none; }
 textarea.doc::placeholder { color: var(--ink-3); }
-textarea.doc.short { min-height: 260px; }
-.md { min-height: 480px; border: 1px solid var(--line); border-radius: 12px; padding: 20px 22px; background: var(--bg); font: 15px/1.75 var(--sans); overflow-wrap: anywhere; cursor: text; }
+textarea.doc.short { height: 260px; }
+.md { cursor: text; }
+.md.beats-md { height: auto; min-height: 240px; overflow: visible; }
 .md > :first-child { margin-top: 0; }
 .md > :last-child { margin-bottom: 0; }
 .md h1, .md h2, .md h3, .md h4, .md h5, .md h6 { letter-spacing: -.02em; line-height: 1.3; margin: 1.6em 0 .5em; font-weight: 650; }
@@ -171,13 +186,10 @@ textarea.doc.short { min-height: 260px; }
 textarea.doc:focus { outline: none; border-color: #c9c7c2; box-shadow: 0 0 0 4px var(--surface-2); }
 .doc-tools { display: flex; align-items: center; gap: 8px; }
 .doc-tools .btn.small { height: 32px; }
-.doc-tools .btn.ghost:last-child { margin-right: -10px; }
-#save-area { display: inline-flex; align-items: center; gap: 10px; }
-.save-state { display: inline-flex; align-items: center; gap: 5px; font-size: 12.5px; color: var(--ink-3); }
-.save-state.dirty { color: var(--ink-2); }
 .banner { display: flex; gap: 12px; align-items: center; justify-content: space-between; flex-wrap: wrap; border: 1px solid #f1d8a8; background: #fff8eb; border-radius: 10px; padding: 10px 14px; margin-bottom: 14px; font-size: 13px; }
 .side { position: sticky; top: 24px; }
-.draft-btn { width: 100%; height: 40px; margin: 6px 0 28px; }
+.side-actions { display: grid; gap: 8px; margin: 6px 0 28px; }
+.side-actions .btn { height: 40px; }
 .side section + section { margin-top: 22px; }
 .side h4 { font-size: 13px; font-weight: 600; color: var(--ink-2); margin: 0 0 8px; display: flex; justify-content: space-between; align-items: center; }
 .side h4 .btn { margin-right: -10px; }
@@ -274,7 +286,210 @@ dialog .sub { margin: 0 0 20px; color: var(--ink-2); font-size: 13.5px; }
 .loading { color: var(--ink-3); padding: 80px 0; text-align: center; }
 code { font: 12.5px var(--mono); background: var(--surface-2); border-radius: 5px; padding: 1px 5px; }
 
+/* research / production */
+.project-head .head-actions { min-width: 300px; min-height: 72px; }
+.project-head .head-actions.placeholder { visibility: hidden; }
+@media (max-width: 700px) { .project-head .head-actions { min-width: 0; width: 100%; } }
+.board { display: grid; grid-template-columns: repeat(3, minmax(0, 1fr)); gap: 14px; align-items: start; }
+.column { background: var(--surface); border: 1px solid var(--line); border-radius: 12px; padding: 10px; display: grid; gap: 8px; }
+.column .label-row { margin: 4px 6px 2px; }
+.item.card { padding: 12px 14px; }
+.item.card h3 { font-size: 14px; }
+.item.card .meta { margin-top: 4px; }
+.col-empty { margin: 0; padding: 4px 6px 8px; }
+.script-meta { display: flex; flex-wrap: wrap; gap: 4px 18px; font-size: 13px; color: var(--ink-2); margin: -8px 0 20px; }
+.script-meta a { color: inherit; text-underline-offset: 3px; }
+.doc-label { font-size: 13px; font-weight: 600; color: var(--ink-2); }
+a.ref-link { display: flex; justify-content: space-between; align-items: center; gap: 8px; text-decoration: none; font-size: 13.5px; }
+a.ref-link:hover { border-color: #cfcdc8; }
+.stage-seg { display: flex; }
+.stage-seg button { flex: 1; }
+.published { display: flex; gap: 6px; margin-top: 10px; }
+.url-input { flex: 1; min-width: 0; height: 30px; border: 1px solid var(--line-2); border-radius: 8px; padding: 0 10px; font-size: 12.5px; background: var(--bg); }
+.small-link { display: inline-flex; align-items: center; gap: 4px; margin-top: 8px; font-size: 12.5px; color: var(--ink-2); overflow-wrap: anywhere; }
+.small-link svg { width: 12px; height: 12px; flex: none; }
+.comment { border: 1px solid var(--line); border-radius: 10px; padding: 10px 12px; margin-bottom: 8px; font-size: 13px; transition: border-color .2s, box-shadow .2s; }
+.comment.flash { border-color: #e9b949; box-shadow: 0 0 0 3px #fdf3d7; }
+.comment .quote { display: block; width: 100%; text-align: left; border: 0; border-left: 3px solid #e9b949; background: #fff7dc; border-radius: 4px; padding: 4px 8px; font-size: 12.5px; color: var(--ink-2); cursor: pointer; overflow: hidden; text-overflow: ellipsis; white-space: nowrap; }
+.comment .quote.whole { background: var(--surface-2); border-left-color: var(--line-2); cursor: default; }
+.comment.orphan .quote { text-decoration: line-through; color: var(--ink-3); }
+.comment p { margin: 8px 0 4px; white-space: pre-wrap; overflow-wrap: anywhere; }
+.comment p.reply { color: var(--ink-3); font-size: 12.5px; margin-top: 0; }
+.comment-tools { display: flex; align-items: center; gap: 2px; font-size: 12px; margin: 0 -6px -4px 0; }
+.comment-tools .muted { margin-right: auto; }
+.comment-tools .btn.small { height: 26px; }
+.comment-tools .icon-btn { width: 26px; height: 26px; }
+.dismissed .comment { opacity: .7; }
+.beats-md .cue { display: inline-flex; gap: 8px; align-items: baseline; font: 12.5px/1.6 var(--mono); color: var(--ink-2); background: var(--surface); border-radius: 6px; padding: 1px 8px; margin: 3px 0; }
+.beats-md .cue b { flex: none; white-space: nowrap; font-weight: 600; font-size: 10.5px; text-transform: uppercase; letter-spacing: .04em; color: var(--ink-3); }
+.beats-md .cue-text { background: #eef4ff; }
+.beats-md .cue-note { background: transparent; border: 1px dashed var(--line-2); }
+.beats-md .cue-image { background: #f1ecff; }
+.beats-md .cue-source { background: #eaf6ef; }
+.beats-md .cue-duration { background: transparent; border: 1px solid var(--line-2); }
+.md mark { background: #fff1bf; box-shadow: inset 0 -2px 0 #e9b949; color: inherit; border-radius: 2px; cursor: pointer; }
+.md mark.flash { background: #ffe58a; }
+.quote-box { border-left: 3px solid #e9b949; background: #fff7dc; border-radius: 4px; padding: 8px 12px; font-size: 13px; margin-bottom: 16px; white-space: pre-wrap; max-height: 120px; overflow: auto; }
+.danger-text:hover { color: var(--danger); }
+
+/* channel look and voice */
+.stepper { display: flex; gap: 8px; list-style: none; padding: 0; margin: 0 0 28px; counter-reset: step; }
+.stepper li { display: flex; align-items: center; gap: 8px; font-size: 13.5px; font-weight: 600; color: var(--ink-3); }
+.stepper li + li::before { content: ""; width: 28px; height: 1px; background: var(--line-2); margin-right: 4px; }
+.stepper .step-n { width: 24px; height: 24px; border-radius: 50%; display: grid; place-items: center; background: var(--surface-2); font: 600 12px/1 var(--mono); }
+.stepper .step-n svg { width: 13px; height: 13px; }
+.stepper li.on { color: var(--ink); }
+.stepper li.on .step-n { background: var(--ink); color: var(--bg); }
+.stepper li.done .step-n { background: #dcfce7; color: #15803d; }
+.setup-next { position: sticky; bottom: 0; display: flex; justify-content: space-between; align-items: center; gap: 12px; padding: 14px 0; margin-top: 24px; background: linear-gradient(transparent, var(--bg) 30%); }
+.tabs a svg { width: 15px; height: 15px; }
+.studio-split { display: grid; grid-template-columns: minmax(0, 1fr) 380px; gap: 40px; align-items: start; }
+.controls { display: grid; gap: 0; }
+.ctl { padding: 18px 0; border-top: 1px solid var(--line); }
+.ctl:first-child { border-top: 0; padding-top: 0; }
+.ctl h4 { font-size: 13px; font-weight: 650; margin: 0 0 12px; display: flex; justify-content: space-between; align-items: center; }
+details.ctl summary { list-style: none; cursor: pointer; }
+details.ctl summary::-webkit-details-marker { display: none; }
+details.ctl summary h4 { margin: 0; color: var(--ink-2); }
+details.ctl[open] summary h4 { margin-bottom: 12px; }
+.ctl.two { display: grid; grid-template-columns: 1fr 1fr; gap: 16px; }
+.row { display: grid; grid-template-columns: 150px minmax(0, 1fr); align-items: center; gap: 12px; margin-bottom: 10px; font-size: 13px; color: var(--ink-2); }
+.row .seg { justify-self: start; flex-wrap: wrap; }
+.ctl > .seg { flex-wrap: wrap; }
+.slider { display: flex; align-items: center; gap: 12px; }
+.slider input { flex: 1; accent-color: var(--ink); }
+.slider output { font: 500 12px var(--mono); color: var(--ink-2); min-width: 64px; text-align: right; }
+.presets { display: grid; grid-template-columns: repeat(auto-fill, minmax(150px, 1fr)); gap: 8px; }
+.preset { display: grid; gap: 4px; text-align: left; padding: 8px 8px 10px; border: 1px solid var(--line); border-radius: 10px; background: var(--bg); cursor: pointer; font-size: 12px; line-height: 1.4; }
+.preset:hover { border-color: #cfcdc8; }
+.preset.on { border-color: var(--ink); box-shadow: inset 0 0 0 1px var(--ink); }
+.preset b { font-size: 13px; margin-top: 4px; }
+.preset .muted { display: -webkit-box; -webkit-line-clamp: 2; -webkit-box-orient: vertical; overflow: hidden; }
+.swatches { display: flex; gap: 4px; align-items: center; height: 38px; padding: 0 10px; border-radius: 6px; border: 1px solid rgba(0,0,0,.06); }
+.swatches i { width: 16px; height: 16px; border-radius: 50%; box-shadow: 0 0 0 1px rgba(255,255,255,.15), 0 0 0 2px rgba(0,0,0,.05); }
+.colors { display: grid; grid-template-columns: repeat(auto-fill, minmax(140px, 1fr)); gap: 8px; }
+.color { display: grid; grid-template-columns: 34px 1fr; grid-template-rows: auto auto; column-gap: 10px; align-items: center; padding: 8px; border: 1px solid var(--line); border-radius: 10px; cursor: pointer; font-size: 12.5px; font-weight: 600; }
+.color input { grid-row: span 2; width: 34px; height: 34px; padding: 0; border: 0; border-radius: 8px; background: none; cursor: pointer; }
+.color input::-webkit-color-swatch-wrapper { padding: 0; }
+.color input::-webkit-color-swatch { border: 1px solid rgba(0,0,0,.1); border-radius: 8px; }
+.color code { background: none; padding: 0; color: var(--ink-3); font-size: 11.5px; }
+.font-select, .text-input { height: 34px; border: 1px solid var(--line-2); border-radius: 8px; padding: 0 10px; background: var(--bg); font-size: 13px; width: 100%; max-width: 320px; }
+.text-input { max-width: none; }
+.text-area, .code-input { width: 100%; border: 1px solid var(--line-2); border-radius: 8px; padding: 9px 11px; background: var(--bg); font-size: 13px; line-height: 1.5; resize: vertical; }
+.text-area.mono, .code-input { font: 12.5px/1.6 var(--mono); }
+.text-input:focus, .text-area:focus, .code-input:focus, .font-select:focus { outline: none; border-color: #b9b7b1; box-shadow: 0 0 0 4px var(--surface-2); }
+.preview-col { position: sticky; top: 20px; display: grid; gap: 12px; }
+.device { position: relative; margin: 0 auto; width: 100%; background: #0b0b0c; border-radius: 18px; overflow: hidden; box-shadow: 0 0 0 1px rgba(0,0,0,.08), 0 18px 40px rgba(17,17,16,.16); }
+.device.aspect-9x16 { aspect-ratio: 9 / 16; max-width: 300px; }
+.device.aspect-16x9 { aspect-ratio: 16 / 9; border-radius: 12px; }
+.device.aspect-1x1 { aspect-ratio: 1; max-width: 340px; }
+.device.aspect-4x5 { aspect-ratio: 4 / 5; max-width: 320px; }
+.side .device.aspect-9x16 { max-width: 270px; }
+.player-frame { position: absolute; inset: 0; width: 100%; height: 100%; border: 0; display: block; }
+.player-error { position: absolute; inset: auto 10px 10px; padding: 8px 10px; border-radius: 8px; background: rgba(194,65,12,.92); color: #fff; font-size: 12px; }
+.player-bar { display: flex; align-items: center; gap: 8px; max-width: 380px; width: 100%; margin: 0 auto; }
+.player-bar .icon-btn { color: var(--ink); background: var(--surface-2); border-radius: 50%; width: 34px; height: 34px; flex: none; }
+.player-bar .icon-btn svg { width: 14px; height: 14px; }
+.scrub { flex: 1; accent-color: var(--ink); }
+.ptime { font: 500 12px var(--mono); color: var(--ink-3); min-width: 74px; text-align: right; }
+.preview-opts { display: flex; align-items: center; justify-content: center; gap: 14px; flex-wrap: wrap; }
+.check-label { display: inline-flex; align-items: center; gap: 6px; font-size: 13px; color: var(--ink-2); cursor: pointer; }
+.check-label input { accent-color: var(--ink); }
+.save-note { margin: 0; text-align: center; font-size: 12px; color: var(--ink-3); min-height: 18px; }
+.ask { border: 1px solid var(--line); border-radius: 12px; padding: 14px; background: var(--surface); display: grid; gap: 10px; }
+.ask h4 { margin: 0; font-size: 13px; display: flex; align-items: center; gap: 6px; }
+.ask h4 svg { width: 15px; height: 15px; }
+.ask textarea { width: 100%; border: 1px solid var(--line-2); border-radius: 8px; padding: 9px 11px; background: var(--bg); font-size: 13px; resize: vertical; }
+.ask textarea:focus { outline: none; border-color: #b9b7b1; }
+.ask .btn { justify-self: start; }
+.ask p { margin: 0; }
+.ask-chips, .toggle-chips { display: flex; flex-wrap: wrap; gap: 6px; }
+.chip.small { height: 26px; padding: 0 9px; font-size: 12px; border-color: var(--line); background: var(--bg); }
+.toggle-chips .chip { border-color: var(--line-2); }
+.toggle-chips .chip.on { background: var(--ink); color: var(--bg); border-color: var(--ink); }
+.tone { display: grid; grid-template-columns: 70px 1fr 70px; align-items: center; gap: 12px; font-size: 12.5px; color: var(--ink-2); margin-bottom: 8px; }
+.tone span:last-child { text-align: right; }
+.tone input { accent-color: var(--ink); }
+.example { border: 1px solid var(--line); border-radius: 10px; padding: 10px 12px; margin-bottom: 8px; }
+.example p { margin: 4px 0; }
+.example pre { margin: 6px 0 0; white-space: pre-wrap; font: 12px/1.5 var(--mono); color: var(--ink-2); max-height: 120px; overflow: hidden; }
+.voice-card { border: 1px solid var(--line); border-radius: 12px; padding: 16px; }
+.voice-card h4 { margin: 0 0 8px; font-size: 13px; color: var(--ink-2); }
+.voice-line { font-size: 15px; font-weight: 550; margin: 0 0 12px; letter-spacing: -.01em; }
+.facts { display: grid; grid-template-columns: 90px 1fr; gap: 6px 10px; margin: 0; font-size: 13px; }
+.facts dt { color: var(--ink-3); }
+.facts dd { margin: 0; }
+/* script preview, hooks, quality */
+.timing { font: 500 11.5px var(--mono); color: var(--ink-3); background: var(--surface-2); border-radius: 5px; padding: 2px 6px; margin-left: 6px; }
+.side-tabs { display: flex; gap: 2px; border-bottom: 1px solid var(--line); margin: 22px 0 14px; }
+.side-tabs button { flex: 1 1 auto; border: 0; background: none; padding: 8px 6px; white-space: nowrap; font-size: 12.5px; font-weight: 600; color: var(--ink-3); cursor: pointer; display: inline-flex; justify-content: center; gap: 4px; }
+.side-tabs button.on { color: var(--ink); box-shadow: inset 0 -1.5px 0 var(--ink); }
+.side-tabs .n { font: 500 10.5px var(--mono); color: var(--ink-3); }
+#side-panel { display: grid; gap: 10px; }
+#side-panel .player-bar { max-width: 260px; }
+.beats { display: grid; gap: 2px; }
+.beats-head { display: flex; align-items: baseline; gap: 8px; margin: 18px 0 6px; }
+.beats-head .small { font-weight: 400; }
+.beat-row { display: flex; align-items: center; gap: 4px; border-radius: 7px; }
+.beat-row .beat { flex: 1; min-width: 0; }
+.beat-row:hover { background: var(--surface); }
+.beat-row.on { background: var(--surface-2); }
+.beat-row .beat:hover { background: none; }
+.beat-row .icon-btn { flex: none; width: 26px; height: 26px; opacity: .55; }
+.beat-row:hover .icon-btn, .beat-row .icon-btn.needs { opacity: 1; }
+.beat-row .icon-btn.needs { color: var(--danger); }
+.beat-thumb { flex: none; width: 22px; height: 30px; border-radius: 4px; background: var(--line) center / cover no-repeat; }
+.media-lib { margin-top: 12px; font-size: 12.5px; }
+.media-lib summary { cursor: pointer; color: var(--ink-2); padding: 4px 0; }
+.media-grid { display: grid; gap: 8px; margin-top: 8px; }
+.media-grid figure { margin: 0; display: grid; grid-template-columns: 40px 1fr auto; gap: 10px; align-items: center; }
+.media-thumb { width: 40px; height: 52px; border-radius: 6px; background: var(--line) center / cover no-repeat; }
+.media-grid figcaption { display: grid; gap: 2px; min-width: 0; color: var(--ink-3); font-size: 11.5px; }
+.media-grid figcaption code { font-size: 11px; color: var(--ink-2); }
+.render-bar { height: 6px; border-radius: 3px; background: var(--surface); overflow: hidden; margin: 6px 0 8px; }
+.render-bar i { display: block; height: 100%; background: var(--ink); border-radius: 3px; transition: width .4s; }
+.video-ready { display: flex; gap: 12px; align-items: flex-start; }
+.video-ready .muted.small { margin: 6px 0 0; }
+.video-ready .text-btn { padding: 6px 0; }
+.video-poster { width: 54px; aspect-ratio: 9 / 16; object-fit: cover; border-radius: 6px; background: var(--surface); flex: none; }
+#video-box .btn { margin-bottom: 2px; }
+.card-poster { width: 40px; aspect-ratio: 9 / 16; object-fit: cover; border-radius: 5px; flex: none; background: var(--surface); }
+.card-origin .pill.ok { background: #e7f6ec; color: #17663a; }
+.look-swatch { flex: none; position: relative; width: 44px; height: 64px; border-radius: 8px; display: grid; place-items: center; overflow: hidden; box-shadow: inset 0 0 0 1px rgba(0,0,0,.08); }
+.look-swatch.aspect-16x9 { width: 64px; height: 40px; margin-top: 10px; }
+.look-swatch.aspect-1x1, .look-swatch.aspect-4x5 { width: 52px; height: 56px; }
+.look-swatch b { font-size: 18px; font-weight: 800; line-height: 1; }
+.look-swatch i { position: absolute; bottom: 6px; width: 10px; height: 4px; border-radius: 2px; }
+.look-swatch i:first-of-type { left: 8px; } .look-swatch i:last-of-type { left: 20px; }
+.look-swatch.post { background: #e7f6ec; color: #17663a; }
+.look-swatch.post svg { width: 20px; height: 20px; }
+.beat { display: grid; grid-template-columns: 64px 1fr auto; align-items: center; gap: 8px; border: 0; background: none; text-align: left; padding: 6px 8px; border-radius: 7px; cursor: pointer; font-size: 12.5px; }
+.beat:hover { background: var(--surface); }
+.beat.on { background: var(--surface-2); }
+.beat-type { font: 500 10.5px var(--mono); text-transform: uppercase; color: var(--ink-3); }
+.beat b { font-weight: 600; overflow: hidden; text-overflow: ellipsis; white-space: nowrap; }
+.beat-warn { margin: 4px 0 0; font-size: 12px; color: var(--danger); }
+.angle { border: 1px solid var(--line); border-radius: 10px; padding: 12px; display: grid; gap: 6px; justify-items: start; }
+.angle.on { border-color: var(--ink); }
+.angle p { margin: 0; }
+.angle .hook { font-size: 14px; font-weight: 600; line-height: 1.45; }
+.angle .why { font-size: 12.5px; color: var(--ink-2); }
+.score-head { display: flex; align-items: baseline; gap: 10px; }
+.score-big { font-size: 34px; font-weight: 650; letter-spacing: -.03em; }
+.score-row { display: grid; grid-template-columns: 82px 1fr 22px; align-items: center; gap: 10px; font-size: 12.5px; }
+.score-row b { text-align: right; font: 600 12px var(--mono); }
+.meter { height: 6px; border-radius: 3px; background: var(--surface-2); overflow: hidden; }
+.meter i { display: block; height: 100%; background: #16a34a; border-radius: 3px; }
+.meter i.low { background: #e9b949; }
+.review-summary { font-size: 13px; margin: 6px 0 0; }
+.review-notes { margin: 0; padding-left: 18px; font-size: 12.5px; color: var(--ink-2); }
+
 @media (max-width: 820px) {
+  .board { grid-template-columns: 1fr; }
+  .studio-split { grid-template-columns: 1fr; }
+  .preview-col { position: static; order: -1; }
+  .row { grid-template-columns: 1fr; gap: 6px; }
+  .ctl.two { grid-template-columns: 1fr; }
   .wrap { padding: 0 18px 140px; }
   .topbar { margin-bottom: 32px; }
   .editor { grid-template-columns: 1fr; gap: 28px; }
@@ -283,8 +498,7 @@ code { font: 12.5px var(--mono); background: var(--surface-2); border-radius: 5p
   .head-actions { align-items: flex-start; }
   h1 { font-size: 28px; }
   .title-input { font-size: 24px; }
-  textarea.doc, .md { min-height: 360px; }
-  .md { padding: 20px; }
+  textarea.doc, .md { height: 360px; padding: 20px; }
 }
 </style>
 </head>
@@ -292,10 +506,13 @@ code { font: 12.5px var(--mono); background: var(--surface-2); border-radius: 5p
 <div class="wrap">
   <header class="topbar">
     <div class="topbar-left"><a class="brand" href="#/" aria-label="Vid Studio home"><svg viewBox="0 0 24 24" aria-hidden="true"><rect width="24" height="24" rx="7" fill="#111110"/><path d="M9.5 7.8v8.4a.6.6 0 0 0 .9.5l6.7-4.2a.6.6 0 0 0 0-1l-6.7-4.2a.6.6 0 0 0-.9.5Z" fill="#fff"/></svg>Vid Studio</a>
-      <span class="slash">/</span>
-      <div class="switcher" id="switcher"></div></div>
-    <button class="btn ghost small" data-action="settings" id="settings-btn">Settings</button>
+    </div>
+    <nav class="global-tabs" id="global-tabs" aria-label="Studio sections">
+      <a href="#/research" data-section="research">Research</a><a href="#/production" data-section="production">Production</a><a href="#/channels" data-section="channels">Channels</a>
+    </nav>
   </header>
+  <div class="research-context" id="research-context" hidden><div class="inline"><span class="muted small">Project</span><div class="switcher" id="switcher"></div></div>
+    <button class="btn ghost small" data-action="settings" id="settings-btn">Project settings</button></div>
   <main id="app"><div class="loading">Loading…</div></main>
 </div>
 <div class="toasts" id="toasts" role="status" aria-live="polite"></div>
@@ -320,6 +537,15 @@ const ICONS = {
   check: '<path d="M20 6 9 17l-5-5"/>',
   chevron: '<path d="m6 9 6 6 6-6"/>',
   external: '<path d="M7 17 17 7M8 7h9v9"/>',
+  play: '<path d="M7 4.5v15a1 1 0 0 0 1.5.86l12-7.5a1 1 0 0 0 0-1.72l-12-7.5A1 1 0 0 0 7 4.5Z" fill="currentColor" stroke="none"/>',
+  pause: '<rect x="6" y="4.5" width="4" height="15" rx="1" fill="currentColor" stroke="none"/><rect x="14" y="4.5" width="4" height="15" rx="1" fill="currentColor" stroke="none"/>',
+  palette: '<circle cx="13.5" cy="6.5" r="1.5"/><circle cx="17.5" cy="10.5" r="1.5"/><circle cx="8.5" cy="7.5" r="1.5"/><circle cx="6.5" cy="12.5" r="1.5"/><path d="M12 2a10 10 0 0 0 0 20c1.1 0 2-.9 2-2 0-.5-.2-1-.5-1.3-.3-.4-.5-.8-.5-1.3 0-1.1.9-2 2-2h2.4A5.6 5.6 0 0 0 22 9.8C22 5.5 17.5 2 12 2Z"/>',
+  mic: '<rect x="9" y="3" width="6" height="11" rx="3"/><path d="M5 11a7 7 0 0 0 14 0M12 18v3"/>',
+  comment: '<path d="M21 15a2 2 0 0 1-2 2H7l-4 4V5a2 2 0 0 1 2-2h14a2 2 0 0 1 2 2Z"/>',
+  send: '<path d="M22 2 11 13M22 2l-7 20-4-9-9-4Z"/>',
+  download: '<path d="M12 4v11"/><path d="m7 10 5 5 5-5"/><path d="M5 20h14"/>',
+  film: '<rect x="3" y="4" width="18" height="16" rx="2"/><path d="M7 4v16M17 4v16M3 9h4M3 15h4M17 9h4M17 15h4"/>',
+  image: '<rect x="3" y="4" width="18" height="16" rx="2"/><circle cx="9" cy="10" r="2"/><path d="m21 17-5-5-9 8"/>',
   copy: '<rect x="9" y="9" width="12" height="12" rx="2"/><path d="M5 15V5a2 2 0 0 1 2-2h10"/>',
 };
 const icon = name => `<svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.8" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true">${ICONS[name]}</svg>`;
@@ -340,18 +566,25 @@ function when(iso) {
 
 async function api(method, path, body) {
   const options = { method, headers: { "X-Vid-Studio": "1" } };
-  if (body !== undefined) { options.headers["Content-Type"] = "application/json"; options.body = JSON.stringify(body); }
+  // Every write is JSON, deletes included: the server refuses writes without this content type.
+  if (method !== "GET") { options.headers["Content-Type"] = "application/json"; options.body = JSON.stringify(body ?? {}); }
   const response = await fetch("/api/" + path, options);
   const data = await response.json().catch(() => ({}));
   if (!response.ok) { const error = new Error(data.error || `Request failed (${response.status})`); error.status = response.status; throw error; }
   return data;
 }
 
-let CHANNELS = [];
-let CH = null;  // current channel ID
-const base = (channel = CH) => "#/" + encodeURIComponent(channel);
-const capi = (method, path, body) => api(method, `c/${encodeURIComponent(CH)}/${path}`, body);
-const channelName = () => (CHANNELS.find(c => c.id === CH) || {}).name || CH;
+let PROJECTS = [];
+let PROJECT = null;  // selected Research project or the open script's owner
+let GLOBAL = null, lastGlobalJson = "";
+let productionProjectFilter = "all";
+let RESEARCH_PROJECT = null;
+const base = (project = PROJECT) => "#/research" + (project ? "/" + encodeURIComponent(project) : "");
+const scriptHref = (id, project = PROJECT) => `#/production/${encodeURIComponent(project)}/${encodeURIComponent(id)}`;
+const storyHref = (id, project = PROJECT) => `${base(project)}/stories/${encodeURIComponent(id)}`;
+const channelHref = (id = "", tab = "") => "#/channels" + (id ? "/" + encodeURIComponent(id) : "") + (tab ? "/" + tab : "");
+const papi = (method, path, body) => api(method, `p/${encodeURIComponent(PROJECT)}/${path}`, body);
+const projectName = () => (PROJECTS.find(c => c.id === PROJECT) || {}).name || PROJECT;
 
 function toast(message, kind = "") {
   const el = document.createElement("div");
@@ -413,14 +646,26 @@ let S = null;               // studio state from the server
 let lastStateJson = "";
 let selected = new Set();   // selected finding IDs
 let topicFilter = "all";
-let editor = null;          // open script: { data, tab, dirty, remoteChanged }
+let channelFilter = "all";
+let editor = null;          // open story or script: { kind, data, view, dirty, remoteChanged }
+const lastTab = { research: "" };
 
 const topicName = id => (S.topics.find(t => t.id === id) || {}).name || id;
 const findingById = id => S.findings.find(f => f.id === id);
+const storyById = id => S.stories.find(s => s.id === id);
+const channels = () => GLOBAL?.channels || S?.channels || [];
+const channelById = id => channels().find(c => c.id === id);
+const channelLabel = id => (channelById(id) || {}).name || id;
+const enc = encodeURIComponent;
+const plural = (n, word) => `${n} ${word}${n === 1 ? "" : "s"}`;
+const RESEARCH_TABS = [["topics", "Topics"], ["sources", "Sources"], ["findings", "Findings"], ["stories", "Stories"]];
+const STAGES = [["script", "Script"], ["ready", "Ready"], ["published", "Published"]];
+const LANGUAGES = ["English", "Hindi", "Hinglish"];
+const openComments = s => (s.comments || []).filter(c => !c.resolved_at);
 const lastRun = () => [...S.runs].reverse().find(r => r.status !== "running");
 const suggestedCount = () => S.sources.filter(s => s.status === "suggested").length;
 const runningRun = () => [...S.runs].reverse().find(r => r.status === "running");
-const workspaceSuffix = () => S.default_workspace ? "" : ` Workspace: ${S.workspace}`;
+const workspaceSuffix = () => (S || GLOBAL)?.default_workspace ? "" : ` Workspace: ${(S || GLOBAL)?.workspace || ""}`;
 const DAYS = ["mon", "tue", "wed", "thu", "fri", "sat", "sun"];
 const DAY_NAMES = { mon: "Mon", tue: "Tue", wed: "Wed", thu: "Thu", fri: "Fri", sat: "Sat", sun: "Sun" };
 // Matches describe_schedule in studio.py, e.g. "weekdays at 07:00 and 19:00".
@@ -432,16 +677,25 @@ function describeSchedule(schedule = {}) {
   return `${when} at ${times.join(" and ")}`;
 }
 const PROMPTS = {
-  research: () => `Use the vid-studio skill to research now for the channel "${channelName()}".${workspaceSuffix()}`,
-  setSchedule: (schedule, timezone) => `Use the vid-studio skill to set up scheduled research for the channel "${channelName()}": ${describeSchedule(schedule)}${timezone ? ` (${timezone})` : ""}. Create the scheduled task now, replacing any earlier one for this channel. Don't run research now.${workspaceSuffix()}`,
-  stopSchedule: () => `Use the vid-studio skill to turn off scheduled research for the channel "${channelName()}". Delete its scheduled task. Don't run research now.${workspaceSuffix()}`,
-  draft: s => `Use the vid-studio skill to write the draft for the script "${s.title}" (${s.id}) in the channel "${channelName()}".${workspaceSuffix()}`,
+  research: () => `Use the vid-studio skill to research now for the project "${projectName()}".${workspaceSuffix()}`,
+  setSchedule: (schedule, timezone) => `Use the vid-studio skill to set up scheduled research for the project "${projectName()}": ${describeSchedule(schedule)}${timezone ? ` (${timezone})` : ""}. Create the scheduled task now, replacing any earlier one for this project. Don't run research now.${workspaceSuffix()}`,
+  stopSchedule: () => `Use the vid-studio skill to turn off scheduled research for the project "${projectName()}". Delete its scheduled task. Don't run research now.${workspaceSuffix()}`,
+  look: (c, request) => `Use the vid-studio skill to change the look of the channel "${c.name}": ${request}${workspaceSuffix()}`,
+  voice: (c, request) => `Use the vid-studio skill to tune the voice of the channel "${c.name}": ${request}${workspaceSuffix()}`,
+  rewriteAngle: (s, a) => `Use the vid-studio skill to rewrite the script "${s.title}" (${s.id}) in the project "${projectName()}" with the chosen angle: "${a.hook}".${workspaceSuffix()}`,
+  researchStory: s => `Use the vid-studio skill to research the story "${s.title}" (${s.id}) in the project "${projectName()}".${workspaceSuffix()}`,
+  draftScripts: (story, ids, name = projectName(), suffix = workspaceSuffix()) => `Use the vid-studio skill to write the scripts for the story "${story.title}" (${story.id}) in the project "${name}": ${ids.join(", ")}.${suffix}`,
+  draft: s => {
+    const n = openComments(s).length;
+    return n ? `Use the vid-studio skill to revise the script "${s.title}" (${s.id}) in the project "${projectName()}": address its ${plural(n, "open comment")}.${workspaceSuffix()}`
+      : `Use the vid-studio skill to write the script "${s.title}" (${s.id}) in the project "${projectName()}".${workspaceSuffix()}`;
+  },
 };
 
 function showPrompt(title, text, explain) {
   copyText(text).then(ok => ok && toast("Prompt copied"));
   openDialog({
-    title, sub: explain, submit: "Done", cancel: "",
+    title, sub: esc(explain), submit: "Done", cancel: "",
     body: `<div class="prompt-box">${esc(text)}</div>
       <div class="dialog-actions" style="justify-content:flex-start;margin-top:10px"><button type="button" class="btn" id="copy-again">${icon("copy")}Copy again</button></div>`,
     onOpen: form => form.querySelector("#copy-again").onclick = () => copyText(text).then(ok => ok && toast("Prompt copied")),
@@ -449,7 +703,9 @@ function showPrompt(title, text, explain) {
 }
 
 async function refresh(force = false) {
-  const next = await capi("GET", "state");
+  const project = PROJECT;
+  const next = await papi("GET", "state");
+  if (project !== PROJECT) return false;
   const json = JSON.stringify(next);
   if (!force && json === lastStateJson) return false;
   lastStateJson = json; S = next;
@@ -459,23 +715,61 @@ async function refresh(force = false) {
 }
 
 // ------------------------------------------------------------------ render
-const route = () => { const [channel = "", tab = "", id = ""] = location.hash.replace(/^#\/?/, "").split("/").map(decodeURIComponent); return { channel, tab, id }; };
+const route = () => {
+  const parts = location.hash.replace(/^#\/?/, "").split("/").map(decodeURIComponent);
+  if (parts[0] === "research") return { scope: "research", project: parts[1] || "", tab: parts[2] || "", id: parts[3] || "", sub: "" };
+  if (parts[0] === "production") return { scope: "production", project: parts[1] || "", tab: "scripts", id: parts[2] || "", sub: "" };
+  if (parts[0] === "channels") return { scope: "channels", project: "", tab: "channels", id: parts[1] || "", sub: parts[2] || "" };
+  return { scope: "legacy", project: parts[0] || "", tab: parts[1] || "", id: parts[2] || "", sub: parts[3] || "" };
+};
+function renderGlobalNavigation() {
+  const current = route().scope;
+  document.querySelectorAll("#global-tabs a").forEach(a => {
+    const on = a.dataset.section === current;
+    a.classList.toggle("on", on);
+    if (on) a.setAttribute("aria-current", "page"); else a.removeAttribute("aria-current");
+    if (a.dataset.section === "research") a.href = base(PROJECTS.some(p => p.id === RESEARCH_PROJECT) ? RESEARCH_PROJECT : null) + (RESEARCH_PROJECT && lastTab.research ? "/" + lastTab.research : "");
+  });
+  document.getElementById("research-context").hidden = current !== "research";
+  document.getElementById("settings-btn").hidden = !PROJECT || !S || current !== "research";
+  renderSwitcher();
+}
+async function refreshGlobal(force = false) {
+  const next = await api("GET", "production"), json = JSON.stringify(next);
+  if (!force && json === lastGlobalJson) return false;
+  GLOBAL = next; lastGlobalJson = json; PROJECTS = next.projects;
+  if (productionProjectFilter !== "all" && !next.projects.some(p => p.id === productionProjectFilter)) productionProjectFilter = "all";
+  if (channelFilter !== "all" && !next.channels.some(c => c.id === channelFilter)) channelFilter = "all";
+  if (S) S.channels = next.channels;
+  return true;
+}
 
 function render() {
-  if (!CH || !S) return renderNoChannels();
-  const { tab: rawTab, id } = route();
-  const tab = ["topics", "sources", "findings", "scripts"].includes(rawTab) ? rawTab : (S.findings.length ? "findings" : "topics");
+  renderGlobalNavigation();
+  const { scope, tab: rawTab, id, sub } = route();
+  if (scope !== "channels") CV = null;
+  if (scope === "channels") return id ? renderChannel(id, sub) : renderChannels();
+  if (scope === "production") {
+    if (id && (!S || PROJECT !== route().project)) return renderUnavailableProject();
+    return id ? renderEditor("script", id) : renderProduction();
+  }
+  if (!PROJECT || !S) return renderNoProjects();
+  const known = RESEARCH_TABS.map(t => t[0]);
+  const tab = known.includes(rawTab) ? rawTab : (S.findings.length ? "findings" : "topics");
+  lastTab.research = tab;
   document.title = (S.settings.name || "Vid Studio") + " · Vid Studio";
-  if (tab === "scripts" && id) return renderEditor(id);
+  if (tab === "stories" && id) return renderEditor("story", id);
   editor = null;
   const app = document.getElementById("app");
   const run = lastRun(), active = runningRun();
   const scheduleText = describeSchedule(S.settings.schedule);
+  const counts = { topics: S.topics.length, sources: S.sources.filter(s => s.status === "approved").length,
+    findings: S.findings.filter(f => !f.dismissed_at).length, stories: S.stories.length, scripts: S.scripts.length };
   app.innerHTML = `
-    <section class="head">
+    <section class="head project-head">
       <div>
-        <h1>${esc(S.settings.name || "Untitled channel")}</h1>
-        <p class="lede">${esc(S.settings.description || "Follow the subjects that matter, collect strong evidence, and shape it into scripts.")}</p>
+        <h1>${esc(S.settings.name || "Untitled project")}</h1>
+        <p class="lede">${esc(S.settings.description || "Follow the subjects that matter, collect strong evidence, and shape it into stories.")}</p>
       </div>
       <div class="head-actions">
         <button class="btn primary" data-action="research">${icon("refresh")}Research now</button>
@@ -485,25 +779,23 @@ function render() {
       </div>
     </section>
     <nav class="tabs" aria-label="Sections">
-      ${[["topics", "Topics", S.topics.length], ["sources", "Sources", S.sources.filter(s => s.status === "approved").length],
-         ["findings", "Findings", S.findings.filter(f => !f.dismissed_at).length], ["scripts", "Scripts", S.scripts.length]]
-        .map(([key, label, count]) => `<a href="${base()}/${key}" class="${tab === key ? "on" : ""}" ${tab === key ? 'aria-current="page"' : ""}>${label}<span class="count">${count || ""}</span>${
+      ${RESEARCH_TABS.map(([key, label]) => `<a href="${base()}/${key}" class="${tab === key ? "on" : ""}" ${tab === key ? 'aria-current="page"' : ""}>${label}<span class="count">${counts[key] || ""}</span>${
           key === "sources" && suggestedCount() ? `<span class="badge" title="Suggested sources waiting for you">${suggestedCount()} new</span>` : ""}</a>`).join("")}
     </nav>
-    <section id="panel">${({ topics: topicsPanel, sources: sourcesPanel, findings: findingsPanel, scripts: scriptsPanel })[tab]()}</section>
+    <section id="panel">${({ topics: topicsPanel, sources: sourcesPanel, findings: findingsPanel, stories: storiesPanel, scripts: scriptsPanel })[tab]()}</section>
     ${tab === "findings" && selected.size ? `<div class="selection-bar"><span>${selected.size} selected</span>
-      <span class="inline"><button class="btn ghost" data-action="clear-selection">Clear</button><button class="btn" data-action="add-to-script">Add to script…</button></span></div>` : ""}`;
+      <span class="inline"><button class="btn ghost" data-action="clear-selection">Clear</button><button class="btn" data-action="add-to-story">Add to story…</button></span></div>` : ""}`;
 }
 
 function topicsPanel() {
   const findingCount = id => S.findings.filter(f => !f.dismissed_at && (f.topics || []).includes(id)).length;
-  const scriptCount = id => S.scripts.filter(s => s.topics.includes(id) || s.findings.some(fid => (findingById(fid)?.topics || []).includes(id))).length;
+  const storyCount = id => S.stories.filter(s => s.topics.includes(id) || s.findings.some(fid => (findingById(fid)?.topics || []).includes(id))).length;
   return `<div class="section-head"><div><h2>Topics</h2><p>What you make videos about. Descriptions guide what research considers relevant.</p></div>
       <button class="btn" data-action="new-topic">${icon("plus")}New topic</button></div>
     ${S.topics.length ? `<div class="list">${S.topics.map(t => `
       <article class="item" data-card="edit-topic" data-id="${esc(t.id)}" tabindex="0">
         <div class="body"><h3>${esc(t.name)}</h3><p>${esc(t.description) || '<span class="muted">No description</span>'}</p>
-          <div class="meta"><a href="${base()}/findings" data-action="filter" data-id="${esc(t.id)}" class="meta-link">${findingCount(t.id)} finding${findingCount(t.id) === 1 ? "" : "s"}</a> · ${scriptCount(t.id)} script${scriptCount(t.id) === 1 ? "" : "s"}</div></div>
+          <div class="meta"><a href="${base()}/findings" data-action="filter" data-id="${esc(t.id)}" class="meta-link">${findingCount(t.id)} finding${findingCount(t.id) === 1 ? "" : "s"}</a> · ${plural(storyCount(t.id), "story").replace("storys", "stories")}</div></div>
         <div class="tools"><button class="icon-btn delete" data-action="delete-topic" data-id="${esc(t.id)}" aria-label="Delete ${esc(t.name)}" title="Delete">${icon("trash")}</button></div>
       </article>`).join("")}</div>`
     : empty("Name what you want videos about", "Add a topic with a short description of what matters and what to ignore.", "new-topic", "New topic")}`;
@@ -549,7 +841,7 @@ function findingsPanel() {
   const counts = {};
   live.forEach(f => (f.topics || []).forEach(t => counts[t] = (counts[t] || 0) + 1));
   const shown = (showDismissed ? S.findings : live).filter(f => topicFilter === "all" || (f.topics || []).includes(topicFilter));
-  return `<div class="section-head"><div><h2>Findings</h2><p>Select findings to start or extend a script.</p></div>
+  return `<div class="section-head"><div><h2>Findings</h2><p>Select findings to start a story, or add them to one.</p></div>
       <select class="topic-select" data-action="filter-select" aria-label="Filter by topic">
         <option value="all">All topics (${live.length})</option>
         ${S.topics.map(t => `<option value="${esc(t.id)}" ${topicFilter === t.id ? "selected" : ""}>${esc(t.name)} (${counts[t.id] || 0})</option>`).join("")}
@@ -572,87 +864,806 @@ function findingsPanel() {
     ${dismissedCount ? `<button class="text-btn" data-action="toggle-dismissed">${showDismissed ? "Hide" : "Show"} ${dismissedCount} dismissed</button>` : ""}`;
 }
 
-function scriptsPanel() {
-  return `<div class="section-head"><div><h2>Scripts</h2><p>Each script holds the video script, a WhatsApp post, and research notes, built from its findings and topics.</p></div>
-      <button class="btn" data-action="new-script">${icon("plus")}New script</button></div>
-    ${S.scripts.length ? `<div class="list">${S.scripts.map(s => `
-      <article class="item" data-card="open-script" data-id="${esc(s.id)}">
+function storiesPanel() {
+  return `<div class="section-head"><div><h2>Stories</h2><p>An angle for a video, built from findings, topics, or both. Research a story once, then send it to production for each channel.</p></div>
+      <button class="btn" data-action="new-story">${icon("plus")}New story</button></div>
+    ${S.stories.length ? `<div class="list">${S.stories.map(s => {
+      const made = S.scripts.filter(x => x.story === s.id);
+      return `<article class="item" data-card="open-story" data-id="${esc(s.id)}">
         <div class="body">
-          <h3><a href="${base()}/scripts/${encodeURIComponent(s.id)}">${esc(s.title)}</a></h3>
-          <div class="meta">${s.drafted ? "Drafted" : "No draft yet"}${s.has_post ? " · post ready" : ""} · ${s.topics.length ? esc(s.topics.map(topicName).join(", ")) + " · " : ""}${s.findings.length} finding${s.findings.length === 1 ? "" : "s"} · updated ${esc(when(s.updated))}</div></div>
-        <div class="tools"><button class="icon-btn delete" data-action="delete-script" data-id="${esc(s.id)}" aria-label="Delete ${esc(s.title)}" title="Delete">${icon("trash")}</button></div>
+          <h3><a href="${base()}/stories/${enc(s.id)}">${esc(s.title)}</a></h3>
+          <div class="meta">${s.researched ? "Researched" : "Not researched yet"} · ${s.topics.length ? esc(s.topics.map(topicName).join(", ")) + " · " : ""}${plural(s.findings.length, "finding")} · ${
+            made.length ? `in production for ${esc(made.map(x => channelLabel(x.channel)).join(", "))}` : "not in production"} · updated ${esc(when(s.updated))}</div></div>
+        <div class="tools"><button class="icon-btn delete" data-action="delete-story" data-id="${esc(s.id)}" aria-label="Delete ${esc(s.title)}" title="Delete">${icon("trash")}</button></div>
+      </article>`; }).join("")}</div>`
+    : empty("Start a story", "Select findings and choose Add to story, or start a story here and link a topic for an explainer.", "new-story", "New story")}`;
+}
+
+function renderUnavailableProject() {
+  document.getElementById("app").innerHTML = `<div class="empty"><h3>Project not found</h3><p>This script's research project is no longer available.</p><a class="btn" href="#/production">Back to production</a></div>`;
+}
+function renderProduction() {
+  editor = null;
+  document.title = "Production · Vid Studio";
+  document.getElementById("app").innerHTML = scriptsPanel();
+}
+function scriptsPanel() {
+  const data = GLOBAL || { projects: PROJECTS, channels: channels(), scripts: S?.scripts || [], stories: S?.stories || [] };
+  const head = extra => `<section class="head"><div><h1>Production</h1><p class="lede">Every script, from first draft to published video, across all your projects and channels.</p></div>${extra ? `<div class="head-actions">${extra}</div>` : ""}</section>`;
+  if (!data.channels.length) return head() + empty("Set up a publishing channel", "Choose its language, voice, format, and look. Then send a researched story to production.", "open-channels", "Set up channels", "palette");
+  if (!data.scripts.length) return head() + empty("Send your first story to production", "Research a story, then create a separate script for each channel. One story can feed many videos.", "go-stories", "Find a story", "back");
+  const shown = data.scripts.filter(s => (channelFilter === "all" || s.channel === channelFilter) && (productionProjectFilter === "all" || s.project === productionProjectFilter));
+  const card = s => {
+    const c = channelById(s.channel) || {}, owner = s.project || PROJECT;
+    const story = data.stories.find(x => x.project === owner && x.id === s.story);
+    const poster = s.video?.ready ? `<img class="card-poster" src="/api/p/${enc(owner)}/scripts/${enc(s.id)}/poster.jpg?v=${esc(s.updated || "")}" alt="" loading="lazy">` : "";
+    const status = s.video?.status === "rendering" ? `<span class="pill">Rendering…</span>` : s.video?.ready ? `<span class="pill ok">${s.video.stale ? "Video outdated" : "Video ready"}</span>` : "";
+    const projectLabel = s.project_name || data.projects.find(p => p.id === owner)?.name || owner;
+    return `<article class="item card ${poster ? "has-poster" : ""}" data-card="open-script" data-id="${esc(s.id)}" data-project="${esc(owner)}" tabindex="0">
+      ${poster}<div class="body"><h3><a href="${scriptHref(s.id, owner)}">${esc(s.title)}</a></h3>
+        <div class="meta"><a href="${channelHref(s.channel)}">${esc(c.name || s.channel)}</a>${c.language ? " · " + esc(c.language) : ""}${s.drafted ? (s.duration ? " · " + fmtTime(s.duration) : "") : " · no draft yet"}${s.open_comments ? ` · ${plural(s.open_comments, "comment")}` : ""}</div>
+        <div class="card-origin"><a href="${base(owner)}/stories" title="Research project">${esc(projectLabel)}</a>${story ? `<a href="${storyHref(story.id, owner)}" title="Source story">← ${esc(story.title)}</a>` : "<span>Source story removed</span>"}${status}</div></div>
+    </article>`;
+  };
+  return head(`<div class="board-filters"><select class="topic-select" data-action="filter-production-project" aria-label="Filter by research project"><option value="all">All projects</option>${data.projects.map(p => `<option value="${esc(p.id)}" ${productionProjectFilter === p.id ? "selected" : ""}>${esc(p.name)}</option>`).join("")}</select>
+      <select class="topic-select" data-action="filter-channel" aria-label="Filter by channel"><option value="all">All channels</option>${data.channels.map(c => `<option value="${esc(c.id)}" ${channelFilter === c.id ? "selected" : ""}>${esc(c.name)}</option>`).join("")}</select></div>`)
+    + `<div class="board">${STAGES.map(([key, label]) => { const items = shown.filter(s => s.stage === key); return `<div class="column"><div class="label-row">${label} <span class="pill">${items.length}</span></div>${items.map(card).join("") || `<p class="muted small col-empty">None</p>`}</div>`; }).join("")}</div>`;
+}
+
+function renderChannels() {
+  editor = null;
+  document.title = "Channels · Vid Studio";
+  const kindLabel = c => c.kind === "post" ? "Text post" : "Video script";
+  document.getElementById("app").innerHTML = `
+    <section class="head"><div><h1>Channels</h1><p class="lede">Publishing destinations, shared across all projects. Set the voice, format, and look once; every script for that channel follows them.</p></div>
+      <div class="head-actions"><button class="btn primary" data-action="new-channel">${icon("plus")}New channel</button></div></section>
+    ${channels().length ? `<div class="list">${channels().map(c => `
+      <article class="item" data-card="open-channel" data-id="${esc(c.id)}" tabindex="0">
+        ${lookSwatch(c)}<div class="body"><h3><a href="${channelHref(c.id)}">${esc(c.name)}</a></h3><p>${esc([c.platform, kindLabel(c), c.language].filter(Boolean).join(" · "))}</p>
+          <div class="meta">${esc(lookLine(c))}</div></div>
+        <div class="tools"><button class="icon-btn delete" data-action="delete-channel" data-id="${esc(c.id)}" aria-label="Delete ${esc(c.name)}" title="Delete">${icon("trash")}</button></div>
       </article>`).join("")}</div>`
-    : empty("Start a script", "Select findings and choose Add to script, or start a script here and link a topic.", "new-script", "New script")}`;
+    : empty("Add your first channel", "A YouTube channel, an Instagram account, or a WhatsApp channel. One story can become a script for each of them.", "new-channel", "New channel")}`;
 }
 
-function empty(title, text, action, label) {
-  return `<div class="empty"><h3>${esc(title)}</h3><p>${esc(text)}</p><button class="btn primary" data-action="${action}">${icon(action === "research" ? "refresh" : "plus")}${esc(label)}</button></div>`;
+const channelLook = c => GLOBAL?.looks?.[c.id] || null;
+function lookSwatch(c) {
+  const look = channelLook(c);
+  if (c.kind === "post") return `<span class="look-swatch post" aria-hidden="true">${icon("comment")}</span>`;
+  if (!look?.colors) return "";
+  const k = look.colors;
+  return `<span class="look-swatch aspect-${esc((look.aspect || "9:16").replace(":", "x"))}" style="background:${esc(k.background)};color:${esc(k.text)}" aria-hidden="true">
+    <b style="font-family:'${esc(look.display_font || "")}',sans-serif;color:${esc(k.accent)}">Aa</b><i style="background:${esc(k.accent)}"></i><i style="background:${esc(k.accent2)}"></i></span>`;
+}
+function lookLine(c) {
+  const look = channelLook(c);
+  if (!look) return "";
+  if (c.kind === "post") return "Text posts";
+  return [look.preset ? `${look.preset} look` : "Custom look", look.aspect, look.length_seconds ? `about ${fmtTime(look.length_seconds)}` : ""].filter(Boolean).join(" · ");
 }
 
-// ------------------------------------------------------------------ script editor
-const EDITOR_TABS = [["script", "Video script"], ["post", "WhatsApp post"], ["notes", "Research notes"]];
-const PLACEHOLDERS = {
-  script: "Write the script here, or click Write draft to have your agent research this script's topics and findings and draft it.",
-  post: "The WhatsApp post. Write draft fills this in too.",
-  notes: "Research notes and numbered sources. Your agent keeps these when it drafts.",
-};
+function empty(title, text, action, label, iconName = action === "research" ? "refresh" : "plus") {
+  return `<div class="empty"><h3>${esc(title)}</h3><p>${esc(text)}</p><button class="btn primary" data-action="${action}">${icon(iconName)}${esc(label)}</button></div>`;
+}
 
-async function renderEditor(id) {
-  const app = document.getElementById("app");
-  if (!editor || editor.data.id !== id) {
-    try { editor = { data: await capi("GET", "scripts/" + encodeURIComponent(id)), tab: "script", dirty: false, remoteChanged: false }; editor.view = defaultView(); }
-    catch (e) { app.innerHTML = `<a class="back" href="${base()}/scripts">${icon("back")}Scripts</a><div class="empty"><h3>Script not found</h3><p>${esc(e.message)}</p></div>`; return; }
+// ------------------------------------------------------------------ scenes: parser and preview player
+// Mirrors parse_scenes in studio.py (see references/scenes.md), so previews update while you type.
+const SCENE_TYPES = ["title", "stat", "bars", "compare", "list", "quote", "timeline", "text", "image", "end"];
+const spokenText = t => String(t).replace(/!?\[([^\]]+)\]\([^)]*\)/g, "$1").replace(/\[(\d+(?:\s*[,–—-]\s*\d+)*)\](?!\()/g, "")
+  .replace(/\*\*|__|[*_`]/g, "").replace(/\s+/g, " ").trim();
+const wordCount = t => t.split(/\s+/).filter(w => /[\p{L}\p{N}]/u.test(w)).length;
+const fmtTime = sec => { const s = Math.round(sec || 0); return s >= 60 ? `${Math.floor(s / 60)}:${String(s % 60).padStart(2, "0")}` : `${s}s`; };
+
+function parseScenes(src, wpm = 160) {
+  const beats = [];
+  let beat = null;
+  for (const raw of String(src || "").replace(/\r\n?/g, "\n").split("\n")) {
+    const line = raw.trim();
+    const heading = line.match(/^##\s+(.*)$/);
+    if (heading) { beat = { beat: heading[1].replace(/[#*_]/g, "").trim(), vo: [], visual: null, text: "", note: "", image: "", source: "", duration: "" }; beats.push(beat); continue; }
+    if (!beat || !line || /^#/.test(line)) continue;
+    const label = line.replace(/^[-*]\s+/, "").match(/^[*_]{0,2}(visual|text|note|image|source|duration)[*_]{0,2}\s*:[*_]{0,2}\s*(.*)$/i);
+    if (label) beat[label[1].toLowerCase()] = label[2].trim();
+    else beat.vo.push(line);
   }
-  const s = editor.data;
-  const attached = s.findings.map(findingById).filter(Boolean);
-  const hasPreview = editor.tab !== "post", preview = hasPreview && editor.view === "preview";
+  return beats.map(b => {
+    const vo = spokenText(b.vo.join(" "));
+    const [type, data] = sceneData(b.visual, vo);
+    let duration = Math.max(1.5, Math.floor(wordCount(vo) * 600 / wpm + 0.5) / 10);
+    const fixed = (b.duration || "").match(/^(\d+(?:\.\d+)?)\s*s?$/i);
+    if (fixed) duration = Math.min(60, Math.max(1, Math.floor(Number(fixed[1]) * 10 + 0.5) / 10));
+    const scene = { beat: b.beat, type, duration, vo, text: b.text, data };
+    if (b.image) { const i = b.image.indexOf("|"); scene.image = i < 0 ? { src: b.image.trim(), credit: "" } : { src: b.image.slice(0, i).trim(), credit: b.image.slice(i + 1).trim() }; }
+    if (b.source) scene.source = b.source;
+    if (b.note) scene.note = b.note;
+    return scene;
+  });
+}
+
+function sceneData(visual, vo) {
+  if (!visual) return ["text", { text: vo }];
+  const parts = visual.split("|").map(x => x.trim()), f = parts.slice(1), type = parts[0].toLowerCase();
+  const pair = (x, first) => { const i = first ? x.indexOf(":") : x.lastIndexOf(":"); return i > 0 && x.slice(i + 1).trim() ? [x.slice(0, i).trim(), x.slice(i + 1).trim()] : [x, ""]; };
+  const v = i => f[i] || "";
+  switch (SCENE_TYPES.includes(type) ? type : "") {
+    case "title": return [type, { title: v(0), subtitle: v(1), kicker: v(2) }];
+    case "stat": return [type, { value: v(0), label: v(1), context: v(2) }];
+    case "bars": case "compare": return [type, { title: v(0), items: f.slice(1).map(x => { const [label, value] = pair(x, false); return { label, value }; }) }];
+    case "list": return [type, { title: v(0), items: f.slice(1) }];
+    case "quote": return [type, { quote: v(0), source: v(1) }];
+    case "timeline": return [type, { title: v(0), items: f.slice(1).map(x => { const [date, label] = pair(x, true); return { date, label }; }) }];
+    case "text": return [type, { text: v(0) || vo }];
+    case "image": return [type, { description: v(0), url: v(1), credit: v(2) }];
+    case "end": return [type, { title: v(0), cta: v(1) }];
+    default: return ["image", { description: visual, url: "", credit: "" }];
+  }
+}
+
+// One preview at a time: an iframe running /scenes/player.html, fed over postMessage.
+const PLAYER = { frame: null, ready: false, pending: null, duration: 0, time: 0, playing: false, scene: -1, scenes: [], scrubbing: false };
+function mountPlayer(host, payload) {
+  PLAYER.mediaBase = payload?.options?.mediaBase || "";
+  host.innerHTML = `<iframe class="player-frame" src="/scenes/player.html" title="Video preview"></iframe>`;
+  Object.assign(PLAYER, { frame: host.querySelector("iframe"), ready: false, pending: payload, duration: 0, time: 0, playing: false, scene: -1, scenes: [] });
+}
+const playerSend = message => PLAYER.frame?.contentWindow?.postMessage(message, location.origin);
+function playerLoad(payload) {
+  if (!PLAYER.frame) return;
+  if (PLAYER.ready) playerSend({ type: "load", ...payload }); else PLAYER.pending = payload;
+}
+// Rebuild after an edit without losing your place.
+function playerReload(design, scenes, extra = {}) {
+  playerLoad({ design, scenes, options: { autoplay: PLAYER.playing, loop: true, captions: true, startAt: PLAYER.time, mediaBase: PLAYER.mediaBase || "", ...extra } });
+}
+window.addEventListener("message", event => {
+  if (!PLAYER.frame || event.source !== PLAYER.frame.contentWindow) return;
+  const m = event.data || {};
+  if (m.type === "ready") { PLAYER.ready = true; if (PLAYER.pending) { playerSend({ type: "load", ...PLAYER.pending }); PLAYER.pending = null; } }
+  else if (m.type === "loaded") { PLAYER.duration = m.duration || 0; PLAYER.scenes = m.scenes || []; document.querySelector(".player-error")?.remove(); updatePlayerBar(); }
+  else if (m.type === "time") { Object.assign(PLAYER, { time: m.time, playing: m.playing, scene: m.scene }); updatePlayerBar(); }
+  else if (m.type === "error") {
+    const host = PLAYER.frame.parentElement;
+    if (!host.querySelector(".player-error")) host.insertAdjacentHTML("beforeend", `<div class="player-error"></div>`);
+    host.querySelector(".player-error").textContent = m.message;
+  }
+});
+const playerBar = () => `<div class="player-bar"><button type="button" class="icon-btn play-btn" data-action="player-toggle" aria-label="Play">${icon("play")}</button>
+    <input type="range" class="scrub" id="scrub" min="0" max="1000" value="0" aria-label="Seek"><span class="ptime" id="ptime">0s</span></div>`;
+function updatePlayerBar() {
+  const btn = document.querySelector(".play-btn");
+  if (btn) { btn.innerHTML = icon(PLAYER.playing ? "pause" : "play"); btn.setAttribute("aria-label", PLAYER.playing ? "Pause" : "Play"); }
+  const scrub = document.getElementById("scrub");
+  if (scrub && !PLAYER.scrubbing) scrub.value = PLAYER.duration ? Math.round(PLAYER.time / PLAYER.duration * 1000) : 0;
+  const time = document.getElementById("ptime");
+  if (time) time.textContent = `${fmtTime(PLAYER.time)} / ${fmtTime(PLAYER.duration)}`;
+  document.querySelectorAll("[data-beat-index]").forEach(el => el.classList.toggle("on", Number(el.dataset.beatIndex) === PLAYER.scene));
+}
+document.addEventListener("input", event => {
+  if (event.target.id !== "scrub") return;
+  PLAYER.scrubbing = true;
+  playerSend({ type: "seek", time: event.target.value / 1000 * PLAYER.duration });
+});
+document.addEventListener("change", event => { if (event.target.id === "scrub") PLAYER.scrubbing = false; });
+
+// ------------------------------------------------------------------ channel: look and voice
+let CV = null;              // open channel: { id, design, voice, setup, sample, savedDesign, savedVoice, safeArea }
+let CATALOG = null;         // { presets, fonts, sample }
+let setupChannel = null;    // the channel being set up right after creating it
+const timers = {};
+const debounce = (key, ms, fn) => { clearTimeout(timers[key]); timers[key] = setTimeout(() => { delete timers[key]; fn(); }, ms); };
+const channelViews = new Map(), saveQueues = new Map();
+let channelRenderToken = 0, editorRenderToken = 0;
+const channelRoute = id => route().scope === "channels" && route().id === id;
+const channelKey = (view, resource) => `channel:${view.id}:${resource}`;
+const channelDirty = view => JSON.stringify(view.design) !== view.savedDesign || JSON.stringify(view.voice) !== view.savedVoice || JSON.stringify(view.fields) !== view.savedFields;
+// Queue immutable snapshots: edits on another channel cannot cancel or redirect a pending write.
+function queueChannelSave(view, resource, snapshot) {
+  const key = channelKey(view, resource), body = structuredClone(snapshot);
+  const next = (saveQueues.get(key) || Promise.resolve()).catch(() => {}).then(async () => {
+    const saved = await api("PUT", `channels/${enc(view.id)}${resource === "fields" ? "" : "/" + resource}`, body);
+    const marker = resource === "design" ? "savedDesign" : resource === "voice" ? "savedVoice" : "savedFields";
+    view[marker] = JSON.stringify(resource === "fields" ? body : saved);
+    if (JSON.stringify(view[resource]) === JSON.stringify(body) && resource !== "fields") view[resource] = saved;
+    if (CV === view && channelRoute(view.id)) { const note = document.getElementById("save-note"); if (note) note.textContent = channelDirty(view) ? "Saving…" : "Saved"; }
+    return saved;
+  }).catch(e => { if (CV === view) { const note = document.getElementById("save-note"); if (note) note.textContent = "Couldn't save"; } toast(e.message, "error"); throw e; });
+  saveQueues.set(key, next);
+  next.finally(() => { if (saveQueues.get(key) === next) saveQueues.delete(key); }).catch(() => {});
+  return next;
+}
+function scheduleChannelSave(view, resource) {
+  const snapshot = structuredClone(view[resource]);
+  debounce(channelKey(view, resource), 700, () => queueChannelSave(view, resource, snapshot).catch(() => {}));
+}
+function focusSnapshot() {
+  const el = document.activeElement;
+  if (!el || !document.getElementById("app").contains(el)) return null;
+  const key = ["design", "voice", "voiceLines", "channelField"].find(k => el.dataset[k]);
+  const selector = el.id ? `#${CSS.escape(el.id)}` : key ? `[data-${key.replace(/[A-Z]/g, x => "-" + x.toLowerCase())}="${CSS.escape(el.dataset[key])}"]` : null;
+  return selector ? { selector, start: el.selectionStart, end: el.selectionEnd, scroll: el.scrollTop, value: el.value } : null;
+}
+function restoreFocus(saved) {
+  const el = saved && document.querySelector(saved.selector);
+  if (!el) return;
+  if (el.id === "published-url") el.value = saved.value;
+  el.focus({ preventScroll: true });
+  if (saved.start !== null && saved.start !== undefined && typeof el.setSelectionRange === "function") { try { el.setSelectionRange(saved.start, saved.end); } catch {} }
+  el.scrollTop = saved.scroll;
+}
+const getPath = (obj, path) => path.split(".").reduce((o, k) => o?.[k], obj);
+function setPath(obj, path, value) { const keys = path.split("."); let o = obj; keys.slice(0, -1).forEach(k => o = o[k] ??= {}); o[keys.at(-1)] = value; }
+
+async function loadCatalog() {
+  if (CATALOG) return;
+  const [presets, fonts, sample] = await Promise.all([api("GET", "presets"), api("GET", "fonts"),
+    fetch("/scenes/sample.json").then(r => r.ok ? r.json() : {}).catch(() => ({}))]);
+  CATALOG = { presets: Array.isArray(presets) ? presets : presets.presets || [], fonts: fonts.fonts || [], sample };
+}
+const sampleScenes = () => CATALOG.sample[CV.sample] || CATALOG.sample.en || [];
+const lookPayload = () => ({ design: CV.design, scenes: sampleScenes(), options: { autoplay: true, loop: true, captions: true, safeArea: CV.safeArea } });
+
+async function renderChannel(id, tab) {
+  const token = ++channelRenderToken, hash = location.hash, focus = focusSnapshot();
+  const current = () => token === channelRenderToken && location.hash === hash && channelRoute(id);
+  const app = document.getElementById("app");
+  const c = channelById(id);
+  editor = null;
+  if (!c) { app.innerHTML = `<a class="back" href="${channelHref()}">${icon("back")}Channels</a><div class="empty"><h3>Channel not found</h3></div>`; return; }
+  try {
+    await loadCatalog();
+    if (!current()) return;
+    if (!CV || CV.id !== id) {
+      CV = channelViews.get(id) || null;
+    }
+    if (!CV) {
+      const [design, voice] = await Promise.all([api("GET", `channels/${enc(id)}/design`), api("GET", `channels/${enc(id)}/voice`)]);
+      if (!current()) return;
+      CV = { id, design, voice, fields: { format: c.format || "" }, savedFields: JSON.stringify({ format: c.format || "" }), ask: {}, setup: setupChannel === id, sample: c.language === "English" ? "en" : "hi",
+        savedDesign: JSON.stringify(design), savedVoice: JSON.stringify(voice), safeArea: false };
+      channelViews.set(id, CV);
+    }
+  } catch (e) { if (!current()) return; app.innerHTML = `<div class="empty"><h3>Couldn't open this channel</h3><p>${esc(e.message)}</p></div>`; return; }
+  const tabs = c.kind === "video" ? [["look", "Look"], ["voice", "Voice"]] : [["voice", "Voice"]];
+  if (!tabs.some(t => t[0] === tab)) tab = tabs[0][0];
+  CV.tab = tab;
+  document.title = `${c.name} · Vid Studio`;
+  const steps = [["basics", "Basics"], ...tabs];
   app.innerHTML = `
-    <a class="back" href="${base()}/scripts">${icon("back")}Scripts</a>
+    <a class="back" href="${channelHref()}">${icon("back")}Channels</a>
+    <section class="head"><div><h1>${esc(c.name)}</h1><p class="lede">${esc([c.platform, c.kind === "post" ? "Text post" : "Video script", c.language].filter(Boolean).join(" · "))}</p></div>
+      <div class="head-actions"><button class="btn" data-action="edit-channel" data-id="${esc(c.id)}">${icon("edit")}Basics</button></div></section>
+    ${CV.setup ? `<ol class="stepper">${steps.map(([key, label], i) => {
+      const at = steps.findIndex(x => x[0] === tab), state = i < at ? "done" : i === at ? "on" : "";
+      return `<li class="${state}"><span class="step-n">${state === "done" ? icon("check") : i + 1}</span>${label}</li>`; }).join("")}</ol>`
+      : `<nav class="tabs" aria-label="Channel">${tabs.map(([key, label]) => `<a href="${channelHref(c.id, key)}" class="${tab === key ? "on" : ""}">${icon(key === "look" ? "palette" : "mic")}${label}</a>`).join("")}</nav>`}
+    <section id="channel-panel">${tab === "look" ? lookPanel(c) : voicePanel(c)}</section>
+    ${CV.setup ? `<div class="setup-next"><span class="muted small">Everything saves as you go, and you can change it any time.</span>${tab === "look"
+      ? `<a class="btn primary" href="${channelHref(c.id, "voice")}">Next: Voice</a>` : `<button class="btn primary" data-action="finish-setup">Finish setup</button>`}</div>` : ""}`;
+  if (tab === "look") mountPlayer(document.getElementById("look-player"), lookPayload());
+  restoreFocus(focus);
+}
+
+// Look ----------------------------------------------------------------
+const seg = (path, options, value) => `<div class="seg" role="group">${options.map(([v, label]) =>
+  `<button type="button" class="${String(value) === String(v) ? "on" : ""}" data-action="set-design" data-path="${path}" data-id="${esc(v)}">${label}</button>`).join("")}</div>`;
+const slider = (path, min, max, step, value, show) => `<div class="slider"><input type="range" min="${min}" max="${max}" step="${step}" value="${esc(value)}" data-design="${path}" data-number><output data-show="${path}">${esc(show(value))}</output></div>`;
+const SHOW = {
+  "type.scale": v => `${Math.round(v * 100)}%`, "type.display_weight": v => v, "type.tracking": v => `${Number(v).toFixed(2)} em`,
+  "radius": v => `${v}px`, "captions.max_words": v => `${v} word${v == 1 ? "" : "s"}`,
+};
+const COLOR_ROLES = [["background", "Background"], ["surface", "Cards"], ["text", "Text"], ["muted", "Muted text"], ["accent", "Accent"], ["accent2", "Second accent"], ["negative", "Negative"]];
+
+function lookPanel(c) {
+  const d = CV.design, hindi = c.language !== "English";
+  const fontSelect = role => {
+    const groups = {};
+    CATALOG.fonts.filter(f => role !== "mono" || f.category === "mono").forEach(f => (groups[f.category] ??= []).push(f));
+    const current = d.fonts?.[role];
+    return `<select class="font-select" data-design="fonts.${role}" aria-label="${role} font">${Object.entries(groups).map(([cat, list]) => `<optgroup label="${esc(cat)}">${list.map(f =>
+      `<option value="${esc(f.family)}" ${f.family === current ? "selected" : ""} ${hindi && role !== "mono" && !f.devanagari ? "disabled" : ""}>${esc(f.family)}${f.devanagari ? " · हिंदी" : ""}</option>`).join("")}</optgroup>`).join("")}
+      ${CATALOG.fonts.some(f => f.family === current) ? "" : `<option selected>${esc(current || "")}</option>`}</select>`;
+  };
+  return `<div class="studio-split">
+    <div class="controls">
+      <section class="ctl"><h4>Start from a style</h4>
+        <div class="presets">${CATALOG.presets.map(p => `<button type="button" class="preset ${d.preset === p.id ? "on" : ""}" data-action="pick-preset" data-id="${esc(p.id)}">
+          <span class="swatches" style="background:${esc(p.design.colors?.background)}">${["surface", "text", "accent", "accent2"].map(k => `<i style="background:${esc(p.design.colors?.[k])}"></i>`).join("")}</span>
+          <b>${esc(p.name)}</b><span class="muted">${esc(p.description)}</span></button>`).join("") || `<p class="muted small">No presets yet.</p>`}</div></section>
+      <section class="ctl"><h4>Format</h4>${seg("aspect", [["9:16", "9:16 vertical"], ["16:9", "16:9 wide"], ["1:1", "1:1"], ["4:5", "4:5"]], d.aspect)}</section>
+      <section class="ctl"><h4>Colors</h4><div class="colors">${COLOR_ROLES.map(([key, label]) => `<label class="color"><input type="color" data-design="colors.${key}" value="${esc(d.colors?.[key] || "#000000")}"><span>${label}</span><code data-show="colors.${key}">${esc(d.colors?.[key] || "")}</code></label>`).join("")}</div></section>
+      <section class="ctl"><h4>Typography</h4>
+        <div class="row"><span>Titles &amp; numbers</span>${fontSelect("display")}</div>
+        <div class="row"><span>Labels &amp; captions</span>${fontSelect("body")}</div>
+        <div class="row"><span>Data</span>${fontSelect("mono")}</div>
+        ${hindi ? `<p class="muted small">This channel writes in ${esc(c.language)}, so title and caption fonts must support Hindi (marked हिंदी).</p>` : ""}
+        <div class="row"><span>Size</span>${slider("type.scale", 0.8, 1.3, 0.05, d.type?.scale ?? 1, SHOW["type.scale"])}</div>
+        <div class="row"><span>Title weight</span>${slider("type.display_weight", 400, 900, 100, d.type?.display_weight ?? 800, SHOW["type.display_weight"])}</div>
+        <div class="row"><span>Letter spacing</span>${slider("type.tracking", -0.05, 0.1, 0.01, d.type?.tracking ?? 0, SHOW["type.tracking"])}</div>
+        <div class="row"><span>Title case</span>${seg("type.display_case", [["upper", "UPPER"], ["title", "Title"], ["none", "As written"]], d.type?.display_case)}</div></section>
+      <section class="ctl"><h4>Motion</h4>
+        <div class="row"><span>Energy</span>${seg("motion.energy", [["calm", "Calm"], ["medium", "Medium"], ["high", "High"]], d.motion?.energy)}</div>
+        <div class="row"><span>Easing</span>${seg("motion.easing", [["smooth", "Smooth"], ["snappy", "Snappy"], ["bouncy", "Bouncy"]], d.motion?.easing)}</div>
+        <div class="row"><span>Transitions</span>${seg("motion.transition", [["cut", "Cut"], ["fade", "Fade"], ["slide", "Slide"], ["zoom", "Zoom"], ["wipe", "Wipe"]], d.motion?.transition)}</div></section>
+      <section class="ctl"><h4>Captions</h4>
+        <div class="row"><span>Style</span>${seg("captions.style", [["none", "Off"], ["plain", "Plain"], ["boxed", "Boxed"], ["karaoke", "Karaoke"], ["pop", "Pop"]], d.captions?.style)}</div>
+        <div class="row"><span>Position</span>${seg("captions.position", [["upper", "Top"], ["middle", "Middle"], ["lower", "Bottom"]], d.captions?.position)}</div>
+        <div class="row"><span>Highlight</span>${seg("captions.highlight", [["accent", "Accent"], ["accent2", "Second accent"], ["text", "Text"]], d.captions?.highlight)}</div>
+        <div class="row"><span>Words at a time</span>${slider("captions.max_words", 1, 8, 1, d.captions?.max_words ?? 4, SHOW["captions.max_words"])}</div>
+        <div class="row"><span>Size</span>${seg("captions.size", [["small", "Small"], ["medium", "Medium"], ["large", "Large"]], d.captions?.size || "medium")}</div></section>
+      <section class="ctl"><h4>Photos &amp; sources</h4>
+        <div class="row"><span>Photo treatment</span>${seg("images.treatment", [["natural", "Natural"], ["dim", "Dimmed"], ["mono", "Mono"], ["duotone", "Duotone"]], d.images?.treatment || "dim")}</div>
+        <div class="row"><span>Source tags</span>${seg("sources.show", [[true, "Show"], [false, "Hide"]], d.sources?.show !== false)}</div>
+        <p class="muted small">Photos come from <code>Image:</code> lines on a script's beats. Duotone tints them in your colors so photos from different places still look like one channel. Source tags show a beat's <code>Source:</code> line, small, so viewers can see where a fact comes from.</p></section>
+      <section class="ctl"><h4>Background &amp; shape</h4>
+        <div class="row"><span>Texture</span>${seg("background.style", [["solid", "Solid"], ["gradient", "Gradient"], ["grain", "Grain"], ["paper", "Paper"]], d.background?.style)}</div>
+        <div class="row"><span>Pattern</span>${seg("background.pattern", [["none", "None"], ["grid", "Grid"], ["dots", "Dots"], ["lines", "Lines"]], d.background?.pattern)}</div>
+        <div class="row"><span>Corners</span>${slider("radius", 0, 48, 2, d.radius ?? 18, SHOW.radius)}</div></section>
+      <section class="ctl"><h4>Logo</h4>
+        <div class="row"><span>Wordmark</span><input class="text-input" data-design="logo.text" value="${esc(d.logo?.text || "")}" placeholder="Shown small on every scene"></div>
+        <div class="row"><span>Corner</span>${seg("logo.position", [["top-left", "Top left"], ["top-right", "Top right"], ["bottom-left", "Bottom left"], ["bottom-right", "Bottom right"]], d.logo?.position)}</div></section>
+      <details class="ctl"><summary><h4>Custom CSS</h4></summary>
+        <textarea class="code-input" data-design="custom_css" rows="6" spellcheck="false" placeholder=".scene-stat .value { text-shadow: 0 0 40px var(--accent); }">${esc(d.custom_css || "")}</textarea>
+        <p class="muted small">For anything the controls can't do. Scenes expose variables like <code>--accent</code> and classes like <code>.scene-stat</code>.</p></details>
+    </div>
+    <div class="preview-col">
+      <div class="device aspect-${esc((d.aspect || "9:16").replace(":", "x"))}" id="look-player"></div>
+      ${playerBar()}
+      <div class="preview-opts">${seg("ui.sample", [["en", "English sample"], ["hi", "हिंदी sample"]], CV.sample).replaceAll('data-action="set-design"', 'data-action="set-sample"')}
+        <label class="check-label"><input type="checkbox" data-action="toggle-safe" ${CV.safeArea ? "checked" : ""}> Safe area</label></div>
+      <p class="save-note" id="save-note"></p>
+      ${askBox("look", ["Make it feel more premium", "More energy, louder captions", "Use my brand colors: ", "Calmer, for longer explainers"])}
+    </div></div>`;
+}
+
+function askBox(kind, suggestions) {
+  return `<div class="ask"><h4>${icon("spark")}Ask your agent</h4>
+    <textarea id="ask-text" rows="3" placeholder="${kind === "look" ? "Describe the change, e.g. make it feel like Bloomberg, but warmer" : "e.g. Sound like a friend explaining money over chai"}">${esc(CV.ask[kind] || "")}</textarea>
+    <div class="ask-chips">${suggestions.map(x => `<button type="button" class="chip small" data-action="ask-fill" data-id="${esc(x)}">${esc(x.replace(/: $/, "…"))}</button>`).join("")}</div>
+    <button type="button" class="btn" data-action="ask-agent" data-id="${kind}">${icon("copy")}Copy prompt</button>
+    <p class="muted small">Your agent edits this channel's ${kind}; the ${kind === "look" ? "preview" : "settings"} update here when it's done.</p></div>`;
+}
+
+function designChanged(path) {
+  const show = document.querySelector(`[data-show="${CSS.escape(path)}"]`);
+  const value = getPath(CV.design, path);
+  if (show) show.textContent = SHOW[path] ? SHOW[path](value) : value;
+  const view = CV, design = structuredClone(view.design), scenes = structuredClone(sampleScenes());
+  debounce(channelKey(view, "preview"), 120, () => { if (CV === view && channelRoute(view.id) && view.tab === "look") playerReload(design, scenes, { safeArea: view.safeArea }); });
+  scheduleChannelSave(view, "design");
+  const note = document.getElementById("save-note"); if (note) note.textContent = "Saving…";
+}
+function saveDesign(view = CV) {
+  clearTimeout(timers[channelKey(view, "design")]); delete timers[channelKey(view, "design")];
+  return queueChannelSave(view, "design", view.design).catch(() => null);
+}
+
+// Voice ---------------------------------------------------------------
+const TONES = [["playful", "Serious", "Playful"], ["casual", "Formal", "Casual"], ["intensity", "Calm", "Intense"]];
+const HOOK_STYLES = [["question", "Question"], ["surprising-stat", "Surprising number"], ["myth-bust", "Myth-bust"], ["story", "Story"], ["stakes", "Stakes"], ["contrast", "Contrast"]];
+function voicePanel(c) {
+  const v = CV.voice, words = Math.round((v.length_seconds || 60) / 60 * (v.words_per_minute || 160));
+  const lines = key => esc((v[key] || []).join("\n"));
+  const vRange = (key, min, max, step, show) => `<div class="slider"><input type="range" min="${min}" max="${max}" step="${step}" value="${esc(getPath(v, key))}" data-voice="${key}" data-number><output data-voice-show="${key}">${esc(show(getPath(v, key)))}</output></div>`;
+  return `<div class="studio-split">
+    <div class="controls">
+      <section class="ctl"><h4>Length &amp; pace</h4>
+        ${c.kind === "video" ? `<div class="row"><span>Target length</span>${vRange("length_seconds", 15, 180, 5, x => fmtTime(x))}</div>
+        <div class="row"><span>Speaking pace</span>${vRange("words_per_minute", 100, 220, 5, x => `${x} wpm`)}</div>
+        <p class="muted small" id="word-budget">About ${words} spoken words. Hindi and Hinglish voiceovers usually run 140–170 words a minute.</p>`
+        : `<p class="muted small">Posts have no timing. The format below sets their length.</p>`}</section>
+      <section class="ctl"><h4>Persona</h4>
+        <textarea class="text-area" data-voice="persona" rows="3" placeholder="Who is talking? e.g. A sharp older sibling who works in finance and hates jargon.">${esc(v.persona || "")}</textarea></section>
+      <section class="ctl"><h4>Tone</h4>${TONES.map(([key, low, high]) => `<div class="tone"><span>${low}</span>
+        <input type="range" min="0" max="100" step="5" value="${esc(v.tone?.[key] ?? 50)}" data-voice="tone.${key}" data-number aria-label="${low} to ${high}"><span>${high}</span></div>`).join("")}</section>
+      <section class="ctl"><h4>Hooks your agent may use</h4>
+        <div class="toggle-chips">${HOOK_STYLES.map(([key, label]) => `<button type="button" class="chip ${(v.hook_styles || []).includes(key) ? "on" : ""}" data-action="toggle-hook" data-id="${key}">${label}</button>`).join("")}</div>
+        <p class="muted small">Each draft comes with 3–5 hooks in these styles; you pick the winner.</p></section>
+      <section class="ctl"><h4>Structure</h4>
+        <textarea class="text-area mono" data-channel-field="format" rows="8">${esc(CV.fields.format)}</textarea>
+        <p class="muted small">The beats every script follows, with rough seconds. Your agent fits each story to it.</p></section>
+      <section class="ctl two"><div><h4>Always</h4><textarea class="text-area" data-voice-lines="do" rows="5" placeholder="One rule per line">${lines("do")}</textarea></div>
+        <div><h4>Never</h4><textarea class="text-area" data-voice-lines="dont" rows="5" placeholder="One rule per line">${lines("dont")}</textarea></div></section>
+      <section class="ctl"><h4>Signature lines</h4>
+        <div class="row"><span>Opening</span><input class="text-input" data-voice="open" value="${esc(v.open || "")}" placeholder="Optional, said after the hook"></div>
+        <div class="row"><span>Sign-off</span><input class="text-input" data-voice="close" value="${esc(v.close || "")}" placeholder="Optional"></div>
+        <div class="row"><span>Call to action</span><input class="text-input" data-voice="cta" value="${esc(v.cta || "")}" placeholder="e.g. Follow for one money rule a day"></div></section>
+      <section class="ctl"><h4>Scripts you love <button type="button" class="btn ghost small" data-action="add-example">${icon("plus")}Add</button></h4>
+        ${(v.examples || []).map((x, i) => `<div class="example"><div class="ref-top"><b>${esc(x.title || "Example")}</b><button type="button" class="icon-btn" data-action="remove-example" data-id="${i}" aria-label="Remove">${icon("x")}</button></div>
+          ${x.why ? `<p class="muted small">${esc(x.why)}</p>` : ""}<pre>${esc(x.text.slice(0, 400))}${x.text.length > 400 ? "…" : ""}</pre></div>`).join("")
+          || `<p class="muted small">Paste scripts from creators (or your own) whose voice you want. Your agent studies their rhythm and wording, never their facts.</p>`}</section>
+    </div>
+    <div class="preview-col">
+      <div class="voice-card" id="voice-card">${voiceSummary(c)}</div>
+      <p class="save-note" id="save-note"></p>
+      ${askBox("voice", ["Punchier, shorter sentences", "Learn my style from my example scripts", "More like a friend, less like news", "Add a recurring sign-off"])}
+    </div></div>`;
+}
+
+function voiceSummary(c) {
+  const v = CV.voice, t = v.tone || {};
+  const word = (x, low, mid, high) => x < 35 ? low : x > 65 ? high : mid;
+  const words = Math.round((v.length_seconds || 60) / 60 * (v.words_per_minute || 160));
+  return `<h4>What your agent will write</h4>
+    <p class="voice-line">${esc(v.persona || "A clear, confident explainer.")}</p>
+    <dl class="facts"><dt>Tone</dt><dd>${[word(t.playful ?? 50, "Serious", "A little playful", "Playful"), word(t.casual ?? 50, "formal", "conversational", "very casual"),
+      word(t.intensity ?? 50, "calm", "steady", "high-energy")].join(", ")}</dd>${c.kind === "video" ? `<dt>Length</dt><dd>${fmtTime(v.length_seconds)} · about ${words} words</dd>` : ""}
+      <dt>Language</dt><dd>${esc(c.language)}</dd>
+      <dt>Hooks</dt><dd>${esc((v.hook_styles || []).map(h => (HOOK_STYLES.find(x => x[0] === h) || [h, h])[1]).join(", ") || "Any")}</dd>
+      ${v.cta ? `<dt>Ends with</dt><dd>${esc(v.cta)}</dd>` : ""}
+      <dt>Learns from</dt><dd>${(v.examples || []).length ? plural(v.examples.length, "example script") : "No examples yet"}</dd></dl>`;
+}
+
+function voiceChanged() {
+  const card = document.getElementById("voice-card"); if (card) card.innerHTML = voiceSummary(channelById(CV.id));
+  const budget = document.getElementById("word-budget");
+  if (budget) budget.textContent = `About ${Math.round(CV.voice.length_seconds / 60 * CV.voice.words_per_minute)} spoken words. Hindi and Hinglish voiceovers usually run 140–170 words a minute.`;
+  const note = document.getElementById("save-note"); if (note) note.textContent = "Saving…";
+  scheduleChannelSave(CV, "voice");
+}
+function saveVoice(view = CV) {
+  clearTimeout(timers[channelKey(view, "voice")]); delete timers[channelKey(view, "voice")];
+  return queueChannelSave(view, "voice", view.voice).catch(() => null);
+}
+
+// Controls write straight into the open channel's look or voice, then save on their own.
+document.addEventListener("input", event => {
+  if (!CV) return;
+  const el = event.target;
+  if (el.dataset.design) {
+    setPath(CV.design, el.dataset.design, el.dataset.number !== undefined ? Number(el.value) : el.value);
+    if (el.type === "color") { const code = document.querySelector(`[data-show="${CSS.escape(el.dataset.design)}"]`); if (code) code.textContent = el.value; }
+    designChanged(el.dataset.design);
+  } else if (el.dataset.voice) {
+    setPath(CV.voice, el.dataset.voice, el.dataset.number !== undefined ? Number(el.value) : el.value);
+    const show = document.querySelector(`[data-voice-show="${CSS.escape(el.dataset.voice)}"]`);
+    if (show) show.textContent = el.dataset.voice === "length_seconds" ? fmtTime(el.value) : `${el.value} wpm`;
+    voiceChanged();
+  } else if (el.dataset.voiceLines) {
+    CV.voice[el.dataset.voiceLines] = el.value.split("\n").map(x => x.trim()).filter(Boolean);
+    voiceChanged();
+  } else if (el.dataset.channelField) {
+    CV.fields[el.dataset.channelField] = el.value;
+    scheduleChannelSave(CV, "fields");
+    const note = document.getElementById("save-note"); if (note) note.textContent = "Saving…";
+  } else if (el.id === "ask-text") {
+    CV.ask[CV.tab] = el.value;
+  }
+});
+document.addEventListener("change", event => {
+  if (CV && event.target.matches("select[data-design]")) { setPath(CV.design, event.target.dataset.design, event.target.value); designChanged(event.target.dataset.design); }
+});
+
+// ------------------------------------------------------------------ story and script editor
+const EDITORS = {
+  story: { path: id => "stories/" + enc(id), key: "notes", back: "stories", backLabel: "Stories", label: "Research notes",
+    placeholder: "Research notes and numbered sources. Click Research story to have your agent research the findings and topics in depth and write them here." },
+  script: { path: id => "scripts/" + enc(id), key: "text", back: "scripts", backLabel: "Scripts", label: "Script",
+    placeholder: "The script. Click Write draft to have your agent write it from the story's research, in this channel's language and format." },
+};
+const docKey = () => EDITORS[editor.kind].key;
+const docText = () => editor.data[docKey()];
+const isPost = () => editor.kind === "script" && (channelById(editor.data.channel) || {}).kind === "post";
+const canPreview = () => !isPost() && docText().trim();
+const rerender = () => renderEditor(editor.kind, editor.data.id);
+
+async function renderEditor(kind, id) {
+  const owner = PROJECT;
+  if (kind === "script" && (!owner || route().scope !== "production" || route().project !== owner)) return renderUnavailableProject();
+  const token = ++editorRenderToken, hash = location.hash, focus = focusSnapshot();
+  const current = () => token === editorRenderToken && hash === location.hash && route().id === id && route().tab === EDITORS[kind].back && route().project === owner && PROJECT === owner;
+  const app = document.getElementById("app");
+  const E = EDITORS[kind];
+  if (!editor || editor.kind !== kind || editor.data.id !== id || editor.project !== owner) {
+    try {
+      const data = await papi("GET", E.path(id));
+      if (!current()) return;
+      editor = { kind, project: owner, data, dirty: false, remoteChanged: false };
+      editor.view = canPreview() ? "preview" : "edit";
+      if (kind === "script" && !isPost()) {
+        const channel = enc(editor.data.channel);
+        const view = editor;
+        const [design, voice] = await Promise.all([api("GET", `channels/${channel}/design`), api("GET", `channels/${channel}/voice`)]).catch(() => [null, null]);
+        if (!current() || editor !== view) return;
+        Object.assign(view, { design, voice });
+        editor.sideTab = docText().trim() ? "preview" : "hooks";
+      }
+    }
+    catch (e) { if (!current()) return; app.innerHTML = `<a class="back" href="${kind === "script" ? "#/production" : base() + "/stories"}">${icon("back")}${E.backLabel}</a><div class="empty"><h3>Not found</h3><p>${esc(e.message)}</p></div>`; return; }
+  }
+  const d = editor.data, preview = canPreview() && editor.view === "preview";
+  app.innerHTML = `
+    <a class="back" href="${kind === "script" ? "#/production" : base() + "/stories"}">${icon("back")}${E.backLabel}</a>
     <div class="editor">
       <div>
-        ${editor.remoteChanged ? `<div class="banner"><span>Your agent changed this script while you were editing.</span>
-          <span class="inline"><button class="btn" data-action="reload-script">Load their version</button><button class="btn ghost" data-action="keep-mine">Keep mine</button></span></div>` : ""}
-        <input class="title-input" id="script-title" value="${esc(s.title)}" aria-label="Script title">
-        <div class="subtabs"><div role="tablist">${EDITOR_TABS.map(([key, label]) => `<button class="chip ${editor.tab === key ? "on" : ""}" role="tab" aria-selected="${editor.tab === key}" data-action="editor-tab" data-id="${key}">${label}</button>`).join("")}</div>
-          <div class="doc-tools"><span id="save-area">${saveArea()}</span>${hasPreview && s[editor.tab].trim() ? (preview
-            ? `<button class="btn ghost small" data-action="editor-view" data-id="edit">${icon("edit")}Edit</button>`
-            : `<button class="btn ghost small" data-action="editor-view" data-id="preview">${icon("check")}Done</button>`) : ""}</div></div>
-        ${preview ? `<div class="md" id="md-preview" title="Double-click to edit">${s[editor.tab].trim() ? markdown(s[editor.tab]) : `<p class="md-empty">${esc(PLACEHOLDERS[editor.tab])}</p>`}</div>` : ""}
-        <textarea class="doc ${editor.tab === "post" ? "short" : ""}" id="script-text" ${preview ? "hidden" : ""} aria-label="${esc(EDITOR_TABS.find(t => t[0] === editor.tab)[1])}" placeholder="${esc(PLACEHOLDERS[editor.tab])}">${esc(s[editor.tab])}</textarea>
-        ${editor.tab === "post" ? `<div class="preview-label">WhatsApp preview</div><div class="phone"><div class="bubble" id="post-preview"></div></div>` : ""}
+        ${editor.remoteChanged ? `<div class="banner"><span>Your agent changed this ${kind} while you were editing.</span>
+          <span class="inline"><button class="btn" data-action="reload-doc">Load their version</button><button class="btn ghost" data-action="keep-mine">Keep mine</button></span></div>` : ""}
+        <input class="title-input" id="doc-title" value="${esc(d.title)}" aria-label="Title">
+        ${kind === "script" ? scriptHeader() : ""}
+        <div class="subtabs"><div class="doc-label">${isPost() ? "Post" : E.label}${kind === "script" && !isPost() ? ` <span class="timing" id="timing">${timingLabel()}</span>` : ""}</div>
+          <div class="doc-tools" id="doc-tools">${docTools()}</div></div>
+        ${preview ? `<div class="md ${kind === "script" && !isPost() ? "beats-md" : ""}" id="md-preview" title="Double-click to edit">${kind === "script" && !isPost() ? scriptMarkdown(docText()) : markdown(docText())}</div>` : ""}
+        <textarea class="doc ${isPost() ? "short" : ""}" id="doc-text" ${preview ? "hidden" : ""} aria-label="${esc(E.label)}" placeholder="${esc(E.placeholder)}">${esc(docText())}</textarea>
+        ${isPost() ? `<div class="preview-label">WhatsApp preview</div><div class="phone"><div class="bubble" id="post-preview"></div></div>` : ""}
       </div>
-      <aside class="side">
-        <button class="btn primary draft-btn" data-action="write-draft">${icon("spark")}Write draft</button>
-        <section><h4>Topics <button class="btn ghost small" data-action="link-topic">${icon("plus")}Add</button></h4>
-        ${s.topics.length ? `<div class="topic-links">${s.topics.map(t => `<span class="tag removable">${esc(topicName(t))}<button class="icon-btn" data-action="unlink-topic" data-id="${esc(t)}" aria-label="Unlink ${esc(topicName(t))}" title="Unlink">${icon("x")}</button></span>`).join("")}</div>` : ""}</section>
-        <section><h4>Findings <button class="btn ghost small" data-action="attach">${icon("plus")}Add</button></h4>
-        ${attached.map(f => `<div class="ref">
-            <div class="ref-top"><b>${esc(f.title)}</b><button class="icon-btn" data-action="detach" data-id="${esc(f.id)}" aria-label="Detach ${esc(f.title)}" title="Detach">${icon("x")}</button></div>
-            ${f.summary ? `<p>${esc(f.summary)}</p>` : ""}
-            <ul>${f.sources.map(src => `<li><a href="${safeUrl(src.url)}" target="_blank" rel="noopener noreferrer">${esc(src.publisher || host(src.url))}${src.title ? ": " + esc(src.title) : ""}</a></li>`).join("")}</ul>
-          </div>`).join("")}</section>
-      </aside>
+      <aside class="side">${kind === "story" ? storySide() : scriptSide()}</aside>
     </div>`;
-  const text = document.getElementById("script-text");
-  const title = document.getElementById("script-title");
+  const text = document.getElementById("doc-text");
+  const title = document.getElementById("doc-title");
   const postPreview = () => { const p = document.getElementById("post-preview"); if (p) p.innerHTML = whatsapp(text.value); };
   const markDirty = () => {
     const wasDirty = editor.dirty;
-    editor.data[editor.tab] = text.value; editor.data.title = title.value; editor.dirty = true;
-    if (!wasDirty) document.getElementById("save-area").innerHTML = saveArea();
+    editor.data[docKey()] = text.value; editor.data.title = title.value; editor.dirty = true;
+    if (!wasDirty) document.getElementById("doc-tools").innerHTML = docTools();
     postPreview();
+    if (editor.kind === "script" && !isPost()) scriptTextChanged();
   };
   text.addEventListener("input", markDirty);
   title.addEventListener("input", markDirty);
-  document.getElementById("md-preview")?.addEventListener("dblclick", () => actions["editor-view"]("edit"));
+  const md = document.getElementById("md-preview");
+  md?.addEventListener("dblclick", event => { if (!event.target.closest("mark")) actions["editor-view"]("edit"); });
+  md?.addEventListener("click", event => { const mark = event.target.closest("mark[data-comment]"); if (mark) { editor.sideTab = "comments"; rerender(); flashComment(mark.dataset.comment); } });
+  if (md && kind === "script") highlightComments(md);
+  // Open on the hook's settled frame, not frame zero (where everything is still off-screen).
+  if (editor.sideTab === "preview" && editor.design) mountPlayer(document.getElementById("script-player"), { ...scriptPayload(), options: { autoplay: false, loop: true, captions: true, mediaBase: scriptMediaBase(), startAt: Math.min(1.6, (scriptScenes()[0]?.duration || 0) * 0.6) } });
   postPreview();
+  restoreFocus(focus);
 }
 
-const saveArea = () => editor.dirty
-  ? `<span class="save-state dirty">Unsaved</span><button class="btn small" data-action="save-script">Save</button>`
-  : "";
+// One button finishes editing: Save when there are changes (then shows the preview), Done when there are none.
+// Ctrl+S saves without leaving the editor.
+function docTools() {
+  const comment = editor.kind === "script" ? `<button class="btn ghost small" data-action="add-comment" data-keep-selection title="Select text first to comment on it">${icon("comment")}Comment</button>` : "";
+  const save = `<button class="btn small" data-action="save-doc">${icon("check")}Save</button>`;
+  if (editor.view === "preview" && canPreview()) return comment + (editor.dirty ? save : "") + `<button class="btn ghost small" data-action="editor-view" data-id="edit">${icon("edit")}Edit</button>`;
+  if (editor.dirty) return comment + save;
+  return comment + (canPreview() ? `<button class="btn ghost small" data-action="editor-view" data-id="preview">${icon("check")}Done</button>` : "");
+}
 
-const defaultView = () => editor.data[editor.tab].trim() ? "preview" : "edit";
+function scriptHeader() {
+  const d = editor.data, c = channelById(d.channel) || { name: d.channel }, story = storyById(d.story);
+  return `<div class="script-meta"><span>For <b><a href="${channelHref(d.channel)}">${esc(c.name)}</a></b>${[c.platform, c.language].filter(Boolean).map(x => " · " + esc(x)).join("")}</span>
+    <span>From <a href="${base()}/stories">${esc(projectName())}</a> → ${story ? `<a href="${storyHref(story.id)}">${esc(story.title)}</a>` : "a deleted story"}</span></div>`;
+}
+
+function storySide() {
+  const d = editor.data;
+  const attached = d.findings.map(findingById).filter(Boolean);
+  const made = S.scripts.filter(x => x.story === d.id);
+  return `<div class="side-actions">
+      <button class="btn primary" data-action="research-story">${icon("spark")}Research story</button>
+      <button class="btn" data-action="send-to-production">${icon("send")}Send to production…</button></div>
+    <section><h4>In production</h4>
+      ${made.map(x => `<a class="ref ref-link" href="${scriptHref(x.id)}"><b>${esc(channelLabel(x.channel))}</b><span class="pill">${esc(STAGES.find(st => st[0] === x.stage)?.[1] || x.stage)}</span></a>`).join("")
+        || `<p class="muted small">Not yet. Research the story, then send it to production for each channel.</p>`}</section>
+    <section><h4>Topics <button class="btn ghost small" data-action="link-topic">${icon("plus")}Add</button></h4>
+    ${d.topics.length ? `<div class="topic-links">${d.topics.map(t => `<span class="tag removable">${esc(topicName(t))}<button class="icon-btn" data-action="unlink-topic" data-id="${esc(t)}" aria-label="Unlink ${esc(topicName(t))}" title="Unlink">${icon("x")}</button></span>`).join("")}</div>` : ""}</section>
+    <section><h4>Findings <button class="btn ghost small" data-action="attach">${icon("plus")}Add</button></h4>
+    ${attached.map(f => `<div class="ref">
+        <div class="ref-top"><b>${esc(f.title)}</b><button class="icon-btn" data-action="detach" data-id="${esc(f.id)}" aria-label="Detach ${esc(f.title)}" title="Detach">${icon("x")}</button></div>
+        ${f.summary ? `<p>${esc(f.summary)}</p>` : ""}
+        <ul>${f.sources.map(src => `<li><a href="${safeUrl(src.url)}" target="_blank" rel="noopener noreferrer">${esc(src.publisher || host(src.url))}${src.title ? ": " + esc(src.title) : ""}</a></li>`).join("")}</ul>
+      </div>`).join("")}</section>`;
+}
+
+const wpm = () => editor.voice?.words_per_minute || 160;
+const scriptScenes = () => parseScenes(docText(), wpm());
+const scriptPayload = () => ({ design: editor.design, scenes: scriptScenes() });
+const scriptApi = (id = editor.data.id, project = PROJECT) => `/api/p/${enc(project)}/scripts/${enc(id)}`;
+const scriptMediaBase = () => scriptApi() + "/";
+const mediaUrl = src => !src ? "" : /^https?:\/\//i.test(src) ? src : /^media\/[a-z0-9-]+\.(jpg|png|webp)$/.test(src) ? scriptMediaBase() + src : "";
+const scenePhoto = x => x.type === "image" && x.data.url ? x.data.url : x.image?.src || "";
+function timingLabel() {
+  const total = scriptScenes().reduce((sum, x) => sum + x.duration, 0), target = editor.voice?.length_seconds;
+  return total ? `${fmtTime(total)}${target ? ` of ${fmtTime(target)}` : ""}` : "";
+}
+function scriptTextChanged() {
+  const timing = document.getElementById("timing"); if (timing) timing.textContent = timingLabel();
+  const beats = document.getElementById("beat-list"); if (beats) beats.innerHTML = beatList();
+  const view = editor;
+  if (view.sideTab === "preview") debounce("script-preview", 500, () => { if (editor === view && route().id === view.data.id && view.sideTab === "preview") playerReload(view.design, scriptScenes()); });
+}
+
+const SCORE_LABELS = [["hook", "Hook"], ["clarity", "Clarity"], ["retention", "Retention"], ["specificity", "Specificity"], ["voice", "Voice"], ["natural", "Sounds human"], ["value", "Value"], ["accuracy", "Accuracy"]];
+function scriptSide() {
+  const d = editor.data, open = openComments(d);
+  const tabs = isPost() ? [] : [["preview", "Preview"], ["hooks", "Hooks"], ["quality", "Quality"], ["comments", "Comments"]];
+  const badge = { hooks: (d.angles || []).length, comments: open.length, quality: d.review ? avgScore(d.review).toFixed(1) : "" };
+  const tab = isPost() ? "comments" : editor.sideTab || "preview";
+  return `<div class="side-actions"><button class="btn primary" data-action="write-draft">${icon("spark")}${open.length ? `Revise with ${plural(open.length, "comment")}` : "Write draft"}</button></div>
+    <section><h4>Stage</h4>
+      <div class="seg stage-seg">${STAGES.map(([key, label]) => `<button type="button" class="${d.stage === key ? "on" : ""}" data-action="set-stage" data-id="${key}">${label}</button>`).join("")}</div>
+      ${d.stage === "published" ? `<div class="published"><input class="url-input" id="published-url" value="${esc(d.published_url)}" placeholder="Paste the published link" inputmode="url">
+        <button class="btn small" data-action="save-url">Save</button></div>
+        ${d.published_url ? `<a class="small-link" href="${safeUrl(d.published_url)}" target="_blank" rel="noopener noreferrer">${esc(shortUrl(d.published_url))}${icon("external")}</a>` : ""}` : ""}</section>
+    ${isPost() ? "" : `<section id="video-box">${videoBox()}</section>`}
+    ${tabs.length ? `<div class="side-tabs" role="tablist">${tabs.map(([key, label]) => `<button type="button" role="tab" aria-selected="${tab === key}" class="${tab === key ? "on" : ""}" data-action="side-tab" data-id="${key}">${label}${badge[key] ? `<span class="n">${badge[key]}</span>` : ""}</button>`).join("")}</div>` : ""}
+    <div id="side-panel">${({ preview: previewTab, hooks: hooksTab, quality: qualityTab, comments: commentsTab })[tab]()}</div>
+    <section><button class="text-btn danger-text" data-action="delete-script" data-id="${esc(d.id)}">Delete script</button></section>`;
+}
+
+function videoBox() {
+  const v = editor.data.video;
+  if (!v) return "";
+  const url = scriptApi();
+  const pct = Math.round((v.progress || 0) * 100);
+  const placeholders = v.placeholders?.length ? `<p class="beat-warn">${esc(plural(v.placeholders.length, "beat"))} still ${v.placeholders.length === 1 ? "needs an image" : "need images"}: ${esc(v.placeholders.join(", "))}.</p>` : "";
+  let body;
+  if (v.status === "rendering") body = `<div class="render-bar"><i style="width:${pct}%"></i></div><p class="muted small">Rendering on this computer… ${pct}%. You can keep working.</p>`;
+  else if (v.ready) body = `<div class="video-ready"><img class="video-poster" src="${url}/poster.jpg?v=${esc(v.finished || "")}" alt="">
+      <div><a class="btn primary" href="${url}/video" download>${icon("download")}Download MP4</a>
+        <p class="muted small">${v.size ? `${(v.size / 1e6).toFixed(1)} MB · ` : ""}rendered ${esc(when(v.finished))}</p>
+        <button class="text-btn" data-action="render-video">${v.stale ? "Re-render with your changes" : "Render again"}</button></div></div>
+      ${v.stale ? `<p class="beat-warn">The script, images, or look changed since this render.</p>` : ""}`;
+  else body = `<button class="btn" data-action="render-video">${icon("film")}Render MP4</button><p class="muted small">Renders on this computer (Chrome + ffmpeg). It can take a few minutes.</p>`;
+  return `<h4>Video</h4>${v.status === "failed" && v.error ? `<p class="beat-warn">Last render failed: ${esc(v.error)}</p>` : ""}${body}${placeholders}`;
+}
+const updateVideoBox = () => { const box = document.getElementById("video-box"); if (box && editor) box.innerHTML = videoBox(); };
+
+function previewTab() {
+  if (!editor.design) return `<p class="muted small">Couldn't load this channel's look.</p>`;
+  return `<div class="device aspect-${esc((editor.design.aspect || "9:16").replace(":", "x"))}" id="script-player"></div>${playerBar()}
+    <h4 class="beats-head">Beats <span class="muted small">click to jump · add a photo to any beat</span></h4>
+    <div class="beats" id="beat-list">${beatList()}</div>
+    ${mediaLibrary()}
+    <a class="small-link" href="${channelHref(editor.data.channel, "look")}">${icon("palette")}Edit ${esc(channelLabel(editor.data.channel))}'s look</a>`;
+}
+
+function beatList() {
+  const scenes = scriptScenes();
+  if (!scenes.length) return `<p class="muted small">Write the script as beats (## headings) with Visual: lines, and each beat plays here in the channel's look.</p>`;
+  const warnings = [];
+  scenes.forEach(x => { if (x.duration > 12) warnings.push(`“${x.beat}” runs ${x.duration}s. Split it, or the screen sits still too long.`); });
+  if (scenes.at(-1).type !== "end") warnings.push("The last beat isn't an end scene.");
+  const total = scenes.reduce((sum, x) => sum + x.duration, 0), target = editor.voice?.length_seconds;
+  if (target && Math.abs(total - target) > target * 0.10) warnings.push(`${fmtTime(total)} is ${total > target ? "over" : "under"} the ${fmtTime(target)} target.`);
+  return scenes.map((x, i) => {
+    const photo = mediaUrl(scenePhoto(x)), needs = x.type === "image" && !x.data.url && !x.image;
+    return `<div class="beat-row" data-beat-index="${i}"><button type="button" class="beat" data-action="seek-beat" data-id="${i}">
+        <span class="beat-type">${esc(x.type)}</span><b>${esc(x.beat)}</b><span class="muted">${x.duration}s</span></button>
+      ${photo ? `<span class="beat-thumb" style="background-image:url('${esc(photo)}')" title="${esc(x.image?.credit || x.data.credit || "")}"></span>
+        <button type="button" class="icon-btn" data-action="beat-image-remove" data-id="${i}" aria-label="Remove the photo from ${esc(x.beat)}" title="Remove photo">${icon("x")}</button>`
+        : `<button type="button" class="icon-btn ${needs ? "needs" : ""}" data-action="beat-image" data-id="${i}" aria-label="Add a photo to ${esc(x.beat)}" title="${needs ? "This beat needs an image" : "Add a photo behind this beat"}">${icon("image")}</button>`}</div>`;
+  }).join("")
+    + warnings.map(w => `<p class="beat-warn">${esc(w)}</p>`).join("");
+}
+
+function mediaLibrary() {
+  const media = editor.data.media || [];
+  if (!media.length) return "";
+  return `<details class="media-lib"><summary>Images in this script (${media.length})</summary><div class="media-grid">${media.map(m => `<figure>
+      <span class="media-thumb" style="background-image:url('${esc(scriptMediaBase() + m.path)}')"></span>
+      <figcaption><code>${esc(m.path)}</code>${m.credit ? `<span>${esc(m.credit)}</span>` : ""}</figcaption>
+      <button class="icon-btn delete" data-action="delete-media" data-id="${esc(m.file)}" aria-label="Delete ${esc(m.file)}" title="Delete">${icon("trash")}</button></figure>`).join("")}</div></details>`;
+}
+
+// Add, replace, or remove one cue line (Image:, Source:, …) inside the i-th beat of a script.
+function setBeatCue(text, index, cue, value) {
+  const lines = String(text).replace(/\r\n?/g, "\n").split("\n");
+  const heads = lines.map((l, k) => /^##\s+/.test(l.trim()) ? k : -1).filter(k => k >= 0);
+  const start = heads[index];
+  if (start === undefined) return text;
+  const end = heads[index + 1] ?? lines.length;
+  const label = new RegExp(`^(?:[-*]\\s+)?[*_]{0,2}${cue}[*_]{0,2}\\s*:`, "i");
+  const at = lines.findIndex((l, k) => k > start && k < end && label.test(l.trim()));
+  const line = `${cue[0].toUpperCase()}${cue.slice(1)}: ${value}`;
+  if (value == null) { if (at >= 0) lines.splice(at, 1); }
+  else if (at >= 0) lines[at] = line;
+  else {
+    let after = lines.findIndex((l, k) => k > start && k < end && /^(?:[-*]\s+)?[*_]{0,2}visual[*_]{0,2}\s*:/i.test(l.trim()));
+    if (after < 0) { after = end - 1; while (after > start && !lines[after].trim()) after--; }
+    lines.splice(after + 1, 0, line);
+  }
+  return lines.join("\n");
+}
+async function editScriptText(change) {
+  const view = editor;
+  view.data.text = change(view.data.text);
+  const area = document.getElementById("doc-text");
+  if (area) area.value = view.data.text;
+  view.dirty = true;
+  await saveDoc();
+}
+const readDataUrl = file => new Promise((resolve, reject) => { const r = new FileReader(); r.onload = () => resolve(r.result); r.onerror = () => reject(r.error); r.readAsDataURL(file); });
+function pickImage() {
+  return new Promise(resolve => {
+    const input = Object.assign(document.createElement("input"), { type: "file", accept: "image/jpeg,image/png,image/webp" });
+    input.onchange = () => resolve(input.files[0] || null);
+    input.oncancel = () => resolve(null);
+    input.click();
+  });
+}
+
+function hooksTab() {
+  const angles = editor.data.angles || [];
+  if (!angles.length) return `<p class="muted small">Every draft comes with 3–5 hooks, each a different angle on the story. They show up here, and you can swap in a different one.</p>`;
+  return angles.map(a => `<div class="angle ${a.chosen ? "on" : ""}">
+      <p class="hook">${esc(a.hook)}</p>
+      ${a.angle ? `<p class="muted small">${esc(a.angle)}</p>` : ""}
+      ${a.why ? `<p class="why">${esc(a.why)}</p>` : ""}
+      ${a.chosen ? `<span class="pill">In the script</span>` : `<button type="button" class="btn small" data-action="choose-angle" data-id="${esc(a.id)}">Use this hook</button>`}
+    </div>`).join("");
+}
+
+const reviewScore = v => typeof v === "number" && Number.isFinite(v) ? Math.max(0, Math.min(10, v)) : null;
+const avgScore = review => { const v = Object.values(review.scores || {}).map(reviewScore).filter(v => v !== null); return v.length ? v.reduce((a, b) => a + b, 0) / v.length : 0; };
+function qualityTab() {
+  const r = editor.data.review;
+  if (!r) return `<p class="muted small">Your agent scores each draft on eight things (hook, clarity, retention, specificity, voice, sounds human, value, accuracy) and revises until every one is 8 or more. The scores show up here.</p>`;
+  return `<div class="score-head"><span class="score-big">${avgScore(r).toFixed(1)}</span><span class="muted small">average${r.at ? ` · reviewed ${esc(when(r.at))}` : ""}</span></div>
+    ${SCORE_LABELS.map(([key, label]) => { const v = reviewScore(r.scores?.[key]); return `<div class="score-row"><span>${label}</span><span class="meter"><i class="${v < 8 ? "low" : ""}" style="width:${(v || 0) * 10}%"></i></span><b>${esc(v ?? "–")}</b></div>`; }).join("")}
+    ${r.summary ? `<p class="review-summary">${esc(r.summary)}</p>` : ""}
+    ${r.notes?.length ? `<ul class="review-notes">${r.notes.map(n => `<li>${esc(n)}</li>`).join("")}</ul>` : ""}`;
+}
+
+function commentsTab() {
+  const d = editor.data, open = openComments(d), resolved = d.comments.filter(c => c.resolved_at);
+  const commentCard = c => `<div class="comment ${c.quote && c.position < 0 ? "orphan" : ""}" data-comment="${esc(c.id)}">
+      ${c.quote ? `<button class="quote" data-action="goto-comment" data-id="${esc(c.id)}" title="${c.position < 0 ? "This text is no longer in the script" : "Show in the script"}">${esc(c.quote)}</button>`
+        : `<span class="quote whole">Whole ${isPost() ? "post" : "script"}</span>`}
+      <p>${esc(c.body)}</p>
+      ${c.reply ? `<p class="reply">↳ ${esc(c.reply)}</p>` : ""}
+      <div class="comment-tools"><span class="muted">${esc(when(c.resolved_at || c.created))}</span>
+        ${c.resolved_at ? `<button class="btn ghost small" data-action="reopen-comment" data-id="${esc(c.id)}">Reopen</button>`
+          : `<button class="btn ghost small" data-action="resolve-comment" data-id="${esc(c.id)}">${icon("check")}Resolve</button>`}
+        <button class="icon-btn delete" data-action="delete-comment" data-id="${esc(c.id)}" aria-label="Delete comment" title="Delete">${icon("trash")}</button></div>
+    </div>`;
+  return `<section><h4>Comments <button class="btn ghost small" data-action="add-comment" data-keep-selection>${icon("plus")}Add</button></h4>
+      ${open.map(commentCard).join("") || `<p class="muted small">Select text in the ${isPost() ? "post" : "script"} and click Comment. Your agent addresses open comments in order when it revises.</p>`}
+      ${resolved.length ? `<details class="dismissed"><summary>Resolved (${resolved.length})</summary>${resolved.map(commentCard).join("")}</details>` : ""}</section>`;
+}
+
+// Beat scripts: Visual, Text, and Note lines show as cues under the spoken lines, not as more voiceover.
+function scriptMarkdown(src) {
+  return markdown(src).replace(/(^|<br>|<p>)\s*(?:<em>|<strong>)?(Visual|Text|Note|Image|Source|Duration)(?:<\/em>|<\/strong>)?\s*:\s*(?:<\/em>|<\/strong>)?\s*(.*?)(?=<br>|<\/p>)/gi,
+    (_, lead, label, rest) => `${lead}<span class="cue cue-${label.toLowerCase()}"><b>${label}</b>${rest}</span>`);
+}
+
+// Marks each open comment's quote in the rendered preview. Quotes spanning formatting are listed but not marked.
+function highlightComments(md) {
+  for (const c of openComments(editor.data)) {
+    if (!c.quote || c.position < 0) continue;
+    const plain = c.quote.replace(/[*_~`]/g, "").replace(/^#+\s*/gm, "").split("\n").map(x => x.trim()).find(Boolean);
+    if (!plain) continue;
+    const walker = document.createTreeWalker(md, NodeFilter.SHOW_TEXT);
+    for (let node = walker.nextNode(); node; node = walker.nextNode()) {
+      const at = node.data.indexOf(plain);
+      if (at < 0 || node.parentElement.closest("mark")) continue;
+      const range = document.createRange();
+      range.setStart(node, at); range.setEnd(node, at + plain.length);
+      const mark = Object.assign(document.createElement("mark"), { title: c.body });
+      mark.dataset.comment = c.id;
+      range.surroundContents(mark);
+      break;
+    }
+  }
+}
+
+function flashComment(id) {
+  const card = document.querySelector(`.comment[data-comment="${CSS.escape(id)}"]`);
+  if (!card) return;
+  card.scrollIntoView({ block: "nearest", behavior: "smooth" });
+  card.classList.remove("flash"); void card.offsetWidth; card.classList.add("flash");
+}
+
+// The selected passage as it is in the saved text: from the editor directly, or matched back from the preview.
+function selectedQuote() {
+  const raw = docText(), area = document.getElementById("doc-text");
+  if (area && !area.hidden && area.selectionStart !== area.selectionEnd) {
+    const picked = raw.slice(area.selectionStart, area.selectionEnd), lead = picked.length - picked.trimStart().length;
+    return picked.trim() ? { quote: picked.trim(), offset: area.selectionStart + lead } : null;
+  }
+  const selection = getSelection(), md = document.getElementById("md-preview");
+  if (!md || !selection.rangeCount || selection.isCollapsed || !md.contains(selection.anchorNode)) return null;
+  const picked = selection.toString().trim();
+  if (!picked) return null;
+  const exact = raw.indexOf(picked);
+  if (exact >= 0) return { quote: picked, offset: exact };
+  // The preview hides markdown, so allow formatting characters between the selected words.
+  const reEsc = c => c.replace(/[.*+?^${}()|[\]\\]/g, "\\$&");
+  const pattern = picked.split(/\s+/).map(word => [...word].map(reEsc).join("[*_~`]*")).join("[\\s*_~`#>\\-]+");
+  const match = new RegExp(pattern).exec(raw);
+  return match ? { quote: match[0], offset: match.index } : { quote: picked, offset: null };
+}
 
 // Enough markdown for scripts and notes. Single newlines stay line breaks, and [1]-style citations are set small.
 function markdown(src) {
@@ -670,6 +1681,12 @@ function markdown(src) {
       const code = []; i++;
       while (i < lines.length && !/^```/.test(lines[i])) code.push(lines[i++]);
       i++; out.push(`<pre><code>${esc(code.join("\n"))}</code></pre>`);
+    } else if (/^\s*<!--/.test(line)) {
+      while (i < lines.length && !lines[i].includes("-->")) i++;
+      if (i < lines.length) {
+        const rest = lines[i].slice(lines[i].indexOf("-->") + 3);
+        if (rest.trim()) lines[i] = rest; else i++;
+      }
     } else if ((m = line.match(/^(#{1,6})\s+(.*?)\s*#*\s*$/))) {
       out.push(`<h${m[1].length}>${inline(m[2])}</h${m[1].length}>`); i++;
     } else if (rule.test(line)) {
@@ -727,25 +1744,39 @@ function whatsapp(text) {
     .replace(/(https?:\/\/[^\s<]+)/g, '<a href="$1" target="_blank" rel="noopener noreferrer">$1</a>');
 }
 
-async function saveScript() {
-  if (!editor || !editor.dirty) return;
-  const { id, title, script, post, notes, version } = editor.data;
+async function saveDoc(finish = false) {
+  if (!editor || !editor.dirty) return true;
+  const view = editor, project = PROJECT, key = EDITORS[view.kind].key;
+  const { id, title, version } = view.data, text = view.data[key];
   try {
-    editor.data = await capi("PUT", "scripts/" + encodeURIComponent(id), { title, script, post, notes, version });
-    editor.dirty = false; editor.remoteChanged = false;
-    await refresh(true); renderEditor(id); toast("Saved");
+    const fresh = await api("PUT", `p/${enc(project)}/${EDITORS[view.kind].path(id)}`, { title, [key]: text, version });
+    const unchanged = view.data.title === title && view.data[key] === text;
+    view.data = unchanged ? fresh : { ...fresh, title: view.data.title, [key]: view.data[key] };
+    view.dirty = !unchanged; view.remoteChanged = false;
+    if (finish && unchanged && editor === view && canPreview()) view.view = "preview";
+    if (editor === view && PROJECT === project) { await refresh(true); if (editor === view) rerender(); }
+    toast("Saved");
+    return unchanged && !view.dirty;
   } catch (e) {
-    if (e.status === 409) { editor.remoteChanged = true; renderEditor(id); }
+    if (e.status === 409) { view.remoteChanged = true; if (editor === view) rerender(); }
     toast(e.message, "error");
+    return false;
   }
 }
 
-async function updateAttachments(changes) {
-  const s = editor.data;
-  const fresh = await capi("PUT", "scripts/" + encodeURIComponent(s.id), changes);
-  // Keep unsaved text; links change only script.json, so the new version is safe to adopt.
-  editor.data = editor.dirty ? { ...editor.data, findings: fresh.findings, topics: fresh.topics, version: fresh.version } : fresh;
-  await refresh(true); renderEditor(s.id);
+// Changes that don't touch the text (links, stage, URL): keep unsaved text and adopt the new version.
+async function updateMeta(changes) {
+  const view = editor, project = PROJECT, key = EDITORS[view.kind].key;
+  const fresh = await api("PUT", `p/${enc(project)}/${EDITORS[view.kind].path(view.data.id)}`, changes);
+  view.data = view.dirty ? { ...fresh, title: view.data.title, [key]: view.data[key] } : fresh;
+  if (editor === view && PROJECT === project) { await refresh(true); if (editor === view) rerender(); }
+}
+
+async function reloadComments() {
+  const view = editor, project = PROJECT;
+  const fresh = await api("GET", `p/${enc(project)}/${EDITORS.script.path(view.data.id)}`);
+  for (const key of ["comments", "media", "video"]) view.data[key] = fresh[key];
+  if (editor === view && PROJECT === project) { await refresh(true); if (editor === view) rerender(); }
 }
 
 // ------------------------------------------------------------------ actions
@@ -753,19 +1784,14 @@ const actions = {
   settings() {
     const st = S.settings;
     openDialog({
-      title: "Channel settings", sub: `Research and drafting follow these settings. Workspace: <code>${esc(S.workspace)}</code>`,
-      body: field("Channel name", `<input name="name" value="${esc(st.name)}" required>`)
-        + field("Description", `<input name="description" value="${esc(st.description)}" placeholder="What the channel is about">`)
-        + field("Audience", `<input name="audience" value="${esc(st.audience)}" placeholder="Who watches, and what they already know">`)
-        + field("Language", `<select name="language">${["English", "Hindi", "Hinglish"].map(l => `<option ${st.language === l ? "selected" : ""}>${l}</option>`).join("")}${
-            ["English", "Hindi", "Hinglish"].includes(st.language) ? "" : `<option selected>${esc(st.language)}</option>`}</select>`,
-            "Hindi is always written in Devanagari. Hinglish mixes Hindi (Devanagari) with English terms, e.g. “HDPE resin के rates बढ़े”.")
-        + field("Script format", `<textarea name="script_format" rows="7">${esc(st.script_format)}</textarea>`, "Length, structure, tone. The agent follows this when drafting.")
-        + field("WhatsApp post format", `<textarea name="post_format" rows="3">${esc(st.post_format)}</textarea>`)
+      title: "Project settings", sub: `Research follows these settings. Language and script formats belong to each channel. Workspace: <code>${esc(S.workspace)}</code>`,
+      body: field("Project name", `<input name="name" value="${esc(st.name)}" required>`)
+        + field("Description", `<input name="description" value="${esc(st.description)}" placeholder="What the project is about">`)
+        + field("Audience", `<input name="audience" value="${esc(st.audience)}" placeholder="Who it's for, and what they already know">`, "Guides what research considers relevant.")
         + field("Research notes", `<textarea name="research_notes" rows="3" placeholder="Anything research should always do or avoid">${esc(st.research_notes)}</textarea>`),
       onSubmit: async form => {
         const values = Object.fromEntries(new FormData(form));
-        await capi("PUT", "settings", values); await loadChannels(); await refresh(true); render(); toast("Settings saved");
+        await papi("PUT", "settings", values); await loadProjects(); await refresh(true); render(); toast("Settings saved");
       },
     });
   },
@@ -823,7 +1849,7 @@ const actions = {
         if (pending && !times.includes(pending)) times = [...times, pending].sort();
         const timezone = form.timezone.value.trim(), schedule = { days, times };
         const wasOn = (saved.times || []).length > 0;
-        await capi("PUT", "settings", { schedule, timezone });
+        await papi("PUT", "settings", { schedule, timezone });
         await refresh(true); render();
         if (times.length) setTimeout(() => showPrompt("Create the schedule", PROMPTS.setSchedule(schedule, timezone),
           "Paste this into Claude or ChatGPT, in the project that has this workspace. Your agent creates the scheduled task. It doesn't run research now."));
@@ -834,16 +1860,16 @@ const actions = {
     });
   },
   "new-topic"() { topicDialog(); },
-  "new-channel"() { document.getElementById("channel-menu")?.setAttribute("hidden", ""); newChannelDialog(); },
+  "new-project"() { document.getElementById("project-menu")?.setAttribute("hidden", ""); newProjectDialog(); },
   async "toggle-switcher"() {
-    if (document.getElementById("channel-menu").hidden) { await loadChannels(); document.getElementById("channel-menu").hidden = false; }
-    else document.getElementById("channel-menu").hidden = true;
+    if (document.getElementById("project-menu").hidden) { await loadProjects(); document.getElementById("project-menu").hidden = false; }
+    else document.getElementById("project-menu").hidden = true;
   },
   "edit-topic"(id) { topicDialog(S.topics.find(t => t.id === id)); },
   "delete-topic"(id) {
     const t = S.topics.find(x => x.id === id);
     openDialog({ title: `Delete “${t.name}”?`, sub: "Findings stay; they just lose this topic tag.", body: "", submit: "Delete", danger: true,
-      onSubmit: async () => { await capi("DELETE", "topics/" + encodeURIComponent(id)); if (topicFilter === id) topicFilter = "all"; await refresh(true); render(); } });
+      onSubmit: async () => { await papi("DELETE", "topics/" + encodeURIComponent(id)); if (topicFilter === id) topicFilter = "all"; await refresh(true); render(); } });
   },
   "new-source"() {
     openDialog({
@@ -851,68 +1877,267 @@ const actions = {
       body: field("Website URL", `<input name="url" placeholder="https://example.com/news" inputmode="url" required>`)
         + field("Note", `<input name="note" placeholder="Optional, e.g. press releases">`),
       submit: "Add source",
-      onSubmit: async form => { await capi("POST", "sources", { url: form.url.value, note: form.note.value }); await refresh(true); render(); },
+      onSubmit: async form => { await papi("POST", "sources", { url: form.url.value, note: form.note.value }); await refresh(true); render(); },
     });
   },
   "edit-source"(id) {
     const s = S.sources.find(x => x.id === id);
     openDialog({ title: shortUrl(s.url), body: field("Note", `<input name="note" value="${esc(s.note)}">`),
-      onSubmit: async form => { await capi("PUT", "sources/" + encodeURIComponent(id), { note: form.note.value }); await refresh(true); render(); } });
+      onSubmit: async form => { await papi("PUT", "sources/" + encodeURIComponent(id), { note: form.note.value }); await refresh(true); render(); } });
   },
   "delete-source"(id) {
     const s = S.sources.find(x => x.id === id);
     openDialog({ title: `Remove ${shortUrl(s.url)}?`, body: "", submit: "Remove", danger: true,
-      onSubmit: async () => { await capi("DELETE", "sources/" + encodeURIComponent(id)); await refresh(true); render(); } });
+      onSubmit: async () => { await papi("DELETE", "sources/" + encodeURIComponent(id)); await refresh(true); render(); } });
   },
   filter(id) { topicFilter = id; if (route().tab !== "findings") location.hash = base() + "/findings"; else render(); },
   select(id, el) { el.checked ? selected.add(id) : selected.delete(id); render(); },
   "clear-selection"() { selected.clear(); render(); },
-  "add-to-script"() {
+  "add-to-story"() {
     const ids = [...selected];
     const first = findingById(ids[0]);
     openDialog({
-      title: "Add to script", sub: `${ids.length} finding${ids.length === 1 ? "" : "s"} will be attached as reference material. Script text is not changed.`,
-      body: `${S.scripts.length ? `<div class="choices"><label class="choice"><input type="radio" name="mode" value="new" checked>New script</label>
-          <label class="choice"><input type="radio" name="mode" value="existing">Existing script</label></div>` : `<input type="hidden" name="mode" value="new">`}
+      title: "Add to story", sub: `${plural(ids.length, "finding")} will be attached as research material.`,
+      body: `${S.stories.length ? `<div class="choices"><label class="choice"><input type="radio" name="mode" value="new" checked>New story</label>
+          <label class="choice"><input type="radio" name="mode" value="existing">Existing story</label></div>` : `<input type="hidden" name="mode" value="new">`}
         <div data-mode="new">${field("Title", `<input name="title" value="${esc(first ? first.title : "")}">`)}</div>
-        ${S.scripts.length ? `<div data-mode="existing" hidden>${field("Script", `<select name="script">${S.scripts.map(s => `<option value="${esc(s.id)}">${esc(s.title)}</option>`).join("")}</select>`)}</div>` : ""}`,
+        ${S.stories.length ? `<div data-mode="existing" hidden>${field("Story", `<select name="story">${S.stories.map(s => `<option value="${esc(s.id)}">${esc(s.title)}</option>`).join("")}</select>`)}</div>` : ""}`,
       submit: "Add",
       onOpen: form => form.querySelectorAll('input[name="mode"][type="radio"]').forEach(radio => radio.onchange = () =>
         form.querySelectorAll("[data-mode]").forEach(block => block.hidden = block.dataset.mode !== radio.value)),
       onSubmit: async form => {
         const mode = (form.querySelector('input[name="mode"]:checked') || form.querySelector('input[name="mode"]')).value;
-        const script = mode === "new" ? await capi("POST", "scripts", { title: form.title.value, findings: ids })
-          : await capi("PUT", "scripts/" + encodeURIComponent(form.script.value), { add_findings: ids });
-        selected.clear(); await refresh(true); location.hash = base() + "/scripts/" + encodeURIComponent(script.id);
+        const story = mode === "new" ? await papi("POST", "stories", { title: form.title.value, findings: ids })
+          : await papi("PUT", "stories/" + enc(form.story.value), { add_findings: ids });
+        selected.clear(); await refresh(true); location.hash = base() + "/stories/" + enc(story.id);
       },
     });
   },
-  "new-script"() {
-    openDialog({ title: "New script", body: field("Title", `<input name="title" placeholder="Untitled script">`), submit: "Create",
-      onSubmit: async form => { const s = await capi("POST", "scripts", { title: form.title.value }); await refresh(true); location.hash = base() + "/scripts/" + encodeURIComponent(s.id); } });
+  "new-story"() {
+    openDialog({ title: "New story", body: field("Title", `<input name="title" placeholder="Untitled story">`), submit: "Create",
+      onSubmit: async form => { const s = await papi("POST", "stories", { title: form.title.value }); await refresh(true); location.hash = base() + "/stories/" + enc(s.id); } });
+  },
+  "delete-story"(id) {
+    const s = S.stories.find(x => x.id === id), made = S.scripts.filter(x => x.story === id).length;
+    openDialog({ title: `Delete “${s.title}”?`, sub: "The story moves to stories/.trash in your workspace." + (made ? ` Its ${plural(made, "script")} stay in production.` : ""),
+      body: "", submit: "Delete", danger: true,
+      onSubmit: async () => { await papi("DELETE", "stories/" + enc(id)); await refresh(true); if (editor) location.hash = base() + "/stories"; else render(); } });
   },
   "delete-script"(id) {
     const s = S.scripts.find(x => x.id === id);
-    openDialog({ title: `Delete “${s.title}”?`, sub: "The script moves to scripts/.trash in your workspace.", body: "", submit: "Delete", danger: true,
-      onSubmit: async () => { await capi("DELETE", "scripts/" + encodeURIComponent(id)); await refresh(true); render(); } });
+    openDialog({ title: `Delete the ${channelLabel(s.channel)} script?`, sub: "It moves to scripts/.trash in your workspace. The story stays.", body: "", submit: "Delete", danger: true,
+      onSubmit: async () => { await papi("DELETE", "scripts/" + enc(id)); editor = null; await refresh(true); location.hash = "#/production"; } });
   },
-  "editor-tab"(id) { editor.tab = id; editor.view = defaultView(); renderEditor(editor.data.id); },
   "editor-view"(id) {
-    editor.view = id; renderEditor(editor.data.id);
-    if (id === "edit") document.getElementById("script-text").focus();
+    editor.view = id; rerender();
+    if (id === "edit") document.getElementById("doc-text").focus();
   },
-  "open-script"(id) { location.hash = base() + "/scripts/" + encodeURIComponent(id); },
+  "open-story"(id) { location.hash = base() + "/stories/" + enc(id); },
+  "open-script"(id, el) { location.hash = scriptHref(id, el?.dataset.project || PROJECT); },
+  "go-stories"() { const project = PROJECTS.find(p => p.id === PROJECT)?.id || PROJECTS[0]?.id; location.hash = project ? base(project) + "/stories" : "#/research"; },
   "toggle-finding"(id) { selected.has(id) ? selected.delete(id) : selected.add(id); render(); },
-  "save-script"() { saveScript(); },
-  async "reload-script"() { editor = null; render(); },
-  "keep-mine"() { editor.remoteChanged = false; editor.data.version = undefined; renderEditor(editor.data.id); toast("Saving will overwrite your agent's version"); },
-  "write-draft"() {
+  "save-doc"() { saveDoc(true); },
+  "reload-doc"() { const kind = editor.kind; editor = null; renderEditor(kind, route().id); },
+  "keep-mine"() { editor.remoteChanged = false; editor.data.version = undefined; rerender(); toast("Saving will overwrite your agent's version"); },
+  async "research-story"() {
     const s = editor.data;
-    if (editor.dirty) saveScript();
-    showPrompt("Write draft", PROMPTS.draft(s), s.findings.length
-      ? "Paste this into Claude or ChatGPT. Your agent researches the attached findings in depth, then writes the video script, the WhatsApp post, and research notes. They appear here when it's done."
-      : "Tip: attach findings first so the draft has material. Paste this into Claude or ChatGPT and your agent will draft from the title alone.");
+    if (editor.dirty && !(await saveDoc())) return;
+    showPrompt("Research story", PROMPTS.researchStory(s), s.findings.length || s.topics.length
+      ? "Paste this into Claude or ChatGPT. Your agent researches the attached findings and topics in depth and writes the research notes. They appear here when it's done."
+      : "Tip: attach findings or link a topic first so research has material. Paste this into Claude or ChatGPT and your agent will research from the title alone.");
   },
+  async "send-to-production"() {
+    const view = editor, owner = PROJECT, ownerName = projectName(), suffix = workspaceSuffix();
+    if (view.dirty && !(await saveDoc())) return;
+    if (editor !== view || PROJECT !== owner) return;
+    const story = view.data, taken = new Set(S.scripts.filter(x => x.story === story.id).map(x => x.channel));
+    if (!S.channels.length) return actions["new-channel"]();
+    openDialog({
+      title: "Send to production", sub: "Creates a script for each channel you pick, written in that channel's language and format.",
+      body: `<div class="pick-list">${S.channels.map(c => `<label><input type="checkbox" name="c" value="${esc(c.id)}" ${taken.has(c.id) ? "checked disabled" : ""}>
+          <span><b>${esc(c.name)}</b><br><span class="muted">${esc([c.platform, c.kind === "post" ? "Text post" : "Video script", c.language].filter(Boolean).join(" · "))}${taken.has(c.id) ? " · already in production" : ""}</span></span></label>`).join("")}</div>
+        <p class="muted small" style="margin:10px 0 0">Need another? <button type="button" class="link-btn" data-action="new-channel">Add a channel</button></p>`,
+      submit: "Create scripts",
+      onSubmit: async form => {
+        const ids = [...form.querySelectorAll('input[name="c"]:checked:not(:disabled)')].map(i => i.value);
+        if (!ids.length) throw new Error("Pick at least one channel");
+        const made = [];
+        for (const channel of ids) made.push((await api("POST", `p/${enc(owner)}/scripts`, { story: story.id, channel })).id);
+        if (PROJECT === owner) await refresh(true);
+        const prompt = PROMPTS.draftScripts(story, made, ownerName, suffix);
+        setTimeout(() => showPrompt("Write the drafts", prompt,
+          "Paste this into Claude or ChatGPT. Your agent writes each script from the story's research, in each channel's language and format. They appear in Production when it's done."));
+        location.hash = "#/production";
+      },
+    });
+  },
+  async "write-draft"() {
+    if (editor.dirty && !(await saveDoc())) return;
+    const s = editor.data, n = openComments(s).length;
+    showPrompt(n ? "Revise the script" : "Write draft", PROMPTS.draft(s), n
+      ? `Paste this into Claude or ChatGPT. Your agent works through the ${plural(n, "open comment")} in order, edits the script, and resolves each one.`
+      : (storyById(s.story)?.researched ? "Paste this into Claude or ChatGPT. Your agent writes the script from the story's research notes, in this channel's language and format. It appears here when it's done."
+        : "The story has no research notes yet, so your agent researches it first, then writes the script. Paste this into Claude or ChatGPT."));
+  },
+  async "set-stage"(stage) { if (stage !== editor.data.stage) await updateMeta({ stage }); },
+  async "save-url"() { await updateMeta({ published_url: document.getElementById("published-url").value }); toast("Link saved"); },
+  async "add-comment"() {
+    const picked = selectedQuote();
+    if (editor.dirty && !(await saveDoc())) return;
+    const scriptId = editor.data.id;
+    openDialog({
+      title: "Comment", sub: picked ? "" : `Nothing is selected, so this comment is on the whole ${isPost() ? "post" : "script"}. To comment on a passage, select it first.`,
+      body: (picked ? `<div class="quote-box">${esc(picked.quote)}</div>` : "") + field("Comment", `<textarea name="body" rows="3" placeholder="What should change here?" required></textarea>`),
+      submit: "Add comment",
+      onOpen: form => form.body.onkeydown = e => { if (e.key === "Enter" && (e.metaKey || e.ctrlKey)) form.requestSubmit(); },
+      onSubmit: async form => {
+        await papi("POST", `scripts/${enc(scriptId)}/comments`, { body: form.body.value, quote: picked?.quote || "", offset: picked?.offset ?? null });
+        await reloadComments();
+      },
+    });
+  },
+  "goto-comment"(id) {
+    const c = editor.data.comments.find(x => x.id === id);
+    if (c.position < 0) return toast(`That text is no longer in the ${isPost() ? "post" : "script"}`);
+    const mark = document.querySelector(`#md-preview mark[data-comment="${CSS.escape(id)}"]`);
+    if (mark) { mark.scrollIntoView({ block: "center", behavior: "smooth" }); mark.classList.remove("flash"); void mark.offsetWidth; mark.classList.add("flash"); return; }
+    if (editor.view === "preview") { editor.view = "edit"; rerender(); }
+    const area = document.getElementById("doc-text");
+    area.focus(); area.setSelectionRange(c.position, c.position + c.quote.length);
+  },
+  async "resolve-comment"(id) { await papi("PUT", `scripts/${enc(editor.data.id)}/comments/${enc(id)}`, { resolved: true }); await reloadComments(); },
+  async "reopen-comment"(id) { await papi("PUT", `scripts/${enc(editor.data.id)}/comments/${enc(id)}`, { resolved: false }); await reloadComments(); },
+  async "delete-comment"(id) { await papi("DELETE", `scripts/${enc(editor.data.id)}/comments/${enc(id)}`); await reloadComments(); },
+  "new-channel"() { channelDialog(); },
+  "set-design"(value, el) {
+    const path = el.dataset.path;
+    if (value === "true" || value === "false") value = value === "true";
+    setPath(CV.design, path, value);
+    el.parentElement.querySelectorAll("button").forEach(b => b.classList.toggle("on", b === el));
+    if (path === "aspect") { const device = document.getElementById("look-player"); device.className = `device aspect-${value.replace(":", "x")}`; }
+    designChanged(path);
+  },
+  "pick-preset"(id) {
+    const preset = CATALOG.presets.find(p => p.id === id), before = structuredClone(CV.design);
+    if (channelById(CV.id).language !== "English" && !CATALOG.fonts.some(f => f.devanagari)) return toast("Load a Hindi-compatible font before applying a style", "error");
+    const view = CV;
+    CV.design = { preset: id, ...structuredClone(preset.design), logo: { ...preset.design.logo, text: before.logo?.text ?? "" } };
+    if (channelById(CV.id).language !== "English") {
+      const fallback = CATALOG.fonts.find(f => f.devanagari)?.family;
+      for (const role of ["display", "body"]) {
+        if (!CATALOG.fonts.some(f => f.family === CV.design.fonts[role] && f.devanagari)) CV.design.fonts[role] = CATALOG.fonts.some(f => f.family === before.fonts[role] && f.devanagari) ? before.fonts[role] : fallback;
+      }
+    }
+    renderChannel(CV.id, "look");
+    saveDesign();
+    undoToast(`Switched to ${preset.name}`, async () => { view.design = before; await saveDesign(view); if (CV === view && channelRoute(view.id)) renderChannel(view.id, "look"); });
+  },
+  "set-sample"(value, el) {
+    CV.sample = value;
+    el.parentElement.querySelectorAll("button").forEach(b => b.classList.toggle("on", b === el));
+    playerLoad(lookPayload());
+  },
+  "toggle-safe"(_, el) { CV.safeArea = el.checked; playerReload(CV.design, sampleScenes(), { safeArea: CV.safeArea }); },
+  "ask-fill"(text) { CV.ask[CV.tab] = text; const box = document.getElementById("ask-text"); box.value = text; box.focus(); box.setSelectionRange(text.length, text.length); },
+  "ask-agent"(kind) {
+    const request = document.getElementById("ask-text").value.trim();
+    if (!request) return toast("Describe the change first");
+    const c = channelById(CV.id);
+    showPrompt(kind === "look" ? "Change the look" : "Tune the voice", PROMPTS[kind](c, request),
+      `Paste this into Claude or ChatGPT. Your agent edits ${c.name}'s ${kind}, and the ${kind === "look" ? "preview" : "settings"} here update when it's done.`);
+  },
+  "toggle-hook"(key, el) {
+    const on = !(CV.voice.hook_styles || []).includes(key);
+    if (!on && CV.voice.hook_styles.length === 1) return toast("Keep at least one hook style");
+    CV.voice.hook_styles = HOOK_STYLES.map(h => h[0]).filter(h => h === key ? on : CV.voice.hook_styles.includes(h));
+    el.classList.toggle("on", on);
+    voiceChanged();
+  },
+  "add-example"() {
+    const view = CV;
+    openDialog({
+      title: "Add a script you love", sub: "Your agent studies its rhythm, wording, and structure. It never reuses its facts.",
+      body: field("Title", `<input name="title" placeholder="e.g. Varun Mayya on credit scores">`)
+        + field("Script", `<textarea name="text" rows="8" placeholder="Paste the script or a transcript" required></textarea>`)
+        + field("What you like about it", `<input name="why" placeholder="e.g. The hook, the pace, the jokes">`),
+      submit: "Add",
+      onSubmit: async form => {
+        if (!form.text.value.trim()) throw new Error("Paste the script first");
+        view.voice.examples = [...(view.voice.examples || []), { title: form.title.value.trim(), text: form.text.value.trim(), why: form.why.value.trim() }];
+        await saveVoice(view); if (CV === view && channelRoute(view.id)) renderChannel(view.id, "voice");
+      },
+    });
+  },
+  async "remove-example"(index) { const view = CV; view.voice.examples = view.voice.examples.filter((_, i) => i !== Number(index)); await saveVoice(view); if (CV === view && channelRoute(view.id)) renderChannel(view.id, "voice"); },
+  "finish-setup"() {
+    setupChannel = null; CV.setup = false;
+    toast("Channel ready. Send a story to production to write its first script");
+    location.hash = `${channelHref()}`;
+  },
+  "player-toggle"() { playerSend({ type: PLAYER.playing ? "pause" : "play" }); },
+  "seek-beat"(index) { playerSend({ type: "seekScene", index: Number(index) }); },
+  async "beat-image"(index) {
+    const view = editor, project = PROJECT, file = await pickImage();
+    if (!file || editor !== view || PROJECT !== project) return;
+    if (file.size > 15e6) return toast("Images must be under 15 MB", "error");
+    try {
+      const data = await readDataUrl(file);
+      if (editor !== view || PROJECT !== project) return;
+      const item = await api("POST", `p/${enc(project)}/scripts/${enc(view.data.id)}/media`, { name: file.name, data });
+      if (editor !== view || PROJECT !== project) return;
+      await editScriptText(text => setBeatCue(text, Number(index), "image", item.path));
+    } catch (e) { toast(e.message, "error"); }
+  },
+  async "beat-image-remove"(index) {
+    const view = editor, scene = scriptScenes()[Number(index)];
+    if (!scene) return;
+    if (scene.image) await editScriptText(text => setBeatCue(text, Number(index), "image", null));
+    else if (scene.type === "image") toast("This beat is an image scene: change its Visual: line to swap the photo", "error");
+    if (editor === view) rerender();
+  },
+  async "delete-media"(file) {
+    const view = editor;
+    const used = scriptScenes().some(x => scenePhoto(x) === `media/${file}`);
+    if (used && !confirm(`media/${file} is used in the script. Delete it anyway?`)) return;
+    try { await api("DELETE", `p/${enc(PROJECT)}/scripts/${enc(view.data.id)}/media/${enc(file)}`); await reloadComments(); }
+    catch (e) { toast(e.message, "error"); }
+  },
+  async "render-video"() {
+    const view = editor, project = PROJECT;
+    if (view.dirty && !(await saveDoc())) return;
+    if (editor !== view || PROJECT !== project) return;
+    try {
+      view.data.video = await api("POST", `p/${enc(project)}/scripts/${enc(view.data.id)}/render`, {});
+      if (editor === view && PROJECT === project) updateVideoBox();
+    } catch (e) { toast(e.message, "error"); }
+  },
+  "side-tab"(key) { editor.sideTab = key; rerender(); },
+  async "choose-angle"(id) {
+    const view = editor, project = PROJECT;
+    if (view.dirty && !(await saveDoc())) return;
+    if (editor !== view || PROJECT !== project) return;
+    const path = `p/${enc(project)}/${EDITORS.script.path(view.data.id)}`;
+    const fresh = await api("PUT", path, { chosen_angle: id });
+    if (editor !== view || PROJECT !== project) return;
+    view.data = view.dirty ? { ...fresh, title: view.data.title, text: view.data.text } : fresh;
+    rerender();
+    // New typing during the hook request must reach disk before the rewrite prompt.
+    if (view.dirty && !(await saveDoc())) return;
+    if (editor !== view || PROJECT !== project) return;
+    const angle = view.data.angles.find(a => a.id === id);
+    showPrompt("Rewrite with this hook", PROMPTS.rewriteAngle(editor.data, angle),
+      "Paste this into Claude or ChatGPT. Your agent rewrites the script around this hook and angle, keeps the facts, and scores the new draft.");
+  },
+  "open-channels"() { location.hash = channelHref(); },
+  "edit-channel"(id) { channelDialog(channelById(id)); },
+  "open-channel"(id) { location.hash = `${channelHref()}/${enc(id)}`; },
+  "delete-channel"(id) {
+    const c = channelById(id);
+    openDialog({ title: `Delete “${c.name}”?`, sub: "Every project shares this channel.", body: "", submit: "Delete", danger: true,
+      onSubmit: async () => { await api("DELETE", "channels/" + enc(id)); await refreshGlobal(true); render(); } });
+  },
+  "filter-channel"(_, el) { channelFilter = el.value; render(); },
+  "filter-production-project"(_, el) { productionProjectFilter = el.value; render(); },
   attach() {
     const s = editor.data;
     const available = S.findings.filter(f => !s.findings.includes(f.id) && !f.dismissed_at);
@@ -922,36 +2147,66 @@ const actions = {
       body: `<div class="pick-list">${available.map(f => `<label><input type="checkbox" name="f" value="${esc(f.id)}"><span><b>${esc(f.title)}</b><br><span class="muted">${(f.topics || []).map(topicName).map(esc).join(", ")} · found ${esc(when(f.found_at))}</span></span></label>`).join("")}</div>`,
       onSubmit: async form => {
         const ids = [...form.querySelectorAll('input[name="f"]:checked')].map(i => i.value);
-        if (ids.length) await updateAttachments({ findings: [...s.findings, ...ids] });
+        if (ids.length) await updateMeta({ findings: [...s.findings, ...ids] });
       },
     });
   },
-  detach(id) { updateAttachments({ findings: editor.data.findings.filter(f => f !== id) }); },
-  "unlink-topic"(id) { updateAttachments({ topics: editor.data.topics.filter(t => t !== id) }); },
+  detach(id) { updateMeta({ findings: editor.data.findings.filter(f => f !== id) }); },
+  "unlink-topic"(id) { updateMeta({ topics: editor.data.topics.filter(t => t !== id) }); },
   "link-topic"() {
     const s = editor.data;
     const available = S.topics.filter(t => !s.topics.includes(t.id));
     if (!available.length) return toast(S.topics.length ? "All topics are already linked" : "Add a topic first");
     openDialog({
-      title: "Link topics", sub: "Write draft researches linked topics directly, which is how explainers work.", submit: "Link",
+      title: "Link topics", sub: "Research story covers linked topics directly, which is how explainers work.", submit: "Link",
       body: `<div class="pick-list">${available.map(t => `<label><input type="checkbox" name="t" value="${esc(t.id)}"><span><b>${esc(t.name)}</b><br><span class="muted">${esc(t.description)}</span></span></label>`).join("")}</div>`,
       onSubmit: async form => {
         const ids = [...form.querySelectorAll('input[name="t"]:checked')].map(i => i.value);
-        if (ids.length) await updateAttachments({ topics: [...s.topics, ...ids] });
+        if (ids.length) await updateMeta({ topics: [...s.topics, ...ids] });
       },
     });
   },
-  async "approve-source"(id) { await capi("PUT", "sources/" + encodeURIComponent(id), { status: "approved" }); await refresh(true); render(); toast("Source approved. Research will check it every run"); },
-  async "dismiss-source"(id) { await capi("PUT", "sources/" + encodeURIComponent(id), { status: "dismissed" }); await refresh(true); render(); },
+  async "approve-source"(id) { await papi("PUT", "sources/" + encodeURIComponent(id), { status: "approved" }); await refresh(true); render(); toast("Source approved. Research will check it every run"); },
+  async "dismiss-source"(id) { await papi("PUT", "sources/" + encodeURIComponent(id), { status: "dismissed" }); await refresh(true); render(); },
   async "dismiss-finding"(id) {
-    await capi("PUT", "findings/" + encodeURIComponent(id), { dismissed: true });
+    await papi("PUT", "findings/" + encodeURIComponent(id), { dismissed: true });
     selected.delete(id); await refresh(true); render();
-    undoToast("Finding dismissed", async () => { await capi("PUT", "findings/" + encodeURIComponent(id), { dismissed: false }); await refresh(true); render(); });
+    undoToast("Finding dismissed", async () => { await papi("PUT", "findings/" + encodeURIComponent(id), { dismissed: false }); await refresh(true); render(); });
   },
-  async "restore-finding"(id) { await capi("PUT", "findings/" + encodeURIComponent(id), { dismissed: false }); await refresh(true); render(); },
+  async "restore-finding"(id) { await papi("PUT", "findings/" + encodeURIComponent(id), { dismissed: false }); await refresh(true); render(); },
   "toggle-dismissed"() { showDismissed = !showDismissed; render(); },
   "filter-select"(_, el) { topicFilter = el.value; render(); },
 };
+
+const PLATFORMS = ["YouTube", "YouTube Shorts", "Instagram Reels", "TikTok", "WhatsApp channel", "LinkedIn", "X"];
+function channelDialog(channel) {
+  const c = channel || { kind: "video", language: "English", platform: "", audience: "", format: "" };
+  openDialog({
+    title: channel ? "Edit channel" : "New channel", sub: "Every project can send scripts here. Scripts follow the channel's language and format.",
+    body: field("Name", `<input name="name" value="${esc(c.name || "")}" placeholder="e.g. Explained in 90s" required>`)
+      + field("Platform", `<input name="platform" value="${esc(c.platform)}" list="platforms" placeholder="e.g. YouTube Shorts"><datalist id="platforms">${PLATFORMS.map(x => `<option value="${x}">`).join("")}</datalist>`)
+      + field("Type", `<select name="kind"><option value="video" ${c.kind === "video" ? "selected" : ""}>Video script</option><option value="post" ${c.kind === "post" ? "selected" : ""}>Text post (WhatsApp, LinkedIn, X)</option></select>`)
+      + field("Language", `<select name="language">${LANGUAGES.map(l => `<option ${c.language === l ? "selected" : ""}>${l}</option>`).join("")}${LANGUAGES.includes(c.language) ? "" : `<option selected>${esc(c.language)}</option>`}</select>`,
+          "Hindi is always written in Devanagari. Hinglish mixes Hindi (Devanagari) with English terms, e.g. “HDPE resin के rates बढ़े”.")
+      + field("Audience", `<input name="audience" value="${esc(c.audience)}" placeholder="Who watches, and what they already know">`)
+      + field("Format", `<textarea name="format" rows="7" placeholder="${channel ? "" : "Leave empty to start from the default format for this type"}">${esc(c.format)}</textarea>`, "Length, structure, tone, visuals. Your agent follows this when writing."),
+    submit: channel ? "Save" : "Create channel",
+    onOpen: form => form.platform.oninput = () => { if (/whatsapp|linkedin|^x$/i.test(form.platform.value.trim())) form.kind.value = "post"; },
+    onSubmit: async form => {
+      const values = Object.fromEntries(new FormData(form));
+      if (channel) await api("PUT", "channels/" + enc(channel.id), values);
+      else {
+        const created = await api("POST", "channels", values);
+        await refreshGlobal(true);
+        setupChannel = created.id;
+        location.hash = `${channelHref()}/${enc(created.id)}/${created.kind === "post" ? "voice" : "look"}`;
+        return;
+      }
+      await refreshGlobal(true);
+      if (editor?.kind === "story") rerender(); else render();
+    },
+  });
+}
 
 function topicDialog(topic) {
   openDialog({
@@ -961,7 +2216,7 @@ function topicDialog(topic) {
     submit: topic ? "Save" : "Add topic",
     onSubmit: async form => {
       const body = { name: form.name.value, description: form.description.value };
-      topic ? await capi("PUT", "topics/" + encodeURIComponent(topic.id), body) : await capi("POST", "topics", body);
+      topic ? await papi("PUT", "topics/" + encodeURIComponent(topic.id), body) : await papi("POST", "topics", body);
       await refresh(true); render();
     },
   });
@@ -986,98 +2241,154 @@ document.addEventListener("change", event => {
   const el = event.target.closest('select[data-action]');
   if (el && actions[el.dataset.action]) actions[el.dataset.action](el.dataset.id, el);
 });
+// Clicking Comment must not clear the text the user selected in the preview.
+document.addEventListener("mousedown", event => { if (event.target.closest("[data-keep-selection]")) event.preventDefault(); });
 document.addEventListener("keydown", event => {
-  if ((event.ctrlKey || event.metaKey) && event.key === "s" && editor) { event.preventDefault(); saveScript(); }
+  if ((event.ctrlKey || event.metaKey) && event.key === "s" && editor) { event.preventDefault(); saveDoc(); }
 });
-async function loadChannels() {
-  CHANNELS = (await api("GET", "channels")).channels;
+async function loadProjects() {
+  PROJECTS = (await api("GET", "projects")).projects;
   renderSwitcher();
 }
 
 function renderSwitcher() {
   const el = document.getElementById("switcher");
-  if (!CHANNELS.length) { el.innerHTML = ""; return; }
-  el.innerHTML = `<button class="switch-btn" data-action="toggle-switcher" aria-haspopup="true">${esc(channelName() || "Choose channel")}${icon("chevron")}</button>
-    <div class="menu" id="channel-menu" hidden>
-      <div class="menu-label">Channels</div>
-      ${CHANNELS.map(c => `<a class="menu-item ${c.id === CH ? "on" : ""}" href="${base(c.id)}/findings"><span>${esc(c.name)}</span>
+  if (route().scope !== "research") { el.innerHTML = ""; return; }
+  if (!PROJECTS.length) { el.innerHTML = `<button class="switch-btn" data-action="new-project">${icon("plus")}New project</button>`; return; }
+  el.innerHTML = `<button class="switch-btn" data-action="toggle-switcher" aria-haspopup="true">${esc(projectName() || "Choose project")}${icon("chevron")}</button>
+    <div class="menu" id="project-menu" hidden>
+      <div class="menu-label">Projects</div>
+      ${PROJECTS.map(c => `<a class="menu-item ${c.id === PROJECT ? "on" : ""}" href="${base(c.id)}/findings"><span>${esc(c.name)}</span>
         <span class="muted">${c.suggested_sources ? `${c.suggested_sources} new source${c.suggested_sources === 1 ? "" : "s"}` : ""}</span></a>`).join("")}
-      <button class="menu-item" data-action="new-channel">${icon("plus")}<span>New channel</span></button>
+      <button class="menu-item" data-action="new-project">${icon("plus")}<span>New project</span></button>
     </div>`;
 }
 document.addEventListener("click", event => {
-  const menu = document.getElementById("channel-menu");
+  const menu = document.getElementById("project-menu");
   if (menu && !menu.hidden && !event.target.closest("#switcher")) menu.hidden = true;
 });
 
-function newChannelDialog() {
+function newProjectDialog() {
   openDialog({
-    title: "New channel", sub: "Each channel has its own topics, sources, findings, scripts, and schedule.",
-    body: field("Channel name", `<input name="name" placeholder="e.g. Pipe Gyaan" required>`)
+    title: "New project", sub: "Each research project has its own topics, sources, findings, stories, and schedule. Production and channels are shared across projects.",
+    body: field("Project name", `<input name="name" placeholder="e.g. Plumbing &amp; bathrooms" required>`)
       + field("What it covers", `<input name="description" placeholder="Optional">`)
-      + field("Language", `<select name="language">${["English", "Hindi", "Hinglish"].map(l => `<option>${l}</option>`).join("")}</select>`),
-    submit: "Create channel",
+,
+    submit: "Create project",
     onSubmit: async form => {
-      const created = await api("POST", "channels", { name: form.name.value, description: form.description.value, language: form.language.value });
-      await loadChannels(); location.hash = base(created.id) + "/topics";
+      const created = await api("POST", "projects", { name: form.name.value, description: form.description.value });
+      await loadProjects(); location.hash = base(created.id) + "/topics";
     },
   });
 }
 
-function renderNoChannels() {
-  document.getElementById("app").innerHTML = `<div class="empty" style="margin-top:40px"><h3>Create your first channel</h3>
-    <p>A channel is one YouTube channel, Instagram account, or WhatsApp channel, with its own topics, sources, findings, and scripts.</p>
-    <button class="btn primary" data-action="new-channel">${icon("plus")}New channel</button></div>`;
+function renderNoProjects() {
+  document.getElementById("app").innerHTML = `<div class="empty" style="margin-top:40px"><h3>Create your first project</h3>
+    <p>A project is one subject area you research, such as plumbing products or Indian tech news, with its own topics, sources, findings, and stories. Production and Channels work across all projects.</p>
+    <button class="btn primary" data-action="new-project">${icon("plus")}New project</button></div>`;
 }
 
-// Pick the channel from the URL, else the last one used, else the first.
-async function enterChannel() {
-  if (!CHANNELS.length) { CH = null; renderSwitcher(); renderNoChannels(); return false; }
-  if (!CHANNELS.some(c => c.id === route().channel)) {
-    const last = localStorage.getItem("vid-studio-channel");
-    const next = CHANNELS.some(c => c.id === last) ? last : CHANNELS[0].id;
-    history.replaceState(null, "", base(next) + "/" + (route().tab || ""));
+// Global sections are valid independently of any research project.
+async function enterProject() {
+  let r = route();
+  if (r.scope === "legacy") {
+    const canonical = r.tab === "channels" ? channelHref(r.id, r.sub) : r.tab === "scripts" ? (r.id ? scriptHref(r.id, r.project) : "#/production") : base(r.project) + (r.tab ? "/" + r.tab : "") + (r.id ? "/" + enc(r.id) : "");
+    history.replaceState(null, "", canonical); r = route();
   }
-  if (CH !== route().channel) {
-    CH = route().channel; localStorage.setItem("vid-studio-channel", CH);
+  const hash = location.hash;
+  await refreshGlobal();
+  if (location.hash !== hash) return false;
+  if (r.scope === "channels" || (r.scope === "production" && !r.id)) { renderGlobalNavigation(); return true; }
+  if (r.scope === "research" && !PROJECTS.length) { PROJECT = null; S = null; renderGlobalNavigation(); return true; }
+  if (r.scope === "research" && !PROJECTS.some(p => p.id === r.project)) {
+    const saved = RESEARCH_PROJECT || localStorage.getItem("vid-studio-project");
+    const next = PROJECTS.some(p => p.id === saved) ? saved : PROJECTS[0].id;
+    history.replaceState(null, "", base(next) + "/" + (r.tab || "findings")); r = route();
+  }
+  if (!PROJECTS.some(p => p.id === r.project)) {
+    PROJECT = null; S = null; editor = null;
+    renderGlobalNavigation(); renderUnavailableProject(); return false;
+  }
+  if (r.scope === "research") { RESEARCH_PROJECT = r.project; localStorage.setItem("vid-studio-project", r.project); }
+  if (PROJECT !== r.project || !S) {
+    PROJECT = r.project;
     S = null; lastStateJson = ""; selected.clear(); topicFilter = "all"; showDismissed = false; editor = null;
-    renderSwitcher();
+    const expected = location.hash;
     await refresh(true);
+    if (location.hash !== expected) return false;
   }
+  renderGlobalNavigation();
   return true;
 }
 
 let lastHash = location.hash;
 window.addEventListener("hashchange", async () => {
-  if (editor && editor.dirty && !confirm("You have unsaved changes in this script. Leave anyway?")) { history.replaceState(null, "", lastHash); return; }
+  if (editor && editor.dirty && !confirm(`You have unsaved changes in this ${editor.kind}. Leave anyway?`)) { history.replaceState(null, "", lastHash); return; }
   lastHash = location.hash; editor = null;
-  if (await enterChannel()) render();
+  if (await enterProject()) render();
 });
 
 window.addEventListener("beforeunload", event => { if (editor && editor.dirty) { event.preventDefault(); event.returnValue = ""; } });
 
 // Pick up changes your agent makes to the files while the page is open.
 async function poll() {
-  if (document.visibilityState === "visible" && !dialog.open && CH) {
+  if (document.visibilityState === "visible" && !dialog.open && (PROJECT || ["channels", "production"].includes(route().scope))) {
     try {
-      if (editor) {
-        const remote = await capi("GET", "scripts/" + encodeURIComponent(editor.data.id));
-        if (editor.data.version && remote.version !== editor.data.version) {
-          if (editor.dirty) { if (!editor.remoteChanged) { editor.remoteChanged = true; renderEditor(editor.data.id); } }
-          else { editor.data = remote; renderEditor(remote.id); toast("Updated by your agent"); }
+      const hash = location.hash, project = PROJECT, view = editor, channel = CV;
+      const current = () => hash === location.hash && project === PROJECT;
+      if (view) {
+        const remote = await papi("GET", EDITORS[view.kind].path(view.data.id));
+        if (!current() || editor !== view) return;
+        let changed = false;
+        if (view.data.version && remote.version !== view.data.version) {
+          if (view.dirty) { if (!view.remoteChanged) { view.remoteChanged = true; changed = true; } }
+          else { view.data = remote; changed = true; toast("Updated by your agent"); }
         }
-        await refresh();
-      } else if (await refresh()) {
+        if (view.kind === "script") {
+          const metadata = ["comments", "angles", "review", "media"];
+          if (JSON.stringify(metadata.map(k => remote[k])) !== JSON.stringify(metadata.map(k => view.data[k]))) {
+            for (const key of metadata) view.data[key] = remote[key];
+            changed = true;
+          }
+          if (JSON.stringify(remote.video) !== JSON.stringify(view.data.video)) { view.data.video = remote.video; if (!changed) updateVideoBox(); }
+          if (!isPost()) {
+            const id = enc(view.data.channel);
+            const [design, voice] = await Promise.all([api("GET", `channels/${id}/design`), api("GET", `channels/${id}/voice`)]);
+            if (!current() || editor !== view) return;
+            if (JSON.stringify([design, voice]) !== JSON.stringify([view.design, view.voice])) { Object.assign(view, { design, voice }); changed = true; }
+          }
+        }
+        if (await refresh()) changed = true;
+        if (view.kind === "script" && await refreshGlobal()) changed = true;
+        if (current() && editor === view && changed) rerender();
+      } else if (channel && channelRoute(channel.id)) {
+        const [design, voice] = await Promise.all([api("GET", `channels/${enc(channel.id)}/design`), api("GET", `channels/${enc(channel.id)}/voice`)]);
+        if (!current() || CV !== channel) return;
+        let changed = false;
+        for (const [resource, remote, marker] of [["design", design, "savedDesign"], ["voice", voice, "savedVoice"]]) {
+          if (!timers[channelKey(channel, resource)] && !saveQueues.has(channelKey(channel, resource)) && JSON.stringify(channel[resource]) === channel[marker] && JSON.stringify(remote) !== channel[marker]) {
+            channel[resource] = remote; channel[marker] = JSON.stringify(remote); changed = true;
+          }
+        }
+        if (await refreshGlobal()) changed = true;
+        if (!current() || CV !== channel) return;
+        const format = channelById(channel.id)?.format || "";
+        if (!timers[channelKey(channel, "fields")] && !saveQueues.has(channelKey(channel, "fields")) && JSON.stringify(channel.fields) === channel.savedFields) {
+          channel.fields.format = format; channel.savedFields = JSON.stringify(channel.fields);
+        }
+        if (changed) renderChannel(channel.id, channel.tab);
+      } else if (await (["production", "channels"].includes(route().scope) ? refreshGlobal() : PROJECT ? refresh() : Promise.resolve(false))) {
+        if (!current()) return;
         const focused = document.activeElement;
         if (!focused || focused === document.body || focused.dataset.action || focused.dataset.card) render();
       }
     } catch { /* server stopped; keep the page as it is */ }
-  }
-  setTimeout(poll, 4000);
+    finally { setTimeout(poll, 4000); }
+  } else setTimeout(poll, 4000);
 }
 
 document.getElementById("settings-btn").insertAdjacentHTML("afterbegin", icon("gear"));
-loadChannels().then(enterChannel).then(ok => { if (ok) render(); poll(); })
+loadProjects().then(enterProject).then(ok => { if (ok) render(); poll(); })
   .catch(e => { document.getElementById("app").innerHTML = `<div class="empty"><h3>Can't reach the studio</h3><p>${esc(e.message)}. Start it with <code>studio.py serve</code>.</p></div>`; });
 </script>
 </body>

@@ -1,0 +1,12 @@
+{
+  "schema_version": 5,
+  "name": "",
+  "description": "",
+  "audience": "",
+  "timezone": "",
+  "schedule": {
+    "days": ["mon", "tue", "wed", "thu", "fri", "sat", "sun"],
+    "times": []
+  },
+  "research_notes": ""
+}

@@ -1,0 +1,49 @@
+{
+  "id": "chalk-bold",
+  "name": "Chalk & Crimson",
+  "description": "Off-white canvas, crimson hero color and Archivo Black slabs with hard cuts. A punchy, poster-like news-explainer brand.",
+  "design": {
+    "aspect": "9:16",
+    "colors": {
+      "background": "#F4F1EA",
+      "surface": "#FFFFFF",
+      "text": "#111111",
+      "muted": "#5F5B55",
+      "accent": "#C41E16",
+      "accent2": "#1D4ED8",
+      "negative": "#C41E16"
+    },
+    "fonts": {
+      "display": "Archivo Black",
+      "body": "Noto Sans Devanagari",
+      "mono": "Space Mono"
+    },
+    "type": {
+      "scale": 0.95,
+      "display_case": "upper",
+      "display_weight": 400,
+      "tracking": -0.02
+    },
+    "motion": {
+      "energy": "high",
+      "easing": "snappy",
+      "transition": "cut"
+    },
+    "captions": {
+      "style": "boxed",
+      "position": "lower",
+      "highlight": "accent",
+      "max_words": 4
+    },
+    "background": {
+      "style": "solid",
+      "pattern": "dots"
+    },
+    "radius": 0,
+    "logo": {
+      "text": "",
+      "position": "top-left"
+    },
+    "custom_css": ""
+  }
+}

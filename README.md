@@ -1,6 +1,6 @@
 # Vid Studio
 
-A skill for running an explainer-video channel's research with any AI agent that supports [skills](https://skills.sh/), such as Claude, ChatGPT, or Codex. All data stays in a local folder, and you work in a small web UI.
+A skill for running research for explainer videos with any AI agent that supports [skills](https://skills.sh/), such as Claude, ChatGPT, or Codex. All data stays in a local folder, and you work in a small web UI.
 
 ```sh
 npx skills add namanbnsl/vid-studio
@@ -8,34 +8,53 @@ npx skills add namanbnsl/vid-studio
 
 ## How it works
 
-The studio holds your **channels** (each YouTube channel, Instagram account, or WhatsApp channel), and you switch between them in the UI. Each channel has four parts:
+The studio has three global tabs: **Research**, **Production**, and **Channels**. They stay available wherever you are in the app.
 
-- **Topics:** what the channel makes videos about. Each one is a name plus a description of what matters.
+**Research** happens in **projects** (each one a subject area, such as plumbing products or Indian tech news), and you switch between them in the UI. Each project has:
+
+- **Topics:** what the project makes videos about. Each one is a name plus a description of what matters.
 - **Sources:** websites every research run must check. Research also suggests new ones for you to approve.
 - **Findings:** short items on new developments, each linked to its topics and to the pages it came from. Dismiss what you don't need.
-- **Scripts:** built from findings, topics, or both. Each holds the video script, a WhatsApp post, and research notes.
+- **Stories:** an angle for a video, built from findings, topics, or both, with research notes.
 
-You manage topics, sources, and scripts in the UI. The two steps that need an AI each have a button:
+**Production** shows scripts from every research project on one board, with optional project and channel filters. A story becomes one script per channel you send it to. Scripts move through stages (script, ready, published), and you can comment on any passage for your agent to address. Each script links back to its source story and to its channel.
 
-- **Research now** copies a prompt. Paste it into Claude or ChatGPT; your agent researches every topic and the new findings show up in the UI.
-- **Write draft** (in a script) copies a prompt; your agent researches the attached findings in depth and writes the script, the post, and research notes.
+**Channels** manages publishing destinations (each YouTube channel, Instagram account, or WhatsApp channel), shared across the studio. They set each script's language, format, look, and voice. One research story can become an English Short, a Hinglish Reel, and a Hindi WhatsApp post. You can set up channels before adding a research project.
+
+The information flow is **Research story → Production scripts → Channels**. Research stays reusable; each script adapts that evidence for its destination. Projects organize Research and appear as source labels or optional filters in Production.
+
+Each channel has a **Voice** (length, pace, persona, tone, hook styles, rules, and scripts you love) and, for video channels, a **Look** (one of eight styles to start from, then colors, fonts with Hindi support, motion, captions, photo treatment, source tags, background, logo). You set both up when you add a channel, with a live preview of animated sample scenes in that look.
+
+Video scripts are written as beats: what's said, plus a `Visual:` line naming a scene (a stat, bar chart, comparison, list, quote, timeline, photo, or punchline). A beat can also have a photo behind it (`Image:`), a small on-screen source tag (`Source:`), and a fixed length (`Duration:`). The script editor plays them as an animated preview in the channel's look as you type, shows the timing against the target, the hooks your agent considered (swap one in with a click), and its self-review scores, including whether it sounds human and whether it's worth the viewer's minute.
+
+**Images.** Your agent picks photos for the beats about real things: openly licensed photos from Wikimedia Commons and Openverse (no API key; it looks at previews before choosing), or images it generates with its own image tool, if it has one. Generated images are never used for real people, products, logos, or documents. Every photo is saved with the script and credited on screen. You can also add your own photo to any beat from the script page.
+
+**Download.** Click **Render MP4** on a script, then **Download MP4**: the video renders on your computer (1080p, 30 fps) with Chrome and ffmpeg, which you need installed. Your agent can do the same with `studio.py render --script ID --out ~/Desktop`. `studio.py export` writes the same video as a [HyperFrames](https://github.com/heygen-com/hyperframes) project instead.
+
+The steps that need an AI each have a button that copies a prompt. Paste it into Claude or ChatGPT, and the results show up in the UI:
+
+- **Research now:** your agent researches every topic and adds findings.
+- **Research story:** your agent researches a story's findings and topics in depth and writes its notes.
+- **Send to production**, then **Write draft:** your agent writes each channel's script from the story's notes, following a craft guide: several hooks, a plain-spoken first pass, a beat outline, photos and sources, timing, a pass to remove anything that sounds machine-made, and an honest self-review against a rubric. With open comments, the button becomes **Revise**, and your agent works through them in order.
+- **Ask your agent** (on a channel's Look and Voice): describe a change in words, and your agent makes it.
 
 To research on a schedule, click the schedule link under **Research now**, pick the days and times, and paste the copied prompt into your agent. It creates the scheduled task.
 
 ## Start
 
-> Use vid-studio to set up my channel.
+> Use vid-studio to set up my project.
 
-Your agent creates the studio (`~/vid-studio` by default, one folder per channel in `channels/`), proposes topics and sources, and opens the studio at `http://localhost:8765`. Later, "Use vid-studio, open the studio" brings it back.
+Your agent creates the studio (`~/vid-studio` by default, one folder per project in `projects/`), proposes topics and sources, and opens the studio at `http://localhost:8765`. Later, "Use vid-studio, open the studio" brings it back.
 
 ## Files
 
 ```
 skills/vid-studio/
   SKILL.md            entry point
-  references/         setup, research, write, schedule
+  references/         setup, research, story, write, script craft, scenes, images, look, schedule
   scripts/studio.py   helper and local web server (Python 3 standard library)
-  assets/             workspace templates and the UI
+  scripts/render.py   MP4 renderer: drives a local Chrome and ffmpeg (standard library)
+  assets/             workspace templates, the UI, the scene engine (assets/scenes), and example scripts
 ```
 
 The workspace is plain JSON and Markdown, so it is easy to back up, read, or edit by hand.
@@ -45,10 +64,11 @@ The workspace is plain JSON and Markdown, so it is easy to back up, read, or edi
 ```sh
 python3 dev.py demo              # throwaway studio full of sample data, opened in your browser
 python3 dev.py sandbox --seed    # test project at ../vid-studio-sandbox, with the skill linked (not copied)
-python3 dev.py try setup         # run Claude Code headlessly in the sandbox (setup, research, draft, status, or any prompt)
+python3 dev.py try setup         # run Claude Code headlessly in the sandbox (setup, research, story, draft, status, or any prompt)
 python3 dev.py try research --agent codex
 python3 dev.py reset --yes       # wipe the sandbox's studio data
 python3 -m unittest discover tests
+node --test tests/test_ui.js tests/test_engine.js
 ```
 
 The sandbox links the skill into `.claude/skills` and `.agents/skills`, so edits to this repo apply on the next prompt with no reinstall. Its studio data lives in the sandbox, so your real `~/vid-studio` is never touched. For interactive testing: `cd ../vid-studio-sandbox && claude`.

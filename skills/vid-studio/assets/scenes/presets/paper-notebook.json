@@ -1,0 +1,49 @@
+{
+  "id": "paper-notebook",
+  "name": "Paper Notebook",
+  "description": "Warm paper, ruled lines and handwritten Kalam headings in sienna ink. Feels like a teacher's notes; great for Hindi.",
+  "design": {
+    "aspect": "9:16",
+    "colors": {
+      "background": "#F3EBDD",
+      "surface": "#FBF6EC",
+      "text": "#2A2420",
+      "muted": "#6A5D50",
+      "accent": "#B53A0A",
+      "accent2": "#2F6F4F",
+      "negative": "#B91C1C"
+    },
+    "fonts": {
+      "display": "Kalam",
+      "body": "Hind",
+      "mono": "Kalam"
+    },
+    "type": {
+      "scale": 1.05,
+      "display_case": "none",
+      "display_weight": 700,
+      "tracking": 0
+    },
+    "motion": {
+      "energy": "medium",
+      "easing": "smooth",
+      "transition": "wipe"
+    },
+    "captions": {
+      "style": "karaoke",
+      "position": "lower",
+      "highlight": "accent",
+      "max_words": 4
+    },
+    "background": {
+      "style": "paper",
+      "pattern": "lines"
+    },
+    "radius": 10,
+    "logo": {
+      "text": "",
+      "position": "top-left"
+    },
+    "custom_css": ""
+  }
+}

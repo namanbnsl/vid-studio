@@ -1,0 +1,322 @@
+{
+ "en": [
+  {
+   "beat": "Hook",
+   "type": "title",
+   "duration": 4.0,
+   "vo": "What if five hundred rupees a month could quietly turn into lakhs?",
+   "text": "",
+   "data": {
+    "title": "The ₹500 habit",
+    "subtitle": "How small SIPs grow big",
+    "kicker": "Money basics"
+   }
+  },
+  {
+   "beat": "The number",
+   "type": "stat",
+   "duration": 5.0,
+   "vo": "Put in five thousand a month for twenty years, and at an assumed eight percent a year, you could end up near twenty nine lakh.",
+   "text": "Illustrative math",
+   "data": {
+    "value": "₹29.6 lakh",
+    "label": "₹5,000 a month for 20 years",
+    "context": "You put in only ₹12 lakh"
+   }
+  },
+  {
+   "beat": "Growth",
+   "type": "bars",
+   "duration": 5.5,
+   "vo": "Look at how the curve bends. Five years is small. Thirty years is a different league.",
+   "text": "",
+   "data": {
+    "title": "What ₹5,000/month becomes",
+    "items": [
+     {
+      "label": "5 years",
+      "value": "₹3.7 lakh"
+     },
+     {
+      "label": "10 years",
+      "value": "₹9.2 lakh"
+     },
+     {
+      "label": "20 years",
+      "value": "₹29.6 lakh"
+     },
+     {
+      "label": "30 years",
+      "value": "₹75 lakh"
+     }
+    ]
+   }
+  },
+  {
+   "beat": "Start early",
+   "type": "compare",
+   "duration": 5.0,
+   "vo": "Starting at twenty five instead of thirty five more than doubles what you have at sixty.",
+   "text": "Same ₹5,000 a month",
+   "data": {
+    "title": "Value at 60",
+    "items": [
+     {
+      "label": "Start at 35",
+      "value": "₹48 lakh"
+     },
+     {
+      "label": "Start at 25",
+      "value": "₹1.15 crore"
+     }
+    ]
+   }
+  },
+  {
+   "beat": "Rules",
+   "type": "list",
+   "duration": 5.0,
+   "vo": "Three rules matter. Start early. Never skip a month. And raise it a little every year.",
+   "text": "",
+   "data": {
+    "title": "Three rules",
+    "items": [
+     "Start early",
+     "Never skip a month",
+     "Step it up yearly"
+    ]
+   }
+  },
+  {
+   "beat": "Quote",
+   "type": "quote",
+   "duration": 4.5,
+   "vo": "There's a line people love to quote about this.",
+   "text": "",
+   "data": {
+    "quote": "Compound interest is the eighth wonder of the world.",
+    "source": "Often attributed to Albert Einstein"
+   }
+  },
+  {
+   "beat": "Journey",
+   "type": "timeline",
+   "duration": 5.0,
+   "vo": "Here's one SIP across three decades, from the first instalment to well past seventy lakh.",
+   "text": "",
+   "data": {
+    "title": "One SIP, 30 years",
+    "items": [
+     {
+      "date": "Age 25",
+      "label": "First ₹5,000"
+     },
+     {
+      "date": "Age 35",
+      "label": "Crosses ₹9 lakh"
+     },
+     {
+      "date": "Age 45",
+      "label": "Nears ₹30 lakh"
+     },
+     {
+      "date": "Age 55",
+      "label": "Past ₹75 lakh"
+     }
+    ]
+   }
+  },
+  {
+   "beat": "Punchline",
+   "type": "text",
+   "duration": 3.5,
+   "vo": "Time in the market beats timing the market.",
+   "text": "",
+   "data": {
+    "text": "Time in the market beats *timing* the market."
+   }
+  },
+  {
+   "beat": "Visual",
+   "type": "image",
+   "duration": 3.5,
+   "vo": "Small, boring, automatic. That's the whole trick.",
+   "text": "",
+   "data": {
+    "description": "A glass jar of coins slowly filling on a desk, soft morning light",
+    "url": ""
+   }
+  },
+  {
+   "beat": "Outro",
+   "type": "end",
+   "duration": 4.0,
+   "vo": "Follow for one money rule a day.",
+   "text": "",
+   "data": {
+    "title": "Start small. Start today.",
+    "cta": "Follow for one money rule a day"
+   }
+  }
+ ],
+ "hi": [
+  {
+   "beat": "Hook",
+   "type": "title",
+   "duration": 4.0,
+   "vo": "क्या ₹500 महीना चुपचाप लाखों बन सकता है?",
+   "text": "",
+   "data": {
+    "title": "₹500 वाली आदत",
+    "subtitle": "छोटा SIP, बड़ा फ़र्क",
+    "kicker": "पैसे की बात"
+   }
+  },
+  {
+   "beat": "The number",
+   "type": "stat",
+   "duration": 5.0,
+   "vo": "हर महीने पाँच हज़ार, बीस साल तक, और अगर सालाना आठ percent मानें, तो रकम करीब उनतीस लाख तक पहुँच सकती है.",
+   "text": "सिर्फ़ उदाहरण",
+   "data": {
+    "value": "₹29.6 लाख",
+    "label": "₹5,000 हर महीने, 20 साल",
+    "context": "आपने लगाए सिर्फ़ ₹12 लाख"
+   }
+  },
+  {
+   "beat": "Growth",
+   "type": "bars",
+   "duration": 5.5,
+   "vo": "देखिए curve कैसे मुड़ता है. पाँच साल छोटे हैं, तीस साल बिल्कुल अलग league.",
+   "text": "",
+   "data": {
+    "title": "₹5,000 महीना कितना बनता है",
+    "items": [
+     {
+      "label": "5 साल",
+      "value": "₹3.7 लाख"
+     },
+     {
+      "label": "10 साल",
+      "value": "₹9.2 लाख"
+     },
+     {
+      "label": "20 साल",
+      "value": "₹29.6 लाख"
+     },
+     {
+      "label": "30 साल",
+      "value": "₹75 लाख"
+     }
+    ]
+   }
+  },
+  {
+   "beat": "Start early",
+   "type": "compare",
+   "duration": 5.0,
+   "vo": "पैंतीस की जगह पच्चीस में शुरू करें, तो साठ की उम्र तक रकम दोगुने से भी ज़्यादा.",
+   "text": "वही ₹5,000 महीना",
+   "data": {
+    "title": "60 की उम्र तक",
+    "items": [
+     {
+      "label": "35 में शुरू",
+      "value": "₹48 लाख"
+     },
+     {
+      "label": "25 में शुरू",
+      "value": "₹1.15 करोड़"
+     }
+    ]
+   }
+  },
+  {
+   "beat": "Rules",
+   "type": "list",
+   "duration": 5.0,
+   "vo": "तीन नियम याद रखिए. जल्दी शुरू करें. कोई महीना न छोड़ें. और हर साल थोड़ा बढ़ाएँ.",
+   "text": "",
+   "data": {
+    "title": "तीन नियम",
+    "items": [
+     "जल्दी शुरू करें",
+     "कोई महीना न छोड़ें",
+     "हर साल थोड़ा बढ़ाएँ"
+    ]
+   }
+  },
+  {
+   "beat": "Quote",
+   "type": "quote",
+   "duration": 4.5,
+   "vo": "इस पर एक line बहुत quote की जाती है.",
+   "text": "",
+   "data": {
+    "quote": "चक्रवृद्धि ब्याज दुनिया का आठवाँ अजूबा है.",
+    "source": "अक्सर Albert Einstein के नाम से"
+   }
+  },
+  {
+   "beat": "Journey",
+   "type": "timeline",
+   "duration": 5.0,
+   "vo": "एक SIP, तीस साल. पहली किस्त से लेकर पचहत्तर लाख के पार तक.",
+   "text": "",
+   "data": {
+    "title": "एक SIP, 30 साल",
+    "items": [
+     {
+      "date": "25 की उम्र",
+      "label": "पहले ₹5,000"
+     },
+     {
+      "date": "35 की उम्र",
+      "label": "₹9 लाख पार"
+     },
+     {
+      "date": "45 की उम्र",
+      "label": "करीब ₹30 लाख"
+     },
+     {
+      "date": "55 की उम्र",
+      "label": "₹75 लाख के पार"
+     }
+    ]
+   }
+  },
+  {
+   "beat": "Punchline",
+   "type": "text",
+   "duration": 3.5,
+   "vo": "Market को time करना नहीं, market में time देना ज़रूरी है.",
+   "text": "",
+   "data": {
+    "text": "Market को time करना नहीं, market में *time देना* ज़रूरी है."
+   }
+  },
+  {
+   "beat": "Visual",
+   "type": "image",
+   "duration": 3.5,
+   "vo": "छोटा, boring, automatic. बस यही trick है.",
+   "text": "",
+   "data": {
+    "description": "मेज़ पर सिक्कों से धीरे-धीरे भरता काँच का जार, सुबह की हल्की रोशनी",
+    "url": ""
+   }
+  },
+  {
+   "beat": "Outro",
+   "type": "end",
+   "duration": 4.0,
+   "vo": "रोज़ एक money rule के लिए follow करें.",
+   "text": "",
+   "data": {
+    "title": "छोटा शुरू करें. आज शुरू करें.",
+    "cta": "रोज़ एक money rule के लिए follow करें"
+   }
+  }
+ ]
+}
