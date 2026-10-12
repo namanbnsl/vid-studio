@@ -1,32 +1,34 @@
-# Scene design and on-screen content
+# Scene design, captions, looks and script content
 
-The rendered scenes looked templated: headings started at a different height in every scene, captions were centred while the graphics were left-aligned, and decoration stood in for information (a glow behind numbers, a progress bar that measured nothing, tilted pills, pulsing rings, drifting colour blobs). The on-screen text was weak too: slogans on most scenes, the same line twice, and a maker's claim charted as invented "100 vs 50" values.
+The rendered scenes looked templated and AI-made. Headings sat at a different height in every scene, and charts were small and crammed under their titles above a band of empty space. Source tags floated mid-frame. Captions looked like part of the graphic. Gradients and glows were everywhere. The scripts read like a model wrote them: slogans, fragment chains, a misattributed quote, and a maker's claim charted as invented numbers.
 
 Each sheet shows one settled frame per scene, rendered by the real engine at 1080×1920.
 
-## Hinglish demo (`dev.py demo`, Neon Finance)
+## Before and after
+
+### Hinglish demo (`dev.py demo`, Night Desk)
 
 Before:
 
-![Hinglish before](assets/before-hinglish.jpg)
+![Hinglish demo before](assets/before-hinglish-demo.jpg)
 
 After:
 
-![Hinglish after](assets/after-hinglish.jpg)
+![Hinglish demo after](assets/after-hinglish-demo.jpg)
 
-## English example (`english-60s.md`, Bold Explainer)
+### English example (`english-60s.md`, Bold Explainer)
 
 Before:
 
 ![English before](assets/before-english.jpg)
 
-After:
+After (rewritten script):
 
 ![English after](assets/after-english.jpg)
 
-## An agent-written script, unchanged (Data Noir)
+### An agent-written script, unchanged (Data Noir)
 
-This script was written in the sandbox before this change. Its text is unchanged, so the difference comes from the engine alone.
+The text is exactly what the agent wrote, so the difference comes from the engine alone. Its script still has lines like "Until it doesn't." and "Follow to keep up with AI news"; `studio.py scenes` now flags both.
 
 Before:
 
@@ -36,19 +38,54 @@ After:
 
 ![AI news after](assets/after-ai-news.jpg)
 
+### Hinglish example in the new Monsoon look
+
+![Hinglish example, Monsoon](assets/after-hinglish-example-monsoon.jpg)
+
+## Captions that follow the voice
+
+Captions are centred and heavy, in their own band, so they read as captions rather than as part of the graphic. In the new default style, `highlight`, a pill in the accent colour sits behind the word being spoken and jumps word to word with the voiceover. Every frame shows it on exactly one word.
+
+![English captions](assets/captions-english.gif) ![Hinglish captions](assets/captions-hinglish.gif)
+
+## Ten looks
+
+Every preset is redesigned with its own palette and type pairing, and there are two new ones: **Monsoon** (deep teal, saffron, and Eczar, an expressive Devanagari serif) and **Studio White** (gallery white, electric blue, Sora). The looks use flat colour with no glows, sentence-case headlines, and one accent for the thing that matters in each scene. Night Desk, the default for Hindi and Hinglish channels, uses Devanagari-capable display and body fonts.
+
+![Presets, compare scene](assets/presets-compare.jpg)
+
+![Presets, column chart](assets/presets-bars.jpg)
+
+## The empty band at the bottom is on purpose
+
+The bottom 20% of a 9:16 frame sits under the platform's own interface: the channel name, the title and the buttons. Nothing important goes there. Captions sit just above that band, and the source line marks its top edge.
+
+![Safe area](assets/safe-area.jpg)
+
 ## What changed
 
-**Layout.** Every scene sits on one grid. The `Text:` overlay and a chart's title share a header row pinned to the top of the content area, and the visual is centred below it. Captions, sources and graphics share one left edge, and a caption's first line is always in the same place. Headings keep one size across scenes; only the visual shrinks to fit.
+**Layout**
+- A thin progress line at the top, one segment per beat, fills as the voiceover plays (`progress.show`).
+- The `Text:` label and the chart title share a header row in the same place in every scene. Headings keep one size across scenes.
+- Charts, lists and timelines fill the space under the header instead of huddling under the title. A stat, punchline, quote or end card is centred in that space. Short punchlines ("50 · 30 · 20") are set poster-size.
+- The source and photo credit are one line of small print on the bottom edge of the safe area, in the same place every time.
+- Captions are centred on the canvas, clear of the side buttons, and bottom-anchored in their band.
 
-**Motion.** Holds are still. Previously the frame, titles and numbers slowly scaled up, which moved their edges off the grid. Entrances stay, with smaller transition distances and no rotations.
+**Charts**
+- `bars` with short labels (years, steps) draws a column chart with a baseline, with values above the columns at one shared size. Longer labels draw horizontal rows that spread over the height.
+- `compare` draws its second item as the subject in the accent, adds a dashed reference line that carries the first value across, and puts the change (`2.4×`, `−50%`) above the subject's value. Two phrases draw panels; the subject panel is filled with the accent.
+- `list` uses large display numerals with dividers above and below. `timeline` spreads its events with the line running through the dots.
+- `stat` has a divider before its context line.
 
-**Decoration removed.** The stat's halo and fake progress bar, the bar-chart shine, the boxed list numbers, the tilted overlay pill, the CTA pulse ring, the moving background blobs and the "scanner" image placeholder are gone. The overlay is now a quiet accent label, and the source tag is a plain line of small print.
+**Style**
+- No gradients, glows, vignettes or moving colour blobs. `gradient` is now a barely visible tonal step, and no preset uses it. Patterns are off in every preset except Paper Notebook's ruled lines.
+- Photo scrims are flat tints.
+- Holds are still, transitions are short, and nothing rotates.
 
-**Captions.** Karaoke no longer scales the spoken word. Scaling ate the spaces beside it ("कोईindependenttest"). The pop style no longer colours every third chunk. Neon Finance highlights captions in its main accent rather than a second, competing lime.
-
-**Compare.** The second item is the subject and takes the accent, so "आम नल vs Sensor नल" no longer highlights the ordinary tap because its number is bigger. Two phrases (rather than two numbers) draw side-by-side panels instead of meaningless equal bars. The change label is plain text ("−50%", "2.4×").
-
-**Content.** `script-craft.md` §6 has a new *On-screen text* section: every scene shows a fact, not a mood; at most two `text` scenes; never repeat a headline; chart only measured or calculated numbers, with units; plain sentence-case titles. Two new machine-made patterns (teaser twists, generic sign-offs) join the §5 table. `studio.py scenes` now warns about repeated headlines, more than two `text` scenes, bars without numbers, a compare mixing a number and a phrase, and unitless chart values. The three examples and the demo script are rewritten to pass. The tests check that the examples produce no warnings.
+**Content**
+- All three bundled examples, the demo script and the live-preview sample (`sample.json`) are rewritten. The sample used to promise money that "could quietly turn into lakhs" and quoted Einstein on compound interest, a quote with no evidence he said it. It is now real SIP arithmetic, and its quote is SEBI's actual mandatory disclaimer.
+- `script-craft.md` adds aphorisms, borrowed wisdom, soft hype, teaser twists and generic sign-offs to its machine-made patterns, plus a section on on-screen text.
+- `studio.py scenes` now lints the voiceover as well as the screen. It flags phrases like "Here's why", "Until it doesn't", "Let's check", "Follow for more" and "दोस्तों", and chains of three or more fragment sentences. It still flags repeated headlines, more than two `text` scenes, bars without numbers, a compare that mixes a number and a phrase, and unitless chart values. The tests check that the examples produce no warnings.
 
 ## Checks
 

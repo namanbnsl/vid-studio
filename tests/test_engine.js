@@ -73,7 +73,7 @@ function engineHarness(fonts) {
 test('malformed design groups default safely without mutating the input', () => {
   const { api } = engineHarness();
   const defaults = json(api.DEFAULT_DESIGN);
-  for (const group of ['colors', 'fonts', 'type', 'motion', 'captions', 'background', 'images', 'sources', 'logo']) {
+  for (const group of ['colors', 'fonts', 'type', 'motion', 'captions', 'background', 'images', 'sources', 'progress', 'logo']) {
     for (const bad of ['bad', false, 4, [], null]) {
       const input = { [group]: bad };
       assert.deepEqual(json(api.normalizeDesign(input))[group], defaults[group], `${group}: ${JSON.stringify(bad)}`);
@@ -91,6 +91,16 @@ test('photo, source, and caption-size settings normalize to safe values', () => 
   const d = api.normalizeDesign({ images: { treatment: 'sepia' }, sources: { show: 0 }, captions: { size: 'huge' } });
   assert.deepEqual([d.images.treatment, d.sources.show, d.captions.size], ['dim', true, 'medium']);
   assert.equal(api.normalizeDesign({ sources: { show: false } }).sources.show, false);
+  assert.equal(api.normalizeDesign({ progress: { show: false } }).progress.show, false);
+  assert.equal(api.normalizeDesign({}).captions.style, 'highlight');
+  assert.equal(api.normalizeDesign({ captions: { style: 'shimmer' } }).captions.style, 'plain');
+  // small print and captions are reserved at the bottom of the safe area, below the content
+  const L = api.layout({});
+  assert.equal(L.meta.top + L.meta.height, 1920 - 384);
+  assert.ok(L.captions.top + L.captions.height <= L.meta.top);
+  assert.ok(L.content.top + L.content.height <= L.captions.top);
+  assert.equal(L.captions.left + L.captions.width, 1080 - L.captions.left, 'captions are centred on the canvas');
+  assert.equal(api.layout({ progress: { show: false } }).progress, null);
   const [a, b, c] = json(api.normalizeScenes([
     { type: 'stat', data: {}, image: 'media/x.jpg', source: ' RBI ' },
     { type: 'text', data: {}, image: { src: 'https://e.com/y.png', credit: 'Photo: Y' } },
@@ -131,7 +141,7 @@ test('font loading success waits for every face and includes the composition gly
   h.document.head.children[0].onload();
   const result = await build;
   assert.equal(result.stage.getAttribute('data-fonts'), 'loaded');
-  assert.match(result.stage.style['--font-display'], /Anton/);
+  assert.match(result.stage.style['--font-display'], /Bricolage Grotesque/);
   assert.ok(samples.length > 1);
   assert.ok(samples.every(sample => sample.includes(titleScenes[0].data.title)));
   assert.equal(h.timers.size, 0, 'loading clears the deadline');

@@ -23,7 +23,7 @@ The studio has three global tabs: **Research**, **Production**, and **Channels**
 
 The information flow is **Research story → Production scripts → Channels**. Research stays reusable; each script adapts that evidence for its destination. Projects organize Research and appear as source labels or optional filters in Production.
 
-Each channel has a **Voice** (length, pace, persona, tone, hook styles, rules, and scripts you love) and, for video channels, a **Look** (one of eight styles to start from, then colors, fonts with Hindi support, motion, captions, photo treatment, source tags, background, logo). You set both up when you add a channel, with a live preview of animated sample scenes in that look.
+Each channel has a **Voice** (length, pace, persona, tone, hook styles, rules, and scripts you love) and, for video channels, a **Look** (one of ten styles to start from, then colors, fonts with Hindi support, motion, captions with a highlight that follows the voice, photo treatment, source tags, a progress line, background, logo). You set both up when you add a channel, with a live preview of animated sample scenes in that look.
 
 Video scripts are written as beats: what's said, plus a `Visual:` line naming a scene (a stat, bar chart, comparison, list, quote, timeline, photo, or punchline). A beat can also have a photo behind it (`Image:`), a small on-screen source tag (`Source:`), and a fixed length (`Duration:`). The script editor plays them as an animated preview in the channel's look as you type, shows the timing against the target, the hooks your agent considered (swap one in with a click), and its self-review scores, including whether it sounds human and whether it's worth the viewer's minute.
 

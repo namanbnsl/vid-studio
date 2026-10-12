@@ -75,8 +75,8 @@ Source: Jaquar press release
 Visual: image | Kitchen sink with a sensor tap, water running
 
 ## End
-घर की ऐसी ही काम की बातें, रोज़ Pipe Gyaan पर.
-Visual: end | सबसे ज़्यादा चलने वाले नल से शुरू करो | Follow @pipegyaan
+Sensor नल लगवाया है? Comment में बताओ कि पानी का bill कितना बदला.
+Visual: end | सबसे ज़्यादा चलने वाले नल से शुरू करो | Comment में अपना bill बताओ
 """
 
 

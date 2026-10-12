@@ -355,6 +355,19 @@ Visual: end | Slow, then sudden. | Follow
         self.assertIn("Mixed: compare either two numbers or two short phrases", joined)
         self.assertIn("3 text scenes (Hook, Two, Three)", joined)
         self.assertEqual(len(warnings), 5)
+        spoken = studio.scene_warnings(studio.parse_scenes("""## Hook
+Haiku beats Mistral. Until it doesn't. Here's why.
+Visual: stat | 43 | Index points
+## Chain
+Same money. Same rate. Only time changed.
+Visual: stat | 2× | More
+## End
+Follow for more AI news.
+Visual: end | Test your own task | Follow
+"""))
+        self.assertEqual([w.split(":")[0] for w in spoken], ["Hook", "Hook", "Hook", "Chain", "End"])
+        self.assertIn('"until it doesn\'t" sounds machine-made', spoken[1])
+        self.assertIn("3 fragment sentences in a row", spoken[3])
         clean = studio.parse_scenes("""## Series
 Line.
 Visual: compare | Intelligence Index | A: 43 | B: 38
@@ -555,7 +568,7 @@ Visual: end | Test the task you have | Follow
     def test_design_font_catalog_and_devanagari(self):
         assets = self.production_assets()
         studio.save(assets / "fonts.json", {"fonts": [
-            {"family": "Anton", "category": "display", "devanagari": False, "weights": [400]},
+            {"family": "Bricolage Grotesque", "category": "display", "devanagari": False, "weights": [400]},
             {"family": "Mukta", "category": "sans-serif", "devanagari": True, "weights": [400, 800]},
             {"family": "JetBrains Mono", "category": "monospace", "devanagari": False, "weights": [400]},
         ]})
@@ -564,16 +577,16 @@ Visual: end | Test the task you have | Follow
             with self.assertRaisesRegex(ValueError, "display.*Devanagari"):
                 studio.save_design(self.home, channel["id"], {})
             with self.assertRaisesRegex(ValueError, "body.*Devanagari"):
-                studio.save_design(self.home, channel["id"], {"fonts": {"display": "Mukta", "body": "Anton"}})
+                studio.save_design(self.home, channel["id"], {"fonts": {"display": "Mukta", "body": "Bricolage Grotesque"}})
             saved = studio.save_design(self.home, channel["id"], {"fonts": {"display": "Mukta"}})
             self.assertEqual(saved["fonts"]["display"], "Mukta")
         studio.add_channel(self.home, {"name": "English"})
         studio.save_design(self.home, "english", {})
         with self.assertRaisesRegex(ValueError, "unknown family"):
             studio.save_design(self.home, "english", {"fonts": {"mono": "Missing"}})
-        self.assertIn("Anton · display · devanagari no", self.cli("fonts"))
+        self.assertIn("Bricolage Grotesque · display · devanagari no", self.cli("fonts"))
         self.assertIn("Mukta", self.cli("fonts", "--devanagari"))
-        self.assertNotIn("Anton", self.cli("fonts", "--devanagari"))
+        self.assertNotIn("Bricolage Grotesque", self.cli("fonts", "--devanagari"))
 
     def test_voice_defaults_merge_and_validation(self):
         self.production_assets()

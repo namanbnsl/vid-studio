@@ -77,7 +77,7 @@ A `story` hook needs a real person or case from the notes, or it must be openly 
 
 Viewers leave when they stop wanting the next sentence. Structure the script so there is always something they're waiting for.
 
-- **Open a loop and close it late.** The hook raises a question, and the payoff answers it near the end, not in beat two. In `english-60s.md`, "why would the last ten years earn more than the first twenty?" is answered piece by piece (returns join the pile, the doublings get bigger) and landed by the last line: "the best decade comes last."
+- **Open a loop and close it late.** The hook raises a question, and the payoff answers it near the end, not in beat two. In `english-60s.md`, "why would the last ten years earn more than the first twenty?" is answered piece by piece (each year's return is added to the balance, the doublings get bigger) and landed by the last line: "if you're five years into an SIP and bored, you're still in the slow part."
 - **Re-hook every 8–12 seconds** (about 20–30 words). A re-hook is a turn. Vary the move:
   - the catch: "But this fifty percent is Jaquar's own number. Nobody has tested it yet."
   - the next question: "Bank पैसा निकालने से पहले पूछता है: ये आप ही हो?"
@@ -90,7 +90,7 @@ Viewers leave when they stop wanting the next sentence. Structure the script so 
 - **End on the payoff, not a summary.** The last line answers the opening question in a form people would repeat.
   - Summary (bad): "So that's how compounding works: returns on returns, the Rule of 72, and starting early."
   - Payoff (good): "So if you're thinking of stopping your SIP after a few dull years, remember the money hasn't hit the steep part yet."
-- **Make Shorts and Reels loop.** Write the last spoken line so it runs back into the first: "Which is why your money's best decade is usually its last." → "Your money earns more in its last ten years than in its first twenty." Add a `Note:` so the editor knows.
+- **Make Shorts and Reels loop.** Write the last spoken line so it runs back into the first: "So if you're five years into an SIP and bored, you're still in the slow part." → "One lakh at twelve percent earns more in its last ten years than in its first twenty." Add a `Note:` so the editor knows.
 - **Use one CTA, specific and short, after the payoff.** "ये Reel उसे भेजो जो हर refund approve कर देता है" beats "like, share and subscribe".
 
 ## 5. Sound like a person
@@ -121,11 +121,14 @@ These patterns are the giveaway, even when every word is true. Find them in your
 | Every line the same length and shape | Seven-word sentence, seven-word sentence, seven-word sentence. | Vary it: a longer explaining sentence, then a short one. |
 | Labels instead of speech | "Honest catch: twelve percent is an example." | "Twelve percent here is just an example, not a promise." |
 | Empty intensity | "This changes everything." "Let that sink in." "Read that again." | Show the number or the consequence, and let it do the work. |
+| Aphorisms and proverbs | "जो बोले scan करो, वो देने नहीं आया." "Time in the market beats timing the market." | Say the plain rule: "पैसे लेने के लिए कुछ scan नहीं करना पड़ता." |
+| Borrowed wisdom | "Compound interest is the eighth wonder of the world." (attributed to Einstein, without evidence) | Quote only what a source you opened says, word for word, and name it. |
+| Soft hype | "Could quietly turn into lakhs." "A small habit, a big difference." | Give the number and its assumption: "about twenty-nine lakh in twenty years, at an assumed eight percent." |
 | Teaser twists | "Haiku beats Mistral. Until it doesn't." "Let's check what those scores actually mean." | State the finding: "Haiku wins on the combined score, and Mistral wins on business workflows." |
 | Generic sign-off | "Follow to keep up with AI news." "Follow for more." | Say what the next video gives them: "Follow for one model comparison a week." |
 
 Before (machine): "Here's why. You earn returns on your returns. Year one? Twelve thousand. Year thirty? Over three lakh. Slow, then sudden."
-After (person): "That's because each year's return joins the pile, and next year's twelve percent is worked out on the bigger pile. In year one that's twelve thousand rupees. By year thirty it's over three lakh, in a single year."
+After (person): "That's because every year's return is added to the balance, so next year's twelve percent is worked out on a bigger number. In year one that's twelve thousand rupees. By year thirty it's over three lakh, in a single year."
 
 Before: "Compound interest, which refers to the process whereby interest is earned on both the principal and previously accumulated interest, can significantly enhance long-term wealth creation."
 After: "You earn returns on your returns. In year one, twelve percent of one lakh is twelve thousand."

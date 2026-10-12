@@ -4,34 +4,34 @@
    "beat": "Hook",
    "type": "title",
    "duration": 4.0,
-   "vo": "What if five hundred rupees a month could quietly turn into lakhs?",
+   "vo": "Five thousand rupees a month, every month, at an assumed eight percent a year.",
    "text": "",
    "data": {
-    "title": "The ₹500 habit",
-    "subtitle": "How small SIPs grow big",
-    "kicker": "Money basics"
+    "title": "What a ₹5,000 SIP becomes",
+    "subtitle": "Worked at 8% a year, before tax and fees",
+    "kicker": "Worked example"
    }
   },
   {
-   "beat": "The number",
+   "beat": "Twenty years",
    "type": "stat",
    "duration": 5.0,
-   "vo": "Put in five thousand a month for twenty years, and at an assumed eight percent a year, you could end up near twenty nine lakh.",
-   "text": "Illustrative math",
+   "vo": "After twenty years that's about twenty-nine lakh, and only twelve lakh of it is money you paid in.",
+   "text": "",
    "data": {
     "value": "₹29.6 lakh",
-    "label": "₹5,000 a month for 20 years",
-    "context": "You put in only ₹12 lakh"
+    "label": "After 20 years",
+    "context": "You paid in ₹12 lakh. The rest is returns."
    }
   },
   {
-   "beat": "Growth",
+   "beat": "The curve",
    "type": "bars",
    "duration": 5.5,
-   "vo": "Look at how the curve bends. Five years is small. Thirty years is a different league.",
+   "vo": "Most of the growth comes late. Ten years gets you to about nine lakh, and the next twenty add sixty-six more.",
    "text": "",
    "data": {
-    "title": "What ₹5,000/month becomes",
+    "title": "Value of the same SIP",
     "items": [
      {
       "label": "5 years",
@@ -56,10 +56,10 @@
    "beat": "Start early",
    "type": "compare",
    "duration": 5.0,
-   "vo": "Starting at twenty five instead of thirty five more than doubles what you have at sixty.",
-   "text": "Same ₹5,000 a month",
+   "vo": "Starting at twenty-five instead of thirty-five more than doubles what you have at sixty, for six lakh more in payments.",
+   "text": "Six lakh more paid in",
    "data": {
-    "title": "Value at 60",
+    "title": "Value at 60, same ₹5,000 a month",
     "items": [
      {
       "label": "Start at 35",
@@ -73,89 +73,89 @@
    }
   },
   {
-   "beat": "Rules",
+   "beat": "Habits",
    "type": "list",
    "duration": 5.0,
-   "vo": "Three rules matter. Start early. Never skip a month. And raise it a little every year.",
+   "vo": "What keeps it working is dull: the debit goes out on salary day, it keeps going in a bad year, and it goes up when your pay does.",
    "text": "",
    "data": {
-    "title": "Three rules",
+    "title": "What keeps it working",
     "items": [
-     "Start early",
-     "Never skip a month",
-     "Step it up yearly"
+     "Debit on salary day",
+     "Keep going in bad years",
+     "Raise it with your pay"
     ]
    }
   },
   {
-   "beat": "Quote",
+   "beat": "The fine print",
    "type": "quote",
    "duration": 4.5,
-   "vo": "There's a line people love to quote about this.",
+   "vo": "And the line read out at the end of every fund ad is there for a reason.",
    "text": "",
    "data": {
-    "quote": "Compound interest is the eighth wonder of the world.",
-    "source": "Often attributed to Albert Einstein"
+    "quote": "Mutual fund investments are subject to market risks, read all scheme related documents carefully.",
+    "source": "Standard disclaimer required by SEBI"
    }
   },
   {
-   "beat": "Journey",
+   "beat": "One SIP",
    "type": "timeline",
    "duration": 5.0,
-   "vo": "Here's one SIP across three decades, from the first instalment to well past seventy lakh.",
+   "vo": "Follow one SIP started at twenty-five: nine lakh at thirty-five, almost thirty at forty-five, seventy-five at fifty-five.",
    "text": "",
    "data": {
-    "title": "One SIP, 30 years",
+    "title": "One SIP started at 25",
     "items": [
      {
       "date": "Age 25",
-      "label": "First ₹5,000"
+      "label": "First ₹5,000 debit"
      },
      {
       "date": "Age 35",
-      "label": "Crosses ₹9 lakh"
+      "label": "₹9.2 lakh"
      },
      {
       "date": "Age 45",
-      "label": "Nears ₹30 lakh"
+      "label": "₹29.6 lakh"
      },
      {
       "date": "Age 55",
-      "label": "Past ₹75 lakh"
+      "label": "₹75 lakh"
      }
     ]
    }
   },
   {
-   "beat": "Punchline",
+   "beat": "Assumption",
    "type": "text",
    "duration": 3.5,
-   "vo": "Time in the market beats timing the market.",
+   "vo": "Eight percent is the assumption here; real returns move around, and some years are negative.",
    "text": "",
    "data": {
-    "text": "Time in the market beats *timing* the market."
+    "text": "8% is an assumption, *not a promise*"
    }
   },
   {
-   "beat": "Visual",
+   "beat": "Set it up",
    "type": "image",
    "duration": 3.5,
-   "vo": "Small, boring, automatic. That's the whole trick.",
+   "vo": "You set the date once, and the bank does the rest.",
    "text": "",
    "data": {
-    "description": "A glass jar of coins slowly filling on a desk, soft morning light",
+    "description": "Phone screen confirming a monthly SIP debit of ₹5,000 on the 1st",
     "url": ""
    }
   },
   {
-   "beat": "Outro",
+   "beat": "End",
    "type": "end",
    "duration": 4.0,
-   "vo": "Follow for one money rule a day.",
+   "vo": "Follow for one money calculation a week.",
    "text": "",
    "data": {
-    "title": "Start small. Start today.",
-    "cta": "Follow for one money rule a day"
+    "title": "Start the SIP on salary day",
+    "cta": "Follow for one money calculation a week"
    }
   }
  ],
@@ -164,34 +164,34 @@
    "beat": "Hook",
    "type": "title",
    "duration": 4.0,
-   "vo": "क्या ₹500 महीना चुपचाप लाखों बन सकता है?",
+   "vo": "हर महीने पाँच हज़ार रुपये, और सालाना आठ परसेंट का अंदाज़ा.",
    "text": "",
    "data": {
-    "title": "₹500 वाली आदत",
-    "subtitle": "छोटा SIP, बड़ा फ़र्क",
-    "kicker": "पैसे की बात"
+    "title": "₹5,000 की SIP कितनी बनती है",
+    "subtitle": "8% सालाना मानकर, टैक्स और फ़ीस से पहले",
+    "kicker": "हिसाब का उदाहरण"
    }
   },
   {
-   "beat": "The number",
+   "beat": "Twenty years",
    "type": "stat",
    "duration": 5.0,
-   "vo": "हर महीने पाँच हज़ार, बीस साल तक, और अगर सालाना आठ percent मानें, तो रकम करीब उनतीस लाख तक पहुँच सकती है.",
-   "text": "सिर्फ़ उदाहरण",
+   "vo": "बीस साल बाद ये करीब उनतीस लाख बनते हैं, और इनमें आपके लगाए सिर्फ़ बारह लाख हैं.",
+   "text": "",
    "data": {
     "value": "₹29.6 लाख",
-    "label": "₹5,000 हर महीने, 20 साल",
-    "context": "आपने लगाए सिर्फ़ ₹12 लाख"
+    "label": "20 साल बाद",
+    "context": "आपने लगाए ₹12 लाख, बाकी रिटर्न है"
    }
   },
   {
-   "beat": "Growth",
+   "beat": "The curve",
    "type": "bars",
    "duration": 5.5,
-   "vo": "देखिए curve कैसे मुड़ता है. पाँच साल छोटे हैं, तीस साल बिल्कुल अलग league.",
+   "vo": "ज़्यादातर बढ़त बाद में आती है. दस साल में करीब नौ लाख, और अगले बीस साल में छियासठ लाख और.",
    "text": "",
    "data": {
-    "title": "₹5,000 महीना कितना बनता है",
+    "title": "उसी SIP की कीमत",
     "items": [
      {
       "label": "5 साल",
@@ -216,10 +216,10 @@
    "beat": "Start early",
    "type": "compare",
    "duration": 5.0,
-   "vo": "पैंतीस की जगह पच्चीस में शुरू करें, तो साठ की उम्र तक रकम दोगुने से भी ज़्यादा.",
-   "text": "वही ₹5,000 महीना",
+   "vo": "पैंतीस की जगह पच्चीस में शुरू करो, तो साठ तक रकम दोगुनी से ज़्यादा, और जेब से सिर्फ़ छह लाख ज़्यादा.",
+   "text": "सिर्फ़ ₹6 लाख ज़्यादा लगे",
    "data": {
-    "title": "60 की उम्र तक",
+    "title": "60 की उम्र तक, वही ₹5,000 महीना",
     "items": [
      {
       "label": "35 में शुरू",
@@ -233,89 +233,89 @@
    }
   },
   {
-   "beat": "Rules",
+   "beat": "Habits",
    "type": "list",
    "duration": 5.0,
-   "vo": "तीन नियम याद रखिए. जल्दी शुरू करें. कोई महीना न छोड़ें. और हर साल थोड़ा बढ़ाएँ.",
+   "vo": "इसे चलाने वाली आदतें सीधी हैं: पैसा सैलरी वाले दिन कटे, बुरे साल में भी न रुके, और सैलरी बढ़े तो SIP भी बढ़े.",
    "text": "",
    "data": {
-    "title": "तीन नियम",
+    "title": "SIP चलती कैसे रहती है",
     "items": [
-     "जल्दी शुरू करें",
-     "कोई महीना न छोड़ें",
-     "हर साल थोड़ा बढ़ाएँ"
+     "सैलरी वाले दिन कटे",
+     "बुरे साल में न रुके",
+     "सैलरी के साथ बढ़े"
     ]
    }
   },
   {
-   "beat": "Quote",
+   "beat": "The fine print",
    "type": "quote",
    "duration": 4.5,
-   "vo": "इस पर एक line बहुत quote की जाती है.",
+   "vo": "और हर fund के ad के आख़िर में ये line यूँ ही नहीं पढ़ी जाती.",
    "text": "",
    "data": {
-    "quote": "चक्रवृद्धि ब्याज दुनिया का आठवाँ अजूबा है.",
-    "source": "अक्सर Albert Einstein के नाम से"
+    "quote": "म्यूचुअल फंड निवेश बाज़ार जोखिमों के अधीन हैं, योजना संबंधी सभी दस्तावेज़ ध्यान से पढ़ें.",
+    "source": "SEBI का ज़रूरी disclaimer"
    }
   },
   {
-   "beat": "Journey",
+   "beat": "One SIP",
    "type": "timeline",
    "duration": 5.0,
-   "vo": "एक SIP, तीस साल. पहली किस्त से लेकर पचहत्तर लाख के पार तक.",
+   "vo": "पच्चीस में शुरू हुई एक SIP: पैंतीस पर नौ लाख, पैंतालीस पर करीब तीस, पचपन पर पचहत्तर.",
    "text": "",
    "data": {
-    "title": "एक SIP, 30 साल",
+    "title": "25 में शुरू हुई एक SIP",
     "items": [
      {
       "date": "25 की उम्र",
-      "label": "पहले ₹5,000"
+      "label": "पहली ₹5,000 किस्त"
      },
      {
       "date": "35 की उम्र",
-      "label": "₹9 लाख पार"
+      "label": "₹9.2 लाख"
      },
      {
       "date": "45 की उम्र",
-      "label": "करीब ₹30 लाख"
+      "label": "₹29.6 लाख"
      },
      {
       "date": "55 की उम्र",
-      "label": "₹75 लाख के पार"
+      "label": "₹75 लाख"
      }
     ]
    }
   },
   {
-   "beat": "Punchline",
+   "beat": "Assumption",
    "type": "text",
    "duration": 3.5,
-   "vo": "Market को time करना नहीं, market में time देना ज़रूरी है.",
+   "vo": "आठ परसेंट यहाँ एक अंदाज़ा है. असली रिटर्न ऊपर-नीचे होते हैं, कुछ साल घाटे के भी.",
    "text": "",
    "data": {
-    "text": "Market को time करना नहीं, market में *time देना* ज़रूरी है."
+    "text": "8% अंदाज़ा है, *वादा नहीं*"
    }
   },
   {
-   "beat": "Visual",
+   "beat": "Set it up",
    "type": "image",
    "duration": 3.5,
-   "vo": "छोटा, boring, automatic. बस यही trick है.",
+   "vo": "तारीख एक बार तय करो, बाकी काम bank करता है.",
    "text": "",
    "data": {
-    "description": "मेज़ पर सिक्कों से धीरे-धीरे भरता काँच का जार, सुबह की हल्की रोशनी",
+    "description": "फ़ोन पर हर महीने की 1 तारीख को ₹5,000 की SIP कटने का मैसेज",
     "url": ""
    }
   },
   {
-   "beat": "Outro",
+   "beat": "End",
    "type": "end",
    "duration": 4.0,
-   "vo": "रोज़ एक money rule के लिए follow करें.",
+   "vo": "हर हफ़्ते पैसे का एक हिसाब, follow करो.",
    "text": "",
    "data": {
-    "title": "छोटा शुरू करें. आज शुरू करें.",
-    "cta": "रोज़ एक money rule के लिए follow करें"
+    "title": "SIP सैलरी वाले दिन शुरू करो",
+    "cta": "हर हफ़्ते एक हिसाब: follow करें"
    }
   }
  ]

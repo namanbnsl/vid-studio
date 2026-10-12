@@ -67,7 +67,7 @@ Visual: end | Follow for one money rule a day | Follow @explainedin90s
 
 Keep on-screen words few: titles under 6 words, labels under 4, list items under 6. The voiceover explains; the screen shows the one thing to remember.
 
-Every scene sits on one grid: a `Text:` overlay and a chart's title share a header row pinned to the top, the visual is centred below it, and captions and the source line align to the same left edge. Holds are still, and headings keep one size across scenes, so write titles that fit in two lines rather than relying on the player to shrink them.
+Every scene sits on one grid. A thin progress line runs across the top, one segment per beat. A `Text:` overlay and a chart's title share a header row pinned under it, in the same place in every scene. Charts, lists and timelines fill the space below; a stat, a punchline, a quote or the end card is centred in it. Captions sit in their own band, centred, with the spoken word highlighted, and the `Source:` line and photo credit are one line of small print on the bottom edge of the safe area. Holds are still, and headings keep one size across scenes, so write titles that fit in two lines rather than relying on the player to shrink them. `bars` with short labels (up to 12 characters, like years) draw columns; longer labels draw horizontal rows.
 
 `studio.py scenes` warns about what makes a video look generated: the same headline on screen twice, more than two `text` scenes, bars without numbers, a compare mixing a number with a phrase, and chart values with no unit. Fix every warning.
 The examples above demonstrate syntax. Replace their figures and placeholder quote with evidence from the story's notes.

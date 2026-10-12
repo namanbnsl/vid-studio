@@ -34,9 +34,9 @@ Bank पैसा निकालने से पहले पूछता ह�
 Visual: compare | Cheque पर signature | देने वाला: करता है | लेने वाला: नहीं करता
 
 ## QR trap
-QR में भी यही trick है: scan करके PIN डाला, मतलब payment किया. [2] जो बोले पैसे लेने के लिए scan करो, वो देने नहीं आया.
+QR में भी यही trick है: scan करके PIN डाला, मतलब payment किया. [2] पैसे लेने के लिए आपको कुछ scan नहीं करना पड़ता.
 Visual: image | Hand scanning a printed QR code with a phone
-Text: Scan + PIN = Pay
+Text: Scan करके PIN = payment
 
 ## If it happens
 पैसे चले गए हों, तो तुरंत 1930 पर call करो या cybercrime.gov.in पर complaint डालो. [3]
@@ -49,4 +49,4 @@ Visual: compare | UPI PIN कब लगता है | भेजना, balance 
 
 ## End
 ये Reel उसे भेजो जो हर refund approve कर देता है.
-Visual: end | Refund के लिए PIN? रुक जाओ | Share करो, किसी को बचाओ
+Visual: end | Refund के लिए PIN? रुक जाओ | घर के group में भेजो

@@ -1,48 +1,58 @@
 {
   "id": "data-noir",
   "name": "Data Noir",
-  "description": "Near-black terminal look: grotesk headlines, mono labels, signal-green figures on a faint grid. For markets, tech and numbers.",
+  "description": "Black, white and one vermilion. Tight grotesque numbers and hard cuts, for markets and tech where the chart is the story.",
   "design": {
     "aspect": "9:16",
     "colors": {
-      "background": "#08090B",
-      "surface": "#12151A",
-      "text": "#E9EDF1",
-      "muted": "#7D8894",
-      "accent": "#4AF08F",
-      "accent2": "#38BDF8",
-      "negative": "#FF5C5C"
+      "background": "#0B0B0C",
+      "surface": "#17171A",
+      "text": "#ECECEC",
+      "muted": "#808086",
+      "accent": "#FF4F2E",
+      "accent2": "#F2F2F2",
+      "negative": "#FF4F2E"
     },
     "fonts": {
       "display": "Space Grotesk",
-      "body": "Inter",
-      "mono": "JetBrains Mono"
+      "body": "Mukta",
+      "mono": "IBM Plex Mono"
     },
     "type": {
       "scale": 1.0,
       "display_case": "none",
       "display_weight": 700,
-      "tracking": -0.035
+      "tracking": -0.03
     },
     "motion": {
       "energy": "medium",
       "easing": "snappy",
-      "transition": "wipe"
+      "transition": "cut"
     },
     "captions": {
-      "style": "plain",
+      "style": "highlight",
       "position": "lower",
       "highlight": "accent",
-      "max_words": 5
+      "max_words": 4,
+      "size": "medium"
     },
     "background": {
-      "style": "grain",
-      "pattern": "grid"
+      "style": "solid",
+      "pattern": "none"
     },
-    "radius": 6,
+    "images": {
+      "treatment": "mono"
+    },
+    "sources": {
+      "show": true
+    },
+    "progress": {
+      "show": true
+    },
+    "radius": 0,
     "logo": {
       "text": "",
-      "position": "top-right"
+      "position": "top-left"
     },
     "custom_css": ""
   }

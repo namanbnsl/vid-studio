@@ -1,28 +1,28 @@
 {
   "id": "desi-pop",
   "name": "Desi Pop",
-  "description": "Mango yellow, rani pink and rounded Baloo type with bouncy motion and pop captions. Playful, made for Hinglish.",
+  "description": "Haldi cream, aubergine type and rani pink. Round, friendly Baloo and a little bounce, for lifestyle and money tips in Hindi.",
   "design": {
     "aspect": "9:16",
     "colors": {
-      "background": "#FFC93C",
-      "surface": "#FFF4D6",
-      "text": "#1F0A2E",
-      "muted": "#6B3F2A",
-      "accent": "#B3005A",
-      "accent2": "#006B4F",
-      "negative": "#C81E1E"
+      "background": "#F7E6C4",
+      "surface": "#FFF4DE",
+      "text": "#2B1736",
+      "muted": "#7A5E6E",
+      "accent": "#D62F63",
+      "accent2": "#E8890C",
+      "negative": "#C0392B"
     },
     "fonts": {
       "display": "Baloo 2",
-      "body": "Mukta",
-      "mono": "Rajdhani"
+      "body": "Baloo 2",
+      "mono": "Space Mono"
     },
     "type": {
-      "scale": 1.05,
+      "scale": 1.0,
       "display_case": "none",
       "display_weight": 800,
-      "tracking": -0.015
+      "tracking": -0.01
     },
     "motion": {
       "energy": "high",
@@ -30,16 +30,26 @@
       "transition": "zoom"
     },
     "captions": {
-      "style": "pop",
+      "style": "highlight",
       "position": "lower",
       "highlight": "accent",
-      "max_words": 2
+      "max_words": 4,
+      "size": "medium"
     },
     "background": {
-      "style": "gradient",
-      "pattern": "dots"
+      "style": "solid",
+      "pattern": "none"
     },
-    "radius": 36,
+    "images": {
+      "treatment": "natural"
+    },
+    "sources": {
+      "show": true
+    },
+    "progress": {
+      "show": true
+    },
+    "radius": 20,
     "logo": {
       "text": "",
       "position": "top-left"

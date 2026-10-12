@@ -1,45 +1,55 @@
 {
   "id": "clean-newsroom",
-  "name": "Clean Newsroom",
-  "description": "Light, editorial and restrained, like a business daily: warm newsprint, serif headlines, oxford-blue figures, boxed captions.",
+  "name": "Broadsheet",
+  "description": "Newsprint white, black serif headlines and a single editorial red. Steady fades; the look of a paper's explainer desk.",
   "design": {
     "aspect": "9:16",
     "colors": {
-      "background": "#FBF7F0",
+      "background": "#F6F4EF",
       "surface": "#FFFFFF",
-      "text": "#16130F",
-      "muted": "#6A6258",
-      "accent": "#0F5499",
-      "accent2": "#C2410C",
-      "negative": "#B42318"
+      "text": "#121212",
+      "muted": "#66625B",
+      "accent": "#C8102E",
+      "accent2": "#1D4E89",
+      "negative": "#C8102E"
     },
     "fonts": {
       "display": "Fraunces",
-      "body": "Inter",
+      "body": "Hind",
       "mono": "IBM Plex Mono"
     },
     "type": {
       "scale": 1.0,
       "display_case": "none",
-      "display_weight": 600,
+      "display_weight": 700,
       "tracking": -0.02
     },
     "motion": {
-      "energy": "calm",
+      "energy": "medium",
       "easing": "smooth",
       "transition": "fade"
     },
     "captions": {
-      "style": "boxed",
+      "style": "highlight",
       "position": "lower",
       "highlight": "accent",
-      "max_words": 6
+      "max_words": 4,
+      "size": "medium"
     },
     "background": {
       "style": "solid",
       "pattern": "none"
     },
-    "radius": 4,
+    "images": {
+      "treatment": "mono"
+    },
+    "sources": {
+      "show": true
+    },
+    "progress": {
+      "show": true
+    },
+    "radius": 2,
     "logo": {
       "text": "",
       "position": "top-left"

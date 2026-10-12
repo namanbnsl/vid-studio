@@ -21,15 +21,16 @@
 
   var DEFAULT_DESIGN = {
     aspect: '9:16',
-    colors: { background: '#0E0E10', surface: '#1A1A1F', text: '#F5F5F0', muted: '#9A9AA2', accent: '#FFD23F', accent2: '#3DDC97', negative: '#FF5A5F' },
-    fonts: { display: 'Anton', body: 'Mukta', mono: 'JetBrains Mono' },
-    type: { scale: 1.0, display_case: 'upper', display_weight: 800, tracking: -0.01 },
+    colors: { background: '#121212', surface: '#1E1E1E', text: '#F7F3EA', muted: '#9C978D', accent: '#FFC233', accent2: '#FF7A45', negative: '#FF5D5D' },
+    fonts: { display: 'Bricolage Grotesque', body: 'Mukta', mono: 'JetBrains Mono' },
+    type: { scale: 1.0, display_case: 'none', display_weight: 800, tracking: -0.03 },
     motion: { energy: 'high', easing: 'snappy', transition: 'slide' },
-    captions: { style: 'karaoke', position: 'lower', highlight: 'accent', max_words: 4, size: 'medium' },
-    background: { style: 'grain', pattern: 'grid' },
+    captions: { style: 'highlight', position: 'lower', highlight: 'accent', max_words: 4, size: 'medium' },
+    background: { style: 'grain', pattern: 'none' },
     images: { treatment: 'dim' },
     sources: { show: true },
-    radius: 18,
+    progress: { show: true },
+    radius: 12,
     logo: { text: '', position: 'top-left' },
     custom_css: ''
   };
@@ -47,7 +48,7 @@
     energy: ['calm', 'medium', 'high'],
     easing: ['smooth', 'snappy', 'bouncy'],
     transition: ['cut', 'fade', 'slide', 'zoom', 'wipe'],
-    capStyle: ['none', 'plain', 'boxed', 'karaoke', 'pop'],
+    capStyle: ['none', 'plain', 'boxed', 'karaoke', 'highlight', 'pop'],
     capPos: ['lower', 'middle', 'upper'],
     bgStyle: ['solid', 'gradient', 'grain', 'paper'],
     pattern: ['none', 'grid', 'dots', 'lines'],
@@ -240,6 +241,7 @@
     d.captions.size = pick(d.captions.size, ENUM.capSize, 'medium');
     d.images.treatment = pick(d.images.treatment, ENUM.treatment, 'dim');
     d.sources.show = d.sources.show !== false;
+    d.progress.show = d.progress.show !== false;
     d.background.style = pick(d.background.style, ENUM.bgStyle, 'solid');
     d.background.pattern = pick(d.background.pattern, ENUM.pattern, 'none');
     d.radius = clamp(num(d.radius, 18), 0, 64);
@@ -392,12 +394,21 @@
   }
   function dimensions(aspect) { var d = ASPECTS[aspect] || ASPECTS['9:16']; return { width: d[0], height: d[1] }; }
 
+  // The frame, top to bottom: progress line, logo, content (header row + visual), captions, then one line of
+  // small print (source and photo credit) on the bottom edge of the safe area, the same place in every scene.
   function layout(design) {
     design = normalizeDesign(design);
     var W = ASPECTS[design.aspect][0], H = ASPECTS[design.aspect][1];
     var s = SAFE[design.aspect], landscape = W > H;
     var top = s.top, bottom = H - s.bottom, left = s.left, right = W - s.right;
     var ts = design.type.scale;
+    var progress = null;
+    if (design.progress.show) {
+      progress = { top: top, height: 6, left: left, width: right - left };
+      top += 6 + (landscape ? 36 : 52);
+    }
+    var meta = { top: bottom - 36, height: 36, left: left, width: right - left };
+    bottom = meta.top - (landscape ? 20 : 28);
     var logo = null;
     if (design.logo.text.trim()) {
       var lp = design.logo.position, isTop = lp.indexOf('top') === 0, lh = 40, lg = landscape ? 28 : 44;
@@ -406,19 +417,21 @@
     }
     var cap = null, cs = design.captions.style;
     if (cs !== 'none') {
-      var ch = Math.round((cs === 'pop' ? (landscape ? 170 : 250) : (landscape ? 140 : 220)) * clamp(ts, 0.85, 1.2) * Math.max(1, CAP_SIZE[design.captions.size]));
-      var gap = landscape ? 32 : 48, pos = design.captions.position;
+      var ch = Math.round((cs === 'pop' ? (landscape ? 170 : 240) : (landscape ? 150 : 210)) * clamp(ts, 0.85, 1.2) * Math.max(1, CAP_SIZE[design.captions.size]));
+      var gap = landscape ? 36 : 56, pos = design.captions.position;
       if (pos === 'upper') { cap = { top: top, height: ch }; top += ch + gap; }
       else if (pos === 'middle') {
         var ct = Math.min(Math.round(H * (landscape ? 0.6 : 0.56)), bottom - ch);
         cap = { top: ct, height: ch }; bottom = ct - gap;
       } else { cap = { top: bottom - ch, height: ch }; bottom = cap.top - gap; }
-      cap.left = left; cap.width = right - left;
+      // captions are centred on the canvas, clear of the side buttons on either edge
+      var side = Math.max(s.left, s.right);
+      cap.left = side; cap.width = W - 2 * side;
     }
     return {
       width: W, height: H, landscape: landscape, safe: s,
       content: { left: left, top: top, width: right - left, height: bottom - top },
-      captions: cap, logo: logo
+      captions: cap, logo: logo, meta: meta, progress: progress
     };
   }
 
@@ -468,7 +481,8 @@
   // ---------------------------------------------------------------- scene builders
   // Each returns {head?, stack, anim(tl, a), post?()} ; a = per-scene animation context.
   // `head` (a chart's title) is pinned to the top of the content area, so it sits on the same line in every
-  // scene; the stack is centred in the space below it. Holds are still: motion lives in the entrances.
+  // scene. Charts, lists and timelines fill the space below it; single statements are centred in it.
+  // Holds are still: motion lives in the entrances.
   var BUILD = {};
 
   function headingEl(text) {
@@ -481,7 +495,7 @@
     tw(tl, target, { y: a.dist(dist || 24), opacity: 0 }, { y: 0, opacity: 1, duration: a.dur(0.7), ease: a.E.out }, at);
   }
   function revealHead(tl, a, head, at) {
-    return head ? revealWords(tl, head, at, a, { stagger: 0.06 }) + a.st(0.05) : at;
+    return head ? revealWords(tl, head, at, a, { stagger: 0.06 }) + a.st(0.08) : at;
   }
   function pairs(list, max, keys) {
     return (Array.isArray(list) ? list : []).slice(0, max).map(function (it) {
@@ -489,6 +503,9 @@
       var o = {}; o[keys[0]] = String(it[keys[0]] == null ? '' : it[keys[0]]).trim(); o[keys[1]] = String(it[keys[1]] == null ? '' : it[keys[1]]).trim();
       return o;
     });
+  }
+  function drawLine(tl, a, line, at) {
+    tw(tl, line, { scaleX: 0 }, { scaleX: 1, duration: a.dur(0.8), ease: a.E.inOut }, at);
   }
 
   BUILD.title = function (sc) {
@@ -513,36 +530,82 @@
 
   BUILD.stat = function (sc) {
     var d = sc.data, st = el('div', 'stack');
-    var label = null, ctx = null;
+    var label = null, ctx = null, line = null;
     if (plain(d.label)) { label = el('div', 'stat-label fit', rich(d.label)); tagLang(label, d.label); st.appendChild(label); }
     var p = parseValue(d.value);
     var val = el('div', 'value disp fit', valueHTML(d.value || '', p));
     tagLang(val, d.value); st.appendChild(val);
-    var rule = el('div', 'rule'); st.appendChild(rule);
-    if (plain(d.context)) { ctx = el('div', 'context fit', rich(d.context)); tagLang(ctx, d.context); st.appendChild(ctx); }
+    if (plain(d.context)) {
+      line = el('div', 'stat-line'); st.appendChild(line);
+      ctx = el('div', 'context fit', rich(d.context)); tagLang(ctx, d.context); st.appendChild(ctx);
+    }
     return {
       stack: st,
       anim: function (tl, a) {
         var at = a.t0;
         if (label) { fadeUp(tl, a, label, at, 18); at += a.st(0.15); }
-        tw(tl, val, { yPercent: 10, opacity: 0 }, { yPercent: 0, opacity: 1, duration: a.dur(0.8), ease: a.E.out }, at);
-        var cd = a.dur(1.3);
-        countUp(tl, q(val, '.num'), p, at, cd, a.E.num);
-        tw(tl, rule, { scaleX: 0 }, { scaleX: 1, duration: a.dur(0.7), ease: a.E.inOut }, at + a.st(0.3));
-        if (ctx) fadeUp(tl, a, ctx, at + a.st(0.45), 18);
+        tw(tl, val, { yPercent: 8, opacity: 0 }, { yPercent: 0, opacity: 1, duration: a.dur(0.8), ease: a.E.out }, at);
+        countUp(tl, q(val, '.num'), p, at, a.dur(1.3), a.E.num);
+        if (line) drawLine(tl, a, line, at + a.st(0.35));
+        if (ctx) fadeUp(tl, a, ctx, at + a.st(0.5), 16);
       }
     };
   };
 
+  // Short labels draw columns that fill the frame (a series: years, steps); long labels or negative values
+  // draw horizontal rows (a ranking). The largest value takes the accent.
   BUILD.bars = function (sc) {
-    var d = sc.data, st = el('div', 'stack');
+    var d = sc.data, st = el('div', 'stack fill');
     var head = headingEl(d.title);
     var items = pairs(d.items, 8, ['label', 'value']).map(function (it) { it.p = parseValue(it.value); return it; });
     var mags = items.map(function (it) { return it.p ? Math.abs(it.p.magnitude) : 0; });
     var max = Math.max.apply(null, mags.concat([0])) || 1;
     var maxI = mags.indexOf(Math.max.apply(null, mags.concat([0])));
+    var columns = items.length >= 2 && items.length <= 7 && items.every(function (it) { return plain(it.label).length <= 12 && !(it.p && it.p.negative); });
+    var rows;
+    if (columns) {
+      var chart = el('div', 'colchart');
+      chart.style.setProperty('--n', String(items.length));
+      rows = items.map(function (it, i) {
+        var col = el('div', 'cc' + (i === maxI ? ' max' : ''));
+        var area = el('div', 'cc-area'), zone = el('div', 'cc-zone');
+        var h = Math.max(1.5, mags[i] / max * 100);
+        var bar = el('div', 'cc-bar'); bar.style.height = h.toFixed(2) + '%';
+        var v = el('div', 'cc-value', valueHTML(it.value, it.p)); tagLang(v, it.value);
+        v.style.bottom = 'calc(' + h.toFixed(2) + '% + calc(var(--k) * 16px))';
+        zone.appendChild(bar); zone.appendChild(v); area.appendChild(zone);
+        var lab = el('div', 'cc-label', rich(it.label)); tagLang(lab, it.label);
+        col.appendChild(area); col.appendChild(lab); chart.appendChild(col);
+        return { bar: bar, value: v, label: lab, zone: zone, h: h, val: q(v, '.num'), p: it.p };
+      });
+      var base = el('div', 'cc-base'); chart.appendChild(base);
+      st.appendChild(chart);
+      return {
+        head: head, stack: st,
+        post: function () {
+          var area = rows[0].zone.parentNode;
+          base.style.top = (area.offsetTop + area.offsetHeight) + 'px';
+          // one shared size for every value, small enough for the widest
+          var over = 1;
+          rows.forEach(function (r) { var room = r.zone.offsetWidth * 1.15; if (room > 0) over = Math.max(over, contentWidth(r.value) / room); });
+          if (over > 1) chart.style.setProperty('--vk', (1 / over).toFixed(3));
+        },
+        anim: function (tl, a) {
+          var at = revealHead(tl, a, head, a.t0);
+          drawLine(tl, a, base, at);
+          var gap = a.st(Math.min(0.18, 0.9 / rows.length)), bd = a.dur(1.0);
+          rows.forEach(function (r, i) {
+            var t = at + 0.1 + i * gap;
+            tw(tl, r.label, { opacity: 0 }, { opacity: 1, duration: a.dur(0.4), ease: 'power2.out' }, t);
+            tw(tl, r.bar, { scaleY: 0 }, { scaleY: 1, duration: bd, ease: a.E.bar }, t);
+            tw(tl, r.value, { y: r.zone.offsetHeight * r.h / 100, opacity: 0 }, { y: 0, opacity: 1, duration: bd, ease: a.E.bar }, t);
+            countUp(tl, r.val, r.p, t, bd, a.E.num);
+          });
+        }
+      };
+    }
     var bars = el('div', 'bars');
-    var rows = items.map(function (it, i) {
+    rows = items.map(function (it, i) {
       var row = el('div', 'bar-row' + (i === maxI ? ' max' : '') + (it.p && it.p.negative ? ' neg' : ''));
       var hd = el('div', 'bar-head');
       var lab = el('span', 'bar-label', rich(it.label)); tagLang(lab, it.label);
@@ -573,7 +636,8 @@
   };
 
   // Two values side by side. The second item is the subject (the "after", the "new", the thing the
-  // story is about), so it takes the accent whichever is larger.
+  // story is about), so it takes the accent whichever is larger. A dashed line carries the first value
+  // across, so the gap between them is something you can see.
   BUILD.compare = function (sc) {
     var d = sc.data, st = el('div', 'stack fill');
     var head = headingEl(d.title);
@@ -581,17 +645,16 @@
     while (items.length < 2) items.push({ label: '', value: '', p: null });
     var numeric = !!(items[0].p && items[1].p);
     var cols = el('div', 'cols' + (numeric ? '' : ' cols-text'));
-    if (!numeric) st.className = 'stack';   // panels are centred like any other visual; bars fill the height
-    var parts;
+    var parts, ref = null, base = null;
     if (numeric) {
       var mA = Math.abs(items[0].p.magnitude), mB = Math.abs(items[1].p.magnitude), mx = Math.max(mA, mB) || 1;
-      var heights = [Math.max(4, mA / mx * 100), Math.max(4, mB / mx * 100)];
-      var delta = null, down = false;
+      var heights = [Math.max(3, mA / mx * 100), Math.max(3, mB / mx * 100)];
+      var delta = null;
       if (mA > 0 && mB > 0 && mA !== mB) {
         var ratio = mB / mA;
         if (ratio >= 2) delta = (Math.round(ratio * 10) / 10) + '×';
         else if (ratio > 1) delta = '+' + Math.round((ratio - 1) * 100) + '%';
-        else { delta = '−' + Math.round((1 - ratio) * 100) + '%'; down = true; }
+        else delta = '−' + Math.round((1 - ratio) * 100) + '%';
       }
       parts = items.map(function (it, i) {
         var col = el('div', 'col' + (i === 1 ? ' subject' : ''));
@@ -599,16 +662,18 @@
         var zone = el('div', 'col-zone');   // leaves room above the tallest bar for its value
         var barEl = el('div', 'col-bar'); barEl.style.height = heights[i].toFixed(2) + '%';
         var top = el('div', 'col-top');
-        top.style.bottom = 'calc(' + heights[i].toFixed(2) + '% + calc(var(--k) * 20px))';
+        top.style.bottom = 'calc(' + heights[i].toFixed(2) + '% + calc(var(--k) * 18px))';
         var badge = null;
-        if (delta && i === 1) { badge = el('div', 'delta' + (down ? ' down' : ''), esc(delta)); top.appendChild(badge); }
+        if (delta && i === 1) { badge = el('div', 'delta', esc(delta)); top.appendChild(badge); }
         var v = el('div', 'col-value fit', valueHTML(it.value, it.p)); tagLang(v, it.value);
         top.appendChild(v);
         zone.appendChild(barEl); zone.appendChild(top); area.appendChild(zone);
         var lab = el('div', 'col-label', rich(it.label)); tagLang(lab, it.label);
         col.appendChild(area); col.appendChild(lab); cols.appendChild(col);
-        return { bar: barEl, top: top, val: q(v, '.num'), p: it.p, label: lab, badge: badge, zone: zone, h: heights[i] };
+        return { bar: barEl, top: top, val: q(v, '.num'), p: it.p, label: lab, badge: badge, zone: zone, area: area, h: heights[i] };
       });
+      if (delta) { ref = el('div', 'ref-line'); cols.appendChild(ref); }
+      base = el('div', 'cc-base'); cols.appendChild(base);
     } else {
       // words, not numbers: two labelled panels
       parts = items.map(function (it, i) {
@@ -618,29 +683,39 @@
         col.appendChild(lab); col.appendChild(v); cols.appendChild(col);
         return { col: col };
       });
+      st.className = 'stack';   // panels are centred like any other statement
     }
     st.appendChild(cols);
     return {
       head: head, stack: st,
+      post: function () {
+        if (!numeric) return;
+        base.style.top = (parts[0].area.offsetTop + parts[0].area.offsetHeight) + 'px';
+        if (!ref) return;
+        var z = parts[0].zone, ar = parts[0].area;
+        ref.style.top = (ar.offsetTop + z.offsetTop + z.offsetHeight * (1 - parts[0].h / 100)).toFixed(1) + 'px';
+      },
       anim: function (tl, a) {
         var at = revealHead(tl, a, head, a.t0);
         var bd = a.dur(1.1);
+        if (base) drawLine(tl, a, base, at);
         parts.forEach(function (pt, i) {
-          var t = at + i * a.st(0.4);
+          var t = at + 0.1 + i * a.st(0.4);
           if (!numeric) { fadeUp(tl, a, pt.col, t, 24); return; }
           var px = pt.zone.offsetHeight * pt.h / 100;
           tw(tl, pt.label, { opacity: 0 }, { opacity: 1, duration: a.dur(0.5), ease: 'power2.out' }, t);
           tw(tl, pt.bar, { scaleY: 0 }, { scaleY: 1, duration: bd, ease: a.E.bar }, t);
           tw(tl, pt.top, { y: px, opacity: 0 }, { y: 0, opacity: 1, duration: bd, ease: a.E.bar }, t);
           countUp(tl, pt.val, pt.p, t, bd, a.E.num);
-          if (pt.badge) tw(tl, pt.badge, { opacity: 0, y: a.dist(10) }, { opacity: 1, y: 0, duration: a.dur(0.5), ease: a.E.out }, t + bd * 0.8);
+          if (pt.badge) tw(tl, pt.badge, { opacity: 0, y: a.dist(10) }, { opacity: 1, y: 0, duration: a.dur(0.5), ease: a.E.out }, t + bd * 0.85);
         });
+        if (ref) tw(tl, ref, { scaleX: 0 }, { scaleX: 1, duration: a.dur(0.7), ease: a.E.inOut }, at + 0.1 + a.st(0.4) + bd * 0.7);
       }
     };
   };
 
   BUILD.list = function (sc) {
-    var d = sc.data, st = el('div', 'stack');
+    var d = sc.data, st = el('div', 'stack fill');
     var head = headingEl(d.title);
     var ol = el('ol', 'items');
     var items = (Array.isArray(d.items) ? d.items : []).slice(0, 6).map(function (txt, i) {
@@ -652,6 +727,8 @@
       li.appendChild(line); li.appendChild(idx); li.appendChild(t); ol.appendChild(li);
       return { line: line, idx: idx, text: t };
     });
+    ol.style.setProperty('--n', String(Math.max(1, items.length)));
+    var end = el('span', 'item-line end'); ol.appendChild(end);
     st.appendChild(ol);
     return {
       head: head, stack: st,
@@ -661,10 +738,11 @@
         var gap = clamp(Math.max(0.3, (a.e - at) * 0.55) / n, 0.18 * a.f, 1.2);
         items.forEach(function (it, i) {
           var t = at + i * gap;
-          tw(tl, it.line, { scaleX: 0 }, { scaleX: 1, duration: a.dur(0.7), ease: a.E.inOut }, t);
-          tw(tl, it.idx, { opacity: 0 }, { opacity: 1, duration: a.dur(0.4), ease: 'power2.out' }, t + 0.05);
-          tw(tl, it.text, { x: -a.dist(24), opacity: 0 }, { x: 0, opacity: 1, duration: a.dur(0.6), ease: a.E.out }, t + 0.08);
+          drawLine(tl, a, it.line, t);
+          tw(tl, it.idx, { opacity: 0, y: a.dist(16) }, { opacity: 1, y: 0, duration: a.dur(0.5), ease: a.E.out }, t + 0.05);
+          tw(tl, it.text, { x: -a.dist(24), opacity: 0 }, { x: 0, opacity: 1, duration: a.dur(0.6), ease: a.E.out }, t + 0.1);
         });
+        drawLine(tl, a, end, at + (n - 1) * gap + 0.2);
       }
     };
   };
@@ -691,7 +769,7 @@
   };
 
   BUILD.timeline = function (sc) {
-    var d = sc.data, st = el('div', 'stack');
+    var d = sc.data, st = el('div', 'stack fill');
     var head = headingEl(d.title);
     var wrap = el('div', 'tl');
     var line = el('div', 'tl-line', '<i></i>'); wrap.appendChild(line);
@@ -700,9 +778,11 @@
       var dot = el('div', 'tl-dot');
       var date = el('div', 'tl-date', rich(it.date)); tagLang(date, it.date);
       var lab = el('div', 'tl-label fit', rich(it.label)); tagLang(lab, it.label);
-      node.appendChild(dot); node.appendChild(date); node.appendChild(lab); wrap.appendChild(node);
+      var txt = el('div', 'tl-text'); txt.appendChild(date); txt.appendChild(lab);
+      node.appendChild(dot); node.appendChild(txt); wrap.appendChild(node);
       return { node: node, dot: dot, date: date, label: lab };
     });
+    wrap.style.setProperty('--n', String(Math.max(1, items.length)));
     st.appendChild(wrap);
     var stops = [];
     return {
@@ -745,6 +825,7 @@
     var hasStar = /\*/.test(txt);
     var p = el('p', 'punch disp fit', wordsHTML(txt, { autoEm: hasStar ? null : function (w) { return /[0-9०-९₹$%]/.test(w); } }));
     tagLang(p, txt); st.appendChild(p);
+    if (plain(txt).length <= 14) p.classList.add('short');   // a figure or a few words: set it like a poster
     return {
       stack: st,
       anim: function (tl, a) {
@@ -807,13 +888,14 @@
     };
   }
 
-  // Small print at the foot of the content area: where a fact comes from, and who took the photo.
-  function buildMeta(sc, photo, design) {
+  // One line of small print on the bottom edge of the safe area: where a fact comes from, and who took the photo.
+  function buildMeta(sc, photo, design, L) {
     var src = design.sources.show ? sc.source : '';
     var credit = photo && photo.credit ? photo.credit : '';
     if (!src && !credit) return null;
     var row = el('div', 'meta-row');
-    if (src) { var t = el('div', 'src-tag', '<span class="src-k">Source</span> <span class="src-v">' + rich(src) + '</span>'); tagLang(t, src); row.appendChild(t); }
+    row.style.cssText = 'left:' + L.meta.left + 'px;top:' + L.meta.top + 'px;width:' + L.meta.width + 'px;height:' + L.meta.height + 'px';
+    if (src) { var t = el('div', 'src-tag', '<span class="src-k">Source</span><span class="src-v">' + rich(src) + '</span>'); tagLang(t, src); row.appendChild(t); }
     else row.appendChild(el('span'));
     if (credit) { var c = el('div', 'credit', rich(credit)); tagLang(c, credit); row.appendChild(c); }
     return row;
@@ -912,6 +994,8 @@
     return { words: words, chunks: chunks };
   }
 
+  // Captions read as captions, not as part of the graphic: centred, heavy, and in `highlight` style a pill
+  // slides behind the word being spoken.
   function buildCaptions(stage, scenes, timing, design, L, colors, tl, E, enabled) {
     var style = design.captions.style;
     if (!enabled || style === 'none' || !L.captions) return;
@@ -927,7 +1011,7 @@
       var ws = s + Math.min(0.1, sc.duration * 0.05), we = e - Math.min(0.15, sc.duration * 0.06);
       var weights = sp.words.map(function (w, i) {
         var letters = w.replace(/[^\p{L}\p{N}]/gu, '').length;
-        var pause = i === sp.words.length - 1 ? 0 : /[.!?\u0964]["'\u201D\u2019)]*$/.test(w) ? 1.3 : /[,;:\u2014]["'\u201D\u2019)]*$/.test(w) ? 0.7 : 0;
+        var pause = i === sp.words.length - 1 ? 0 : /[.!?।]["'”’)]*$/.test(w) ? 1.3 : /[,;:—]["'”’)]*$/.test(w) ? 0.7 : 0;
         return 1 + 0.09 * letters + pause;
       });
       var tot = weights.reduce(function (a, b) { return a + b; }, 0);
@@ -946,10 +1030,12 @@
         var inner = el('div', 'cap-inner');
         var wordsH = ch.map(function (i) { return '<span class="w">' + wrapDv(esc(sp.words[i])) + '</span>'; }).join(' ');
         inner.innerHTML = style === 'boxed' ? '<span class="line">' + wordsH + '</span>' : wordsH;
+        var pill = null;
+        if (style === 'highlight') { pill = el('span', 'cap-hl'); inner.insertBefore(pill, inner.firstChild); }
         tagLang(inner, text);
         cap.appendChild(inner);
         layer.appendChild(cap);
-        made.push({ cap: cap, inner: inner, start: start, end: end, ch: ch, times: times, ci: ci });
+        made.push({ cap: cap, inner: inner, pill: pill, start: start, end: end, ch: ch, times: times, ci: ci });
       });
     });
     // measure
@@ -961,18 +1047,33 @@
       tl.set(m.inner, { visibility: 'hidden' }, m.end);
       if (style === 'pop') {
         tw(tl, m.inner, { scale: 0.9, opacity: 0 }, { scale: 1, opacity: 1, duration: 0.2, ease: 'power3.out' }, m.start);
-        qa(m.inner, '.w').forEach(function (w) { if (/[0-9\u0966-\u096F\u20B9$%]/.test(w.textContent)) w.style.color = hl; });
+        qa(m.inner, '.w').forEach(function (w) { if (/[0-9०-९₹$%]/.test(w.textContent)) w.style.color = hl; });
       } else {
         tw(tl, m.inner, { opacity: 0 }, { opacity: 1, duration: 0.12, ease: 'power1.out' }, m.start);
       }
+      var spans = qa(m.inner, '.w');
       if (style === 'karaoke') {
-        var spans = qa(m.inner, '.w');
         spans.forEach(function (w, j) {
           var tt = m.times[m.ch[j]];
           gsap.set(w, { color: colors.capDim });
           // colour only: scaling the spoken word would eat the spaces beside it
           tl.set(w, { color: hl }, tt[0]);
           if (j < spans.length - 1) tl.set(w, { color: colors.text }, tt[1]);
+        });
+      }
+      if (m.pill && spans.length) {
+        var fs = parseFloat((root.getComputedStyle ? root.getComputedStyle(m.inner).fontSize : '') || '64') || 64;
+        var px = fs * 0.12, py = fs * 0.02;
+        var box = function (w) { return { x: w.offsetLeft - px, y: w.offsetTop - py, width: w.offsetWidth + 2 * px, height: w.offsetHeight + 2 * py }; };
+        var boxes = spans.map(box);
+        gsap.set(m.pill, boxes[0]);
+        // a set (not a tween) per word keeps every frame consistent: no frame shows the pill between words
+        // the pill jumps to each word as it is spoken, and that word flips to the pill's text colour in the same frame
+        spans.forEach(function (w, j) {
+          var at = m.times[m.ch[j]][0];
+          if (j > 0) { tl.set(m.pill, boxes[j], at); tl.set(w, { color: colors.onHighlight }, at); }
+          else gsap.set(w, { color: colors.onHighlight });
+          if (j < spans.length - 1) tl.set(w, { color: colors.capText }, m.times[m.ch[j + 1]][0]);
         });
       }
     });
@@ -995,8 +1096,8 @@
     var bg = el('div', 'bg');
     bg.setAttribute('data-track-index', '0');
     var style = design.background.style, pat = design.background.pattern;
-    // one still, soft light from the top: moving colour blobs read as a screensaver, not a design
-    if (style === 'gradient' || style === 'grain') bg.appendChild(el('div', 'bg-glow'));
+    // flat colour by default; `gradient` is a barely-there tonal step from the top, never a glow
+    if (style === 'gradient') bg.appendChild(el('div', 'bg-tone'));
     var patEl = null;
     if (pat !== 'none') {
       patEl = el('div', 'bg-pattern bg-' + pat);
@@ -1015,7 +1116,6 @@
       if (style === 'paper') noise.style.mixBlendMode = 'multiply';
       bg.appendChild(noise);
     }
-    bg.appendChild(el('div', 'bg-vignette'));
     stage.appendChild(bg);
   }
 
@@ -1042,10 +1142,13 @@
       var dark = lum(C.background) < 0.3;
       var onAccent = contrast('#0B0B0C', C.accent) >= contrast('#FFFFFF', C.accent) ? '#0B0B0C' : '#FFFFFF';
       var hlKey = design.captions.highlight;
+      var hlColor = isHex(hlKey) ? hlKey : (C[hlKey] || C.accent);
       var colors = {
         dark: dark, onAccent: onAccent, accent: C.accent, text: C.text,
-        highlight: isHex(hlKey) ? hlKey : (C[hlKey] || C.accent),
-        capDim: rgba(C.text, 0.55),
+        highlight: hlColor,
+        onHighlight: contrast('#0B0B0C', hlColor) >= contrast('#FFFFFF', hlColor) ? '#0B0B0C' : '#FFFFFF',
+        capDim: rgba(C.text, 0.5),
+        capText: C.text,
         pattern: rgba(C.text, dark ? 0.035 : 0.045),
         patternDots: rgba(C.text, dark ? 0.08 : 0.1)
       };
@@ -1061,16 +1164,16 @@
         '--display-case': design.type.display_case === 'upper' ? 'uppercase' : design.type.display_case === 'title' ? 'capitalize' : 'none',
         '--tracking': design.type.tracking + 'em',
         '--ts': String(design.type.scale),
-        '--line': rgba(C.text, 0.14), '--track': rgba(C.text, dark ? 0.08 : 0.07), '--bar-dim': rgba(C.text, dark ? 0.3 : 0.24),
+        '--line': rgba(C.text, 0.14), '--line-strong': rgba(C.text, 0.32), '--track-strong': rgba(C.text, dark ? 0.16 : 0.13), '--track': rgba(C.text, dark ? 0.08 : 0.07), '--bar-dim': rgba(C.text, dark ? 0.3 : 0.24),
         '--shadow': dark ? 'rgba(0,0,0,.45)' : rgba(C.text, 0.16),
-                '--glow': rgba(C.accent, design.background.style === 'grain' ? (dark ? 0.07 : 0.06) : (dark ? 0.12 : 0.1)),
-        '--vignette': dark ? 'rgba(0,0,0,.35)' : (design.background.style === 'paper' ? 'rgba(110,80,40,.22)' : rgba(C.text, 0.06)),
-        '--cap-shadow': dark ? '0 3px 0 rgba(0,0,0,.35), 0 6px 26px rgba(0,0,0,.6)' : 'none',
+        '--tone': rgba(C.text, dark ? 0.05 : 0.04),
+        '--cap-hl': hlColor, '--on-hl': colors.onHighlight,
+        '--cap-shadow': dark ? '0 2px 12px rgba(0,0,0,.55)' : 'none',
         '--cap-box': dark ? 'rgba(0,0,0,.72)' : C.text,
         '--cap-box-text': dark ? C.text : C.background,
         '--cap-dim': rgba(C.text, 0.55),
         '--cap-k': String(CAP_SIZE[design.captions.size]),
-        '--scrim0': rgba(C.background, 0.28), '--scrim1': rgba(C.background, 0.62), '--scrim2': rgba(C.background, 0.94),
+        '--scrim': rgba(C.background, 0.62), '--scrim-hero': rgba(C.background, 0.2),
         '--photo-shadow': dark ? '0 2px 28px rgba(0,0,0,.55)' : 'none',
         '--cl': L.content.left + 'px', '--ct': L.content.top + 'px', '--cw': L.content.width + 'px', '--ch': L.content.height + 'px'
       };
@@ -1150,11 +1253,10 @@
         }
         body.appendChild(b.stack);
         frame.appendChild(body);
-        var meta = buildMeta(sc, photo, design);
-        if (meta) frame.appendChild(meta);
+        var meta = buildMeta(sc, photo, design, L);
         var backdrop = photo ? buildBackdrop(photo, sc, ctx) : null;
         if (backdrop) { inner.appendChild(backdrop.el); sEl.classList.add('has-photo'); }
-        drift.appendChild(frame); inner.appendChild(drift); sEl.appendChild(inner);
+        drift.appendChild(frame); if (meta) drift.appendChild(meta); inner.appendChild(drift); sEl.appendChild(inner);
         stage.appendChild(sEl);
         return { sc: sc, el: sEl, inner: inner, drift: drift, chip: chip, b: b, backdrop: backdrop, meta: meta, clipStart: clipStart, clipEnd: clipEnd, t: t };
       });
@@ -1168,6 +1270,13 @@
         logoEl.style.height = L.logo.height + 'px';
         if (L.logo.side === 'left') logoEl.style.left = L.logo.left + 'px'; else { logoEl.style.right = L.logo.right + 'px'; logoEl.style.flexDirection = 'row-reverse'; }
         stage.appendChild(logoEl);
+      }
+      var progFills = [];
+      if (L.progress && scenes.length > 1) {
+        var prog = el('div', 'progress');
+        prog.style.cssText = 'left:' + L.progress.left + 'px;top:' + L.progress.top + 'px;width:' + L.progress.width + 'px;height:' + L.progress.height + 'px';
+        scenes.forEach(function () { var seg = el('span', 'seg', '<i></i>'); prog.appendChild(seg); progFills.push(q(seg, 'i')); });
+        stage.appendChild(prog);
       }
       var wipe = null;
       if (trans === 'wipe' && scenes.length > 1 && o > 0) {
@@ -1237,6 +1346,10 @@
           x.b.anim(tl, a);
         });
 
+        // the progress line fills one segment per beat, at the pace of the voiceover
+        progFills.forEach(function (f, i) {
+          tw(tl, f, { scaleX: 0 }, { scaleX: 1, duration: Math.max(0.1, timing[i].duration), ease: 'none' }, timing[i].start);
+        });
         if (wipe) {
           gsap.set(wipe, { x: 0, xPercent: -125, skewX: -8 });
           for (var i = 1; i < built.length; i++) {
