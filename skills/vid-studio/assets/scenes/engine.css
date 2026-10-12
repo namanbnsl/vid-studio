@@ -263,9 +263,6 @@
 .vid-stage .scene-quote .source { display: flex; align-items: center; gap: .7em; margin-top: calc(var(--k) * 48px); font: 600 calc(var(--k) * var(--ts) * 36px)/1.3 var(--font-body); color: var(--muted); }
 .vid-stage .scene-quote .src-av { flex: none; width: 1.9em; height: 1.9em; border-radius: 50%; display: grid; place-items: center; color: var(--accent); background: var(--accent-soft); box-shadow: inset 0 0 0 2px var(--accent-line); }
 .vid-stage .scene-quote .src-av svg { width: 52%; height: 52%; }
-.vid-stage.surf-flat .scene-quote .quote { padding-left: calc(var(--ts) * 48px); }
-.vid-stage.surf-flat .scene-quote .quote-bar { display: block; position: absolute; left: 0; top: .1em; bottom: .1em; width: calc(var(--ts) * 8px); background: var(--accent); transform-origin: 50% 0; border-radius: 4px; }
-.vid-stage.surf-flat .scene-quote .qmark { display: none; }
 
 /* ---------- message: the call or text the story turns on ---------- */
 .vid-stage .msg-card { padding: calc(var(--k) * 36px) calc(var(--k) * 36px) calc(var(--k) * 44px); }
