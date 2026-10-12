@@ -42,6 +42,7 @@ window.VID_SCENES = __VID_SCENES_JSON__;
     // engine.build already registered it; repeated here (after the build) so the registration is visible to tooling
     window.__timelines = window.__timelines || {};
     window.__timelines["vid"] = res.timeline;
+    window.__vidScenes = res.scenes;
     if (typeof window.__hfForceTimelineRebind === 'function') window.__hfForceTimelineRebind();
     document.documentElement.setAttribute('data-vid-ready', '1');
     return res;

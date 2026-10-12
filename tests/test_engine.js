@@ -73,7 +73,7 @@ function engineHarness(fonts) {
 test('malformed design groups default safely without mutating the input', () => {
   const { api } = engineHarness();
   const defaults = json(api.DEFAULT_DESIGN);
-  for (const group of ['colors', 'fonts', 'type', 'motion', 'captions', 'background', 'logo']) {
+  for (const group of ['colors', 'fonts', 'type', 'motion', 'captions', 'background', 'images', 'sources', 'logo']) {
     for (const bad of ['bad', false, 4, [], null]) {
       const input = { [group]: bad };
       assert.deepEqual(json(api.normalizeDesign(input))[group], defaults[group], `${group}: ${JSON.stringify(bad)}`);
@@ -84,6 +84,25 @@ test('malformed design groups default safely without mutating the input', () => 
   }
   assert.equal(api.normalizeDesign({ colors: { accent: '#abc' }, type: { scale: 99 } }).type.scale, 1.6);
   assert.equal(api.normalizeDesign({ colors: { accent: '#abc' } }).colors.accent, '#abc');
+});
+
+test('photo, source, and caption-size settings normalize to safe values', () => {
+  const { api } = engineHarness();
+  const d = api.normalizeDesign({ images: { treatment: 'sepia' }, sources: { show: 0 }, captions: { size: 'huge' } });
+  assert.deepEqual([d.images.treatment, d.sources.show, d.captions.size], ['dim', true, 'medium']);
+  assert.equal(api.normalizeDesign({ sources: { show: false } }).sources.show, false);
+  const [a, b, c] = json(api.normalizeScenes([
+    { type: 'stat', data: {}, image: 'media/x.jpg', source: ' RBI ' },
+    { type: 'text', data: {}, image: { src: 'https://e.com/y.png', credit: 'Photo: Y' } },
+    { type: 'image', data: { description: 'd', src: 'media/z.jpg' }, image: { src: '' } }]));
+  assert.deepEqual([a.image, a.source], [{ src: 'media/x.jpg', credit: '' }, 'RBI']);
+  assert.deepEqual([b.image, b.source], [{ src: 'https://e.com/y.png', credit: 'Photo: Y' }, '']);
+  assert.deepEqual([c.image, c.data.url], [null, 'media/z.jpg']);
+  const base = '/api/p/one/scripts/s/';
+  assert.equal(api.resolveMedia('media/x.jpg', base), base + 'media/x.jpg');
+  assert.equal(api.resolveMedia('./media/x.jpg', base), base + 'media/x.jpg');
+  assert.equal(api.resolveMedia('https://e.com/y.png', base), 'https://e.com/y.png');
+  for (const bad of ['javascript:alert(1)', 'file:///etc/passwd', 'JaVaScRiPt:x', '']) assert.equal(api.resolveMedia(bad, base), '');
 });
 
 test('empty compositions build static backgrounds with zero duration and replace the old timeline', async () => {

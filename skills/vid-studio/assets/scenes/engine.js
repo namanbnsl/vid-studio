@@ -25,8 +25,10 @@
     fonts: { display: 'Anton', body: 'Mukta', mono: 'JetBrains Mono' },
     type: { scale: 1.0, display_case: 'upper', display_weight: 800, tracking: -0.01 },
     motion: { energy: 'high', easing: 'snappy', transition: 'slide' },
-    captions: { style: 'karaoke', position: 'lower', highlight: 'accent', max_words: 4 },
+    captions: { style: 'karaoke', position: 'lower', highlight: 'accent', max_words: 4, size: 'medium' },
     background: { style: 'grain', pattern: 'grid' },
+    images: { treatment: 'dim' },
+    sources: { show: true },
     radius: 18,
     logo: { text: '', position: 'top-left' },
     custom_css: ''
@@ -49,8 +51,11 @@
     capPos: ['lower', 'middle', 'upper'],
     bgStyle: ['solid', 'gradient', 'grain', 'paper'],
     pattern: ['none', 'grid', 'dots', 'lines'],
-    logoPos: ['top-left', 'top-right', 'bottom-left', 'bottom-right']
+    logoPos: ['top-left', 'top-right', 'bottom-left', 'bottom-right'],
+    capSize: ['small', 'medium', 'large'],
+    treatment: ['natural', 'dim', 'mono', 'duotone']
   };
+  var CAP_SIZE = { small: 0.88, medium: 1.08, large: 1.3 };
   var TYPES = ['title', 'stat', 'bars', 'compare', 'list', 'quote', 'timeline', 'text', 'image', 'end'];
 
   var MOTION = {
@@ -232,6 +237,9 @@
     d.captions.position = pick(d.captions.position, ENUM.capPos, 'lower');
     if (!isHex(d.captions.highlight)) d.captions.highlight = pick(d.captions.highlight, ['accent', 'accent2', 'text'], 'accent');
     d.captions.max_words = clamp(Math.round(num(d.captions.max_words, 4)), 1, 8);
+    d.captions.size = pick(d.captions.size, ENUM.capSize, 'medium');
+    d.images.treatment = pick(d.images.treatment, ENUM.treatment, 'dim');
+    d.sources.show = d.sources.show !== false;
     d.background.style = pick(d.background.style, ENUM.bgStyle, 'solid');
     d.background.pattern = pick(d.background.pattern, ENUM.pattern, 'none');
     d.radius = clamp(num(d.radius, 18), 0, 64);
@@ -356,12 +364,28 @@
         data = { description: desc, url: data.url || '' };
         type = 'image';
       }
+      if (type === 'image' && !data.url && data.src) data.url = data.src;
       return {
         beat: String(sc.beat || ''), type: type,
         duration: clamp(num(sc.duration, 3), 1, 600),
-        vo: String(sc.vo || ''), text: String(sc.text || ''), data: data
+        vo: String(sc.vo || ''), text: String(sc.text || ''), data: data,
+        image: normalizeImage(sc.image), source: String(sc.source || '').trim()
       };
     });
+  }
+  // A beat's photo: "media/x.jpg" or {src, credit}; null when there is none.
+  function normalizeImage(img) {
+    if (typeof img === 'string') img = { src: img };
+    if (!isObj(img) || typeof img.src !== 'string' || !img.src.trim()) return null;
+    return { src: img.src.trim(), credit: String(img.credit || '').trim() };
+  }
+  // Relative media paths ("media/x.jpg") resolve against options.mediaBase; absolute URLs pass through.
+  function resolveMedia(src, base) {
+    src = String(src || '').trim();
+    if (!src) return '';
+    if (/^(https?:|data:|blob:|\/)/i.test(src)) return src;
+    if (/^[a-z][a-z0-9+.-]*:/i.test(src)) return '';   // no javascript:, file:, ...
+    return (base || '') + src.replace(/^\.\//, '');
   }
   function totalDuration(scenes) {
     return r3(normalizeScenes(scenes).reduce(function (a, s) { return a + s.duration; }, 0));
@@ -382,7 +406,7 @@
     }
     var cap = null, cs = design.captions.style;
     if (cs !== 'none') {
-      var ch = Math.round((cs === 'pop' ? (landscape ? 170 : 250) : (landscape ? 140 : 220)) * clamp(ts, 0.85, 1.2));
+      var ch = Math.round((cs === 'pop' ? (landscape ? 170 : 250) : (landscape ? 140 : 220)) * clamp(ts, 0.85, 1.2) * Math.max(1, CAP_SIZE[design.captions.size]));
       var gap = landscape ? 32 : 48, pos = design.captions.position;
       if (pos === 'upper') { cap = { top: top, height: ch }; top += ch + gap; }
       else if (pos === 'middle') {
@@ -765,41 +789,31 @@
     };
   };
 
+  // With a photo, the image scene is the photo itself, full-bleed (the backdrop layer draws it).
+  // Without one, it is an editor placeholder that says what to find.
   BUILD.image = function (sc, ctx) {
     var d = sc.data, st = el('div', 'stack fill');
+    if (ctx.photo) {
+      st.className = 'stack photo-only';
+      return { stack: st, anim: function () {} };
+    }
     var card = el('div', 'img-card');
-    var url = String(d.url || '').trim();
-    var img = null;
     var ph = el('div', 'ph-wrap');
     ph.style.cssText = 'position:absolute;inset:0';
     ph.innerHTML = '<div class="stripes"></div><div class="scan"></div>' +
       '<span class="vf tl"></span><span class="vf tr"></span><span class="vf bl"></span><span class="vf br"></span>' +
       '<svg class="ph-icon" viewBox="0 0 60 48" fill="none" stroke="currentColor" stroke-width="2.5"><rect x="2" y="2" width="56" height="44" rx="6"/><circle cx="20" cy="17" r="5"/><path d="M4 40l16-14 10 9 9-7 17 13"/></svg>';
     var inner = el('div', 'ph');
-    inner.innerHTML = '<div class="ph-tag"><span class="rec"></span><span>' + (url ? 'Visual' : 'Visual needed') + '</span></div>';
+    inner.innerHTML = '<div class="ph-tag"><span class="rec"></span><span>Image needed</span></div>';
     var desc = el('div', 'ph-desc fit', wordsHTML(d.description || '', { mask: false }));
     tagLang(desc, d.description);
     inner.appendChild(desc); ph.appendChild(inner); card.appendChild(ph);
-    if (/^https?:\/\//i.test(url)) {
-      img = el('img');
-      img.alt = plain(d.description);
-      img.decoding = 'sync';
-      img.src = url;
-      card.appendChild(img);
-      ctx.waits.push(withTimeout(img.decode ? img.decode().catch(function () { img.style.display = 'none'; }) :
-        new Promise(function (res) { img.onload = res; img.onerror = function () { img.style.display = 'none'; res(); }; }), 6000));
-    }
     st.appendChild(card);
     return {
       stack: st,
       anim: function (tl, a) {
         var at = a.t0;
         tw(tl, card, { scale: 0.94, opacity: 0, y: a.dist(30) }, { scale: 1, opacity: 1, y: 0, duration: a.dur(0.9), ease: a.E.out }, at);
-        if (img && img.style.display !== 'none') {
-          var dx = (a.rand() - 0.5) * 6, dy = (a.rand() - 0.5) * 4;
-          tw(tl, img, { scale: 1.06, xPercent: -dx / 2, yPercent: -dy / 2 }, { scale: 1.18, xPercent: dx / 2, yPercent: dy / 2, duration: a.clipEnd - a.clipStart, ease: 'none' }, a.clipStart);
-          return;
-        }
         var vfs = qa(ph, '.vf'), off = a.dist(26);
         var dirs = [[-1, -1], [1, -1], [-1, 1], [1, 1]];
         vfs.forEach(function (v, i) {
@@ -814,10 +828,48 @@
         tw(tl, q(ph, '.scan'), { yPercent: -110 }, { yPercent: 260, duration: cyc, ease: 'sine.inOut', repeat: reps }, at);
         var blink = 0.5, br = Math.max(0, Math.floor((a.e - at) / blink) - 1);
         tw(tl, q(ph, '.rec'), { opacity: 1 }, { opacity: 0.2, duration: blink, ease: 'steps(1)', repeat: br }, at);
-        tw(tl, q(ph, '.ph-icon'), { y: 0 }, { y: -a.dist(10), duration: Math.max(0.5, a.e - at), ease: 'sine.inOut' }, at);
       }
     };
   };
+
+  // Full-bleed photo behind a scene: decoded before fitting, slow Ken Burns across the clip.
+  function buildBackdrop(photo, sc, ctx) {
+    var wrap = el('div', 'backdrop' + (sc.type === 'image' ? ' is-hero' : ''));
+    var img = el('img');
+    img.alt = plain(sc.data.description || sc.beat || '');
+    img.decoding = 'sync';
+    img.src = photo.url;
+    wrap.appendChild(img);
+    if (ctx.design.images.treatment === 'duotone') wrap.appendChild(el('div', 'tint'));
+    wrap.appendChild(el('div', 'scrim'));
+    var ok = true;
+    ctx.waits.push(withTimeout(img.decode ? img.decode().catch(function () { ok = false; }) :
+      new Promise(function (res) { img.onload = res; img.onerror = function () { ok = false; res(); }; }), 8000).then(function () {
+      if (!ok || !img.naturalWidth) { wrap.style.display = 'none'; wrap.setAttribute('data-failed', '1'); }
+    }));
+    return {
+      el: wrap, img: img,
+      anim: function (tl, a) {
+        if (wrap.style.display === 'none') return;
+        // drift direction and focus vary per scene but are fixed for a given script, so renders repeat exactly
+        var dx = (a.rand() - 0.5) * 5, dy = (a.rand() - 0.5) * 4, zoomIn = a.rand() > 0.35;
+        var s0 = zoomIn ? 1.04 : 1.16, s1 = zoomIn ? 1.16 : 1.04;
+        tw(tl, img, { scale: s0, xPercent: -dx / 2, yPercent: -dy / 2 }, { scale: s1, xPercent: dx / 2, yPercent: dy / 2, duration: Math.max(0.1, a.clipEnd - a.clipStart), ease: 'none' }, a.clipStart);
+      }
+    };
+  }
+
+  // Small print at the foot of the content area: where a fact comes from, and who took the photo.
+  function buildMeta(sc, photo, design) {
+    var src = design.sources.show ? sc.source : '';
+    var credit = photo && photo.credit ? photo.credit : '';
+    if (!src && !credit) return null;
+    var row = el('div', 'meta-row');
+    if (src) { var t = el('div', 'src-tag', '<span class="src-k">Source</span><span class="src-v">' + rich(src) + '</span>'); tagLang(t, src); row.appendChild(t); }
+    else row.appendChild(el('span'));
+    if (credit) { var c = el('div', 'credit', rich(credit)); tagLang(c, credit); row.appendChild(c); }
+    return row;
+  }
 
   BUILD.end = function (sc, ctx) {
     var d = sc.data, st = el('div', 'stack');
@@ -910,10 +962,15 @@
     if (!clean) return [];
     var words = clean.split(' ');
     var chunks = [], cur = [];
+    var ends = function (w) { return /[.,!?;:\u0964\u2026\u2014]["'\u201D\u2019)]*$/.test(w); };
     words.forEach(function (w, i) {
+      var prev = chunks[chunks.length - 1];
+      // a clause's last word never opens the next caption: it joins the one before, if that has room
+      if (!cur.length && ends(w) && prev && prev.length < per + 1 && !ends(words[prev[prev.length - 1]])) { prev.push(i); return; }
       cur.push(i);
-      var punct = /[.,!?;:\u0964\u2026\u2014]["'\u201D\u2019)]*$/.test(w);
-      if (cur.length >= per || (punct && cur.length >= Math.min(2, per))) { chunks.push(cur); cur = []; }
+      // break at clause ends; otherwise at the word limit, but not just before a clause's final word
+      if (ends(w) && cur.length >= Math.min(2, per)) { chunks.push(cur); cur = []; return; }
+      if (cur.length >= per && !(words[i + 1] && ends(words[i + 1]) && cur.length < per + 1 && per > 1)) { chunks.push(cur); cur = []; }
     });
     if (cur.length) {
       var prev = chunks[chunks.length - 1];
@@ -990,12 +1047,15 @@
   }
 
   // ---------------------------------------------------------------- background
-  function noiseURI(kind) {
+  // Grain is white (dark looks) or black (light looks) with noise in the alpha channel, so it needs no
+  // blend mode: blend modes and masks on full-frame layers are among the slowest things to rasterize.
+  function noiseURI(kind, dark) {
     var svg;
     if (kind === 'paper') {
       svg = "<svg xmlns='http://www.w3.org/2000/svg' width='420' height='420'><filter id='p'><feTurbulence type='fractalNoise' baseFrequency='.9' numOctaves='3' seed='4' stitchTiles='stitch'/><feColorMatrix values='0 0 0 0 .35  0 0 0 0 .25  0 0 0 0 .12  0 0 0 .38 -.08'/></filter><filter id='m'><feTurbulence type='fractalNoise' baseFrequency='.008 .02' numOctaves='3' seed='9' stitchTiles='stitch'/><feColorMatrix values='0 0 0 0 .45  0 0 0 0 .32  0 0 0 0 .15  0 0 0 .26 -.08'/></filter><rect width='100%' height='100%' filter='url(%23m)'/><rect width='100%' height='100%' filter='url(%23p)'/></svg>";
     } else {
-      svg = "<svg xmlns='http://www.w3.org/2000/svg' width='300' height='300'><filter id='n'><feTurbulence type='fractalNoise' baseFrequency='.8' numOctaves='3' seed='7' stitchTiles='stitch'/><feColorMatrix type='saturate' values='0'/></filter><rect width='100%' height='100%' filter='url(%23n)'/></svg>";
+      var c = dark ? 1 : 0;
+      svg = "<svg xmlns='http://www.w3.org/2000/svg' width='300' height='300'><filter id='n'><feTurbulence type='fractalNoise' baseFrequency='.85' numOctaves='3' seed='7' stitchTiles='stitch'/><feColorMatrix values='0 0 0 0 " + c + "  0 0 0 0 " + c + "  0 0 0 0 " + c + "  1.6 0 0 0 -.62'/></filter><rect width='100%' height='100%' filter='url(%23n)'/></svg>";
     }
     return 'url("data:image/svg+xml;utf8,' + svg.replace(/"/g, "'").replace(/#/g, '%23').replace(/</g, '%3C').replace(/>/g, '%3E') + '")';
   }
@@ -1012,18 +1072,18 @@
     if (pat !== 'none') {
       patEl = el('div', 'bg-pattern bg-' + pat);
       var c = colors.pattern, cs;
-      if (pat === 'grid') cs = 'background-image:linear-gradient(' + c + ' 2px, transparent 2px),linear-gradient(90deg,' + c + ' 2px, transparent 2px);background-size:96px 96px';
-      else if (pat === 'dots') cs = 'background-image:radial-gradient(' + colors.patternDots + ' 3px, transparent 3.6px);background-size:48px 48px';
-      else cs = 'background-image:linear-gradient(' + c + ' 2px, transparent 2px);background-size:100% 72px';
-      patEl.style.cssText = cs + ';-webkit-mask-image:radial-gradient(ellipse 75% 65% at 50% 42%, #000 35%, transparent 100%);mask-image:radial-gradient(ellipse 75% 65% at 50% 42%, #000 35%, transparent 100%)';
+      if (pat === 'grid') { cs = 'background-image:linear-gradient(' + c + ' 2px, transparent 2px),linear-gradient(90deg,' + c + ' 2px, transparent 2px);background-size:96px 96px'; }
+      else if (pat === 'dots') { cs = 'background-image:radial-gradient(' + colors.patternDots + ' 3px, transparent 3.6px);background-size:48px 48px'; }
+      else { cs = 'background-image:linear-gradient(' + c + ' 2px, transparent 2px);background-size:100% 72px'; }
+      patEl.style.cssText = cs;
       bg.appendChild(patEl);
     }
     var noise = null;
     if (style === 'grain' || style === 'paper') {
       noise = el('div', 'bg-noise');
-      noise.style.backgroundImage = noiseURI(style);
-      if (style === 'grain') { noise.style.opacity = colors.dark ? '0.13' : '0.16'; noise.style.mixBlendMode = colors.dark ? 'screen' : 'multiply'; }
-      else { noise.style.opacity = '1'; noise.style.mixBlendMode = 'multiply'; }
+      noise.style.backgroundImage = noiseURI(style, colors.dark);
+      noise.style.opacity = style === 'grain' ? (colors.dark ? '0.07' : '0.06') : '1';
+      if (style === 'paper') noise.style.mixBlendMode = 'multiply';
       bg.appendChild(noise);
     }
     bg.appendChild(el('div', 'bg-vignette'));
@@ -1031,11 +1091,8 @@
 
     // motion (all on the timeline)
     if (!timing.length || total <= 0) return;
-    if (patEl) tw(tl, patEl, { backgroundPosition: '0px 0px' }, { backgroundPosition: '0px ' + (-Math.round(total * 9)) + 'px', duration: total, ease: 'none' }, 0);
-    if (noise && style === 'grain') {
-      var steps = Math.max(1, Math.round(total * 10));
-      tw(tl, noise, { backgroundPosition: '0px 0px' }, { backgroundPosition: (steps * 97) + 'px ' + (steps * 61) + 'px', duration: total, ease: 'steps(' + steps + ')' }, 0);
-    }
+    // Pattern and grain stay still: anything that moves under every frame gets repainted on every frame,
+    // which triples render time. The scenes, photos and blobs carry the motion.
     if (blobs.length) {
       var W = L.width, H = L.height;
       var pos = timing.map(function () {
@@ -1047,7 +1104,6 @@
           var t0 = Math.max(0, timing[i].start - 0.8);
           tw(tl, b, { x: pos[i - 1][bi][0], y: pos[i - 1][bi][1] }, { x: pos[i][bi][0], y: pos[i][bi][1], duration: 2.2, ease: 'sine.inOut' }, t0, i === 1 ? undefined : false);
         }
-        tw(tl, b, { scale: 1, rotate: 0 }, { scale: 1.15, rotate: bi ? -20 : 20, duration: total, ease: 'none' }, 0);
       });
     }
   }
@@ -1104,6 +1160,9 @@
         '--cap-box': dark ? 'rgba(0,0,0,.72)' : C.text,
         '--cap-box-text': dark ? C.text : C.background,
         '--cap-dim': rgba(C.text, 0.55),
+        '--cap-k': String(CAP_SIZE[design.captions.size]),
+        '--scrim0': rgba(C.background, 0.28), '--scrim1': rgba(C.background, 0.62), '--scrim2': rgba(C.background, 0.94),
+        '--photo-shadow': dark ? '0 2px 28px rgba(0,0,0,.55)' : 'none',
         '--cl': L.content.left + 'px', '--ct': L.content.top + 'px', '--cw': L.content.width + 'px', '--ch': L.content.height + 'px'
       };
       if (L.captions) {
@@ -1116,7 +1175,8 @@
       var reuse = !!options.stage;
       if (reuse) stage.innerHTML = '';
       stage.className = 'vid-stage ar-' + (L.landscape ? 'landscape' : 'portrait') + ' aspect-' + design.aspect.replace(':', 'x') +
-        ' energy-' + design.motion.energy + ' tx-' + design.motion.transition + ' bg-' + design.background.style + (dark ? ' is-dark' : ' is-light');
+        ' energy-' + design.motion.energy + ' tx-' + design.motion.transition + ' bg-' + design.background.style + (dark ? ' is-dark' : ' is-light') +
+        ' img-' + design.images.treatment + ' cap-size-' + design.captions.size;
       stage.setAttribute('data-composition-id', COMPOSITION_ID);
       stage.setAttribute('data-start', '0');
       stage.setAttribute('data-width', String(W));
@@ -1173,11 +1233,20 @@
           slot.appendChild(chip); frame.appendChild(slot);
         }
         var body = el('div', 'body');
-        var b = BUILD[sc.type](sc, { design: design, waits: waits });
+        var pic = sc.type === 'image' ? (sc.data.url ? { src: sc.data.url, credit: sc.data.credit || (sc.image && sc.image.credit) || '' } : sc.image) : sc.image;
+        var photo = pic ? { url: resolveMedia(pic.src, options.mediaBase), credit: pic.credit || '' } : null;
+        if (photo && !photo.url) photo = null;
+        var ctx = { design: design, waits: waits, photo: photo };
+        var b = BUILD[sc.type](sc, ctx);
         body.appendChild(b.stack);
-        frame.appendChild(body); drift.appendChild(frame); inner.appendChild(drift); sEl.appendChild(inner);
+        frame.appendChild(body);
+        var meta = buildMeta(sc, photo, design);
+        if (meta) frame.appendChild(meta);
+        var backdrop = photo ? buildBackdrop(photo, sc, ctx) : null;
+        if (backdrop) { inner.appendChild(backdrop.el); sEl.classList.add('has-photo'); }
+        drift.appendChild(frame); inner.appendChild(drift); sEl.appendChild(inner);
         stage.appendChild(sEl);
-        return { sc: sc, el: sEl, inner: inner, drift: drift, chip: chip, b: b, clipStart: clipStart, clipEnd: clipEnd, t: t };
+        return { sc: sc, el: sEl, inner: inner, drift: drift, chip: chip, b: b, backdrop: backdrop, meta: meta, clipStart: clipStart, clipEnd: clipEnd, t: t };
       });
 
       // ---- logo, wipe, guides
@@ -1200,6 +1269,16 @@
 
       return Promise.all(waits).then(function () {
         if (container.__vidSeq !== my) throw Object.assign(new Error('superseded'), { cancelled: true });
+        built.forEach(function (x) {
+          if (x.backdrop && x.backdrop.el.hasAttribute('data-failed')) {
+            x.el.classList.remove('has-photo');
+            if (x.sc.type === 'image') {
+              var fallback = BUILD.image(x.sc, { design: design, waits: [] });
+              x.b.stack.replaceWith(fallback.stack);
+              x.b = fallback;
+            }
+          }
+        });
         // ---- fit (fonts are loaded or frozen to system fallbacks)
         built.forEach(function (x) {
           fitScene(x.el);
@@ -1246,6 +1325,8 @@
           if (x.chip) {
             tw(tl, x.chip, { scale: 0.5, rotate: -9, opacity: 0 }, { scale: 1, rotate: -2, opacity: 1, duration: a.dur(0.6), ease: E.pop }, a.t0 + a.st(0.3));
           }
+          if (x.backdrop) x.backdrop.anim(tl, a);
+          if (x.meta) tw(tl, x.meta, { opacity: 0, y: 12 }, { opacity: 1, y: 0, duration: 0.5, ease: 'power2.out' }, a.t0 + Math.min(0.7, d * 0.2));
           x.b.anim(tl, a);
         });
 
@@ -1325,6 +1406,7 @@
     dimensions: dimensions,
     totalDuration: totalDuration,
     parseValue: parseValue,
+    resolveMedia: resolveMedia,
     formatValue: formatValue,
     FONTS: FONT_TABLE,
     DEFAULT_DESIGN: clone(DEFAULT_DESIGN),

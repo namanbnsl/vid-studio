@@ -23,8 +23,10 @@ To start from a preset, `studio.py presets` lists them; set `"preset"` and drop 
   "fonts": {"display": "Anton", "body": "Mukta", "mono": "JetBrains Mono"},
   "type": {"scale": 1.0, "display_case": "upper", "display_weight": 800, "tracking": -0.01},
   "motion": {"energy": "high", "easing": "snappy", "transition": "slide"},
-  "captions": {"style": "karaoke", "position": "lower", "highlight": "accent", "max_words": 4},
+  "captions": {"style": "karaoke", "position": "lower", "highlight": "accent", "max_words": 4, "size": "medium"},
   "background": {"style": "grain", "pattern": "grid"},
+  "images": {"treatment": "dim"},
+  "sources": {"show": true},
   "radius": 18,
   "logo": {"text": "PIPE GYAAN", "position": "top-left"},
   "custom_css": ""
@@ -47,6 +49,9 @@ To start from a preset, `studio.py presets` lists them; set `"preset"` and drop 
 | `captions.position` | `lower`, `middle`, or `upper` |
 | `captions.highlight` | `accent`, `accent2`, or `text` |
 | `captions.max_words` | Words per caption line, 1–8 |
+| `captions.size` | `small`, `medium`, or `large`. Captions carry the words while videos have no voiceover, so `medium` or `large` |
+| `images.treatment` | How beat photos (`Image:` lines) look: `natural`, `dim` (darkened for legible text), `mono` (black and white), or `duotone` (tinted from the background color to the accent, so photos from different sources look like one brand) |
+| `sources.show` | `true` shows each beat's `Source:` line as a small tag; `false` hides them |
 | `background.style` | `solid`, `gradient`, `grain`, or `paper` |
 | `background.pattern` | `none`, `grid`, `dots`, or `lines` |
 | `radius` | Corner radius of cards and bars, in px at 1080 wide (0–48) |

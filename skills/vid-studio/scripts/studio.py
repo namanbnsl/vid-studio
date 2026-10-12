@@ -8,6 +8,7 @@ Every command prints what it did so the calling agent can continue from the outp
 from __future__ import annotations
 
 import argparse
+import base64
 import datetime as dt
 import hashlib
 import html
@@ -19,6 +20,7 @@ import shutil
 import signal
 import subprocess
 import sys
+import threading
 import time
 import urllib.parse
 import urllib.request
@@ -49,8 +51,8 @@ DEFAULT_DESIGN = {
     "fonts": {"display": "Anton", "body": "Mukta", "mono": "JetBrains Mono"},
     "type": {"scale": 1.0, "display_case": "upper", "display_weight": 800, "tracking": -0.01},
     "motion": {"energy": "high", "easing": "snappy", "transition": "slide"},
-    "captions": {"style": "karaoke", "position": "lower", "highlight": "accent", "max_words": 4},
-    "background": {"style": "grain", "pattern": "grid"}, "radius": 18,
+    "captions": {"style": "karaoke", "position": "lower", "highlight": "accent", "max_words": 4, "size": "medium"},
+    "background": {"style": "grain", "pattern": "grid"}, "images": {"treatment": "dim"}, "sources": {"show": True}, "radius": 18,
     "logo": {"text": "", "position": "top-left"}, "custom_css": "",
 }
 HOOK_STYLES = ["question", "surprising-stat", "myth-bust", "story", "stakes", "contrast"]
@@ -638,7 +640,8 @@ class Studio:
         channel = find_channel(self.root, meta["channel"])
         scenes = parse_scenes(text, channel_voice(self.root, channel["id"])["words_per_minute"]) if channel["kind"] == "video" else []
         return {**meta, "text": text, "comments": self.comments(script_id, text), "version": version,
-                "scenes": scenes, "duration": total_duration(scenes),
+                "scenes": scenes, "duration": total_duration(scenes), "media": self.media(script_id),
+                "video": self.video_status(script_id, scenes, channel) if channel["kind"] == "video" else None,
                 "angles": load(folder / "angles.json", {"angles": []})["angles"],
                 "review": load(folder / "review.json") if (folder / "review.json").is_file() else None}
 
@@ -647,7 +650,8 @@ class Studio:
         for script_id in self.script_ids():
             item = self.script(script_id)
             listed.append({key: item[key] for key in ("id", "title", "story", "channel", "stage", "published_url", "created", "updated", "version", "duration")}
-                          | {"drafted": bool(item["text"].strip()), "open_comments": sum(1 for c in item["comments"] if not c.get("resolved_at"))})
+                          | {"drafted": bool(item["text"].strip()), "open_comments": sum(1 for c in item["comments"] if not c.get("resolved_at")),
+                             "video": item["video"] and {k: item["video"][k] for k in ("status", "ready", "stale")}})
         return sorted(listed, key=lambda s: s.get("updated", ""), reverse=True)
 
     def create_script(self, story_id: str, channel_id: str, title: str = "") -> dict:
@@ -727,7 +731,7 @@ class Studio:
         self.script(script_id)
         check_keys(review, {"scores", "summary", "notes", "at"}, "review")
         scores = review.get("scores")
-        keys = {"hook", "clarity", "retention", "specificity", "voice", "accuracy"}
+        keys = {"hook", "clarity", "retention", "specificity", "voice", "natural", "value", "accuracy"}
         check_keys(scores, keys, "review.scores")
         for key in sorted(keys):
             check_number(scores.get(key), f"review.scores.{key}", 1, 10, integer=True)
@@ -744,13 +748,14 @@ class Studio:
         for name in ("engine.js", "engine.css", "composition.html"):
             if not (SCENES_DIR / name).is_file():
                 raise RuntimeError(f"Missing scene asset {SCENES_DIR / name}; add the scene engine before exporting")
+        design = channel_design(self.root, channel["id"])
         template = (SCENES_DIR / "composition.html").read_text(encoding="utf-8")
-        replacements = {"__VID_DESIGN_JSON__": script_json(channel_design(self.root, channel["id"])),
+        replacements = {"__VID_DESIGN_JSON__": script_json(design),
                         "__VID_SCENES_JSON__": script_json(script["scenes"]), "__VID_TITLE__": html.escape(script["title"])}
         # Substitute once: user text containing a token must remain literal.
         template = re.sub("|".join(replacements), lambda match: replacements[match.group()], template)
         # HyperFrames reads the canvas size and length from the root's attributes, before any script runs.
-        width, height = ASPECT_SIZES[channel_design(self.root, channel["id"])["aspect"]]
+        width, height = ASPECT_SIZES[design["aspect"]]
         template = template.replace('data-width="1080" data-height="1920"',
                                     f'data-width="{width}" data-height="{height}" data-duration="{total_duration(script["scenes"])}"', 1)
         folder = Path(out_dir).expanduser().resolve() if out_dir is not None else self.path("scripts", script_id, "render")
@@ -759,8 +764,114 @@ class Studio:
             target = folder / name
             if target.resolve() != (SCENES_DIR / name).resolve():
                 shutil.copyfile(SCENES_DIR / name, target)
+        # Photos travel with the composition, at the same relative paths the script uses (media/…).
+        media = self.path("scripts", script_id, "media")
+        if (folder / "media").is_dir() and (folder / "media").resolve() != media.resolve():
+            for old in (folder / "media").iterdir():
+                if old.is_file() and re.fullmatch(r"[a-z0-9-]+\.(jpg|png|webp)", old.name) and not (media / old.name).is_file():
+                    old.unlink()
+        if media.is_dir() and (folder / "media").resolve() != media.resolve():
+            shutil.copytree(media, folder / "media", dirs_exist_ok=True)
         write_text(folder / "index.html", template)
         return folder
+
+    # media: photos for a script's beats, in scripts/<id>/media, listed with their credits in media.json
+
+    def media(self, script_id: str) -> list[dict]:
+        folder = self.path("scripts", script_id, "media")
+        listed = load(self.path("scripts", script_id, "media.json"), {"media": []})["media"]
+        return [item for item in listed if (folder / item.get("file", "")).is_file()]
+
+    def add_media(self, script_id: str, data: bytes, name: str = "", credit: str = "", source: str = "", license: str = "") -> dict:
+        self.script(script_id)
+        kind = image_kind(data)
+        if not kind:
+            raise ValueError("Not a JPEG, PNG, or WebP image")
+        if len(data) > MAX_MEDIA_BYTES:
+            raise ValueError(f"Images must be under {MAX_MEDIA_BYTES // 1_000_000} MB")
+        folder = self.path("scripts", script_id, "media")
+        folder.mkdir(parents=True, exist_ok=True)
+        existing = {p.name for p in folder.iterdir()}
+        stem = slugify(Path(name).stem if name else "image", 40) or "image"
+        file = unique_id(stem, {Path(n).stem for n in existing}) + "." + kind
+        (folder / file).write_bytes(data)
+        item = {"file": file, "path": f"media/{file}", "credit": clean_text(credit, 200), "source": source.strip(),
+                "license": clean_text(license, 80), "added": now()}
+        listed = [m for m in self.media(script_id) if m["file"] != file] + [item]
+        save(self.path("scripts", script_id, "media.json"), {"media": listed})
+        return item
+
+    def delete_media(self, script_id: str, file: str) -> None:
+        self.script(script_id)
+        if not re.fullmatch(r"[a-z0-9-]+\.(jpg|png|webp)", file or ""):
+            raise KeyError(f"Unknown media file: {file}")
+        target = self.path("scripts", script_id, "media", file)
+        if not target.is_file():
+            raise KeyError(f"Unknown media file: {file}")
+        target.unlink()
+        save(self.path("scripts", script_id, "media.json"), {"media": [m for m in self.media(script_id) if m["file"] != file]})
+
+    # rendering: scripts/<id>/render holds the exported composition, video.mp4, poster.jpg and render.json
+
+    def video_status(self, script_id: str, scenes: list, channel: dict) -> dict:
+        folder = self.path("scripts", script_id, "render")
+        status = load(folder / "render.json", {})
+        video = folder / "video.mp4"
+        state = status.get("status") or ("done" if video.is_file() else "none")
+        if state == "rendering" and status.get("pid") not in (None, os.getpid()) and not pid_alive(status.get("pid")):
+            state = "failed"
+            status["error"] = "The render stopped before it finished"
+        result = {"status": state, "progress": status.get("progress", 0), "error": status.get("error", ""),
+                  "finished": status.get("finished", ""), "seconds": status.get("seconds"),
+                  "ready": video.is_file(), "size": video.stat().st_size if video.is_file() else 0,
+                  "stale": False, "placeholders": []}
+        for scene in scenes:
+            src = (scene["data"].get("url") if scene["type"] == "image" else "") or (scene.get("image") or {}).get("src")
+            if (scene["type"] == "image" and not src) or (src and src.startswith("media/") and not self.path("scripts", script_id, src).is_file()):
+                result["placeholders"].append(scene["beat"])
+        if video.is_file() and status.get("fingerprint"):
+            result["stale"] = status["fingerprint"] != media_fingerprint(self.path("scripts", script_id), scenes, channel_design(self.root, channel["id"]))
+        return result
+
+    def render_script(self, script_id: str, quality: str = "high", progress=None) -> dict:
+        import render as renderer
+        script = self.script(script_id)
+        channel = find_channel(self.root, script["channel"])
+        if channel["kind"] != "video":
+            raise ValueError("Only video scripts render to MP4")
+        if not script["scenes"]:
+            raise ValueError("The script has no beats yet")
+        problems = renderer.missing_tools()
+        if problems:
+            raise RuntimeError("Rendering needs: " + "; ".join(problems))
+        folder = self.path("scripts", script_id, "render")
+        status_path = folder / "render.json"
+        fingerprint = media_fingerprint(self.path("scripts", script_id), script["scenes"], channel_design(self.root, channel["id"]))
+        # The previous video stays downloadable while this one renders, so keep what it was rendered from.
+        status = {"status": "rendering", "progress": 0, "pid": os.getpid(), "started": now(), "quality": quality,
+                  "fingerprint": load(status_path, {}).get("fingerprint")}
+        save(status_path, status)
+        last = [0.0]
+
+        def report(done, total):
+            if progress:
+                progress(done, total)
+            if time.monotonic() - last[0] > 0.5 or done == total:
+                last[0] = time.monotonic()
+                save(status_path, status | {"progress": round(done / total, 3)})
+
+        try:
+            self.export_script(script_id)
+            result = renderer.render(folder, folder / "video.mp4", quality=quality, progress=report, poster=folder / "poster.jpg")
+        except BaseException as error:
+            save(status_path, status | {"status": "failed", "error": str(error) or type(error).__name__, "finished": now()})
+            raise
+        save(status_path, status | {"status": "done", "progress": 1, "finished": now(), "seconds": result["seconds"],
+                                    "fingerprint": fingerprint, "duration": result["duration"]})
+        credits = [m for m in self.media(script_id) if m.get("credit")]
+        if credits:
+            write_text(folder / "credits.txt", "".join(f"{m['credit']}{' – ' + m['source'] if m.get('source') else ''}\n" for m in credits))
+        return result | {"credits": [m["credit"] for m in credits]}
 
     def delete_script(self, script_id: str) -> None:
         self.script(script_id)
@@ -1031,6 +1142,7 @@ def save_design(root: Path, channel_id: str, design: dict) -> dict:
         "captions.style": ["none", "plain", "boxed", "karaoke", "pop"], "captions.position": ["lower", "middle", "upper"],
         "captions.highlight": ["accent", "accent2", "text"], "background.style": ["solid", "gradient", "grain", "paper"],
         "background.pattern": ["none", "grid", "dots", "lines"], "logo.position": ["top-left", "top-right", "bottom-left", "bottom-right"],
+        "captions.size": ["small", "medium", "large"], "images.treatment": ["natural", "dim", "mono", "duotone"],
     }
     def value_at(key):
         group, dot, sub = key.partition(".")
@@ -1053,6 +1165,8 @@ def save_design(root: Path, channel_id: str, design: dict) -> dict:
                 raise ValueError(f"design.fonts.{key}: unknown family {value!r}; choose a family from studio.py fonts")
             if key in ("display", "body") and language in ("hindi", "hinglish") and not catalog[value]["devanagari"]:
                 raise ValueError(f"design.fonts.{key}: {value!r} does not support Devanagari; choose a family from studio.py fonts --devanagari for {language.title()}")
+    if not isinstance(design["sources"]["show"], bool):
+        raise ValueError("design.sources.show must be true or false")
     check_text(design["logo"]["text"], "design.logo.text", 200)
     css = check_text(design["custom_css"], "design.custom_css", 20000)
     if re.search(r"</style|<script", css, re.I):
@@ -1094,6 +1208,47 @@ def save_voice(root: Path, channel_id: str, voice: dict) -> dict:
     return voice
 
 
+# ---------------------------------------------------------------- media and rendering
+
+MAX_MEDIA_BYTES = 15_000_000
+
+
+def image_kind(data: bytes) -> str | None:
+    if data[:3] == b"\xff\xd8\xff":
+        return "jpg"
+    if data[:8] == b"\x89PNG\r\n\x1a\n":
+        return "png"
+    if data[:4] == b"RIFF" and data[8:12] == b"WEBP":
+        return "webp"
+    return None
+
+
+def media_fingerprint(script_folder: Path, scenes: list, design: dict) -> str:
+    digest = hashlib.sha1(json.dumps([scenes, design], sort_keys=True).encode())
+    media = script_folder / "media"
+    for path in sorted(media.glob("*")) if media.is_dir() else []:
+        stat = path.stat()
+        digest.update(f"{path.name}:{stat.st_size}:{int(stat.st_mtime)}".encode())
+    return digest.hexdigest()[:16]
+
+
+def pid_alive(pid) -> bool:
+    try:
+        os.kill(int(pid), 0)
+        return True
+    except (OSError, ValueError, TypeError):
+        return False
+
+
+def fetch_image(url: str) -> tuple[bytes, str]:
+    """Download an image URL; returns (bytes, a file name to keep)."""
+    if not re.match(r"^https?://", url or ""):
+        raise ValueError("Image URLs must start with http:// or https://")
+    data, _, final = fetch(url, timeout=40)
+    name = Path(urllib.parse.urlsplit(final).path).name or "image"
+    return data, urllib.parse.unquote(name)
+
+
 # ---------------------------------------------------------------- script beats and scenes
 
 def spoken_text(text: str) -> str:
@@ -1130,14 +1285,14 @@ def parse_scenes(text: str, words_per_minute=160) -> list[dict]:
             beats.append(current)
         elif current is not None and line and not line.startswith("#"):
             cue = re.sub(r"^[-*]\s+", "", line)
-            match = re.match(r"^[*_]{0,2}(visual|text|note)[*_]{0,2}\s*:[*_]{0,2}\s*(.*)$", cue, re.I)
+            match = re.match(r"^[*_]{0,2}(visual|text|note|image|source|duration)[*_]{0,2}\s*:[*_]{0,2}\s*(.*)$", cue, re.I)
             if match:
                 current[match[1].lower()] = match[2].strip()
             elif line:
                 current["lines"].append(line)
     scenes = []
     fields = {"title": ("title", "subtitle", "kicker"), "stat": ("value", "label", "context"),
-              "quote": ("quote", "source"), "text": ("text",), "image": ("description", "url"), "end": ("title", "cta")}
+              "quote": ("quote", "source"), "text": ("text",), "image": ("description", "url", "credit"), "end": ("title", "cta")}
     for beat in beats:
         vo = spoken_text(" ".join(beat["lines"]))
         visual = beat.get("visual")
@@ -1160,9 +1315,17 @@ def parse_scenes(text: str, words_per_minute=160) -> list[dict]:
                     items.append(dict(zip(keys, (left.strip(), right.strip()))))
             data = {"title": values[0] if values else "", "items": items}
         else:
-            kind, data = "image", {"description": visual or "", "url": ""}
-        scene = {"beat": beat["beat"], "type": kind, "duration": max(1.5, math.floor(word_count(vo) * 600 / words_per_minute + 0.5) / 10),  # halves round up, like the UI
-                 "vo": vo, "text": beat.get("text", ""), "data": data}
+            kind, data = "image", {"description": visual or "", "url": "", "credit": ""}
+        duration = max(1.5, math.floor(word_count(vo) * 600 / words_per_minute + 0.5) / 10)  # halves round up, like the UI
+        fixed = re.fullmatch(r"(\d+(?:\.\d+)?)\s*s?", beat.get("duration", ""), re.I)
+        if fixed:
+            duration = min(60.0, max(1.0, math.floor(float(fixed[1]) * 10 + 0.5) / 10))
+        scene = {"beat": beat["beat"], "type": kind, "duration": duration, "vo": vo, "text": beat.get("text", ""), "data": data}
+        if beat.get("image"):
+            src, _, credit = beat["image"].partition("|")
+            scene["image"] = {"src": src.strip(), "credit": credit.strip()}
+        if beat.get("source"):
+            scene["source"] = beat["source"]
         if beat.get("note"):
             scene["note"] = beat["note"]
         scenes.append(scene)
@@ -1202,6 +1365,21 @@ def projects_overview(root: Path) -> list[dict]:
     return listed
 
 
+def channel_looks(root: Path) -> dict:
+    """What each channel looks and sounds like at a glance, for lists."""
+    names = {p["id"]: p["name"] for p in presets()}
+    looks = {}
+    for channel in channels(root):
+        voice = channel_voice(root, channel["id"])
+        look = {"length_seconds": voice["length_seconds"]}
+        if channel["kind"] == "video":
+            design = channel_design(root, channel["id"])
+            look |= {"preset": names.get(design.get("preset"), ""), "aspect": design["aspect"], "colors": design["colors"],
+                     "display_font": design["fonts"]["display"]}
+        looks[channel["id"]] = look
+    return looks
+
+
 def production_overview(root: Path) -> dict:
     """Production spans all research projects; IDs remain scoped to their owner."""
     projects = projects_overview(root)
@@ -1216,7 +1394,7 @@ def production_overview(root: Path) -> dict:
                        for script in studio.scripts())
     return {"workspace": str(root),
             "default_workspace": root == workspace_path(None) and not os.environ.get("VID_STUDIO_HOME"),
-            "projects": projects, "channels": channels(root),
+            "projects": projects, "channels": channels(root), "looks": channel_looks(root),
             "scripts": sorted(scripts, key=lambda script: script.get("updated", ""), reverse=True),
             "stories": stories}
 
@@ -1546,6 +1724,139 @@ def cmd_export(ws: Path, args) -> None:
     print("Next: run `npx hyperframes preview` or `npx hyperframes render` in that folder")
 
 
+OPEN_LICENSES = re.compile(r"^(cc0|pdm|public domain|pd\b|cc[ -]by(-sa)?([ -][\d.]+)?$|by(-sa)?$)", re.I)
+
+
+def search_openverse(query: str, limit: int, orientation: str) -> list[dict]:
+    params = {"q": query, "page_size": str(min(20, limit * 2)), "license_type": "commercial,modification", "mature": "false"}
+    if orientation in ("tall", "wide", "square"):
+        params["aspect_ratio"] = orientation
+    data, _, _ = fetch("https://api.openverse.org/v1/images/?" + urllib.parse.urlencode(params))
+    results = []
+    for item in json.loads(data).get("results", []):
+        license_name = ("CC0" if item.get("license") == "cc0" else "Public domain" if item.get("license") == "pdm"
+                        else f"CC {str(item.get('license', '')).upper()} {item.get('license_version') or ''}".strip())
+        creator = clean_text(item.get("creator") or "Unknown", 60)
+        provider = str(item.get("source") or item.get("provider") or "").replace("_", " ").title()
+        results.append({"title": clean_text(item.get("title") or "Untitled", 80), "url": item.get("url"),
+                        "thumbnail": item.get("thumbnail") or item.get("url"), "page": item.get("foreign_landing_url") or "",
+                        "width": item.get("width"), "height": item.get("height"), "license": license_name,
+                        "credit": f"Photo: {creator} / {provider}, {license_name}" if license_name not in ("CC0", "Public domain") else f"Photo: {creator} / {provider}"})
+    return results
+
+
+def search_commons(query: str, limit: int, orientation: str) -> list[dict]:
+    params = {"action": "query", "format": "json", "generator": "search", "gsrsearch": f"filetype:bitmap {query}", "gsrnamespace": "6",
+              "gsrlimit": str(min(30, limit * 3)), "prop": "imageinfo", "iiprop": "url|extmetadata|size", "iiurlwidth": "1600"}
+    data, _, _ = fetch("https://commons.wikimedia.org/w/api.php?" + urllib.parse.urlencode(params))
+    pages = sorted(json.loads(data).get("query", {}).get("pages", {}).values(), key=lambda p: p.get("index", 0))
+    results = []
+    for page in pages:
+        info = (page.get("imageinfo") or [{}])[0]
+        meta = info.get("extmetadata") or {}
+        value = lambda key: re.sub(r"<[^>]+>", "", html.unescape(str((meta.get(key) or {}).get("value", "")))).strip()
+        license_name = value("LicenseShortName")
+        if not OPEN_LICENSES.match(license_name) or info.get("width", 0) < 900:
+            continue
+        width, height = info.get("width") or 0, info.get("height") or 0
+        if orientation == "tall" and width > height or orientation == "wide" and height > width:
+            continue
+        creator = clean_text(value("Artist") or "Unknown", 60)
+        clean = lambda url: re.sub(r"\?utm_[^#]*$", "", url or "")
+        results.append({"title": clean_text(page.get("title", "").removeprefix("File:"), 80), "url": clean(info.get("thumburl") or info.get("url")),
+                        "thumbnail": info.get("thumburl") or info.get("url"), "page": info.get("descriptionurl") or "",
+                        "width": width, "height": height, "license": license_name,
+                        "credit": f"Photo: {creator} / Wikimedia Commons" + ("" if re.match(r"(?i)cc0|public domain|pd", license_name) else f", {license_name}")})
+    return results
+
+
+def cmd_images(ws: Path, args) -> None:
+    found, errors = [], []
+    for name, search in (("Wikimedia Commons", search_commons), ("Openverse", search_openverse)):
+        if args.provider not in ("all", name.split()[0].lower()):
+            continue
+        try:
+            found += search(args.query, args.limit, args.orientation)[: args.limit]
+        except Exception as error:  # one provider being down shouldn't hide the other
+            errors.append(f"{name}: {error}")
+    for error in errors:
+        print(f"Search failed on {error}")
+    if not found:
+        print("No openly licensed images found. Try a broader or more literal query (objects and places, not ideas).")
+        return
+    preview = Path(args.preview).expanduser() if args.preview else None
+    if preview:
+        preview.mkdir(parents=True, exist_ok=True)
+    for i, item in enumerate(found, 1):
+        print(f"{i}. {item['title']} · {item['width']}×{item['height']} · {item['license']}")
+        print(f"   credit: {item['credit']}")
+        print(f"   url: {item['url']}")
+        print(f"   page: {item['page']}")
+        if preview:
+            try:
+                data, _, _ = fetch(item["thumbnail"], timeout=20)
+                if image_kind(data):
+                    target = preview / f"{i:02d}.{image_kind(data)}"
+                    target.write_bytes(data)
+                    print(f"   preview: {target}")
+            except Exception:
+                pass
+    print('Next: look at the candidates, then `studio.py media --script ID --add URL --credit "…" --source PAGE`')
+
+
+def cmd_media(ws: Path, args) -> None:
+    studio = Studio(ws)
+    if args.remove:
+        studio.delete_media(args.script, args.remove)
+        print(f"Removed media/{args.remove}")
+        return
+    if args.add:
+        if re.match(r"^https?://", args.add):
+            data, name = fetch_image(args.add)
+            source = args.source or args.add
+        else:
+            path = Path(args.add).expanduser()
+            if not path.is_file():
+                raise ValueError(f"No such file: {path}")
+            data, name, source = path.read_bytes(), path.name, args.source or ""
+        item = studio.add_media(args.script, data, args.name or name, args.credit or "", source, args.license or "")
+        print(f"Saved {item['path']}")
+        cue = f"Image: {item['path']}" + (f" | {item['credit']}" if item["credit"] else "")
+        print(f"Use it on a beat with `{cue}`, or as `Visual: image | <what it shows> | {item['path']}`")
+        return
+    listed = studio.media(args.script)
+    print(f"{len(listed)} image{'s' * (len(listed) != 1)} for {args.script}" + (":" if listed else "."))
+    for item in listed:
+        print(f"- {item['path']}" + (f" · {item['credit']}" if item.get("credit") else "") + (f" · {item['source']}" if item.get("source") else ""))
+
+
+def cmd_render(ws: Path, args) -> None:
+    studio = Studio(ws)
+    script = studio.script(args.script)
+    for beat in (script.get("video") or {}).get("placeholders", []):
+        print(f"Warning: {beat} has no image yet; it renders as an 'Image needed' card")
+
+    def progress(done, total):
+        print(f"\rRendering {done}/{total} frames", end="", flush=True)
+
+    result = studio.render_script(args.script, "draft" if args.draft else "high", progress)
+    print()
+    target = Path(result["output"])
+    if args.out:
+        out = Path(args.out).expanduser()
+        if out.is_dir():
+            out = out / (slugify(script["title"], 60) + ".mp4")
+        shutil.copyfile(target, out)
+        target = out
+    print(f"Rendered {result['duration']:.1f}s at {result['width']}×{result['height']}, {result['fps']} fps in {result['seconds']:.0f}s: {target}")
+    if result.get("fonts") != "loaded":
+        print("Warning: web fonts didn't load (offline?), so system fonts were used")
+    if result["credits"]:
+        print("Image credits for the video description:")
+        for credit in result["credits"]:
+            print(f"- {credit}")
+
+
 def cmd_comments(ws: Path, args) -> None:
     studio = Studio(ws)
     script = studio.script(args.script)
@@ -1574,8 +1885,45 @@ def running_server(ws: Path) -> dict | None:
         return None
 
 
+class Raw:
+    """A binary reply (an image or video) from the API, optionally as a download."""
+
+    def __init__(self, path: Path, content_type: str, filename: str = ""):
+        self.path, self.content_type, self.filename = path, content_type, filename
+
+
+RENDERS: dict[str, threading.Thread] = {}
+
+
+def start_render(studio: "Studio", script_id: str, quality: str = "high") -> dict:
+    key = f"{studio.ws}:{script_id}"
+    running = RENDERS.get(key)
+    if not (running and running.is_alive()):
+        script = studio.script(script_id)
+        if not script["scenes"]:
+            raise ValueError("Write the script's beats before rendering")
+        import render as renderer
+        problems = renderer.missing_tools()
+        if problems:
+            raise RuntimeError("Rendering needs " + "; ".join(problems))
+        status_path = studio.path("scripts", script_id, "render", "render.json")
+        save(status_path, {"status": "rendering", "progress": 0, "pid": os.getpid(), "started": now(),
+                           "fingerprint": load(status_path, {}).get("fingerprint")})
+
+        def run():
+            try:
+                Studio(studio.ws, studio.root).render_script(script_id, quality)
+            except BaseException as error:
+                # Setup may fail before render_script reaches its status handler.
+                status = load(status_path, {})
+                save(status_path, status | {"status": "failed", "error": str(error) or type(error).__name__, "finished": now()})
+
+        RENDERS[key] = threading.Thread(target=run, daemon=True)
+        RENDERS[key].start()
+    return studio.script(script_id)["video"]
+
+
 def make_handler(ws: Path):
-    import threading
     lock = threading.Lock()
     page = ASSETS / "ui" / "index.html"
 
@@ -1593,6 +1941,22 @@ def make_handler(ws: Path):
             self.send_header("X-Content-Type-Options", "nosniff")
             self.end_headers()
             self.wfile.write(body)
+
+        def send_file(self, raw: Raw) -> None:
+            if not raw.path.is_file():
+                return self.reply(404, {"error": "Not found"})
+            size = raw.path.stat().st_size
+            self.send_response(200)
+            self.send_header("Content-Type", raw.content_type)
+            self.send_header("Content-Length", str(size))
+            self.send_header("Cache-Control", "no-store")
+            self.send_header("X-Content-Type-Options", "nosniff")
+            if raw.filename:
+                ascii_name = re.sub(r"[^A-Za-z0-9._-]+", "-", raw.filename).strip("-") or "video.mp4"
+                self.send_header("Content-Disposition", f"attachment; filename=\"{ascii_name}\"; filename*=UTF-8''{urllib.parse.quote(raw.filename)}")
+            self.end_headers()
+            with raw.path.open("rb") as handle:
+                shutil.copyfileobj(handle, self.wfile, 1 << 20)
 
         def allowed(self, write: bool) -> bool:
             # Only this machine may talk to the server (blocks DNS rebinding). Writes also need a custom
@@ -1668,6 +2032,8 @@ def make_handler(ws: Path):
                         result = self.api(method, parts[3:], body, Studio(find_project(ws, parts[2]), ws))
                     else:
                         return self.reply(404, {"error": "Not found"})
+                if isinstance(result, Raw):
+                    return self.send_file(result)
                 return self.reply(200, result)
             except KeyError as error:
                 return self.reply(404, {"error": str(error.args[0] if error.args else error)})
@@ -1710,6 +2076,29 @@ def make_handler(ws: Path):
                     return studio.update_story(item, body, version)
                 if method == "DELETE" and item:
                     return studio.delete_story(item) or {"ok": True}
+            if resource == "scripts" and item and len(parts) >= 3 and parts[2] in ("media", "render", "video", "poster.jpg"):
+                folder = studio.path("scripts", item)
+                studio.script(item)
+                if parts[2] == "media" and method == "GET" and len(parts) == 4:
+                    if not re.fullmatch(r"[a-z0-9-]+\.(jpg|png|webp)", parts[3]):
+                        raise KeyError("Unknown media file")
+                    kinds = {"jpg": "image/jpeg", "png": "image/png", "webp": "image/webp"}
+                    return Raw(folder / "media" / parts[3], kinds[parts[3].rsplit(".", 1)[1]])
+                if parts[2] == "media" and method == "POST" and len(parts) == 3:
+                    try:
+                        data = base64.b64decode(str(body.get("data", "")).split(",")[-1], validate=True)
+                    except ValueError:
+                        raise ValueError("The upload was not valid base64")
+                    return studio.add_media(item, data, body.get("name", ""), body.get("credit", ""), body.get("source", ""))
+                if parts[2] == "media" and method == "DELETE" and len(parts) == 4:
+                    return studio.delete_media(item, parts[3]) or {"ok": True}
+                if parts[2] == "render" and method == "POST":
+                    return start_render(studio, item, "draft" if body.get("draft") else "high")
+                if parts[2] == "video" and method == "GET":
+                    title = studio.script(item)["title"]
+                    return Raw(folder / "render" / "video.mp4", "video/mp4", (slugify(title, 60) or item) + ".mp4")
+                if parts[2] == "poster.jpg" and method == "GET":
+                    return Raw(folder / "render" / "poster.jpg", "image/jpeg")
             if resource == "scripts" and len(parts) >= 3 and parts[2] == "comments":
                 comment = parts[3] if len(parts) > 3 else None
                 if method == "POST" and not comment:
@@ -1903,6 +2292,27 @@ def main(argv=None) -> None:
     sub.add_argument("--script", required=True)
     sub.add_argument("--out", help="Output folder (default: the script's render folder)")
 
+    sub = command("render", cmd_render, "Render a video script to MP4 on this machine (needs Chrome and ffmpeg)")
+    sub.add_argument("--script", required=True)
+    sub.add_argument("--out", help="Also copy the MP4 here (a file or folder)")
+    sub.add_argument("--draft", action="store_true", help="Faster, smaller, lower quality")
+
+    sub = command("images", cmd_images, "Search openly licensed photos (Wikimedia Commons, Openverse) for a beat")
+    sub.add_argument("query", help="What should be in the photo: concrete objects, places, people's roles")
+    sub.add_argument("--limit", type=int, default=6, help="Results per provider")
+    sub.add_argument("--orientation", choices=["any", "tall", "wide", "square"], default="any")
+    sub.add_argument("--provider", choices=["all", "wikimedia", "openverse"], default="all")
+    sub.add_argument("--preview", metavar="DIR", help="Download small previews here so you can look at them")
+
+    sub = command("media", cmd_media, "List, add, or remove a script's images")
+    sub.add_argument("--script", required=True)
+    sub.add_argument("--add", metavar="FILE_OR_URL", help="An image file you made or downloaded, or an image URL")
+    sub.add_argument("--name", help="File name to keep (default: from the file or URL)")
+    sub.add_argument("--credit", help='On-screen credit, e.g. "Photo: Jane Doe / Wikimedia Commons, CC BY-SA 4.0"')
+    sub.add_argument("--source", help="Page the image came from")
+    sub.add_argument("--license")
+    sub.add_argument("--remove", metavar="FILE", help="File name in media/ to remove")
+
     sub = command("comments", cmd_comments, "List a script's open comments in the order they appear")
     sub.add_argument("--script", required=True)
 
@@ -1914,7 +2324,7 @@ def main(argv=None) -> None:
     args = parser.parse_args(argv)
     root = workspace_path(args.workspace)
     try:
-        if args.command in ("init", "projects", "new-project", "status", "serve", "channels", "add-channel", "design", "voice", "presets", "fonts"):
+        if args.command in ("init", "projects", "new-project", "status", "serve", "channels", "add-channel", "design", "voice", "presets", "fonts", "images"):
             args.handler(root, args)
         else:
             args.handler(find_project(root, args.project), args)

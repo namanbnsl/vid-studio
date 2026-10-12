@@ -141,7 +141,7 @@
     var job = pending; pending = null;
     var opts = job.options || {};
     var wasPlaying = state.playing, prevTime = state.time;
-    VidScenes.build(scaler, job.design || {}, job.scenes || [], { captions: opts.captions !== false, safeArea: !!opts.safeArea })
+    VidScenes.build(scaler, job.design || {}, job.scenes || [], { captions: opts.captions !== false, safeArea: !!opts.safeArea, mediaBase: opts.mediaBase || '' })
       .then(function (res) {
         state.tl = res.timeline; state.duration = res.duration; state.stage = res.stage;
         state.scenes = res.scenes.map(function (s) { return { start: s.start, duration: s.duration, type: s.type }; });

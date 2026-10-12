@@ -340,9 +340,9 @@ Visual: end | Follow | Subscribe
             "list | Who | One | Two": ("list", {"title": "Who", "items": ["One", "Two"]}),
             "quote | The words | RBI": ("quote", {"quote": "The words", "source": "RBI"}),
             "text | Punchline": ("text", {"text": "Punchline"}),
-            "image | A phone | https://example.com/phone.png": ("image", {"description": "A phone", "url": "https://example.com/phone.png"}),
+            "image | A phone | https://example.com/phone.png": ("image", {"description": "A phone", "url": "https://example.com/phone.png", "credit": ""}),
             "end | Follow": ("end", {"title": "Follow", "cta": ""}),
-            "chart | A custom scene | keep all fields": ("image", {"description": "chart | A custom scene | keep all fields", "url": ""}),
+            "chart | A custom scene | keep all fields": ("image", {"description": "chart | A custom scene | keep all fields", "url": "", "credit": ""}),
         }
         for visual, (kind, data) in examples.items():
             with self.subTest(visual=visual):
@@ -351,6 +351,117 @@ Visual: end | Follow | Subscribe
         for label in ("Visual:", "*Visual:*", "**Visual:**", "**Visual**:", "- vIsUaL:"):
             with self.subTest(label=label):
                 self.assertEqual(studio.parse_scenes(f"## Beat\n{label} stat | 42")[0]["type"], "stat")
+
+    def test_scene_image_source_and_duration_cues(self):
+        text = ("## Hook\nOne two three four.\nVisual: stat | 42% | Share\n"
+                "Image: media/tap.jpg | Photo: A / Wikimedia Commons, CC BY 4.0\n- **Source:** RBI, 1 Oct 2026\nDuration: 4.25s\n"
+                "## Hero\nVisual: image | A sensor tap | media/hero.png | Photo: B\nDuration: 90\n"
+                "## Plain\nWords here.\nImage: https://example.com/x.jpg\nDuration: soon\n")
+        hook, hero, plain = studio.parse_scenes(text, 160)
+        self.assertEqual(hook["image"], {"src": "media/tap.jpg", "credit": "Photo: A / Wikimedia Commons, CC BY 4.0"})
+        self.assertEqual((hook["source"], hook["duration"]), ("RBI, 1 Oct 2026", 4.3))
+        self.assertEqual(hero["data"], {"description": "A sensor tap", "url": "media/hero.png", "credit": "Photo: B"})
+        self.assertEqual((hero["duration"], "image" in hero, "source" in hero), (60.0, False, False))
+        self.assertEqual(plain["image"], {"src": "https://example.com/x.jpg", "credit": ""})
+        self.assertEqual(plain["duration"], 1.5)
+
+    def test_script_media_export_and_video_status(self):
+        assets = self.production_assets()
+        for name in ("engine.js", "engine.css"):
+            (assets / name).write_text("/* engine */")
+        (assets / "composition.html").write_text('<div data-width="1080" data-height="1920"></div><script>__VID_SCENES_JSON__ __VID_DESIGN_JSON__</script>')
+        script = self.production_script()
+        jpeg, png = b"\xff\xd8\xff\xe0" + b"0" * 64, b"\x89PNG\r\n\x1a\n" + b"0" * 64
+        item = self.studio.add_media(script["id"], jpeg, "Sensor Tap.JPG", "Photo: A", "https://example.com/page")
+        self.assertEqual((item["file"], item["path"], item["credit"]), ("sensor-tap.jpg", "media/sensor-tap.jpg", "Photo: A"))
+        self.assertEqual(self.studio.add_media(script["id"], png, "sensor tap.png")["file"], "sensor-tap-2.png")
+        for bad in (b"GIF89a....", b"<svg></svg>", b""):
+            with self.assertRaises(ValueError):
+                self.studio.add_media(script["id"], bad, "x.jpg")
+        with mock.patch.object(studio, "MAX_MEDIA_BYTES", 10), self.assertRaises(ValueError):
+            self.studio.add_media(script["id"], jpeg, "big.jpg")
+        self.assertEqual([m["file"] for m in self.studio.script(script["id"])["media"]], ["sensor-tap.jpg", "sensor-tap-2.png"])
+        for bad in ("../script.json", "sensor-tap.gif", "missing.jpg"):
+            with self.assertRaises(KeyError):
+                self.studio.delete_media(script["id"], bad)
+        self.studio.delete_media(script["id"], "sensor-tap-2.png")
+        self.assertEqual(len(self.studio.media(script["id"])), 1)
+
+        text = "## Hook\nA fact.\nVisual: stat | 5% | Rate\nImage: media/sensor-tap.jpg | Photo: A\n## Show it\nVisual: image | The product\n## End\nVisual: end | Bye"
+        script = self.studio.update_script(script["id"], {"text": text})
+        self.assertEqual(script["video"]["status"], "none")
+        self.assertEqual(script["video"]["placeholders"], ["Show it"])
+        folder = self.studio.export_script(script["id"])
+        self.assertEqual((folder / "media" / "sensor-tap.jpg").read_bytes(), jpeg)
+        self.assertIn("media/sensor-tap.jpg", (folder / "index.html").read_text())
+        # A finished render is stale once the scenes, the look, or the photos change.
+        (folder / "video.mp4").write_bytes(b"mp4")
+        fingerprint = studio.media_fingerprint(self.studio.path("scripts", script["id"]), script["scenes"], studio.channel_design(self.home, "production"))
+        studio.save(folder / "render.json", {"status": "done", "fingerprint": fingerprint, "finished": "now"})
+        video = self.studio.script(script["id"])["video"]
+        self.assertEqual((video["status"], video["ready"], video["stale"]), ("done", True, False))
+        self.studio.update_script(script["id"], {"text": text.replace("5%", "6%")})
+        self.assertTrue(self.studio.script(script["id"])["video"]["stale"])
+        studio.save(folder / "render.json", {"status": "rendering", "pid": 2 ** 22 + 12345, "fingerprint": fingerprint})
+        video = self.studio.script(script["id"])["video"]
+        self.assertEqual((video["status"], video["error"]), ("failed", "The render stopped before it finished"))
+        self.assertEqual(self.studio.scripts()[0]["video"], {"status": "failed", "ready": True, "stale": True})
+
+    def test_media_cli_and_image_search_output(self):
+        script = self.production_script()
+        image = self.root / "photo.png"
+        image.write_bytes(b"\x89PNG\r\n\x1a\n" + b"0" * 32)
+        out = self.cli("--project", "test-project", "media", "--script", script["id"], "--add", str(image), "--credit", "AI-generated illustration")
+        self.assertIn("Saved media/photo.png", out)
+        self.assertIn("Image: media/photo.png | AI-generated illustration", out)
+        self.assertIn("media/photo.png · AI-generated illustration", self.cli("media", "--script", script["id"]))
+        self.assertIn("Removed media/photo.png", self.cli("media", "--script", script["id"], "--remove", "photo.png"))
+        commons = {"query": {"pages": {
+            "1": {"index": 2, "title": "File:Tap.jpg", "imageinfo": [{"width": 2000, "height": 3000, "thumburl": "https://upload.example/tap.jpg?utm_source=x",
+                  "descriptionurl": "https://commons.example/Tap", "extmetadata": {"LicenseShortName": {"value": "CC BY-SA 4.0"}, "Artist": {"value": "<a href='x'>Jane &amp; Co</a>"}}}]},
+            "2": {"index": 1, "title": "File:NC.jpg", "imageinfo": [{"width": 2000, "height": 3000, "extmetadata": {"LicenseShortName": {"value": "CC BY-NC 4.0"}}}]},
+            "3": {"index": 3, "title": "File:Wide.jpg", "imageinfo": [{"width": 3000, "height": 2000, "extmetadata": {"LicenseShortName": {"value": "CC0"}}}]}}}}
+        openverse = {"results": [{"title": "Tap", "url": "https://flickr.example/t.jpg", "creator": "Sam", "license": "by", "license_version": "2.0",
+                                  "source": "flickr", "foreign_landing_url": "https://flickr.example/p", "width": 1024, "height": 1536}]}
+        replies = {"commons.wikimedia.org": commons, "api.openverse.org": openverse}
+        with mock.patch.object(studio, "fetch", lambda url, timeout=25: (json.dumps(next(v for k, v in replies.items() if k in url)).encode(), "application/json", url)):
+            out = self.cli("images", "sink tap", "--orientation", "tall")
+        self.assertIn("1. Tap.jpg · 2000×3000 · CC BY-SA 4.0", out)
+        self.assertIn("credit: Photo: Jane & Co / Wikimedia Commons, CC BY-SA 4.0", out)
+        self.assertIn("url: https://upload.example/tap.jpg\n", out)
+        self.assertNotIn("NC.jpg", out)
+        self.assertNotIn("Wide.jpg", out)
+        self.assertIn("credit: Photo: Sam / Flickr, CC BY 2.0", out)
+
+    def test_image_cue_satisfies_placeholder_and_deleted_files_are_reported(self):
+        script = self.production_script()
+        image = self.studio.add_media(script["id"], b"\xff\xd8\xff" + b"0" * 64, "hero.jpg")
+        saved = self.studio.update_script(script["id"], {"text": f"## Hero\nVisual: image | A tap\nImage: {image['path']}"})
+        self.assertEqual(saved["video"]["placeholders"], [])
+        self.studio.delete_media(script["id"], image["file"])
+        self.assertEqual(self.studio.script(script["id"])["video"]["placeholders"], ["Hero"])
+
+    def test_background_render_setup_failure_is_visible(self):
+        import render
+        script = self.production_script()
+        self.studio.update_script(script["id"], {"text": "## Hook\nA fact."})
+        with mock.patch.object(render, "missing_tools", return_value=[]), mock.patch.object(studio.Studio, "export_script", side_effect=OSError("Export failed")):
+            studio.start_render(self.studio, script["id"])
+            worker = studio.RENDERS[f"{self.studio.ws}:{script['id']}"]
+            worker.join(timeout=2)
+            self.assertFalse(worker.is_alive())
+        video = self.studio.script(script["id"])["video"]
+        self.assertEqual((video["status"], video["error"]), ("failed", "Export failed"))
+
+    def test_render_requires_tools_and_beats(self):
+        script = self.production_script()
+        with self.assertRaises(ValueError):
+            self.studio.render_script(script["id"])
+        self.studio.update_script(script["id"], {"text": "## Hook\nHello there"})
+        import render
+        with mock.patch.object(render, "missing_tools", lambda: ["ffmpeg (install it)"]), self.assertRaises(RuntimeError) as caught:
+            self.studio.render_script(script["id"])
+        self.assertIn("ffmpeg (install it)", str(caught.exception))
 
     def test_design_defaults_presets_validation_and_channel_paths(self):
         assets = self.production_assets()
@@ -464,7 +575,7 @@ Visual: end | Follow | Subscribe
                     [angles[0] | {"why": 1}, angles[1]]):
             with self.subTest(angles=bad), self.assertRaises(ValueError):
                 self.studio.save_angles(script["id"], bad)
-        scores = {key: 8 for key in ("hook", "clarity", "retention", "specificity", "voice", "accuracy")}
+        scores = {key: 8 for key in ("hook", "clarity", "retention", "specificity", "voice", "natural", "value", "accuracy")}
         review = self.studio.save_review(script["id"], {"scores": scores, "summary": "Strong", "notes": ["Check date"], "at": "ignored"})
         studio.parse_time(review["at"])
         self.assertEqual(self.studio.script(script["id"])["review"], review)
@@ -527,7 +638,7 @@ Visual: end | Follow | Subscribe
         self.assertEqual(json.loads(self.cli("scenes", "--script", script["id"], "--json")), script["scenes"])
         angles = {"angles": [{"hook": "A", "angle": "B", "why": "C"}, {"hook": "D", "angle": "E", "why": "F"}]}
         self.assertIn("Saved 2 angles", self.cli("angles", "--script", script["id"], "--file", "-", stdin=json.dumps(angles)))
-        review = {"scores": {key: 7 for key in ("hook", "clarity", "retention", "specificity", "voice", "accuracy")}, "summary": "Good", "notes": []}
+        review = {"scores": {key: 7 for key in ("hook", "clarity", "retention", "specificity", "voice", "natural", "value", "accuracy")}, "summary": "Good", "notes": []}
         self.assertIn("hook 7/10", self.cli("review", "--script", script["id"], "--file", "-", stdin=json.dumps(review)))
         status = self.cli("status")
         self.assertIn("look bold-explainer", status)
@@ -604,6 +715,28 @@ Visual: end | Follow | Subscribe
         self.assertEqual(changed["duration"], 6)
         self.assertEqual(call("PUT", path, {"chosen_angle": "missing"})[0], 404)
         self.assertEqual(call("GET", "/api/p/test-project/state")[1]["scripts"][0]["duration"], 6)
+        media = f"/api/p/test-project/scripts/{script['id']}/media"
+        png = b"\x89PNG\r\n\x1a\n" + b"0" * 16
+        status, item, _ = call("POST", media, {"name": "My Photo.png", "data": "data:image/png;base64," + __import__("base64").b64encode(png).decode()})
+        self.assertEqual((status, item["path"]), (200, "media/my-photo.png"))
+        status, body, headers = call("GET", f"{media}/my-photo.png")
+        self.assertEqual((status, body, headers["Content-Type"]), (200, png, "image/png"))
+        self.assertEqual(call("POST", media, {"name": "x.png", "data": "not base64!"})[0], 400)
+        self.assertEqual(call("POST", media, {"name": "x.svg", "data": "PHN2Zz4="})[0], 400)
+        self.assertEqual(call("GET", f"{media}/..%2fscript.json")[0], 404)
+        self.assertEqual(call("GET", f"{media}/missing.png")[0], 404)
+        self.assertEqual(call("DELETE", f"{media}/my-photo.png")[1], {"ok": True})
+        self.assertEqual(call("GET", f"/api/p/test-project/scripts/{script['id']}/video")[0], 404)
+        import render
+        with mock.patch.object(render, "missing_tools", lambda: ["ffmpeg"]):
+            status, error, _ = call("POST", f"/api/p/test-project/scripts/{script['id']}/render", {})
+        self.assertEqual((status, error["error"]), (409, "Rendering needs ffmpeg"))
+        folder = self.studio.path("scripts", script["id"], "render")
+        folder.mkdir(parents=True, exist_ok=True)
+        (folder / "video.mp4").write_bytes(b"fake mp4")
+        status, body, headers = call("GET", f"/api/p/test-project/scripts/{script['id']}/video")
+        self.assertEqual((status, body, headers["Content-Type"]), (200, b"fake mp4", "video/mp4"))
+        self.assertTrue(headers["Content-Disposition"].startswith('attachment; filename="a-video.mp4"'))
         for extension, content_type in extensions.items():
             with self.subTest(extension=extension):
                 status, _, headers = call("GET", f"/scenes/asset.{extension}")

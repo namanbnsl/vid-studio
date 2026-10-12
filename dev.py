@@ -57,25 +57,26 @@ def serve(home: Path, open_browser: bool) -> None:
 # ---------------------------------------------------------------- sample data
 
 SENSOR_SCRIPT = """## Hook
-₹6,500 का नल. और company कहती है ये आधा पानी बचाता है. [1]
-Visual: stat | ₹6,500 | Jaquar sensor faucet | starting price
+Jaquar के नए sensor नल ₹6,500 से शुरू होते हैं, और company कहती है कि इनसे आधा पानी बचता है. [1]
+Visual: stat | ₹6,500 | Jaquar sensor tap | starting price
+Source: Jaquar, October 2026
 
-## The claim
-हाथ आगे करो, पानी चालू. हटाओ, बंद. Brush करते वक़्त नल खुला छूटता ही नहीं.
-Visual: list | कैसे बचता है पानी | हाथ हटते ही बंद | Battery से चलता है | कोई handle नहीं
-Text: Touchless
+## How it saves
+तरीका सीधा है. हाथ नीचे लाओ तो पानी चलता है, हटाओ तो बंद. Brush करते वक़्त जो पानी यूँ ही बहता रहता है, वही बचता है.
+Visual: list | पानी कहाँ बचता है | Brush करते वक़्त | बर्तन धोते वक़्त | साबुन लगाते वक़्त
 
 ## The catch
-पर ये 50% Jaquar का अपना दावा है. कोई independent test अभी तक नहीं. [1]
+लेकिन ये 50 percent वाला आँकड़ा Jaquar का अपना है. किसी independent lab ने अभी तक इसे test नहीं किया. [1]
 Visual: compare | पानी की खपत | आम नल: 100 | Sensor नल: 50
-Text: Maker's claim
+Text: Company का दावा
+Source: Jaquar press release
 
-## Who should buy
-Kitchen या guest bathroom, जहाँ नल सबसे ज़्यादा खुला रहता है, वहाँ ये सबसे जल्दी पैसा वसूल करेगा.
-Visual: text | जहाँ नल सबसे ज़्यादा चलता है, वहीं लगाओ
+## Where it pays
+तो लगाना है, तो kitchen में या उस bathroom में लगाओ जहाँ नल दिन भर चलता है. पैसा वहीं सबसे जल्दी वसूल होगा.
+Visual: image | Kitchen sink with a sensor tap, water running
 
 ## End
-Pipe Gyaan पर रोज़ एक smart घर वाली बात. Follow करो.
+घर की ऐसी ही काम की बातें, रोज़ Pipe Gyaan पर.
 Visual: end | पानी बचाओ, पैसा भी | Follow @pipegyaan
 """
 
@@ -120,14 +121,14 @@ def seed(home: Path) -> None:
     script = pipe.create_script(story["id"], "pipe-gyaan")
     pipe.update_script(script["id"], {"stage": "ready", "text": SENSOR_SCRIPT})
     pipe.save_angles(script["id"], [
-        {"hook": "₹6,500 का नल. और company कहती है ये आधा पानी बचाता है.", "angle": "Price vs claimed savings", "why": "Number first, claim second: the gap is the open loop.", "chosen": True},
+        {"hook": "Jaquar के नए sensor नल ₹6,500 से शुरू होते हैं, और company कहती है कि इनसे आधा पानी बचता है.", "angle": "Price vs claimed savings", "why": "Number first, claim second: the gap is the open loop.", "chosen": True},
         {"hook": "आपका नल रोज़ कितना पानी बहा देता है? ये वाला कहता है, आधा कम.", "angle": "Your daily waste", "why": "Makes it about the viewer, but the answer isn't sourced yet."},
         {"hook": "Touchless नल hospital के लिए बने थे. अब घर आ रहे हैं.", "angle": "Hospital tech goes home", "why": "Story hook; weaker stakes for a homeowner."}])
-    pipe.save_review(script["id"], {"scores": {"hook": 8, "clarity": 9, "retention": 7, "specificity": 8, "voice": 8, "accuracy": 7},
+    pipe.save_review(script["id"], {"scores": {"hook": 8, "clarity": 9, "retention": 7, "specificity": 8, "voice": 8, "natural": 7, "value": 8, "accuracy": 7},
                                     "summary": "Strong price-first hook; the 50% claim still needs clear attribution.",
                                     "notes": ["Retention dips in the middle beat; add a re-hook before the payback math.",
                                               "Say that the 50% figure is Jaquar's own claim."]})
-    pipe.add_comment(script["id"], "Can we name a real test, or show the payback math?", "कोई independent test अभी तक नहीं")
+    pipe.add_comment(script["id"], "Can we name a real test, or show the payback math?", "किसी independent lab ने अभी तक इसे test नहीं किया")
     post = pipe.create_script(story["id"], "pipe-gyaan-whatsapp")
     pipe.update_script(post["id"], {"text": "*Sensor taps: पैसा बचेगा?*\n\nJaquar के नए sensor faucets ₹6,500 से शुरू। [1]\n\nhttps://www.jaquar.com/news/sensor\n",
                                     "stage": "published", "published_url": "https://whatsapp.com/channel/example"})

@@ -23,15 +23,19 @@ The studio has three global tabs: **Research**, **Production**, and **Channels**
 
 The information flow is **Research story → Production scripts → Channels**. Research stays reusable; each script adapts that evidence for its destination. Projects organize Research and appear as source labels or optional filters in Production.
 
-Each channel has a **Voice** (length, pace, persona, tone, hook styles, rules, and scripts you love) and, for video channels, a **Look** (one of eight styles to start from, then colors, fonts with Hindi support, motion, captions, background, logo). You set both up when you add a channel, with a live preview of animated sample scenes in that look.
+Each channel has a **Voice** (length, pace, persona, tone, hook styles, rules, and scripts you love) and, for video channels, a **Look** (one of eight styles to start from, then colors, fonts with Hindi support, motion, captions, photo treatment, source tags, background, logo). You set both up when you add a channel, with a live preview of animated sample scenes in that look.
 
-Video scripts are written as beats: what's said, plus a `Visual:` line naming a scene (a stat, bar chart, comparison, list, quote, timeline, or punchline). The script editor plays them as an animated preview in the channel's look as you type, shows the timing against the target, the hooks your agent considered (swap one in with a click), and its self-review scores. `studio.py export` turns a script into a [HyperFrames](https://github.com/heygen-com/hyperframes) project that renders to MP4.
+Video scripts are written as beats: what's said, plus a `Visual:` line naming a scene (a stat, bar chart, comparison, list, quote, timeline, photo, or punchline). A beat can also have a photo behind it (`Image:`), a small on-screen source tag (`Source:`), and a fixed length (`Duration:`). The script editor plays them as an animated preview in the channel's look as you type, shows the timing against the target, the hooks your agent considered (swap one in with a click), and its self-review scores, including whether it sounds human and whether it's worth the viewer's minute.
+
+**Images.** Your agent picks photos for the beats about real things: openly licensed photos from Wikimedia Commons and Openverse (no API key; it looks at previews before choosing), or images it generates with its own image tool, if it has one. Generated images are never used for real people, products, logos, or documents. Every photo is saved with the script and credited on screen. You can also add your own photo to any beat from the script page.
+
+**Download.** Click **Render MP4** on a script, then **Download MP4**: the video renders on your computer (1080p, 30 fps) with Chrome and ffmpeg, which you need installed. Your agent can do the same with `studio.py render --script ID --out ~/Desktop`. `studio.py export` writes the same video as a [HyperFrames](https://github.com/heygen-com/hyperframes) project instead.
 
 The steps that need an AI each have a button that copies a prompt. Paste it into Claude or ChatGPT, and the results show up in the UI:
 
 - **Research now:** your agent researches every topic and adds findings.
 - **Research story:** your agent researches a story's findings and topics in depth and writes its notes.
-- **Send to production**, then **Write draft:** your agent writes each channel's script from the story's notes, following a craft guide: several hooks, a beat outline, timing, and an honest self-review against a rubric. With open comments, the button becomes **Revise**, and your agent works through them in order.
+- **Send to production**, then **Write draft:** your agent writes each channel's script from the story's notes, following a craft guide: several hooks, a plain-spoken first pass, a beat outline, photos and sources, timing, a pass to remove anything that sounds machine-made, and an honest self-review against a rubric. With open comments, the button becomes **Revise**, and your agent works through them in order.
 - **Ask your agent** (on a channel's Look and Voice): describe a change in words, and your agent makes it.
 
 To research on a schedule, click the schedule link under **Research now**, pick the days and times, and paste the copied prompt into your agent. It creates the scheduled task.
@@ -47,8 +51,9 @@ Your agent creates the studio (`~/vid-studio` by default, one folder per project
 ```
 skills/vid-studio/
   SKILL.md            entry point
-  references/         setup, research, story, write, script craft, scenes, look, schedule
+  references/         setup, research, story, write, script craft, scenes, images, look, schedule
   scripts/studio.py   helper and local web server (Python 3 standard library)
+  scripts/render.py   MP4 renderer: drives a local Chrome and ffmpeg (standard library)
   assets/             workspace templates, the UI, the scene engine (assets/scenes), and example scripts
 ```
 

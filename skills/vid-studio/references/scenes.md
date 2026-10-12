@@ -15,6 +15,8 @@ Text: Example only
 ## Comparison
 यहाँ source में दिए हुए before और after figures समझाओ. [1]
 Visual: compare | Example comparison | Before: 500 | Now: 1000
+Image: media/example-photo.jpg | Photo: Name / Wikimedia Commons, CC BY 4.0
+Source: Example source, 1 Oct 2026
 ```
 
 - `## Name`: the beat's name (Hook, Context, How it works, …). It is a label for the team, never shown or spoken.
@@ -22,6 +24,9 @@ Visual: compare | Example comparison | Before: 500 | Now: 1000
 - `Visual: TYPE | field | field …`: the scene shown during this beat. One per beat; if a beat needs two visuals, split it into two beats.
 - `Text: …`: optional extra on-screen text (a short overlay, under 8 words).
 - `Note: …`: optional production note for the team (not shown, not spoken).
+- `Image: path | credit`: optional photo shown full-screen behind this beat's scene. The path is one of the script's images (`media/…`, from `studio.py media`) or an `https://` URL. See [images.md](images.md).
+- `Source: …`: optional short name of where this beat's fact comes from ("RBI circular, 1 Oct 2026"). It shows small on screen, unless the channel's look turns source tags off.
+- `Duration: 4`: optional fixed length in seconds (1–60), instead of the length the voiceover takes. Use it for a beat with little or no voiceover that needs time on screen.
 - Anything before the first `##` (like a `# Title`) is ignored.
 
 A beat without a `Visual:` line shows its voiceover as a big caption (`text` scene).
@@ -30,7 +35,7 @@ The parser accepts indented beat headings, optional Markdown emphasis around cue
 
 ## Timing
 
-A beat lasts as long as its voiceover takes to say: spoken words ÷ the channel's words per minute (from its voice settings; 160 if unset), with a minimum of 1.5 seconds. Count words after removing citations and markdown. `studio.py scenes --script ID` prints each beat with its scene and timing, and the total; use it to hit the channel's target length.
+A beat lasts as long as its voiceover takes to say: spoken words ÷ the channel's words per minute (from its voice settings; 160 if unset), with a minimum of 1.5 seconds. A `Duration:` line overrides it. Count words after removing citations and markdown. `studio.py scenes --script ID` prints each beat with its scene and timing, and the total; use it to hit the channel's target length.
 
 ## Scene types
 
@@ -46,7 +51,7 @@ Fields are separated by `|`, in this order. Trailing fields are optional. Number
 | `quote` | quote \| source | A real quote from a source in the notes |
 | `timeline` | title \| date: label \| date: label … | 2–5 dated events in order |
 | `text` | text | A punchline or key sentence, big on screen |
-| `image` | description \| url | A real photo, screenshot, or clip; description says what to show |
+| `image` | description \| path \| credit | A photo or screenshot as the whole scene; the description says what it shows (it's the brief while the image is missing, and the alt text after) |
 | `end` | title \| call to action | The last beat |
 
 Example `Visual:` lines:
@@ -56,7 +61,7 @@ Visual: title | Your story, explained | 60 seconds | Source-backed explainer
 Visual: bars | Example volumes | Period 1: 36 | Period 2: 52 | Period 3: 64
 Visual: list | The mechanism | First step | Second step | Third step
 Visual: quote | Exact words from an opened source | Source name and date
-Visual: image | Close-up of a UPI Lite screen on a phone
+Visual: image | Close-up of a UPI Lite screen on a phone | media/upi-lite-screen.png | Screenshot: NPCI
 Visual: end | Follow for one money rule a day | Follow @explainedin90s
 ```
 
@@ -72,4 +77,8 @@ The studio parses beats into this shape (the UI, the player, and `studio.py scen
  "data": {"value": "₹5,000", "label": "UPI Lite wallet limit", "context": "was ₹2,000"}}
 ```
 
-`data` keys per type: `title` {title, subtitle, kicker} · `stat` {value, label, context} · `bars` {title, items: [{label, value}]} · `compare` {title, items: [{label, value}] (two)} · `list` {title, items: [string]} · `quote` {quote, source} · `timeline` {title, items: [{date, label}]} · `text` {text} · `image` {description, url} · `end` {title, cta}. In `bars` and `compare`, `value` is the original text (`"₹1,000"`); the player extracts the number. An unknown type becomes `image` with the whole line as its description.
+`data` keys per type: `title` {title, subtitle, kicker} · `stat` {value, label, context} · `bars` {title, items: [{label, value}]} · `compare` {title, items: [{label, value}] (two)} · `list` {title, items: [string]} · `quote` {quote, source} · `timeline` {title, items: [{date, label}]} · `text` {text} · `image` {description, url, credit} · `end` {title, cta}. A beat with an `Image:` line also has `"image": {"src", "credit"}`, and one with a `Source:` line has `"source"`. In `bars` and `compare`, `value` is the original text (`"₹1,000"`); the player extracts the number. An unknown type becomes `image` with the whole line as its description.
+
+## Render
+
+`studio.py render --script ID` renders the video to `scripts/<id>/render/video.mp4` (1080p, 30 fps, H.264) on this machine, with Chrome and ffmpeg; `--out ~/Desktop` also copies it there, and `--draft` renders a faster 720p check. It prints the image credits for the video description. The user can do the same from the script page (Render MP4, then Download MP4). `studio.py export --script ID` writes the same composition as a [HyperFrames](https://github.com/heygen-com/hyperframes) project instead.

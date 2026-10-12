@@ -38,7 +38,9 @@ button, input, textarea, select { font: inherit; color: inherit; }
 .flow-note a { font-weight:600; text-underline-offset:3px; }
 .board-filters { display:flex; gap:8px; flex-wrap:wrap; }
 .card-origin { display:flex; flex-wrap:wrap; gap:5px 10px; margin-top:10px; font-size:12px; color:var(--ink-3); }
-.card-origin a { text-underline-offset:3px; }
+.card-origin a, .item.card .meta a { color: inherit; text-decoration: none; }
+.card-origin a:hover, .item.card .meta a:hover { text-decoration: underline; text-underline-offset: 3px; }
+.card-origin a[title="Source story"] { overflow: hidden; text-overflow: ellipsis; white-space: nowrap; max-width: 100%; }
 @media(max-width:700px) { .topbar { gap:8px; flex-wrap:wrap; padding-top:14px; } .global-tabs { min-height:48px; width:100%; } .global-tabs a { flex:1; justify-content:center; padding:0 8px; } }
 .brand { display: flex; align-items: center; gap: 10px; font-weight: 650; font-size: 15px; letter-spacing: -.01em; text-decoration: none; }
 .brand svg { width: 24px; height: 24px; }
@@ -151,16 +153,17 @@ h2 { font-size: 19px; font-weight: 650; letter-spacing: -.02em; margin: 0; }
 .back { display: inline-flex; align-items: center; gap: 6px; color: var(--ink-3); text-decoration: none; font-size: 13px; font-weight: 550; margin-bottom: 20px; }
 .back:hover { color: var(--ink); }
 .back svg { width: 15px; height: 15px; }
-.editor { display: grid; grid-template-columns: minmax(0, 1fr) 300px; gap: 40px; align-items: start; }
+.editor { display: grid; grid-template-columns: minmax(0, 1fr) 320px; gap: 40px; align-items: start; }
 .title-input { width: 100%; border: 0; background: transparent; font-size: 30px; font-weight: 650; letter-spacing: -.035em; padding: 2px 0; margin-bottom: 16px; border-radius: 6px; }
 .title-input:focus { outline: none; }
 .subtabs { display: flex; gap: 12px; margin-bottom: 12px; flex-wrap: wrap; justify-content: space-between; align-items: center; }
 .subtabs > div { display: flex; gap: 4px; flex-wrap: wrap; }
-textarea.doc, .md { display: block; width: 100%; height: 480px; overflow: auto; scrollbar-gutter: stable; border: 1px solid var(--line-2); border-radius: 12px; padding: 20px 22px; background: var(--bg); font: 15px/1.75 var(--sans); color: var(--ink); overflow-wrap: anywhere; }
+textarea.doc, .md { display: block; width: 100%; height: max(480px, calc(100vh - 300px)); overflow: auto; scrollbar-gutter: stable; border: 1px solid var(--line-2); border-radius: 12px; padding: 20px 22px; background: var(--bg); font: 15px/1.75 var(--sans); color: var(--ink); overflow-wrap: anywhere; }
 textarea.doc { resize: none; }
 textarea.doc::placeholder { color: var(--ink-3); }
 textarea.doc.short { height: 260px; }
 .md { cursor: text; }
+.md.beats-md { height: auto; min-height: 240px; overflow: visible; }
 .md > :first-child { margin-top: 0; }
 .md > :last-child { margin-bottom: 0; }
 .md h1, .md h2, .md h3, .md h4, .md h5, .md h6 { letter-spacing: -.02em; line-height: 1.3; margin: 1.6em 0 .5em; font-weight: 650; }
@@ -183,7 +186,6 @@ textarea.doc.short { height: 260px; }
 textarea.doc:focus { outline: none; border-color: #c9c7c2; box-shadow: 0 0 0 4px var(--surface-2); }
 .doc-tools { display: flex; align-items: center; gap: 8px; }
 .doc-tools .btn.small { height: 32px; }
-.doc-tools .btn.ghost:last-child { margin-right: -10px; }
 .banner { display: flex; gap: 12px; align-items: center; justify-content: space-between; flex-wrap: wrap; border: 1px solid #f1d8a8; background: #fff8eb; border-radius: 10px; padding: 10px 14px; margin-bottom: 14px; font-size: 13px; }
 .side { position: sticky; top: 24px; }
 .side-actions { display: grid; gap: 8px; margin: 6px 0 28px; }
@@ -319,9 +321,12 @@ a.ref-link:hover { border-color: #cfcdc8; }
 .comment-tools .icon-btn { width: 26px; height: 26px; }
 .dismissed .comment { opacity: .7; }
 .beats-md .cue { display: inline-flex; gap: 8px; align-items: baseline; font: 12.5px/1.6 var(--mono); color: var(--ink-2); background: var(--surface); border-radius: 6px; padding: 1px 8px; margin: 3px 0; }
-.beats-md .cue b { font-weight: 600; font-size: 10.5px; text-transform: uppercase; letter-spacing: .04em; color: var(--ink-3); }
+.beats-md .cue b { flex: none; white-space: nowrap; font-weight: 600; font-size: 10.5px; text-transform: uppercase; letter-spacing: .04em; color: var(--ink-3); }
 .beats-md .cue-text { background: #eef4ff; }
 .beats-md .cue-note { background: transparent; border: 1px dashed var(--line-2); }
+.beats-md .cue-image { background: #f1ecff; }
+.beats-md .cue-source { background: #eaf6ef; }
+.beats-md .cue-duration { background: transparent; border: 1px solid var(--line-2); }
 .md mark { background: #fff1bf; box-shadow: inset 0 -2px 0 #e9b949; color: inherit; border-radius: 2px; cursor: pointer; }
 .md mark.flash { background: #ffe58a; }
 .quote-box { border-left: 3px solid #e9b949; background: #fff7dc; border-radius: 4px; padding: 8px 12px; font-size: 13px; margin-bottom: 16px; white-space: pre-wrap; max-height: 120px; overflow: auto; }
@@ -379,7 +384,7 @@ details.ctl[open] summary h4 { margin-bottom: 12px; }
 .device.aspect-16x9 { aspect-ratio: 16 / 9; border-radius: 12px; }
 .device.aspect-1x1 { aspect-ratio: 1; max-width: 340px; }
 .device.aspect-4x5 { aspect-ratio: 4 / 5; max-width: 320px; }
-.side .device.aspect-9x16 { max-width: 240px; }
+.side .device.aspect-9x16 { max-width: 270px; }
 .player-frame { position: absolute; inset: 0; width: 100%; height: 100%; border: 0; display: block; }
 .player-error { position: absolute; inset: auto 10px 10px; padding: 8px 10px; border-radius: 8px; background: rgba(194,65,12,.92); color: #fff; font-size: 12px; }
 .player-bar { display: flex; align-items: center; gap: 8px; max-width: 380px; width: 100%; margin: 0 auto; }
@@ -417,12 +422,47 @@ details.ctl[open] summary h4 { margin-bottom: 12px; }
 /* script preview, hooks, quality */
 .timing { font: 500 11.5px var(--mono); color: var(--ink-3); background: var(--surface-2); border-radius: 5px; padding: 2px 6px; margin-left: 6px; }
 .side-tabs { display: flex; gap: 2px; border-bottom: 1px solid var(--line); margin: 22px 0 14px; }
-.side-tabs button { flex: 1; border: 0; background: none; padding: 8px 2px; font-size: 12.5px; font-weight: 600; color: var(--ink-3); cursor: pointer; display: inline-flex; justify-content: center; gap: 4px; }
+.side-tabs button { flex: 1 1 auto; border: 0; background: none; padding: 8px 6px; white-space: nowrap; font-size: 12.5px; font-weight: 600; color: var(--ink-3); cursor: pointer; display: inline-flex; justify-content: center; gap: 4px; }
 .side-tabs button.on { color: var(--ink); box-shadow: inset 0 -1.5px 0 var(--ink); }
 .side-tabs .n { font: 500 10.5px var(--mono); color: var(--ink-3); }
 #side-panel { display: grid; gap: 10px; }
 #side-panel .player-bar { max-width: 260px; }
 .beats { display: grid; gap: 2px; }
+.beats-head { display: flex; align-items: baseline; gap: 8px; margin: 18px 0 6px; }
+.beats-head .small { font-weight: 400; }
+.beat-row { display: flex; align-items: center; gap: 4px; border-radius: 7px; }
+.beat-row .beat { flex: 1; min-width: 0; }
+.beat-row:hover { background: var(--surface); }
+.beat-row.on { background: var(--surface-2); }
+.beat-row .beat:hover { background: none; }
+.beat-row .icon-btn { flex: none; width: 26px; height: 26px; opacity: .55; }
+.beat-row:hover .icon-btn, .beat-row .icon-btn.needs { opacity: 1; }
+.beat-row .icon-btn.needs { color: var(--danger); }
+.beat-thumb { flex: none; width: 22px; height: 30px; border-radius: 4px; background: var(--line) center / cover no-repeat; }
+.media-lib { margin-top: 12px; font-size: 12.5px; }
+.media-lib summary { cursor: pointer; color: var(--ink-2); padding: 4px 0; }
+.media-grid { display: grid; gap: 8px; margin-top: 8px; }
+.media-grid figure { margin: 0; display: grid; grid-template-columns: 40px 1fr auto; gap: 10px; align-items: center; }
+.media-thumb { width: 40px; height: 52px; border-radius: 6px; background: var(--line) center / cover no-repeat; }
+.media-grid figcaption { display: grid; gap: 2px; min-width: 0; color: var(--ink-3); font-size: 11.5px; }
+.media-grid figcaption code { font-size: 11px; color: var(--ink-2); }
+.render-bar { height: 6px; border-radius: 3px; background: var(--surface); overflow: hidden; margin: 6px 0 8px; }
+.render-bar i { display: block; height: 100%; background: var(--ink); border-radius: 3px; transition: width .4s; }
+.video-ready { display: flex; gap: 12px; align-items: flex-start; }
+.video-ready .muted.small { margin: 6px 0 0; }
+.video-ready .text-btn { padding: 6px 0; }
+.video-poster { width: 54px; aspect-ratio: 9 / 16; object-fit: cover; border-radius: 6px; background: var(--surface); flex: none; }
+#video-box .btn { margin-bottom: 2px; }
+.card-poster { width: 40px; aspect-ratio: 9 / 16; object-fit: cover; border-radius: 5px; flex: none; background: var(--surface); }
+.card-origin .pill.ok { background: #e7f6ec; color: #17663a; }
+.look-swatch { flex: none; position: relative; width: 44px; height: 64px; border-radius: 8px; display: grid; place-items: center; overflow: hidden; box-shadow: inset 0 0 0 1px rgba(0,0,0,.08); }
+.look-swatch.aspect-16x9 { width: 64px; height: 40px; margin-top: 10px; }
+.look-swatch.aspect-1x1, .look-swatch.aspect-4x5 { width: 52px; height: 56px; }
+.look-swatch b { font-size: 18px; font-weight: 800; line-height: 1; }
+.look-swatch i { position: absolute; bottom: 6px; width: 10px; height: 4px; border-radius: 2px; }
+.look-swatch i:first-of-type { left: 8px; } .look-swatch i:last-of-type { left: 20px; }
+.look-swatch.post { background: #e7f6ec; color: #17663a; }
+.look-swatch.post svg { width: 20px; height: 20px; }
 .beat { display: grid; grid-template-columns: 64px 1fr auto; align-items: center; gap: 8px; border: 0; background: none; text-align: left; padding: 6px 8px; border-radius: 7px; cursor: pointer; font-size: 12.5px; }
 .beat:hover { background: var(--surface); }
 .beat.on { background: var(--surface-2); }
@@ -503,6 +543,9 @@ const ICONS = {
   mic: '<rect x="9" y="3" width="6" height="11" rx="3"/><path d="M5 11a7 7 0 0 0 14 0M12 18v3"/>',
   comment: '<path d="M21 15a2 2 0 0 1-2 2H7l-4 4V5a2 2 0 0 1 2-2h14a2 2 0 0 1 2 2Z"/>',
   send: '<path d="M22 2 11 13M22 2l-7 20-4-9-9-4Z"/>',
+  download: '<path d="M12 4v11"/><path d="m7 10 5 5 5-5"/><path d="M5 20h14"/>',
+  film: '<rect x="3" y="4" width="18" height="16" rx="2"/><path d="M7 4v16M17 4v16M3 9h4M3 15h4M17 9h4M17 15h4"/>',
+  image: '<rect x="3" y="4" width="18" height="16" rx="2"/><circle cx="9" cy="10" r="2"/><path d="m21 17-5-5-9 8"/>',
   copy: '<rect x="9" y="9" width="12" height="12" rx="2"/><path d="M5 15V5a2 2 0 0 1 2-2h10"/>',
 };
 const icon = name => `<svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.8" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true">${ICONS[name]}</svg>`;
@@ -798,7 +841,7 @@ function findingsPanel() {
   const counts = {};
   live.forEach(f => (f.topics || []).forEach(t => counts[t] = (counts[t] || 0) + 1));
   const shown = (showDismissed ? S.findings : live).filter(f => topicFilter === "all" || (f.topics || []).includes(topicFilter));
-  return `<div class="section-head"><div><h2>Findings</h2><p>Select findings to start or extend a script.</p></div>
+  return `<div class="section-head"><div><h2>Findings</h2><p>Select findings to start a story, or add them to one.</p></div>
       <select class="topic-select" data-action="filter-select" aria-label="Filter by topic">
         <option value="all">All topics (${live.length})</option>
         ${S.topics.map(t => `<option value="${esc(t.id)}" ${topicFilter === t.id ? "selected" : ""}>${esc(t.name)} (${counts[t.id] || 0})</option>`).join("")}
@@ -842,22 +885,24 @@ function renderUnavailableProject() {
 function renderProduction() {
   editor = null;
   document.title = "Production · Vid Studio";
-  document.getElementById("app").innerHTML = `<section class="head"><div><h1>Production</h1><p class="lede">Every script, across every research project and channel.</p></div></section>
-    ${scriptsPanel()}`;
+  document.getElementById("app").innerHTML = scriptsPanel();
 }
 function scriptsPanel() {
   const data = GLOBAL || { projects: PROJECTS, channels: channels(), scripts: S?.scripts || [], stories: S?.stories || [] };
-  const head = extra => `<div class="section-head"><div><h2>Scripts</h2><p>Track drafts from first script to publication. Open a card to edit, review, and preview.</p></div>${extra || ""}</div>`;
+  const head = extra => `<section class="head"><div><h1>Production</h1><p class="lede">Every script, from first draft to published video, across all your projects and channels.</p></div>${extra ? `<div class="head-actions">${extra}</div>` : ""}</section>`;
   if (!data.channels.length) return head() + empty("Set up a publishing channel", "Choose its language, voice, format, and look. Then send a researched story to production.", "open-channels", "Set up channels", "palette");
   if (!data.scripts.length) return head() + empty("Send your first story to production", "Research a story, then create a separate script for each channel. One story can feed many videos.", "go-stories", "Find a story", "back");
   const shown = data.scripts.filter(s => (channelFilter === "all" || s.channel === channelFilter) && (productionProjectFilter === "all" || s.project === productionProjectFilter));
   const card = s => {
     const c = channelById(s.channel) || {}, owner = s.project || PROJECT;
     const story = data.stories.find(x => x.project === owner && x.id === s.story);
-    return `<article class="item card" data-card="open-script" data-id="${esc(s.id)}" data-project="${esc(owner)}" tabindex="0">
-      <div class="body"><h3><a href="${scriptHref(s.id, owner)}">${esc(s.title)}</a></h3>
+    const poster = s.video?.ready ? `<img class="card-poster" src="/api/p/${enc(owner)}/scripts/${enc(s.id)}/poster.jpg?v=${esc(s.updated || "")}" alt="" loading="lazy">` : "";
+    const status = s.video?.status === "rendering" ? `<span class="pill">Rendering…</span>` : s.video?.ready ? `<span class="pill ok">${s.video.stale ? "Video outdated" : "Video ready"}</span>` : "";
+    const projectLabel = s.project_name || data.projects.find(p => p.id === owner)?.name || owner;
+    return `<article class="item card ${poster ? "has-poster" : ""}" data-card="open-script" data-id="${esc(s.id)}" data-project="${esc(owner)}" tabindex="0">
+      ${poster}<div class="body"><h3><a href="${scriptHref(s.id, owner)}">${esc(s.title)}</a></h3>
         <div class="meta"><a href="${channelHref(s.channel)}">${esc(c.name || s.channel)}</a>${c.language ? " · " + esc(c.language) : ""}${s.drafted ? (s.duration ? " · " + fmtTime(s.duration) : "") : " · no draft yet"}${s.open_comments ? ` · ${plural(s.open_comments, "comment")}` : ""}</div>
-        <div class="card-origin"><a href="${base(owner)}/stories">${esc(s.project_name || data.projects.find(p => p.id === owner)?.name || owner)}</a><span>← ${story ? `<a href="${storyHref(story.id, owner)}">${esc(story.title)}</a>` : "Source story removed"}</span></div></div>
+        <div class="card-origin"><a href="${base(owner)}/stories" title="Research project">${esc(projectLabel)}</a>${story ? `<a href="${storyHref(story.id, owner)}" title="Source story">← ${esc(story.title)}</a>` : "<span>Source story removed</span>"}${status}</div></div>
     </article>`;
   };
   return head(`<div class="board-filters"><select class="topic-select" data-action="filter-production-project" aria-label="Filter by research project"><option value="all">All projects</option>${data.projects.map(p => `<option value="${esc(p.id)}" ${productionProjectFilter === p.id ? "selected" : ""}>${esc(p.name)}</option>`).join("")}</select>
@@ -874,11 +919,27 @@ function renderChannels() {
       <div class="head-actions"><button class="btn primary" data-action="new-channel">${icon("plus")}New channel</button></div></section>
     ${channels().length ? `<div class="list">${channels().map(c => `
       <article class="item" data-card="open-channel" data-id="${esc(c.id)}" tabindex="0">
-        <div class="body"><h3><a href="${channelHref(c.id)}">${esc(c.name)}</a></h3><p>${esc([c.platform, kindLabel(c), c.language].filter(Boolean).join(" · "))}</p>
-          <div class="meta">${esc((c.format || "").split("\n")[0]) || "No format yet"}</div></div>
+        ${lookSwatch(c)}<div class="body"><h3><a href="${channelHref(c.id)}">${esc(c.name)}</a></h3><p>${esc([c.platform, kindLabel(c), c.language].filter(Boolean).join(" · "))}</p>
+          <div class="meta">${esc(lookLine(c))}</div></div>
         <div class="tools"><button class="icon-btn delete" data-action="delete-channel" data-id="${esc(c.id)}" aria-label="Delete ${esc(c.name)}" title="Delete">${icon("trash")}</button></div>
       </article>`).join("")}</div>`
     : empty("Add your first channel", "A YouTube channel, an Instagram account, or a WhatsApp channel. One story can become a script for each of them.", "new-channel", "New channel")}`;
+}
+
+const channelLook = c => GLOBAL?.looks?.[c.id] || null;
+function lookSwatch(c) {
+  const look = channelLook(c);
+  if (c.kind === "post") return `<span class="look-swatch post" aria-hidden="true">${icon("comment")}</span>`;
+  if (!look?.colors) return "";
+  const k = look.colors;
+  return `<span class="look-swatch aspect-${esc((look.aspect || "9:16").replace(":", "x"))}" style="background:${esc(k.background)};color:${esc(k.text)}" aria-hidden="true">
+    <b style="font-family:'${esc(look.display_font || "")}',sans-serif;color:${esc(k.accent)}">Aa</b><i style="background:${esc(k.accent)}"></i><i style="background:${esc(k.accent2)}"></i></span>`;
+}
+function lookLine(c) {
+  const look = channelLook(c);
+  if (!look) return "";
+  if (c.kind === "post") return "Text posts";
+  return [look.preset ? `${look.preset} look` : "Custom look", look.aspect, look.length_seconds ? `about ${fmtTime(look.length_seconds)}` : ""].filter(Boolean).join(" · ");
 }
 
 function empty(title, text, action, label, iconName = action === "research" ? "refresh" : "plus") {
@@ -899,16 +960,21 @@ function parseScenes(src, wpm = 160) {
   for (const raw of String(src || "").replace(/\r\n?/g, "\n").split("\n")) {
     const line = raw.trim();
     const heading = line.match(/^##\s+(.*)$/);
-    if (heading) { beat = { beat: heading[1].replace(/[#*_]/g, "").trim(), vo: [], visual: null, text: "", note: "" }; beats.push(beat); continue; }
+    if (heading) { beat = { beat: heading[1].replace(/[#*_]/g, "").trim(), vo: [], visual: null, text: "", note: "", image: "", source: "", duration: "" }; beats.push(beat); continue; }
     if (!beat || !line || /^#/.test(line)) continue;
-    const label = line.replace(/^[-*]\s+/, "").match(/^[*_]{0,2}(visual|text|note)[*_]{0,2}\s*:[*_]{0,2}\s*(.*)$/i);
+    const label = line.replace(/^[-*]\s+/, "").match(/^[*_]{0,2}(visual|text|note|image|source|duration)[*_]{0,2}\s*:[*_]{0,2}\s*(.*)$/i);
     if (label) beat[label[1].toLowerCase()] = label[2].trim();
     else beat.vo.push(line);
   }
   return beats.map(b => {
     const vo = spokenText(b.vo.join(" "));
     const [type, data] = sceneData(b.visual, vo);
-    const scene = { beat: b.beat, type, duration: Math.max(1.5, Math.floor(wordCount(vo) * 600 / wpm + 0.5) / 10), vo, text: b.text, data };
+    let duration = Math.max(1.5, Math.floor(wordCount(vo) * 600 / wpm + 0.5) / 10);
+    const fixed = (b.duration || "").match(/^(\d+(?:\.\d+)?)\s*s?$/i);
+    if (fixed) duration = Math.min(60, Math.max(1, Math.floor(Number(fixed[1]) * 10 + 0.5) / 10));
+    const scene = { beat: b.beat, type, duration, vo, text: b.text, data };
+    if (b.image) { const i = b.image.indexOf("|"); scene.image = i < 0 ? { src: b.image.trim(), credit: "" } : { src: b.image.slice(0, i).trim(), credit: b.image.slice(i + 1).trim() }; }
+    if (b.source) scene.source = b.source;
     if (b.note) scene.note = b.note;
     return scene;
   });
@@ -927,15 +993,16 @@ function sceneData(visual, vo) {
     case "quote": return [type, { quote: v(0), source: v(1) }];
     case "timeline": return [type, { title: v(0), items: f.slice(1).map(x => { const [date, label] = pair(x, true); return { date, label }; }) }];
     case "text": return [type, { text: v(0) || vo }];
-    case "image": return [type, { description: v(0), url: v(1) }];
+    case "image": return [type, { description: v(0), url: v(1), credit: v(2) }];
     case "end": return [type, { title: v(0), cta: v(1) }];
-    default: return ["image", { description: visual, url: "" }];
+    default: return ["image", { description: visual, url: "", credit: "" }];
   }
 }
 
 // One preview at a time: an iframe running /scenes/player.html, fed over postMessage.
 const PLAYER = { frame: null, ready: false, pending: null, duration: 0, time: 0, playing: false, scene: -1, scenes: [], scrubbing: false };
 function mountPlayer(host, payload) {
+  PLAYER.mediaBase = payload?.options?.mediaBase || "";
   host.innerHTML = `<iframe class="player-frame" src="/scenes/player.html" title="Video preview"></iframe>`;
   Object.assign(PLAYER, { frame: host.querySelector("iframe"), ready: false, pending: payload, duration: 0, time: 0, playing: false, scene: -1, scenes: [] });
 }
@@ -946,7 +1013,7 @@ function playerLoad(payload) {
 }
 // Rebuild after an edit without losing your place.
 function playerReload(design, scenes, extra = {}) {
-  playerLoad({ design, scenes, options: { autoplay: PLAYER.playing, loop: true, captions: true, startAt: PLAYER.time, ...extra } });
+  playerLoad({ design, scenes, options: { autoplay: PLAYER.playing, loop: true, captions: true, startAt: PLAYER.time, mediaBase: PLAYER.mediaBase || "", ...extra } });
 }
 window.addEventListener("message", event => {
   if (!PLAYER.frame || event.source !== PLAYER.frame.contentWindow) return;
@@ -1121,7 +1188,12 @@ function lookPanel(c) {
         <div class="row"><span>Style</span>${seg("captions.style", [["none", "Off"], ["plain", "Plain"], ["boxed", "Boxed"], ["karaoke", "Karaoke"], ["pop", "Pop"]], d.captions?.style)}</div>
         <div class="row"><span>Position</span>${seg("captions.position", [["upper", "Top"], ["middle", "Middle"], ["lower", "Bottom"]], d.captions?.position)}</div>
         <div class="row"><span>Highlight</span>${seg("captions.highlight", [["accent", "Accent"], ["accent2", "Second accent"], ["text", "Text"]], d.captions?.highlight)}</div>
-        <div class="row"><span>Words at a time</span>${slider("captions.max_words", 1, 8, 1, d.captions?.max_words ?? 4, SHOW["captions.max_words"])}</div></section>
+        <div class="row"><span>Words at a time</span>${slider("captions.max_words", 1, 8, 1, d.captions?.max_words ?? 4, SHOW["captions.max_words"])}</div>
+        <div class="row"><span>Size</span>${seg("captions.size", [["small", "Small"], ["medium", "Medium"], ["large", "Large"]], d.captions?.size || "medium")}</div></section>
+      <section class="ctl"><h4>Photos &amp; sources</h4>
+        <div class="row"><span>Photo treatment</span>${seg("images.treatment", [["natural", "Natural"], ["dim", "Dimmed"], ["mono", "Mono"], ["duotone", "Duotone"]], d.images?.treatment || "dim")}</div>
+        <div class="row"><span>Source tags</span>${seg("sources.show", [[true, "Show"], [false, "Hide"]], d.sources?.show !== false)}</div>
+        <p class="muted small">Photos come from <code>Image:</code> lines on a script's beats. Duotone tints them in your colors so photos from different places still look like one channel. Source tags show a beat's <code>Source:</code> line, small, so viewers can see where a fact comes from.</p></section>
       <section class="ctl"><h4>Background &amp; shape</h4>
         <div class="row"><span>Texture</span>${seg("background.style", [["solid", "Solid"], ["gradient", "Gradient"], ["grain", "Grain"], ["paper", "Paper"]], d.background?.style)}</div>
         <div class="row"><span>Pattern</span>${seg("background.pattern", [["none", "None"], ["grid", "Grid"], ["dots", "Dots"], ["lines", "Lines"]], d.background?.pattern)}</div>
@@ -1331,7 +1403,8 @@ async function renderEditor(kind, id) {
   md?.addEventListener("dblclick", event => { if (!event.target.closest("mark")) actions["editor-view"]("edit"); });
   md?.addEventListener("click", event => { const mark = event.target.closest("mark[data-comment]"); if (mark) { editor.sideTab = "comments"; rerender(); flashComment(mark.dataset.comment); } });
   if (md && kind === "script") highlightComments(md);
-  if (editor.sideTab === "preview" && editor.design) mountPlayer(document.getElementById("script-player"), { ...scriptPayload(), options: { autoplay: false, loop: true, captions: true } });
+  // Open on the hook's settled frame, not frame zero (where everything is still off-screen).
+  if (editor.sideTab === "preview" && editor.design) mountPlayer(document.getElementById("script-player"), { ...scriptPayload(), options: { autoplay: false, loop: true, captions: true, mediaBase: scriptMediaBase(), startAt: Math.min(1.6, (scriptScenes()[0]?.duration || 0) * 0.6) } });
   postPreview();
   restoreFocus(focus);
 }
@@ -1375,6 +1448,10 @@ function storySide() {
 const wpm = () => editor.voice?.words_per_minute || 160;
 const scriptScenes = () => parseScenes(docText(), wpm());
 const scriptPayload = () => ({ design: editor.design, scenes: scriptScenes() });
+const scriptApi = (id = editor.data.id, project = PROJECT) => `/api/p/${enc(project)}/scripts/${enc(id)}`;
+const scriptMediaBase = () => scriptApi() + "/";
+const mediaUrl = src => !src ? "" : /^https?:\/\//i.test(src) ? src : /^media\/[a-z0-9-]+\.(jpg|png|webp)$/.test(src) ? scriptMediaBase() + src : "";
+const scenePhoto = x => x.type === "image" && x.data.url ? x.data.url : x.image?.src || "";
 function timingLabel() {
   const total = scriptScenes().reduce((sum, x) => sum + x.duration, 0), target = editor.voice?.length_seconds;
   return total ? `${fmtTime(total)}${target ? ` of ${fmtTime(target)}` : ""}` : "";
@@ -1386,7 +1463,7 @@ function scriptTextChanged() {
   if (view.sideTab === "preview") debounce("script-preview", 500, () => { if (editor === view && route().id === view.data.id && view.sideTab === "preview") playerReload(view.design, scriptScenes()); });
 }
 
-const SCORE_LABELS = [["hook", "Hook"], ["clarity", "Clarity"], ["retention", "Retention"], ["specificity", "Specificity"], ["voice", "Voice"], ["accuracy", "Accuracy"]];
+const SCORE_LABELS = [["hook", "Hook"], ["clarity", "Clarity"], ["retention", "Retention"], ["specificity", "Specificity"], ["voice", "Voice"], ["natural", "Sounds human"], ["value", "Value"], ["accuracy", "Accuracy"]];
 function scriptSide() {
   const d = editor.data, open = openComments(d);
   const tabs = isPost() ? [] : [["preview", "Preview"], ["hooks", "Hooks"], ["quality", "Quality"], ["comments", "Comments"]];
@@ -1398,15 +1475,36 @@ function scriptSide() {
       ${d.stage === "published" ? `<div class="published"><input class="url-input" id="published-url" value="${esc(d.published_url)}" placeholder="Paste the published link" inputmode="url">
         <button class="btn small" data-action="save-url">Save</button></div>
         ${d.published_url ? `<a class="small-link" href="${safeUrl(d.published_url)}" target="_blank" rel="noopener noreferrer">${esc(shortUrl(d.published_url))}${icon("external")}</a>` : ""}` : ""}</section>
+    ${isPost() ? "" : `<section id="video-box">${videoBox()}</section>`}
     ${tabs.length ? `<div class="side-tabs" role="tablist">${tabs.map(([key, label]) => `<button type="button" role="tab" aria-selected="${tab === key}" class="${tab === key ? "on" : ""}" data-action="side-tab" data-id="${key}">${label}${badge[key] ? `<span class="n">${badge[key]}</span>` : ""}</button>`).join("")}</div>` : ""}
     <div id="side-panel">${({ preview: previewTab, hooks: hooksTab, quality: qualityTab, comments: commentsTab })[tab]()}</div>
     <section><button class="text-btn danger-text" data-action="delete-script" data-id="${esc(d.id)}">Delete script</button></section>`;
 }
 
+function videoBox() {
+  const v = editor.data.video;
+  if (!v) return "";
+  const url = scriptApi();
+  const pct = Math.round((v.progress || 0) * 100);
+  const placeholders = v.placeholders?.length ? `<p class="beat-warn">${esc(plural(v.placeholders.length, "beat"))} still ${v.placeholders.length === 1 ? "needs an image" : "need images"}: ${esc(v.placeholders.join(", "))}.</p>` : "";
+  let body;
+  if (v.status === "rendering") body = `<div class="render-bar"><i style="width:${pct}%"></i></div><p class="muted small">Rendering on this computer… ${pct}%. You can keep working.</p>`;
+  else if (v.ready) body = `<div class="video-ready"><img class="video-poster" src="${url}/poster.jpg?v=${esc(v.finished || "")}" alt="">
+      <div><a class="btn primary" href="${url}/video" download>${icon("download")}Download MP4</a>
+        <p class="muted small">${v.size ? `${(v.size / 1e6).toFixed(1)} MB · ` : ""}rendered ${esc(when(v.finished))}</p>
+        <button class="text-btn" data-action="render-video">${v.stale ? "Re-render with your changes" : "Render again"}</button></div></div>
+      ${v.stale ? `<p class="beat-warn">The script, images, or look changed since this render.</p>` : ""}`;
+  else body = `<button class="btn" data-action="render-video">${icon("film")}Render MP4</button><p class="muted small">Renders on this computer (Chrome + ffmpeg). It can take a few minutes.</p>`;
+  return `<h4>Video</h4>${v.status === "failed" && v.error ? `<p class="beat-warn">Last render failed: ${esc(v.error)}</p>` : ""}${body}${placeholders}`;
+}
+const updateVideoBox = () => { const box = document.getElementById("video-box"); if (box && editor) box.innerHTML = videoBox(); };
+
 function previewTab() {
   if (!editor.design) return `<p class="muted small">Couldn't load this channel's look.</p>`;
   return `<div class="device aspect-${esc((editor.design.aspect || "9:16").replace(":", "x"))}" id="script-player"></div>${playerBar()}
+    <h4 class="beats-head">Beats <span class="muted small">click to jump · add a photo to any beat</span></h4>
     <div class="beats" id="beat-list">${beatList()}</div>
+    ${mediaLibrary()}
     <a class="small-link" href="${channelHref(editor.data.channel, "look")}">${icon("palette")}Edit ${esc(channelLabel(editor.data.channel))}'s look</a>`;
 }
 
@@ -1418,9 +1516,61 @@ function beatList() {
   if (scenes.at(-1).type !== "end") warnings.push("The last beat isn't an end scene.");
   const total = scenes.reduce((sum, x) => sum + x.duration, 0), target = editor.voice?.length_seconds;
   if (target && Math.abs(total - target) > target * 0.10) warnings.push(`${fmtTime(total)} is ${total > target ? "over" : "under"} the ${fmtTime(target)} target.`);
-  return scenes.map((x, i) => `<button type="button" class="beat" data-action="seek-beat" data-id="${i}" data-beat-index="${i}">
-      <span class="beat-type">${esc(x.type)}</span><b>${esc(x.beat)}</b><span class="muted">${x.duration}s</span></button>`).join("")
+  return scenes.map((x, i) => {
+    const photo = mediaUrl(scenePhoto(x)), needs = x.type === "image" && !x.data.url && !x.image;
+    return `<div class="beat-row" data-beat-index="${i}"><button type="button" class="beat" data-action="seek-beat" data-id="${i}">
+        <span class="beat-type">${esc(x.type)}</span><b>${esc(x.beat)}</b><span class="muted">${x.duration}s</span></button>
+      ${photo ? `<span class="beat-thumb" style="background-image:url('${esc(photo)}')" title="${esc(x.image?.credit || x.data.credit || "")}"></span>
+        <button type="button" class="icon-btn" data-action="beat-image-remove" data-id="${i}" aria-label="Remove the photo from ${esc(x.beat)}" title="Remove photo">${icon("x")}</button>`
+        : `<button type="button" class="icon-btn ${needs ? "needs" : ""}" data-action="beat-image" data-id="${i}" aria-label="Add a photo to ${esc(x.beat)}" title="${needs ? "This beat needs an image" : "Add a photo behind this beat"}">${icon("image")}</button>`}</div>`;
+  }).join("")
     + warnings.map(w => `<p class="beat-warn">${esc(w)}</p>`).join("");
+}
+
+function mediaLibrary() {
+  const media = editor.data.media || [];
+  if (!media.length) return "";
+  return `<details class="media-lib"><summary>Images in this script (${media.length})</summary><div class="media-grid">${media.map(m => `<figure>
+      <span class="media-thumb" style="background-image:url('${esc(scriptMediaBase() + m.path)}')"></span>
+      <figcaption><code>${esc(m.path)}</code>${m.credit ? `<span>${esc(m.credit)}</span>` : ""}</figcaption>
+      <button class="icon-btn delete" data-action="delete-media" data-id="${esc(m.file)}" aria-label="Delete ${esc(m.file)}" title="Delete">${icon("trash")}</button></figure>`).join("")}</div></details>`;
+}
+
+// Add, replace, or remove one cue line (Image:, Source:, …) inside the i-th beat of a script.
+function setBeatCue(text, index, cue, value) {
+  const lines = String(text).replace(/\r\n?/g, "\n").split("\n");
+  const heads = lines.map((l, k) => /^##\s+/.test(l.trim()) ? k : -1).filter(k => k >= 0);
+  const start = heads[index];
+  if (start === undefined) return text;
+  const end = heads[index + 1] ?? lines.length;
+  const label = new RegExp(`^(?:[-*]\\s+)?[*_]{0,2}${cue}[*_]{0,2}\\s*:`, "i");
+  const at = lines.findIndex((l, k) => k > start && k < end && label.test(l.trim()));
+  const line = `${cue[0].toUpperCase()}${cue.slice(1)}: ${value}`;
+  if (value == null) { if (at >= 0) lines.splice(at, 1); }
+  else if (at >= 0) lines[at] = line;
+  else {
+    let after = lines.findIndex((l, k) => k > start && k < end && /^(?:[-*]\s+)?[*_]{0,2}visual[*_]{0,2}\s*:/i.test(l.trim()));
+    if (after < 0) { after = end - 1; while (after > start && !lines[after].trim()) after--; }
+    lines.splice(after + 1, 0, line);
+  }
+  return lines.join("\n");
+}
+async function editScriptText(change) {
+  const view = editor;
+  view.data.text = change(view.data.text);
+  const area = document.getElementById("doc-text");
+  if (area) area.value = view.data.text;
+  view.dirty = true;
+  await saveDoc();
+}
+const readDataUrl = file => new Promise((resolve, reject) => { const r = new FileReader(); r.onload = () => resolve(r.result); r.onerror = () => reject(r.error); r.readAsDataURL(file); });
+function pickImage() {
+  return new Promise(resolve => {
+    const input = Object.assign(document.createElement("input"), { type: "file", accept: "image/jpeg,image/png,image/webp" });
+    input.onchange = () => resolve(input.files[0] || null);
+    input.oncancel = () => resolve(null);
+    input.click();
+  });
 }
 
 function hooksTab() {
@@ -1438,7 +1588,7 @@ const reviewScore = v => typeof v === "number" && Number.isFinite(v) ? Math.max(
 const avgScore = review => { const v = Object.values(review.scores || {}).map(reviewScore).filter(v => v !== null); return v.length ? v.reduce((a, b) => a + b, 0) / v.length : 0; };
 function qualityTab() {
   const r = editor.data.review;
-  if (!r) return `<p class="muted small">Your agent scores each draft on six things (hook, clarity, retention, specificity, voice, accuracy) and revises until every one is 8 or more. The scores show up here.</p>`;
+  if (!r) return `<p class="muted small">Your agent scores each draft on eight things (hook, clarity, retention, specificity, voice, sounds human, value, accuracy) and revises until every one is 8 or more. The scores show up here.</p>`;
   return `<div class="score-head"><span class="score-big">${avgScore(r).toFixed(1)}</span><span class="muted small">average${r.at ? ` · reviewed ${esc(when(r.at))}` : ""}</span></div>
     ${SCORE_LABELS.map(([key, label]) => { const v = reviewScore(r.scores?.[key]); return `<div class="score-row"><span>${label}</span><span class="meter"><i class="${v < 8 ? "low" : ""}" style="width:${(v || 0) * 10}%"></i></span><b>${esc(v ?? "–")}</b></div>`; }).join("")}
     ${r.summary ? `<p class="review-summary">${esc(r.summary)}</p>` : ""}
@@ -1464,7 +1614,7 @@ function commentsTab() {
 
 // Beat scripts: Visual, Text, and Note lines show as cues under the spoken lines, not as more voiceover.
 function scriptMarkdown(src) {
-  return markdown(src).replace(/(^|<br>|<p>)\s*(?:<em>|<strong>)?(Visual|Text|Note)(?:<\/em>|<\/strong>)?\s*:\s*(?:<\/em>|<\/strong>)?\s*(.*?)(?=<br>|<\/p>)/gi,
+  return markdown(src).replace(/(^|<br>|<p>)\s*(?:<em>|<strong>)?(Visual|Text|Note|Image|Source|Duration)(?:<\/em>|<\/strong>)?\s*:\s*(?:<\/em>|<\/strong>)?\s*(.*?)(?=<br>|<\/p>)/gi,
     (_, lead, label, rest) => `${lead}<span class="cue cue-${label.toLowerCase()}"><b>${label}</b>${rest}</span>`);
 }
 
@@ -1531,6 +1681,12 @@ function markdown(src) {
       const code = []; i++;
       while (i < lines.length && !/^```/.test(lines[i])) code.push(lines[i++]);
       i++; out.push(`<pre><code>${esc(code.join("\n"))}</code></pre>`);
+    } else if (/^\s*<!--/.test(line)) {
+      while (i < lines.length && !lines[i].includes("-->")) i++;
+      if (i < lines.length) {
+        const rest = lines[i].slice(lines[i].indexOf("-->") + 3);
+        if (rest.trim()) lines[i] = rest; else i++;
+      }
     } else if ((m = line.match(/^(#{1,6})\s+(.*?)\s*#*\s*$/))) {
       out.push(`<h${m[1].length}>${inline(m[2])}</h${m[1].length}>`); i++;
     } else if (rule.test(line)) {
@@ -1619,7 +1775,7 @@ async function updateMeta(changes) {
 async function reloadComments() {
   const view = editor, project = PROJECT;
   const fresh = await api("GET", `p/${enc(project)}/${EDITORS.script.path(view.data.id)}`);
-  view.data.comments = fresh.comments;
+  for (const key of ["comments", "media", "video"]) view.data[key] = fresh[key];
   if (editor === view && PROJECT === project) { await refresh(true); if (editor === view) rerender(); }
 }
 
@@ -1855,6 +2011,7 @@ const actions = {
   "new-channel"() { channelDialog(); },
   "set-design"(value, el) {
     const path = el.dataset.path;
+    if (value === "true" || value === "false") value = value === "true";
     setPath(CV.design, path, value);
     el.parentElement.querySelectorAll("button").forEach(b => b.classList.toggle("on", b === el));
     if (path === "aspect") { const device = document.getElementById("look-player"); device.className = `device aspect-${value.replace(":", "x")}`; }
@@ -1919,6 +2076,41 @@ const actions = {
   },
   "player-toggle"() { playerSend({ type: PLAYER.playing ? "pause" : "play" }); },
   "seek-beat"(index) { playerSend({ type: "seekScene", index: Number(index) }); },
+  async "beat-image"(index) {
+    const view = editor, project = PROJECT, file = await pickImage();
+    if (!file || editor !== view || PROJECT !== project) return;
+    if (file.size > 15e6) return toast("Images must be under 15 MB", "error");
+    try {
+      const data = await readDataUrl(file);
+      if (editor !== view || PROJECT !== project) return;
+      const item = await api("POST", `p/${enc(project)}/scripts/${enc(view.data.id)}/media`, { name: file.name, data });
+      if (editor !== view || PROJECT !== project) return;
+      await editScriptText(text => setBeatCue(text, Number(index), "image", item.path));
+    } catch (e) { toast(e.message, "error"); }
+  },
+  async "beat-image-remove"(index) {
+    const view = editor, scene = scriptScenes()[Number(index)];
+    if (!scene) return;
+    if (scene.image) await editScriptText(text => setBeatCue(text, Number(index), "image", null));
+    else if (scene.type === "image") toast("This beat is an image scene: change its Visual: line to swap the photo", "error");
+    if (editor === view) rerender();
+  },
+  async "delete-media"(file) {
+    const view = editor;
+    const used = scriptScenes().some(x => scenePhoto(x) === `media/${file}`);
+    if (used && !confirm(`media/${file} is used in the script. Delete it anyway?`)) return;
+    try { await api("DELETE", `p/${enc(PROJECT)}/scripts/${enc(view.data.id)}/media/${enc(file)}`); await reloadComments(); }
+    catch (e) { toast(e.message, "error"); }
+  },
+  async "render-video"() {
+    const view = editor, project = PROJECT;
+    if (view.dirty && !(await saveDoc())) return;
+    if (editor !== view || PROJECT !== project) return;
+    try {
+      view.data.video = await api("POST", `p/${enc(project)}/scripts/${enc(view.data.id)}/render`, {});
+      if (editor === view && PROJECT === project) updateVideoBox();
+    } catch (e) { toast(e.message, "error"); }
+  },
   "side-tab"(key) { editor.sideTab = key; rerender(); },
   async "choose-angle"(id) {
     const view = editor, project = PROJECT;
@@ -2153,11 +2345,12 @@ async function poll() {
           else { view.data = remote; changed = true; toast("Updated by your agent"); }
         }
         if (view.kind === "script") {
-          const metadata = ["comments", "angles", "review"];
+          const metadata = ["comments", "angles", "review", "media"];
           if (JSON.stringify(metadata.map(k => remote[k])) !== JSON.stringify(metadata.map(k => view.data[k]))) {
             for (const key of metadata) view.data[key] = remote[key];
             changed = true;
           }
+          if (JSON.stringify(remote.video) !== JSON.stringify(view.data.video)) { view.data.video = remote.video; if (!changed) updateVideoBox(); }
           if (!isPost()) {
             const id = enc(view.data.channel);
             const [design, voice] = await Promise.all([api("GET", `channels/${id}/design`), api("GET", `channels/${id}/voice`)]);

@@ -281,3 +281,39 @@ test('an invalid production owner never falls back to a valid project with the s
   assert.match(h.nodes.get('app').innerHTML, /Project not found/);
   assert.deepEqual(calls,['production','production']);
 });
+
+test('photos added from the beat list edit only that beat, and parse back as its image', () => {
+  const h = harness();
+  const text = '# Title\n## Hook\nSpoken.\nVisual: stat | 5% | Rate\nSource: RBI\n\n## Second\nMore words.\n- **Image:** media/old.jpg | Photo: Old\n## Third\nNo visual here.\n\n';
+  h.context.text = text;
+  const added = h.run('setBeatCue(text, 0, "image", "media/new.jpg")');
+  assert.match(added, /Visual: stat \| 5% \| Rate\nImage: media\/new\.jpg\nSource: RBI/);
+  assert.deepEqual(JSON.parse(h.run(`JSON.stringify(parseScenes(${JSON.stringify(added)}).map(s => s.image?.src || null))`)), ['media/new.jpg', 'media/old.jpg', null]);
+  const replaced = h.run('setBeatCue(text, 1, "image", "media/x.png")');
+  assert.ok(replaced.includes('Image: media/x.png') && !replaced.includes('old.jpg'));
+  assert.match(h.run('setBeatCue(text, 2, "image", "media/y.png")'), /No visual here\.\nImage: media\/y\.png\n\n$/);
+  assert.equal(h.run('setBeatCue(text, 1, "image", null)').includes('Image:'), false);
+  assert.equal(h.run('setBeatCue(text, 7, "image", "media/z.png")'), text);
+  h.run('editor = { data: { id: "s" } }');
+  assert.equal(h.run('mediaUrl("media/a-b.jpg")'), '/api/p/p/scripts/s/media/a-b.jpg');
+  assert.equal(h.run('mediaUrl("https://e.com/x.jpg")'), 'https://e.com/x.jpg');
+  for (const bad of ['javascript:alert(1)', 'media/../script.json', '/etc/passwd', 'media/x.svg']) assert.equal(h.run(`mediaUrl(${JSON.stringify(bad)})`), '');
+});
+
+test('render cannot move to another project while saving a dirty script', async () => {
+  const h = harness(), calls = [];
+  h.run('editor = { data: { id: "same", video: {} }, project: "p", dirty: true };');
+  h.context.write = async (method, path) => { calls.push(path); return {}; };
+  h.run('api = write; saveDoc = async () => { PROJECT = "other"; editor = {data:{id:"same"}}; return true; };');
+  await h.run('actions["render-video"]()');
+  assert.deepEqual(calls, []);
+});
+
+test('script preview hides planning comments while keeping comments inside code visible', () => {
+  const h = harness();
+  h.context.source = '<!--\nPrivate planning notes\n-->\n## Hook\nSpoken line.\n```html\n<!-- literal code -->\n```';
+  const rendered = h.run('scriptMarkdown(source)');
+  assert.ok(!rendered.includes('Private planning notes'));
+  assert.match(rendered, /<h2>Hook<\/h2>/);
+  assert.match(rendered, /&lt;!-- literal code --&gt;/);
+});

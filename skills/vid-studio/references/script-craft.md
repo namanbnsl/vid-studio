@@ -1,6 +1,6 @@
 # Script craft
 
-The bar: someone who never planned to watch stays to the end, learns one thing they repeat to a friend, and every claim survives a fact-check. Generic is the failure mode. **If a line could appear in a video about a different topic, cut it.**
+The bar: someone who never planned to watch stays to the end, learns one thing they repeat to a friend, and every claim survives a fact-check. It sounds like a person who knows the subject, not like a model, and even a viewer who suspects otherwise feels the minute was worth it. Generic is the failure mode. **If a line could appear in a video about a different topic, cut it.**
 
 The finished examples in `assets/examples/` show that bar: `english-60s.md`, `hinglish-60s.md`, `hindi-45s.md`. Read the one closest to the channel's language before your first draft.
 
@@ -17,11 +17,14 @@ Do these in order, for every script. Don't skip steps because the topic seems si
      {"hook": "PhonePe में आपका पैसा रखा कहाँ है? कहीं नहीं.", "angle": "Question: apps don't hold money; banks do, and NPCI connects them.", "why": "Good curiosity, but the stakes for the viewer come late.", "chosen": false}
    ]}
    ```
-4. **Outline.** Map beats onto the channel's `format`. Budget the words: `length_seconds × words_per_minute ÷ 60` (60 s at 160 wpm = 160 words). The hook gets ≤ 12 words, each beat one idea and one visual, and no beat runs over ~15 s.
-5. **Draft** in the scenes.md format (§5–§6).
-6. **Time it** with `studio.py scenes --script ID`. Get within ±10% of `length_seconds` and fix every warning. To cut, remove whole ideas, not articles and connectives.
-7. **Score it** against the rubric (§10). Fix the lowest score first, re-time, and score again. Keep going until every score is ≥ 8. If one can't get there (for example, the notes have no number that would make the stakes concrete), say why and what would fix it.
-8. **Save the review** with `studio.py review --script ID --file -`.
+4. **Talk it through.** Write the story as 4–6 plain, connected sentences, the way you'd explain it to a friend (§5). This is the spine of the script, and it's where the value is decided (the value test, §5).
+5. **Outline.** Map the spine onto the channel's `format`. Budget the words: `length_seconds × words_per_minute ÷ 60` (60 s at 160 wpm = 160 words). The hook gets ≤ 12 words, each beat one idea and one visual, and no beat runs over ~15 s.
+6. **Draft** in the scenes.md format (§5–§6).
+7. **Add pictures and sources.** Give the beats about real things (a product, a place, a document, a person's role) a photo, following [images.md](images.md), and add a `Source:` line to beats that state a fact from the notes (§6).
+8. **Time it** with `studio.py scenes --script ID`. Get within ±10% of `length_seconds` and fix every warning. To cut, remove whole ideas, not articles and connectives.
+9. **Read it aloud and remove the machine.** Go line by line through the table in §5 and §9 and rewrite every match.
+10. **Score it** against the rubric (§10). Fix the lowest score first, re-time, and score again. Keep going until every score is ≥ 8. If one can't get there (for example, the notes have no number that would make the stakes concrete), say why and what would fix it.
+11. **Save the review** with `studio.py review --script ID --file -`.
 
 ## 2. The angle
 
@@ -74,34 +77,67 @@ A `story` hook needs a real person or case from the notes, or it must be openly 
 
 Viewers leave when they stop wanting the next sentence. Structure the script so there is always something they're waiting for.
 
-- **Open a loop and close it late.** The hook raises a question, and the payoff answers it near the end, not in beat two. In `english-60s.md`, "why do the last ten years out-earn the first twenty?" is answered piece by piece and finally landed by "Quit early, and you miss the steep part."
+- **Open a loop and close it late.** The hook raises a question, and the payoff answers it near the end, not in beat two. In `english-60s.md`, "why would the last ten years earn more than the first twenty?" is answered piece by piece and finally landed by "the money hasn't hit the steep part yet."
 - **Re-hook every 8–12 seconds** (about 20–30 words). A re-hook is a turn. Vary the move:
-  - the catch: "Honest catch: twelve percent is an example, not a promise."
+  - the catch: "But this fifty percent is Jaquar's own number. Nobody has tested it yet."
   - the next question: "Bank पैसा निकालने से पहले पूछता है: ये आप ही हो?"
-  - a reveal: "Year thirty, the same twelve percent adds over three lakh."
+  - a reveal: "By year thirty, that same twelve percent adds over three lakh in a single year."
   - an escalation: "QR में भी यही trick है."
   - a shift to "you": "पैसे चले गए? तुरंत 1930 पर call करो."
 - **One idea per beat.** If a beat says "and also", split it. Each new beat is a new scene, so splitting gives you a visual change for free.
 - **Make the stakes concrete for the viewer.** "Your finances" is abstract; "your ₹12,000 a month" is not. "Fraud is rising" is a statistic; "पैसे आने की जगह account से निकल गए" is a gut punch.
-- **Tie pattern interrupts to visual changes.** Change the scene type at least every two beats. After two long sentences, drop in a 2–4 word one ("Slow, then sudden."). Move from an abstract point to a number, or from a number to a "you".
+- **Tie pattern interrupts to visual changes.** Change the scene type at least every two beats. A photo after two charts, or a chart after a photo, resets attention. Move from an abstract point to a number, or from a number to a "you".
 - **End on the payoff, not a summary.** The last line answers the opening question in a form people would repeat.
   - Summary (bad): "So that's how compounding works: returns on returns, the Rule of 72, and starting early."
-  - Payoff (good): "So the boring early years aren't wasted. They're the runway. Quit early, and you miss the steep part."
-- **Make Shorts and Reels loop.** Write the last spoken line so it runs back into the first: "Because your money's best decade is its last." → "Your money's last ten years can out-earn its first twenty." Add a `Note:` so the editor knows.
+  - Payoff (good): "So if you're thinking of stopping your SIP after a few dull years, remember the money hasn't hit the steep part yet."
+- **Make Shorts and Reels loop.** Write the last spoken line so it runs back into the first: "Which is why your money's best decade is usually its last." → "Your money earns more in its last ten years than in its first twenty." Add a `Note:` so the editor knows.
 - **Use one CTA, specific and short, after the payoff.** "ये Reel उसे भेजो जो हर refund approve कर देता है" beats "like, share and subscribe".
 
-## 5. Writing for the ear
+## 5. Sound like a person
 
-The voiceover is heard once, at speed, often with half the viewer's attention. Write it to be said.
+The voiceover is heard once, at speed, often with half the viewer's attention. It has to sound like one person explaining something they understand to one friend. Most AI scripts fail here, not on facts: they're written as a string of slogans, and viewers hear it within two lines.
 
-- Keep sentences under 15 words, and most under 10. Use one clause and put the verb early.
-- Use contractions: it's, you'll, don't, that's.
-- Cut written-only devices: parentheses, semicolons, "respectively", "the former", "e.g.", and long lists inside a sentence.
-- Vary the rhythm. Use a long sentence, then a short one, and fragments where they work ("Same one lakh. Same rate."). Deliberate repetition is rhythm, not redundancy.
-- **Read every line aloud at speaking speed.** Rewrite anything you stumble on, need a breath in the middle of, or that sounds like a press release.
+**Draft by talking it through.** Before writing beats, explain the story out loud (or in plain prose) the way you'd tell a friend over chai, in 4–6 sentences: what happened, why it works that way, what it means for them. That paragraph is the spine. Then cut it into beats and tighten it. Don't write beat by beat from a blank page; that's what produces disconnected one-liners.
+
+- **Connect the sentences.** People explain with links: "so", "because", "which means", "that's why", "but", "and then". Each sentence should lead into the next. If you could shuffle the sentences in a beat without anyone noticing, they aren't connected.
+- **Mostly full sentences, 8–16 words.** Use one clause and put the verb early. Short sentences are for emphasis, so they only work when they're rare: at most one or two in the whole script.
+- **Use contractions and plain words:** it's, you'll, don't, that's; "use" not "utilize", "about" not "approximately".
+- **Cut written-only devices:** parentheses, semicolons, "respectively", "the former", "e.g.", and lists of more than three things inside a sentence.
+- **Say it like you'd say it.** Asides and small reactions are human ("which, honestly, surprised me", "हाँ, ये भी गिनती में आता है"). One or two per script, in the persona's voice.
+- **Read every line aloud at speaking speed.** Rewrite anything you stumble on, need a breath in the middle of, or that sounds like a press release, a LinkedIn post, or a trailer.
+
+### What makes a script sound machine-made
+
+These patterns are the giveaway, even when every word is true. Find them in your draft and rewrite them.
+
+| Pattern | Sounds like | Say instead |
+|---|---|---|
+| Fragment chains | "Same money. Same rate. Only time changed." | "You put in the same lakh at the same rate. The only thing that changes is how long it sits there." |
+| Setup-reveal crutches | "Here's why." "Here's the catch." "The result?" "The kicker?" "Plot twist:" | Just say the reason, the catch, or the result, joined to what came before: "But this 50% is the company's own number." |
+| "Not X. It's Y." reframes | "It's not a tap. It's a water meter." | Say what it is and why that matters. |
+| A slogan at the end of every beat | "Slow, then sudden." "That's the runway." "Simple." | At most one quotable line per script, where it lands the payoff. |
+| Rhetorical question, instant answer | "So what does this mean? It means…" | Make the point. Real questions are fine when the script answers them later. |
+| Threes everywhere | "Fast, cheap, and reliable." "Brush, rinse, repeat." | Use the one or two things that matter. |
+| Every line the same length and shape | Seven-word sentence, seven-word sentence, seven-word sentence. | Vary it: a longer explaining sentence, then a short one. |
+| Labels instead of speech | "Honest catch: twelve percent is an example." | "Twelve percent here is just an example, not a promise." |
+| Empty intensity | "This changes everything." "Let that sink in." "Read that again." | Show the number or the consequence, and let it do the work. |
+
+Before (machine): "Here's why. You earn returns on your returns. Year one? Twelve thousand. Year thirty? Over three lakh. Slow, then sudden."
+After (person): "That's because each year's return joins the pile, and next year's twelve percent is worked out on the bigger pile. In year one that's twelve thousand rupees. By year thirty it's over three lakh, in a single year."
 
 Before: "Compound interest, which refers to the process whereby interest is earned on both the principal and previously accumulated interest, can significantly enhance long-term wealth creation."
-After: "You earn returns on your returns. Year one, twelve percent of one lakh is twelve thousand."
+After: "You earn returns on your returns. In year one, twelve percent of one lakh is twelve thousand."
+
+### The value test
+
+A viewer who suspects a video is AI keeps watching only if it's worth their time. Before you score, check that the script gives them at least one of these, stated plainly, not hinted at:
+
+- **A number they didn't know** that changes how they see it ("the 50% saving is the maker's own figure; nobody has tested it").
+- **How or why something works**, explained so they could explain it to someone else.
+- **A decision rule or a check** they can use ("put it on the tap that runs the most"; "if you have to enter your PIN, you're paying").
+- **What to do next**, with the real name, number, date, or link ("call 1930", "from 1 November").
+
+Then ask: if someone watched with the sound off, reading only the captions and the screen, would they still get it? And would a person who knows this field nod along, or wince?
 
 ### Numbers, said the way people say them
 
@@ -161,11 +197,13 @@ After: "पचास परसेंट ज़रूरतों के लि�
 | `timeline` | 2–5 dated events | News context. Keep it to the dates that matter. |
 | `quote` | A real quote from the notes, with its source | An official saying it beats you saying it. Never paraphrase inside quote marks. |
 | `text` | A punchline, a myth, the rule, the takeaway (≤ 8 words) | The line someone would screenshot. |
-| `image` | A real screenshot, photo, or clip | Describe it precisely enough for an editor to find: "Phone screen showing a UPI collect request with 'Approve'", not "money concept". |
+| `image` | A photo or screenshot, full-screen | For a beat where seeing the thing *is* the point: the product, the place, the screen. Get the image with [images.md](images.md); describe it precisely ("Phone screen showing a UPI collect request with 'Approve'"), not "money concept". |
 | `title` | A section break in longer videos | Never as the hook. |
 | `end` | Always the last beat | The title is the takeaway or the series name; the `cta` is one action. |
 
 - **One `Visual:` per beat.** Two visuals means two beats.
+- **Put real things on screen.** A beat about a product, a place, an institution, or a document gets an `Image:` line: the photo fills the screen behind that beat's scene and drifts slowly. Two or three photos in a 60-second script make it feel produced instead of templated. Beats about pure numbers or ideas are better without one. See [images.md](images.md) for where photos come from.
+- **Show where facts come from.** A beat that states a fact from the notes gets a `Source:` line with the short name of its source ("RBI circular, 1 Oct 2026", "Jaquar"). It shows small on screen; it's the cheapest trust you can buy.
 - **Change the scene type at least every two beats.** A deliberate series (`stat` 50% → `stat` 30% → `stat` 20%) is fine; three unrelated `text` scenes in a row is not.
 - **Add a `Text:` overlay only when it brings something the visual lacks:** a twist, a label, a name ("Refund नहीं, collect request"). If it repeats the VO or the visual, delete it.
 - **In `bars` and `compare`, write every value in the same unit.** The player animates the bare number, so "₹12,000" vs "₹3.2 lakh" draws 12,000 against 3.2. Write "₹3,21,000", or put the unit in the title ("₹ lakh").
@@ -249,7 +287,7 @@ These phrases mark a script as machine-made or lazy. Don't use them, even "ironi
 | "बहुत ही ज़्यादा important है" | Show why with a number or a consequence. |
 | "उम्मीद है आपको ये जानकारी पसंद आई होगी" / "चैनल को subscribe करना न भूलें" | End on the payoff and one CTA. |
 
-Watch for these patterns too: three-adjective lists ("fast, secure, and convenient"), every sentence opening with "So" or "And", a run of rhetorical questions each answered by "The answer? …", em-dash pile-ups, and "Imagine…" openers.
+Also see the table of machine-made patterns in §5. Watch for these too: three-adjective lists ("fast, secure, and convenient"), every sentence opening with "So" or "And", a run of rhetorical questions each answered by "The answer? …", em-dash pile-ups, and "Imagine…" openers.
 
 ## 10. The rubric
 
@@ -262,6 +300,8 @@ Score each dimension as an integer from 1 to 10. The anchors below define 3, 6, 
 | **retention** | Front-loaded. A flat middle, and it ends on a summary. | Some turns, but a stretch of 15 s or more with no new question or visual change, and a weak ending. | A re-hook every ~8–12 s, the open loop paid off at the end, a new visual each beat, a payoff ending. | Every beat raises the next question. It loops, and no beat could be dropped. |
 | **specificity** | Abstractions: "significant", "experts say", "many people". | Some numbers, but generic examples and abstract stakes. | Every beat has a concrete number, name, date, place, or image from the notes. The stakes are in the viewer's terms. | So specific it could only be about this story. |
 | **voice** | Generic AI voice, banned phrases, wrong language or script rules. | The right language and roughly the right tone, but lines that read as written, not said. Stiff Hindi, or a missed `do`/`dont`. | Sounds like the persona saying it aloud. Sliders, `do`/`dont`, and `open`/`close`/`cta` applied. Reads aloud without a stumble. | Indistinguishable from the channel's best `examples`. |
+| **natural** | Reads like a model: fragment chains, "Here's why", a slogan per beat, labels like "Honest catch:". | Mostly connected speech, but a few §5 patterns remain, or every line has the same shape. | No §5 or §9 patterns. Sentences connect, the rhythm varies, and it sounds like one person talking to one friend. | You couldn't tell it from the channel's best human-made video. |
+| **value** | The viewer learns nothing they couldn't guess from the title. | One useful fact, but no mechanism, decision rule, or next step. | Passes the value test (§5): a non-obvious number, a mechanism, or a rule or action the viewer can use, stated plainly. | Something the viewer will act on or repeat, and they'd feel the minute was well spent even if they suspected AI. |
 | **accuracy** | Claims not in the notes, or wrong. | Everything is in the notes, but some lines are uncited or overstated (certainty, causation). | Every factual line cited, numbers match the notes, uncertainty framed honestly, illustrative numbers labelled. | All of 8, plus caveats that make the video more trustworthy without slowing it down. |
 
 **The bar is ≥ 8 on every dimension before you save.** Accuracy below 8 is never acceptable: fix it, don't explain it. If another score can't reach 8, say exactly why in `notes` and the summary, and what would fix it (for example, "the notes have no figure for how many users this affects; research NPCI monthly data").
@@ -269,12 +309,14 @@ Score each dimension as an integer from 1 to 10. The anchors below define 3, 6, 
 **Score honestly.** The review is for the user: it tells them whether to trust the draft and where to look. Score as a skeptical editor who didn't write it. First drafts usually land at 5–7. A 9 or 10 needs a reason in `notes`. Inflated scores are a failure, worse than a low score, because they hide the problems. Each note names a beat and a problem; "could be punchier" is not a note.
 
 ```json
-{"scores": {"hook": 9, "clarity": 8, "retention": 8, "specificity": 8, "voice": 8, "accuracy": 9},
+{"scores": {"hook": 9, "clarity": 8, "retention": 8, "specificity": 8, "voice": 8, "natural": 8, "value": 9, "accuracy": 9},
  "summary": "Myth-bust hook, mechanism in two beats, 1930 helpline as the action. 62 s against a 60 s target.",
  "notes": ["Hook: 6 words, flips a common belief; the screen shows the consequence, not the VO.",
            "Retention: 'If it happens' doesn't raise a new question; acceptable because it's the action step.",
            "Accuracy: the app→NPCI→bank flow is simplified (PSP banks omitted); fine for this audience, cited [1].",
-           "Voice: आप with करो throughout, matching the elder-sibling persona; no banned phrases."]}
+           "Voice: आप with करो throughout, matching the elder-sibling persona; no banned phrases.",
+           "Natural: rewrote 'PIN = signature' from three fragments into two connected sentences.",
+           "Value: the rule 'if you have to do something to receive money, stop' is usable on the spot; 9."]}
 ```
 
 ## 11. Text posts (`kind: post`)
