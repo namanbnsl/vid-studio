@@ -14,22 +14,27 @@ Sources: [1] NPCI, UPI FAQs, https://www.npci.org.in/what-we-do/upi/faqs. [2] NP
 Visual: text | पैसे लेने में PIN नहीं लगता
 
 ## Stakes
-Refund का झाँसा इसी confusion पर चलता है. [2] "Sir, refund भेज दिया है, बस approve करके PIN डाल दो", लेकिन ये collect request है: approve करने पर पैसे आपके account से निकलते हैं.
+Refund का झाँसा इसी confusion पर चलता है. [2] Call आता है: "Sir, refund भेज दिया है, बस approve करके PIN डाल दो."
 Visual: image | Phone screen showing a UPI collect request with "Approve" and a PIN prompt
-Text: Refund नहीं, collect request
+Text: "बस approve कर दो"
+Source: NPCI, Fraud Awareness
+
+## The trap
+पर असल में वो collect request होती है, और approve करते ही पैसे आपके account से निकल जाते हैं. [2]
+Visual: compare | Approve करने पर | वो कहते हैं: पैसे आएँगे | असल में: पैसे जाएँगे
 Source: NPCI, Fraud Awareness
 
 ## How it moves
-Bank-to-bank UPI में पैसा आपके bank में होता है. [1] App बस remote है, जो NPCI के ज़रिए bank को बताता है कि पैसा कहाँ भेजना है.
+Bank-to-bank UPI में पैसा आपके bank में होता है. [1] App बस NPCI के ज़रिए bank को बताता है कि पैसा कहाँ भेजना है.
 Visual: list | Payment का रास्ता | आपका app | NPCI | आपका bank | उनका bank
 Source: NPCI, UPI product overview
 
 ## PIN = signature
 Bank पैसा निकालने से पहले पूछता है कि ये आप ही हो, और PIN उसका जवाब है. [1] जैसे cheque पर signature देने वाला करता है, लेने वाला नहीं.
-Visual: list | PIN कब लगता है | भेजना: हाँ | लेना: कभी नहीं
+Visual: compare | Cheque पर signature | देने वाला: करता है | लेने वाला: नहीं करता
 
 ## QR trap
-QR में भी यही trick है, क्योंकि scan करके PIN डालना मतलब payment करना. [2] जो बोले पैसे लेने के लिए scan करो, वो देने नहीं आया.
+QR में भी यही trick है: scan करके PIN डाला, मतलब payment किया. [2] जो बोले पैसे लेने के लिए scan करो, वो देने नहीं आया.
 Visual: image | Hand scanning a printed QR code with a phone
 Text: Scan + PIN = Pay
 
@@ -40,8 +45,8 @@ Source: National Cyber Crime Reporting Portal
 
 ## Payoff
 PIN balance check में भी लगता है, पर पैसे लेने में कभी नहीं. Refund के नाम पर PIN माँगे, तो रुक जाओ. [1]
-Visual: text | पैसे आने में PIN नहीं लगता
+Visual: compare | UPI PIN कब लगता है | भेजना, balance check: हाँ | पैसे लेना: कभी नहीं
 
 ## End
 ये Reel उसे भेजो जो हर refund approve कर देता है.
-Visual: end | पैसे लेने में PIN नहीं लगता | Share करो, किसी को बचाओ
+Visual: end | Refund के लिए PIN? रुक जाओ | Share करो, किसी को बचाओ

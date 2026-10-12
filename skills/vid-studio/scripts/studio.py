@@ -1266,6 +1266,46 @@ def total_duration(scenes: list[dict]) -> float:
     return round(sum(scene["duration"] for scene in scenes), 1)
 
 
+UNIT_HINT = re.compile(r"[\d%₹$€£]|index|score|points|rank|rating|lakh|crore|litre|liter|kg|km|hour|minute|day|month|year|"
+                       r"रुपये|लाख|करोड़|लीटर|साल|महीने|घंटे|मिनट|दिन", re.I)
+
+
+def scene_warnings(scenes: list[dict]) -> list[str]:
+    """On-screen problems that make a video look generated: repeated lines, slogan runs, charts without meaning."""
+    warnings, seen = [], {}
+    for scene in scenes:
+        if scene["duration"] > 12:
+            warnings.append(f"{scene['beat']} runs over 12s ({scene['duration']:.1f}s); split it into smaller beats")
+        data, kind = scene["data"], scene["type"]
+        if word_count(scene["text"]) > 8 or (kind == "text" and word_count(data.get("text", "")) > 8):
+            warnings.append(f"{scene['beat']} has more than 8 words of on-screen text; shorten it")
+        # chart titles may repeat across a deliberate series; headline lines may not
+        headline = data.get("title", "") if kind in ("title", "end") else data.get("text", "") if kind == "text" else ""
+        for line in (scene["text"], headline):
+            key = re.sub(r"[^\w\s]", "", line.replace("*", "")).casefold().split()
+            if key:
+                first = seen.setdefault(" ".join(key), scene["beat"])
+                if first != scene["beat"]:
+                    warnings.append(f"{scene['beat']} repeats on-screen text from {first} (\"{clean_text(line.replace('*', ''), 40)}\"); show something new")
+        if kind in ("bars", "compare"):
+            values = [str(item.get("value", "")) for item in data.get("items", []) if isinstance(item, dict)]
+            numeric = [v for v in values if re.search(r"[\d\u0966-\u096F]", v)]
+            if kind == "bars" and len(numeric) < len(values):
+                warnings.append(f"{scene['beat']}: every bar needs a number; use a list for words")
+            elif kind == "compare" and 0 < len(numeric) < len(values):
+                warnings.append(f"{scene['beat']}: compare either two numbers or two short phrases, not one of each")
+            elif numeric and all(re.fullmatch(r"[\d.,\s]+", v) for v in values) and not UNIT_HINT.search(data.get("title", "")):
+                warnings.append(f"{scene['beat']}: the values have no unit; say what is measured (₹, %, litres, a named index) "
+                                "in the values or the title. Never chart a claim as invented numbers")
+    texts = [s["beat"] for s in scenes if s["type"] == "text"]
+    if len(texts) > 2:
+        warnings.append(f"{len(texts)} text scenes ({', '.join(texts)}): slogans on screen read as generated; "
+                        "keep at most two, and show a number, chart, list, or photo instead")
+    if not scenes or scenes[-1]["type"] != "end":
+        warnings.append("the last beat is missing an end scene")
+    return warnings
+
+
 def script_json(value) -> str:
     text = json.dumps(value, ensure_ascii=False, allow_nan=False)
     for char, escape in (("<", "\\u003c"), (">", "\\u003e"), ("&", "\\u0026"), ("\u2028", "\\u2028"), ("\u2029", "\\u2029")):
@@ -1695,13 +1735,8 @@ def cmd_scenes(ws: Path, args) -> None:
         print(f"{i}. {scene['beat']} · {scene['type']} · {scene['duration']:.1f}s · {clean_text(scene['vo'], 60)}")
     target = voice["length_seconds"]
     print(f"Total {script['duration']:.1f}s (target {target:g}s)")
-    for scene in scenes:
-        if scene["duration"] > 12:
-            print(f"Warning: {scene['beat']} runs over 12s ({scene['duration']:.1f}s); split it into smaller beats")
-        if word_count(scene["text"]) > 8 or (scene["type"] == "text" and word_count(scene["data"]["text"]) > 8):
-            print(f"Warning: {scene['beat']} has more than 8 words of on-screen text; shorten it")
-    if not scenes or scenes[-1]["type"] != "end":
-        print("Warning: the last beat is missing an end scene")
+    for warning in scene_warnings(scenes):
+        print(f"Warning: {warning}")
     if abs(script["duration"] - target) > target * 0.10:
         print("Warning: total duration is more than 10% off the channel's target")
 

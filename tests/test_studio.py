@@ -326,6 +326,52 @@ Visual: end | Follow | Subscribe
             with self.assertRaises(ValueError):
                 studio.parse_scenes(text, bad)
 
+    def test_scene_warnings_catch_generated_looking_screens(self):
+        warnings = studio.scene_warnings(studio.parse_scenes("""## Hook
+Line.
+Visual: text | Slow, then *sudden*
+## Claim
+Line.
+Visual: compare | पानी की खपत | आम नल: 100 | Sensor नल: 50
+## Words
+Line.
+Visual: bars | Access | Haiku: hosted | Mistral: 60%
+## Mixed
+Line.
+Visual: compare | Result | A: 43 | B: no valid improvement
+## Two
+Line.
+Visual: text | Another line
+## Three
+Line.
+Visual: text | A third line
+## End
+Visual: end | Slow, then sudden. | Follow
+"""))
+        joined = "\n".join(warnings)
+        self.assertIn("End repeats on-screen text from Hook", joined)
+        self.assertIn("Claim: the values have no unit", joined)
+        self.assertIn("Words: every bar needs a number", joined)
+        self.assertIn("Mixed: compare either two numbers or two short phrases", joined)
+        self.assertIn("3 text scenes (Hook, Two, Three)", joined)
+        self.assertEqual(len(warnings), 5)
+        clean = studio.parse_scenes("""## Series
+Line.
+Visual: compare | Intelligence Index | A: 43 | B: 38
+## Again
+Line.
+Visual: compare | Intelligence Index | A High: 38 | B: 38
+## Panels
+Line.
+Visual: compare | Approve करने पर | वो कहते हैं: पैसे आएँगे | असल में: पैसे जाएँगे
+## End
+Visual: end | Test the task you have | Follow
+""")
+        self.assertEqual(studio.scene_warnings(clean), [])
+        for name in ("english-60s", "hinglish-60s", "hindi-45s"):
+            example = (Path(studio.__file__).resolve().parents[1] / "assets" / "examples" / f"{name}.md").read_text(encoding="utf-8")
+            self.assertEqual(studio.scene_warnings(studio.parse_scenes(example)), [], name)
+
     def test_scene_pipe_fields_and_unknown_types(self):
         examples = {
             "title | A | B | C": ("title", {"title": "A", "subtitle": "B", "kicker": "C"}),

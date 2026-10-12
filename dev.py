@@ -58,17 +58,16 @@ def serve(home: Path, open_browser: bool) -> None:
 
 SENSOR_SCRIPT = """## Hook
 Jaquar के नए sensor नल ₹6,500 से शुरू होते हैं, और company कहती है कि इनसे आधा पानी बचता है. [1]
-Visual: stat | ₹6,500 | Jaquar sensor tap | starting price
+Visual: stat | ₹6,500 | Jaquar sensor नल | शुरुआती क़ीमत
 Source: Jaquar, October 2026
 
 ## How it saves
-तरीका सीधा है. हाथ नीचे लाओ तो पानी चलता है, हटाओ तो बंद. Brush करते वक़्त जो पानी यूँ ही बहता रहता है, वही बचता है.
+तरीका सीधा है: हाथ नीचे आते ही पानी चलता है और हटते ही बंद हो जाता है. Brush करते वक़्त जो पानी यूँ ही बहता रहता है, वही बचता है.
 Visual: list | पानी कहाँ बचता है | Brush करते वक़्त | बर्तन धोते वक़्त | साबुन लगाते वक़्त
 
 ## The catch
-लेकिन ये 50 percent वाला आँकड़ा Jaquar का अपना है. किसी independent lab ने अभी तक इसे test नहीं किया. [1]
-Visual: compare | पानी की खपत | आम नल: 100 | Sensor नल: 50
-Text: Company का दावा
+लेकिन ये 50 percent वाला आँकड़ा Jaquar का अपना है, और किसी independent lab ने अभी तक इसे test नहीं किया. [1]
+Visual: stat | 50% | पानी की बचत | Jaquar का दावा, independent test नहीं
 Source: Jaquar press release
 
 ## Where it pays
@@ -77,7 +76,7 @@ Visual: image | Kitchen sink with a sensor tap, water running
 
 ## End
 घर की ऐसी ही काम की बातें, रोज़ Pipe Gyaan पर.
-Visual: end | पानी बचाओ, पैसा भी | Follow @pipegyaan
+Visual: end | सबसे ज़्यादा चलने वाले नल से शुरू करो | Follow @pipegyaan
 """
 
 

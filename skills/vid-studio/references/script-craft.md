@@ -21,7 +21,7 @@ Do these in order, for every script. Don't skip steps because the topic seems si
 5. **Outline.** Map the spine onto the channel's `format`. Budget the words: `length_seconds × words_per_minute ÷ 60` (60 s at 160 wpm = 160 words). The hook gets ≤ 12 words, each beat one idea and one visual, and no beat runs over ~15 s.
 6. **Draft** in the scenes.md format (§5–§6).
 7. **Add pictures and sources.** Give the beats about real things (a product, a place, a document, a person's role) a photo, following [images.md](images.md), and add a `Source:` line to beats that state a fact from the notes (§6).
-8. **Time it** with `studio.py scenes --script ID`. Get within ±10% of `length_seconds` and fix every warning. To cut, remove whole ideas, not articles and connectives.
+8. **Time it** with `studio.py scenes --script ID`. Get within ±10% of `length_seconds` and fix every warning, including the on-screen ones (§6). To cut, remove whole ideas, not articles and connectives.
 9. **Read it aloud and remove the machine.** Go line by line through the table in §5 and §9 and rewrite every match.
 10. **Score it** against the rubric (§10). Fix the lowest score first, re-time, and score again. Keep going until every score is ≥ 8. If one can't get there (for example, the notes have no number that would make the stakes concrete), say why and what would fix it.
 11. **Save the review** with `studio.py review --script ID --file -`.
@@ -77,7 +77,7 @@ A `story` hook needs a real person or case from the notes, or it must be openly 
 
 Viewers leave when they stop wanting the next sentence. Structure the script so there is always something they're waiting for.
 
-- **Open a loop and close it late.** The hook raises a question, and the payoff answers it near the end, not in beat two. In `english-60s.md`, "why would the last ten years earn more than the first twenty?" is answered piece by piece and finally landed by "the money hasn't hit the steep part yet."
+- **Open a loop and close it late.** The hook raises a question, and the payoff answers it near the end, not in beat two. In `english-60s.md`, "why would the last ten years earn more than the first twenty?" is answered piece by piece (returns join the pile, the doublings get bigger) and landed by the last line: "the best decade comes last."
 - **Re-hook every 8–12 seconds** (about 20–30 words). A re-hook is a turn. Vary the move:
   - the catch: "But this fifty percent is Jaquar's own number. Nobody has tested it yet."
   - the next question: "Bank पैसा निकालने से पहले पूछता है: ये आप ही हो?"
@@ -121,6 +121,8 @@ These patterns are the giveaway, even when every word is true. Find them in your
 | Every line the same length and shape | Seven-word sentence, seven-word sentence, seven-word sentence. | Vary it: a longer explaining sentence, then a short one. |
 | Labels instead of speech | "Honest catch: twelve percent is an example." | "Twelve percent here is just an example, not a promise." |
 | Empty intensity | "This changes everything." "Let that sink in." "Read that again." | Show the number or the consequence, and let it do the work. |
+| Teaser twists | "Haiku beats Mistral. Until it doesn't." "Let's check what those scores actually mean." | State the finding: "Haiku wins on the combined score, and Mistral wins on business workflows." |
+| Generic sign-off | "Follow to keep up with AI news." "Follow for more." | Say what the next video gives them: "Follow for one model comparison a week." |
 
 Before (machine): "Here's why. You earn returns on your returns. Year one? Twelve thousand. Year thirty? Over three lakh. Slow, then sudden."
 After (person): "That's because each year's return joins the pile, and next year's twelve percent is worked out on the bigger pile. In year one that's twelve thousand rupees. By year thirty it's over three lakh, in a single year."
@@ -208,6 +210,18 @@ After: "पचास परसेंट ज़रूरतों के लि�
 - **Add a `Text:` overlay only when it brings something the visual lacks:** a twist, a label, a name ("Refund नहीं, collect request"). If it repeats the VO or the visual, delete it.
 - **In `bars` and `compare`, write every value in the same unit.** The player animates the bare number, so "₹12,000" vs "₹3.2 lakh" draws 12,000 against 3.2. Write "₹3,21,000", or put the unit in the title ("₹ lakh").
 - **Respect the on-screen word limits:** titles under 6 words, labels under 4, list items under 6, overlays under 8.
+
+### On-screen text
+
+The screen is where a generated video gives itself away first: a slogan on every scene, the same line twice, a chart of numbers nobody measured. Each scene must carry information the viewer can read in one second.
+
+- **Every scene shows a fact, not a mood.** A number with its unit, a name, a step, a label. "Slow, then sudden", "Don't quit before the steep part" and "पानी बचाओ, पैसा भी" are slogans; "Years 21–30 earn ₹20.3 lakh" and "सबसे ज़्यादा चलने वाले नल से शुरू करो" are information.
+- **At most two `text` scenes per script,** and each one holds a number, a name, or the rule itself. If the beat is a number, use `stat`; if it's a mechanism, `list`; if it's a contrast, `compare`.
+- **Never repeat a headline.** The `end` title is the takeaway in new words, not the hook again and not an earlier `text` scene. A loop lives in the voiceover, not in a duplicated screen.
+- **Chart only measured or calculated numbers, with their unit.** A maker's claim ("50% less water") is a `stat` with the claim labelled in its context ("Jaquar's claim, untested"), never a bar chart of invented values like "100 vs 50". Put the unit in each value (`₹2 lakh`, `35%`) or name the measure in the title ("Intelligence Index"); no bare numbers, no parenthesised units.
+- **Write titles as plain statements in sentence case:** "What ₹1 lakh earns at 12%", not "₹1 LAKH AT 12% (₹ LAKH)" or a label like "The catch". Labels are for the team (`## Beat`), not the viewer.
+- **Order a `compare` so the second item is the subject.** It's drawn in the accent: the after, the new product, the true version ("वो कहते हैं: पैसे आएँगे | असल में: पैसे जाएँगे").
+- **Run `studio.py scenes`** and fix every warning it prints; they catch the repeats, slogan runs, and unitless charts.
 
 Before (the screen repeats the VO):
 ```

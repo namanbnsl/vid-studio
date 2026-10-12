@@ -460,23 +460,41 @@
     var stagger = a.st(opts.stagger || 0.07);
     var maxSpan = opts.maxSpan || 1.2 * a.f;
     if (stagger * ws.length > maxSpan) stagger = maxSpan / ws.length;
-    var high = a.design.motion.energy === 'high';
-    tw(tl, ws, { yPercent: opts.y || 112, opacity: 0, rotate: high ? 5 : 0 },
-      { yPercent: 0, opacity: 1, rotate: 0, duration: a.dur(opts.dur || 0.8), ease: a.E.out, stagger: stagger }, at);
+    tw(tl, ws, { yPercent: opts.y || 100, opacity: 0 },
+      { yPercent: 0, opacity: 1, duration: a.dur(opts.dur || 0.8), ease: a.E.out, stagger: stagger }, at);
     return at + stagger * ws.length;
   }
 
   // ---------------------------------------------------------------- scene builders
-  // Each returns {stack, fill?, anim(tl, a), post?()} ; a = per-scene animation context
+  // Each returns {head?, stack, anim(tl, a), post?()} ; a = per-scene animation context.
+  // `head` (a chart's title) is pinned to the top of the content area, so it sits on the same line in every
+  // scene; the stack is centred in the space below it. Holds are still: motion lives in the entrances.
   var BUILD = {};
+
+  function headingEl(text) {
+    if (!plain(text)) return null;
+    var h = el('h2', 'heading disp fit', wordsHTML(text));
+    tagLang(h, text);
+    return h;
+  }
+  function fadeUp(tl, a, target, at, dist) {
+    tw(tl, target, { y: a.dist(dist || 24), opacity: 0 }, { y: 0, opacity: 1, duration: a.dur(0.7), ease: a.E.out }, at);
+  }
+  function revealHead(tl, a, head, at) {
+    return head ? revealWords(tl, head, at, a, { stagger: 0.06 }) + a.st(0.05) : at;
+  }
+  function pairs(list, max, keys) {
+    return (Array.isArray(list) ? list : []).slice(0, max).map(function (it) {
+      if (typeof it === 'string') { var m = it.split(':'); it = {}; it[keys[0]] = m[0]; it[keys[1]] = m.slice(1).join(':'); }
+      var o = {}; o[keys[0]] = String(it[keys[0]] == null ? '' : it[keys[0]]).trim(); o[keys[1]] = String(it[keys[1]] == null ? '' : it[keys[1]]).trim();
+      return o;
+    });
+  }
 
   BUILD.title = function (sc) {
     var d = sc.data, st = el('div', 'stack');
     var kick = null, sub = null;
-    if (plain(d.kicker)) {
-      kick = el('div', 'kicker', '<span class="kicker-bar"></span><span class="kicker-text">' + rich(d.kicker) + '</span>');
-      tagLang(kick, d.kicker); st.appendChild(kick);
-    }
+    if (plain(d.kicker)) { kick = el('div', 'kicker', rich(d.kicker)); tagLang(kick, d.kicker); st.appendChild(kick); }
     var title = el('h1', 'title disp fit', wordsHTML(d.title || d.text || ''));
     tagLang(title, d.title); st.appendChild(title);
     var rule = el('div', 'rule'); st.appendChild(rule);
@@ -485,16 +503,10 @@
       stack: st,
       anim: function (tl, a) {
         var at = a.t0;
-        if (kick) {
-          tw(tl, q(kick, '.kicker-bar'), { scaleX: 0 }, { scaleX: 1, duration: a.dur(0.7), ease: a.E.inOut }, at);
-          tw(tl, q(kick, '.kicker-text'), { x: -a.dist(28), opacity: 0 }, { x: 0, opacity: 1, duration: a.dur(0.7), ease: a.E.out }, at + a.st(0.12));
-          at += a.st(0.22);
-        }
+        if (kick) { fadeUp(tl, a, kick, at, 16); at += a.st(0.2); }
         var end = revealWords(tl, title, at, a, { stagger: 0.08 });
-        tw(tl, rule, { scaleX: 0 }, { scaleX: 1, duration: a.dur(0.9), ease: a.E.inOut }, end + a.st(0.05));
-        if (sub) tw(tl, sub, { y: a.dist(34), opacity: 0 }, { y: 0, opacity: 1, duration: a.dur(0.8), ease: a.E.out }, end + a.st(0.2));
-        // hold: title breathes slightly wider tracking-free scale
-        tw(tl, title, { scale: 1 }, { scale: 1.025, transformOrigin: '0% 50%', duration: Math.max(0.5, a.e - end - 0.4), ease: 'sine.inOut' }, end + 0.4);
+        tw(tl, rule, { scaleX: 0 }, { scaleX: 1, duration: a.dur(0.7), ease: a.E.inOut }, end);
+        if (sub) fadeUp(tl, a, sub, end + a.st(0.15));
       }
     };
   };
@@ -504,43 +516,28 @@
     var label = null, ctx = null;
     if (plain(d.label)) { label = el('div', 'stat-label fit', rich(d.label)); tagLang(label, d.label); st.appendChild(label); }
     var p = parseValue(d.value);
-    var wrap = el('div', 'value-wrap');
-    var halo = el('div', 'halo');
     var val = el('div', 'value disp fit', valueHTML(d.value || '', p));
-    val.setAttribute('data-fitm', '0.93');
-    tagLang(val, d.value);
-    wrap.appendChild(halo); wrap.appendChild(val); st.appendChild(wrap);
-    var bar = el('div', 'stat-bar', '<i></i>'); st.appendChild(bar);
+    tagLang(val, d.value); st.appendChild(val);
+    var rule = el('div', 'rule'); st.appendChild(rule);
     if (plain(d.context)) { ctx = el('div', 'context fit', rich(d.context)); tagLang(ctx, d.context); st.appendChild(ctx); }
     return {
       stack: st,
       anim: function (tl, a) {
         var at = a.t0;
-        if (label) { tw(tl, label, { y: a.dist(26), opacity: 0 }, { y: 0, opacity: 1, duration: a.dur(0.7), ease: a.E.out }, at); at += a.st(0.15); }
-        tw(tl, val, { yPercent: 18, scale: 0.86, opacity: 0 }, { yPercent: 0, scale: 1, opacity: 1, duration: a.dur(0.9), ease: a.E.pop }, at);
-        var cd = a.dur(1.5);
+        if (label) { fadeUp(tl, a, label, at, 18); at += a.st(0.15); }
+        tw(tl, val, { yPercent: 10, opacity: 0 }, { yPercent: 0, opacity: 1, duration: a.dur(0.8), ease: a.E.out }, at);
+        var cd = a.dur(1.3);
         countUp(tl, q(val, '.num'), p, at, cd, a.E.num);
-        tw(tl, halo, { opacity: 0, scale: 0.5 }, { opacity: 1, scale: 1, duration: a.dur(1.2), ease: a.E.out }, at + 0.1);
-        tw(tl, q(bar, 'i'), { scaleX: 0 }, { scaleX: 1, duration: cd, ease: a.E.num }, at);
-        if (ctx) tw(tl, ctx, { y: a.dist(24), opacity: 0 }, { y: 0, opacity: 1, duration: a.dur(0.7), ease: a.E.out }, at + a.st(0.45));
-        var hold = at + cd;
-        var span = a.e - hold - 0.2;
-        if (span > 1) {
-          tw(tl, halo, { opacity: 1, scale: 1 }, { opacity: 0.55, scale: 1.12, duration: span / 2, ease: 'sine.inOut', yoyo: true, repeat: 1 }, hold, false);
-          tw(tl, val, { scale: 1 }, { scale: 1.03, duration: span, ease: 'sine.inOut' }, hold, false);
-        }
+        tw(tl, rule, { scaleX: 0 }, { scaleX: 1, duration: a.dur(0.7), ease: a.E.inOut }, at + a.st(0.3));
+        if (ctx) fadeUp(tl, a, ctx, at + a.st(0.45), 18);
       }
     };
   };
 
   BUILD.bars = function (sc) {
     var d = sc.data, st = el('div', 'stack');
-    var head = null;
-    if (plain(d.title)) { head = el('h2', 'heading disp fit', wordsHTML(d.title)); tagLang(head, d.title); st.appendChild(head); }
-    var items = (Array.isArray(d.items) ? d.items : []).slice(0, 8).map(function (it) {
-      if (typeof it === 'string') { var m = it.split(':'); it = { label: m[0], value: m.slice(1).join(':') }; }
-      return { label: String(it.label || ''), value: String(it.value == null ? '' : it.value), p: parseValue(it.value) };
-    });
+    var head = headingEl(d.title);
+    var items = pairs(d.items, 8, ['label', 'value']).map(function (it) { it.p = parseValue(it.value); return it; });
     var mags = items.map(function (it) { return it.p ? Math.abs(it.p.magnitude) : 0; });
     var max = Math.max.apply(null, mags.concat([0])) || 1;
     var maxI = mags.indexOf(Math.max.apply(null, mags.concat([0])));
@@ -553,134 +550,120 @@
       hd.appendChild(lab); hd.appendChild(v);
       var track = el('div', 'bar-track');
       var fill = el('div', 'bar-fill');
-      fill.style.width = Math.max(2.5, mags[i] / max * 100).toFixed(2) + '%';
-      if (i === maxI) fill.appendChild(el('div', 'shine'));
+      fill.style.width = Math.max(1.5, mags[i] / max * 100).toFixed(2) + '%';
       track.appendChild(fill);
       row.appendChild(hd); row.appendChild(track); bars.appendChild(row);
-      return { row: row, head: hd, fill: fill, val: q(v, '.num'), p: it.p };
+      return { head: hd, fill: fill, val: q(v, '.num'), p: it.p };
     });
     st.appendChild(bars);
     return {
-      stack: st,
+      head: head, stack: st,
       anim: function (tl, a) {
-        var at = a.t0;
-        if (head) at = revealWords(tl, head, at, a, { stagger: 0.06 }) + a.st(0.05);
-        var gap = a.st(Math.min(0.22, 1.1 / Math.max(1, rows.length)));
-        var bd = a.dur(1.1);
+        var at = revealHead(tl, a, head, a.t0);
+        var gap = a.st(Math.min(0.2, 1.0 / Math.max(1, rows.length)));
+        var bd = a.dur(1.0);
         rows.forEach(function (r, i) {
           var t = at + i * gap;
-          tw(tl, r.head, { y: a.dist(18), opacity: 0 }, { y: 0, opacity: 1, duration: a.dur(0.6), ease: a.E.out }, t);
+          tw(tl, r.head, { opacity: 0 }, { opacity: 1, duration: a.dur(0.5), ease: 'power2.out' }, t);
           tw(tl, r.fill, { scaleX: 0 }, { scaleX: 1, duration: bd, ease: a.E.bar }, t + 0.05);
           countUp(tl, r.val, r.p, t + 0.05, bd, a.E.num);
         });
-        var done = at + rows.length * gap + bd;
-        var shine = q(st, '.shine');
-        if (shine) {
-          tw(tl, shine, { xPercent: -120 }, { xPercent: 420, duration: 0.9, ease: 'power2.inOut' }, done);
-          if (a.e - done > 2.4) tw(tl, shine, { xPercent: -120 }, { xPercent: 420, duration: 0.9, ease: 'power2.inOut' }, done + (a.e - done) / 2, false);
-        }
       }
     };
   };
 
+  // Two values side by side. The second item is the subject (the "after", the "new", the thing the
+  // story is about), so it takes the accent whichever is larger.
   BUILD.compare = function (sc) {
     var d = sc.data, st = el('div', 'stack fill');
-    var head = null;
-    if (plain(d.title)) { head = el('h2', 'heading disp fit', wordsHTML(d.title)); tagLang(head, d.title); st.appendChild(head); }
-    var items = (Array.isArray(d.items) ? d.items : []).slice(0, 2).map(function (it) {
-      if (typeof it === 'string') { var m = it.split(':'); it = { label: m[0], value: m.slice(1).join(':') }; }
-      return { label: String(it.label || ''), value: String(it.value == null ? '' : it.value), p: parseValue(it.value) };
-    });
+    var head = headingEl(d.title);
+    var items = pairs(d.items, 2, ['label', 'value']).map(function (it) { it.p = parseValue(it.value); return it; });
     while (items.length < 2) items.push({ label: '', value: '', p: null });
-    var numeric = items[0].p && items[1].p;
-    var mA = numeric ? Math.abs(items[0].p.magnitude) : 1, mB = numeric ? Math.abs(items[1].p.magnitude) : 1;
-    var big = numeric ? (mB >= mA ? 1 : 0) : 1;
-    var mx = Math.max(mA, mB) || 1;
-    var heights = numeric ? [Math.max(6, mA / mx * 100), Math.max(6, mB / mx * 100)] : [62, 62];
-    var delta = null, down = false;
-    if (numeric && mA > 0 && mB > 0 && mA !== mB) {
-      var ratio = mB / mA;
-      if (ratio >= 2) delta = '\u25B2 ' + (Math.round(ratio * 10) / 10).toString() + '\u00D7';
-      else if (ratio > 1) delta = '\u25B2 +' + Math.round((ratio - 1) * 100) + '%';
-      else { delta = '\u25BC \u2212' + Math.round((1 - ratio) * 100) + '%'; down = true; }
+    var numeric = !!(items[0].p && items[1].p);
+    var cols = el('div', 'cols' + (numeric ? '' : ' cols-text'));
+    if (!numeric) st.className = 'stack';   // panels are centred like any other visual; bars fill the height
+    var parts;
+    if (numeric) {
+      var mA = Math.abs(items[0].p.magnitude), mB = Math.abs(items[1].p.magnitude), mx = Math.max(mA, mB) || 1;
+      var heights = [Math.max(4, mA / mx * 100), Math.max(4, mB / mx * 100)];
+      var delta = null, down = false;
+      if (mA > 0 && mB > 0 && mA !== mB) {
+        var ratio = mB / mA;
+        if (ratio >= 2) delta = (Math.round(ratio * 10) / 10) + '×';
+        else if (ratio > 1) delta = '+' + Math.round((ratio - 1) * 100) + '%';
+        else { delta = '−' + Math.round((1 - ratio) * 100) + '%'; down = true; }
+      }
+      parts = items.map(function (it, i) {
+        var col = el('div', 'col' + (i === 1 ? ' subject' : ''));
+        var area = el('div', 'col-bar-area');
+        var zone = el('div', 'col-zone');   // leaves room above the tallest bar for its value
+        var barEl = el('div', 'col-bar'); barEl.style.height = heights[i].toFixed(2) + '%';
+        var top = el('div', 'col-top');
+        top.style.bottom = 'calc(' + heights[i].toFixed(2) + '% + calc(var(--k) * 20px))';
+        var badge = null;
+        if (delta && i === 1) { badge = el('div', 'delta' + (down ? ' down' : ''), esc(delta)); top.appendChild(badge); }
+        var v = el('div', 'col-value fit', valueHTML(it.value, it.p)); tagLang(v, it.value);
+        top.appendChild(v);
+        zone.appendChild(barEl); zone.appendChild(top); area.appendChild(zone);
+        var lab = el('div', 'col-label', rich(it.label)); tagLang(lab, it.label);
+        col.appendChild(area); col.appendChild(lab); cols.appendChild(col);
+        return { bar: barEl, top: top, val: q(v, '.num'), p: it.p, label: lab, badge: badge, zone: zone, h: heights[i] };
+      });
+    } else {
+      // words, not numbers: two labelled panels
+      parts = items.map(function (it, i) {
+        var col = el('div', 'col panel' + (i === 1 ? ' subject' : ''));
+        var lab = el('div', 'col-label', rich(it.label)); tagLang(lab, it.label);
+        var v = el('div', 'panel-value fit', rich(it.value)); tagLang(v, it.value);
+        col.appendChild(lab); col.appendChild(v); cols.appendChild(col);
+        return { col: col };
+      });
     }
-    var cols = el('div', 'cols');
-    var parts = items.map(function (it, i) {
-      var col = el('div', 'col' + (i === big ? ' big' : ''));
-      var area = el('div', 'col-bar-area');
-      var zone = el('div', 'col-zone');
-      zone.style.cssText = 'position:absolute;left:0;right:0;bottom:0;top:calc(var(--k) * var(--ts) * 190px)';
-      var barEl = el('div', 'col-bar'); barEl.style.height = heights[i].toFixed(2) + '%';
-      var top = el('div', 'col-top');
-      top.style.cssText = 'position:absolute;left:0;right:0;bottom:calc(' + heights[i].toFixed(2) + '% + 18px);display:flex;flex-direction:column;align-items:flex-start;gap:14px';
-      var badge = null;
-      if (delta && i === 1) { badge = el('div', 'delta' + (down ? ' down' : ''), esc(delta)); badge.style.cssText = 'position:static;transform:none'; top.appendChild(badge); }
-      var v = el('div', 'col-value fit', valueHTML(it.value, it.p)); tagLang(v, it.value);
-      v.style.marginBottom = '0'; v.style.width = '100%';
-      top.appendChild(v);
-      zone.appendChild(barEl); zone.appendChild(top); area.appendChild(zone);
-      var lab = el('div', 'col-label', rich(it.label)); tagLang(lab, it.label);
-      col.appendChild(area); col.appendChild(lab); cols.appendChild(col);
-      return { bar: barEl, top: top, val: q(v, '.num'), p: it.p, label: lab, badge: badge, zone: zone, h: heights[i] };
-    });
     st.appendChild(cols);
     return {
-      stack: st,
+      head: head, stack: st,
       anim: function (tl, a) {
-        var at = a.t0;
-        if (head) at = revealWords(tl, head, at, a, { stagger: 0.06 }) + a.st(0.05);
-        var bd = a.dur(1.2);
+        var at = revealHead(tl, a, head, a.t0);
+        var bd = a.dur(1.1);
         parts.forEach(function (pt, i) {
-          var t = at + i * a.st(0.45);
+          var t = at + i * a.st(0.4);
+          if (!numeric) { fadeUp(tl, a, pt.col, t, 24); return; }
           var px = pt.zone.offsetHeight * pt.h / 100;
-          tw(tl, pt.label, { y: a.dist(20), opacity: 0 }, { y: 0, opacity: 1, duration: a.dur(0.6), ease: a.E.out }, t);
+          tw(tl, pt.label, { opacity: 0 }, { opacity: 1, duration: a.dur(0.5), ease: 'power2.out' }, t);
           tw(tl, pt.bar, { scaleY: 0 }, { scaleY: 1, duration: bd, ease: a.E.bar }, t);
           tw(tl, pt.top, { y: px, opacity: 0 }, { y: 0, opacity: 1, duration: bd, ease: a.E.bar }, t);
           countUp(tl, pt.val, pt.p, t, bd, a.E.num);
-          if (pt.badge) tw(tl, pt.badge, { scale: 0.4, opacity: 0, transformOrigin: '0% 100%' }, { scale: 1, opacity: 1, duration: a.dur(0.6), ease: a.E.pop }, t + bd * 0.8);
+          if (pt.badge) tw(tl, pt.badge, { opacity: 0, y: a.dist(10) }, { opacity: 1, y: 0, duration: a.dur(0.5), ease: a.E.out }, t + bd * 0.8);
         });
-        var done = at + a.st(0.45) + bd;
-        var bigTop = parts[big].top;
-        if (a.e - done > 1) tw(tl, bigTop, { scale: 1 }, { scale: 1.04, transformOrigin: '0% 100%', duration: (a.e - done - 0.2) / 2, ease: 'sine.inOut', yoyo: true, repeat: 1 }, done, false);
       }
     };
   };
 
   BUILD.list = function (sc) {
     var d = sc.data, st = el('div', 'stack');
-    var head = null;
-    if (plain(d.title)) { head = el('h2', 'heading disp fit', wordsHTML(d.title)); tagLang(head, d.title); st.appendChild(head); }
+    var head = headingEl(d.title);
     var ol = el('ol', 'items');
     var items = (Array.isArray(d.items) ? d.items : []).slice(0, 6).map(function (txt, i) {
       txt = typeof txt === 'string' ? txt : (txt && (txt.label || txt.text)) || '';
       var li = el('li', 'item');
       var line = el('span', 'item-line');
-      var idx = el('span', 'idx', '<span class="idx-fill"></span><b>' + (i < 9 ? '0' : '') + (i + 1) + '</b>');
+      var idx = el('span', 'idx tnum', String(i + 1));
       var t = el('span', 'item-text fit', rich(txt)); tagLang(t, txt);
       li.appendChild(line); li.appendChild(idx); li.appendChild(t); ol.appendChild(li);
-      return { line: line, idx: idx, fill: q(idx, '.idx-fill'), num: q(idx, 'b'), text: t };
+      return { line: line, idx: idx, text: t };
     });
     st.appendChild(ol);
     return {
-      stack: st,
+      head: head, stack: st,
       anim: function (tl, a) {
-        var at = a.t0;
-        if (head) at = revealWords(tl, head, at, a, { stagger: 0.06 }) + a.st(0.1);
+        var at = revealHead(tl, a, head, a.t0);
         var n = Math.max(1, items.length);
-        var span = Math.max(0.3, (a.e - at) * 0.62);
-        var gap = clamp(span / n, 0.18 * a.f, 1.3);
-        var onAcc = a.colors.onAccent, acc = a.colors.accent;
+        var gap = clamp(Math.max(0.3, (a.e - at) * 0.55) / n, 0.18 * a.f, 1.2);
         items.forEach(function (it, i) {
           var t = at + i * gap;
-          tw(tl, it.line, { scaleX: 0 }, { scaleX: 1, duration: a.dur(0.8), ease: a.E.inOut }, t);
-          tw(tl, it.idx, { scale: 0.3, opacity: 0, rotate: -30 }, { scale: 1, opacity: 1, rotate: 0, duration: a.dur(0.6), ease: a.E.pop }, t + 0.04);
-          tw(tl, it.text, { x: -a.dist(36), opacity: 0 }, { x: 0, opacity: 1, duration: a.dur(0.7), ease: a.E.out }, t + 0.08);
-          tw(tl, it.fill, { scale: 0 }, { scale: 1, duration: a.dur(0.45), ease: a.E.out }, t + 0.12);
-          tw(tl, it.num, { color: acc }, { color: onAcc, duration: 0.2, ease: 'none' }, t + 0.14);
-          if (i < items.length - 1) {
-            tw(tl, it.fill, { scale: 1 }, { scale: 0, duration: a.dur(0.4), ease: a.E.inOut }, t + gap + 0.1, false);
-            tw(tl, it.num, { color: onAcc }, { color: acc, duration: 0.2, ease: 'none' }, t + gap + 0.15, false);
-          }
+          tw(tl, it.line, { scaleX: 0 }, { scaleX: 1, duration: a.dur(0.7), ease: a.E.inOut }, t);
+          tw(tl, it.idx, { opacity: 0 }, { opacity: 1, duration: a.dur(0.4), ease: 'power2.out' }, t + 0.05);
+          tw(tl, it.text, { x: -a.dist(24), opacity: 0 }, { x: 0, opacity: 1, duration: a.dur(0.6), ease: a.E.out }, t + 0.08);
         });
       }
     };
@@ -688,48 +671,42 @@
 
   BUILD.quote = function (sc) {
     var d = sc.data, st = el('div', 'stack');
-    var mark = el('div', 'qmark', '\u201C'); st.appendChild(mark);
-    var qt = el('blockquote', 'quote-text fit', wordsHTML(d.quote || d.text || '', { mask: false }));
-    tagLang(qt, d.quote); st.appendChild(qt);
+    var wrap = el('div', 'quote');
+    var bar = el('span', 'quote-bar'); wrap.appendChild(bar);
+    var qt = el('blockquote', 'quote-text fit', wordsHTML('“' + plain(d.quote || d.text || '') + '”', { mask: false }));
+    tagLang(qt, d.quote); wrap.appendChild(qt); st.appendChild(wrap);
     var src = null;
-    if (plain(d.source)) { src = el('div', 'source', '<span class="src-line"></span><span class="src-text">' + rich(d.source) + '</span>'); tagLang(src, d.source); st.appendChild(src); }
+    if (plain(d.source)) { src = el('div', 'source', rich(d.source)); tagLang(src, d.source); st.appendChild(src); }
     return {
       stack: st,
       anim: function (tl, a) {
         var at = a.t0;
-        tw(tl, mark, { scale: 0.3, rotate: -14, opacity: 0 }, { scale: 1, rotate: 0, opacity: 1, duration: a.dur(0.9), ease: a.E.pop }, at);
+        tw(tl, bar, { scaleY: 0 }, { scaleY: 1, duration: a.dur(0.7), ease: a.E.inOut }, at);
         var ws = qa(qt, '.w');
-        var span = Math.min((a.e - at) * 0.45, ws.length * 0.11 * a.f + 0.2);
-        tw(tl, ws, { opacity: 0.08, y: a.dist(14) }, { opacity: 1, y: 0, duration: a.dur(0.5), ease: a.E.out, stagger: span / Math.max(1, ws.length) }, at + a.st(0.2));
-        if (src) {
-          var ts = at + a.st(0.2) + span;
-          tw(tl, q(src, '.src-line'), { scaleX: 0 }, { scaleX: 1, duration: a.dur(0.7), ease: a.E.inOut }, ts);
-          tw(tl, q(src, '.src-text'), { x: -a.dist(20), opacity: 0 }, { x: 0, opacity: 1, duration: a.dur(0.7), ease: a.E.out }, ts + 0.1);
-        }
-        tw(tl, mark, { y: 0 }, { y: -a.dist(16), duration: Math.max(0.5, a.e - at - 1), ease: 'sine.inOut' }, at + 1, false);
+        var span = Math.min((a.e - at) * 0.45, ws.length * 0.1 * a.f + 0.2);
+        tw(tl, ws, { opacity: 0.12 }, { opacity: 1, duration: a.dur(0.4), ease: 'power1.out', stagger: span / Math.max(1, ws.length) }, at + a.st(0.15));
+        if (src) fadeUp(tl, a, src, at + a.st(0.15) + span, 14);
       }
     };
   };
 
   BUILD.timeline = function (sc) {
     var d = sc.data, st = el('div', 'stack');
-    var head = null;
-    if (plain(d.title)) { head = el('h2', 'heading disp fit', wordsHTML(d.title)); tagLang(head, d.title); st.appendChild(head); }
+    var head = headingEl(d.title);
     var wrap = el('div', 'tl');
     var line = el('div', 'tl-line', '<i></i>'); wrap.appendChild(line);
-    var items = (Array.isArray(d.items) ? d.items : []).slice(0, 6).map(function (it) {
-      if (typeof it === 'string') { var m = it.split(':'); it = { date: m[0], label: m.slice(1).join(':') }; }
+    var items = pairs(d.items, 6, ['date', 'label']).map(function (it) {
       var node = el('div', 'tl-item');
-      var dot = el('div', 'tl-dot', '<i></i><span class="tl-ring"></span>');
+      var dot = el('div', 'tl-dot');
       var date = el('div', 'tl-date', rich(it.date)); tagLang(date, it.date);
       var lab = el('div', 'tl-label fit', rich(it.label)); tagLang(lab, it.label);
       node.appendChild(dot); node.appendChild(date); node.appendChild(lab); wrap.appendChild(node);
-      return { node: node, dot: dot, fill: q(dot, 'i'), ring: q(dot, '.tl-ring'), date: date, label: lab };
+      return { node: node, dot: dot, date: date, label: lab };
     });
     st.appendChild(wrap);
     var stops = [];
     return {
-      stack: st,
+      head: head, stack: st,
       post: function (landscape) {
         // fit the line exactly between first and last dot centres
         if (!items.length) return;
@@ -742,11 +719,9 @@
         stops = centers.map(function (c) { return (c - a0) / len; });
       },
       anim: function (tl, a) {
-        var at = a.t0;
-        if (head) at = revealWords(tl, head, at, a, { stagger: 0.06 }) + a.st(0.1);
+        var at = revealHead(tl, a, head, a.t0);
         var n = Math.max(1, items.length);
-        var span = Math.max(0.3, (a.e - at) * 0.6);
-        var gap = clamp(span / n, 0.2 * a.f, 1.3);
+        var gap = clamp(Math.max(0.3, (a.e - at) * 0.55) / n, 0.2 * a.f, 1.2);
         var fill = q(line, 'i'), prop = a.landscape ? 'scaleX' : 'scaleY';
         tw(tl, line, { opacity: 0 }, { opacity: 1, duration: a.dur(0.4), ease: 'power1.out' }, at);
         var prev = 0;
@@ -756,12 +731,9 @@
           if (i > 0) { var f0 = {}, f1 = { duration: gap * 0.9, ease: a.E.inOut }; f0[prop] = prev; f1[prop] = to; tw(tl, fill, f0, f1, t - gap * 0.9, i === 1 ? undefined : false); }
           else { var z = {}; z[prop] = 0; gsap.set(fill, z); }
           prev = to;
-          var tt = t + (i > 0 ? 0.05 : 0);
-          tw(tl, it.dot, { scale: 0 }, { scale: 1, duration: a.dur(0.5), ease: a.E.pop }, tt);
-          tw(tl, it.fill, { scale: 0 }, { scale: 1, duration: a.dur(0.4), ease: a.E.out }, tt + 0.1);
-          tw(tl, it.ring, { scale: 0.5, opacity: 0.9 }, { scale: 1.5, opacity: 0, duration: a.dur(0.9), ease: 'power2.out' }, tt + 0.1);
-          tw(tl, it.date, { y: a.dist(22), opacity: 0 }, { y: 0, opacity: 1, duration: a.dur(0.6), ease: a.E.out }, tt + 0.05);
-          tw(tl, it.label, { y: a.dist(22), opacity: 0 }, { y: 0, opacity: 1, duration: a.dur(0.6), ease: a.E.out }, tt + 0.14);
+          tw(tl, it.dot, { scale: 0 }, { scale: 1, duration: a.dur(0.4), ease: a.E.out }, t);
+          fadeUp(tl, a, it.date, t + 0.05, 16);
+          fadeUp(tl, a, it.label, t + 0.12, 16);
         });
       }
     };
@@ -771,20 +743,15 @@
     var d = sc.data, st = el('div', 'stack');
     var txt = d.text || d.title || sc.text || '';
     var hasStar = /\*/.test(txt);
-    var p = el('p', 'punch disp fit', wordsHTML(txt, { mark: true, autoEm: hasStar ? null : function (w) { return /[0-9\u0966-\u096F\u20B9$%]/.test(w); } }));
+    var p = el('p', 'punch disp fit', wordsHTML(txt, { autoEm: hasStar ? null : function (w) { return /[0-9०-९₹$%]/.test(w); } }));
     tagLang(p, txt); st.appendChild(p);
     return {
       stack: st,
       anim: function (tl, a) {
         var ws = qa(p, '.w');
-        var span = Math.min((a.e - a.t0) * 0.45, ws.length * 0.13 * a.f + 0.1);
+        var span = Math.min((a.e - a.t0) * 0.45, ws.length * 0.12 * a.f + 0.1);
         var stg = span / Math.max(1, ws.length);
-        var end = revealWords(tl, p, a.t0, a, { stagger: stg / Math.max(0.01, a.M.st), maxSpan: span + 0.01, dur: 0.75 });
-        // highlighter stroke under emphasised words (a background, so no z-index tricks)
-        qa(p, '.w.em').forEach(function (m, i) {
-          tw(tl, m, { backgroundSize: '0% 0.2em' }, { backgroundSize: '100% 0.2em', duration: a.dur(0.6), ease: a.E.inOut }, end + 0.1 + i * 0.12);
-        });
-        tw(tl, p, { scale: 1 }, { scale: 1.035, transformOrigin: '0% 50%', duration: Math.max(0.5, a.e - end), ease: 'sine.inOut' }, end, true);
+        revealWords(tl, p, a.t0, a, { stagger: stg / Math.max(0.01, a.M.st), maxSpan: span + 0.01, dur: 0.7 });
       }
     };
   };
@@ -798,36 +765,17 @@
       return { stack: st, anim: function () {} };
     }
     var card = el('div', 'img-card');
-    var ph = el('div', 'ph-wrap');
-    ph.style.cssText = 'position:absolute;inset:0';
-    ph.innerHTML = '<div class="stripes"></div><div class="scan"></div>' +
-      '<span class="vf tl"></span><span class="vf tr"></span><span class="vf bl"></span><span class="vf br"></span>' +
-      '<svg class="ph-icon" viewBox="0 0 60 48" fill="none" stroke="currentColor" stroke-width="2.5"><rect x="2" y="2" width="56" height="44" rx="6"/><circle cx="20" cy="17" r="5"/><path d="M4 40l16-14 10 9 9-7 17 13"/></svg>';
     var inner = el('div', 'ph');
-    inner.innerHTML = '<div class="ph-tag"><span class="rec"></span><span>Image needed</span></div>';
-    var desc = el('div', 'ph-desc fit', wordsHTML(d.description || '', { mask: false }));
+    inner.innerHTML = '<div class="ph-tag">Image needed</div>';
+    var desc = el('div', 'ph-desc fit', rich(d.description || ''));
     tagLang(desc, d.description);
-    inner.appendChild(desc); ph.appendChild(inner); card.appendChild(ph);
+    inner.appendChild(desc); card.appendChild(inner);
     st.appendChild(card);
     return {
       stack: st,
       anim: function (tl, a) {
-        var at = a.t0;
-        tw(tl, card, { scale: 0.94, opacity: 0, y: a.dist(30) }, { scale: 1, opacity: 1, y: 0, duration: a.dur(0.9), ease: a.E.out }, at);
-        var vfs = qa(ph, '.vf'), off = a.dist(26);
-        var dirs = [[-1, -1], [1, -1], [-1, 1], [1, 1]];
-        vfs.forEach(function (v, i) {
-          tw(tl, v, { x: dirs[i][0] * off, y: dirs[i][1] * off, opacity: 0 }, { x: 0, y: 0, opacity: 1, duration: a.dur(0.8), ease: a.E.out }, at + 0.15);
-        });
-        tw(tl, q(ph, '.ph-tag'), { y: a.dist(16), opacity: 0 }, { y: 0, opacity: 1, duration: a.dur(0.6), ease: a.E.out }, at + 0.25);
-        var ws = qa(desc, '.w');
-        tw(tl, ws, { opacity: 0, y: a.dist(16) }, { opacity: 1, y: 0, duration: a.dur(0.6), ease: a.E.out, stagger: Math.min(0.06, 1.2 / Math.max(1, ws.length)) }, at + 0.35);
-        var len = a.clipEnd - a.clipStart;
-        tw(tl, q(ph, '.stripes'), { x: 0 }, { x: 96, duration: len, ease: 'none' }, a.clipStart);
-        var cyc = 2.6, reps = Math.max(0, Math.floor((a.e - at) / cyc) - 1);
-        tw(tl, q(ph, '.scan'), { yPercent: -110 }, { yPercent: 260, duration: cyc, ease: 'sine.inOut', repeat: reps }, at);
-        var blink = 0.5, br = Math.max(0, Math.floor((a.e - at) / blink) - 1);
-        tw(tl, q(ph, '.rec'), { opacity: 1 }, { opacity: 0.2, duration: blink, ease: 'steps(1)', repeat: br }, at);
+        tw(tl, card, { opacity: 0 }, { opacity: 1, duration: a.dur(0.6), ease: 'power2.out' }, a.t0);
+        fadeUp(tl, a, inner, a.t0 + 0.15, 16);
       }
     };
   };
@@ -851,9 +799,9 @@
       el: wrap, img: img,
       anim: function (tl, a) {
         if (wrap.style.display === 'none') return;
-        // drift direction and focus vary per scene but are fixed for a given script, so renders repeat exactly
-        var dx = (a.rand() - 0.5) * 5, dy = (a.rand() - 0.5) * 4, zoomIn = a.rand() > 0.35;
-        var s0 = zoomIn ? 1.04 : 1.16, s1 = zoomIn ? 1.16 : 1.04;
+        // drift direction varies per scene but is fixed for a given script, so renders repeat exactly
+        var dx = (a.rand() - 0.5) * 3, dy = (a.rand() - 0.5) * 2, zoomIn = a.rand() > 0.35;
+        var s0 = zoomIn ? 1.02 : 1.08, s1 = zoomIn ? 1.08 : 1.02;
         tw(tl, img, { scale: s0, xPercent: -dx / 2, yPercent: -dy / 2 }, { scale: s1, xPercent: dx / 2, yPercent: dy / 2, duration: Math.max(0.1, a.clipEnd - a.clipStart), ease: 'none' }, a.clipStart);
       }
     };
@@ -865,7 +813,7 @@
     var credit = photo && photo.credit ? photo.credit : '';
     if (!src && !credit) return null;
     var row = el('div', 'meta-row');
-    if (src) { var t = el('div', 'src-tag', '<span class="src-k">Source</span><span class="src-v">' + rich(src) + '</span>'); tagLang(t, src); row.appendChild(t); }
+    if (src) { var t = el('div', 'src-tag', '<span class="src-k">Source</span> <span class="src-v">' + rich(src) + '</span>'); tagLang(t, src); row.appendChild(t); }
     else row.appendChild(el('span'));
     if (credit) { var c = el('div', 'credit', rich(credit)); tagLang(c, credit); row.appendChild(c); }
     return row;
@@ -878,35 +826,19 @@
     if (logoText) { lg = el('div', 'end-logo', '<span class="logo-mark"></span><span>' + rich(logoText) + '</span>'); tagLang(lg, logoText); st.appendChild(lg); }
     var title = el('h1', 'end-title disp fit', wordsHTML(d.title || ''));
     tagLang(title, d.title); st.appendChild(title);
-    var cw = null, cta = null, ring = null, arrow = null;
+    var cta = null;
     if (plain(d.cta)) {
-      cw = el('div', 'cta-wrap');
-      ring = el('span', 'cta-ring');
-      cta = el('div', 'cta fit', '<span>' + rich(d.cta) + '</span><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="3" stroke-linecap="round" stroke-linejoin="round"><path d="M5 12h14M13 6l6 6-6 6"/></svg>');
+      cta = el('div', 'cta fit', '<span>' + rich(d.cta) + '</span><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.6" stroke-linecap="round" stroke-linejoin="round"><path d="M5 12h14M13 6l6 6-6 6"/></svg>');
       tagLang(cta, d.cta);
-      cw.appendChild(ring); cw.appendChild(cta); st.appendChild(cw);
-      arrow = q(cta, 'svg');
+      st.appendChild(cta);
     }
     return {
       stack: st,
       anim: function (tl, a) {
         var at = a.t0;
-        if (lg) {
-          tw(tl, q(lg, '.logo-mark'), { scale: 0, rotate: -90 }, { scale: 1, rotate: 0, duration: a.dur(0.6), ease: a.E.pop }, at);
-          tw(tl, q(lg, 'span:last-child'), { x: -a.dist(20), opacity: 0 }, { x: 0, opacity: 1, duration: a.dur(0.6), ease: a.E.out }, at + 0.1);
-          at += a.st(0.2);
-        }
+        if (lg) { fadeUp(tl, a, lg, at, 14); at += a.st(0.2); }
         var end = revealWords(tl, title, at, a, { stagger: 0.07 });
-        if (cta) {
-          tw(tl, cta, { scale: 0.6, opacity: 0, transformOrigin: '0% 50%' }, { scale: 1, opacity: 1, duration: a.dur(0.8), ease: a.E.pop }, end + 0.05);
-          var hold = end + 0.6, left = a.e - hold - 0.1;
-          if (left > 0.8) {
-            var reps = Math.max(0, Math.floor(left / 0.8) - 1);
-            tw(tl, arrow, { x: 0 }, { x: 8, duration: 0.4, ease: 'sine.inOut', yoyo: true, repeat: reps * 2 + 1 }, hold);
-            var rc = 1.4, rr = Math.max(0, Math.floor(left / rc) - 1);
-            tw(tl, ring, { scale: 1, opacity: 0.7 }, { scale: 1.18, opacity: 0, duration: rc, ease: 'power2.out', repeat: rr }, hold);
-          }
-        }
+        if (cta) fadeUp(tl, a, cta, end + 0.05, 20);
       }
     };
   };
@@ -1028,19 +960,19 @@
       if (m.start > 0) tl.set(m.inner, { visibility: 'visible' }, m.start);
       tl.set(m.inner, { visibility: 'hidden' }, m.end);
       if (style === 'pop') {
-        tw(tl, m.inner, { scale: 0.55, opacity: 0 }, { scale: 1, opacity: 1, duration: 0.24, ease: E.pop === 'power3.out' ? 'back.out(2.2)' : E.pop }, m.start);
-        if (m.ci % 3 === 1) m.inner.style.color = hl;
+        tw(tl, m.inner, { scale: 0.9, opacity: 0 }, { scale: 1, opacity: 1, duration: 0.2, ease: 'power3.out' }, m.start);
         qa(m.inner, '.w').forEach(function (w) { if (/[0-9\u0966-\u096F\u20B9$%]/.test(w.textContent)) w.style.color = hl; });
       } else {
-        tw(tl, m.inner, { y: 16, opacity: 0 }, { y: 0, opacity: 1, duration: 0.16, ease: 'power2.out' }, m.start);
+        tw(tl, m.inner, { opacity: 0 }, { opacity: 1, duration: 0.12, ease: 'power1.out' }, m.start);
       }
       if (style === 'karaoke') {
         var spans = qa(m.inner, '.w');
         spans.forEach(function (w, j) {
           var tt = m.times[m.ch[j]];
           gsap.set(w, { color: colors.capDim });
-          tl.set(w, { color: hl, scale: 1.06 }, tt[0]);
-          if (j < spans.length - 1) tl.set(w, { color: colors.text, scale: 1 }, tt[1]);
+          // colour only: scaling the spoken word would eat the spaces beside it
+          tl.set(w, { color: hl }, tt[0]);
+          if (j < spans.length - 1) tl.set(w, { color: colors.text }, tt[1]);
         });
       }
     });
@@ -1059,15 +991,12 @@
     }
     return 'url("data:image/svg+xml;utf8,' + svg.replace(/"/g, "'").replace(/#/g, '%23').replace(/</g, '%3C').replace(/>/g, '%3E') + '")';
   }
-  function buildBackground(stage, design, colors, total, timing, tl, rand, L) {
+  function buildBackground(stage, design, colors) {
     var bg = el('div', 'bg');
     bg.setAttribute('data-track-index', '0');
     var style = design.background.style, pat = design.background.pattern;
-    var blobs = [];
-    if (style === 'gradient' || style === 'grain') {
-      var b1 = el('div', 'bg-blob b1'), b2 = el('div', 'bg-blob b2');
-      bg.appendChild(b1); bg.appendChild(b2); blobs = [b1, b2];
-    }
+    // one still, soft light from the top: moving colour blobs read as a screensaver, not a design
+    if (style === 'gradient' || style === 'grain') bg.appendChild(el('div', 'bg-glow'));
     var patEl = null;
     if (pat !== 'none') {
       patEl = el('div', 'bg-pattern bg-' + pat);
@@ -1088,24 +1017,6 @@
     }
     bg.appendChild(el('div', 'bg-vignette'));
     stage.appendChild(bg);
-
-    // motion (all on the timeline)
-    if (!timing.length || total <= 0) return;
-    // Pattern and grain stay still: anything that moves under every frame gets repainted on every frame,
-    // which triples render time. The scenes, photos and blobs carry the motion.
-    if (blobs.length) {
-      var W = L.width, H = L.height;
-      var pos = timing.map(function () {
-        return [[(rand() * 0.5 - 0.45) * W, (rand() * 0.4 - 0.5) * H], [(rand() * 0.5 + 0.05) * W, (rand() * 0.4 + 0.15) * H]];
-      });
-      blobs.forEach(function (b, bi) {
-        gsap.set(b, { x: pos[0][bi][0], y: pos[0][bi][1] });
-        for (var i = 1; i < timing.length; i++) {
-          var t0 = Math.max(0, timing[i].start - 0.8);
-          tw(tl, b, { x: pos[i - 1][bi][0], y: pos[i - 1][bi][1] }, { x: pos[i][bi][0], y: pos[i][bi][1], duration: 2.2, ease: 'sine.inOut' }, t0, i === 1 ? undefined : false);
-        }
-      });
-    }
   }
 
   // ---------------------------------------------------------------- build
@@ -1135,8 +1046,8 @@
         dark: dark, onAccent: onAccent, accent: C.accent, text: C.text,
         highlight: isHex(hlKey) ? hlKey : (C[hlKey] || C.accent),
         capDim: rgba(C.text, 0.55),
-        pattern: rgba(C.text, dark ? 0.06 : 0.07),
-        patternDots: rgba(C.text, dark ? 0.13 : 0.15)
+        pattern: rgba(C.text, dark ? 0.035 : 0.045),
+        patternDots: rgba(C.text, dark ? 0.08 : 0.1)
       };
       var fb = plan ? plan.fallback : null;
       var vars = {
@@ -1152,10 +1063,8 @@
         '--ts': String(design.type.scale),
         '--line': rgba(C.text, 0.14), '--track': rgba(C.text, dark ? 0.08 : 0.07), '--bar-dim': rgba(C.text, dark ? 0.3 : 0.24),
         '--shadow': dark ? 'rgba(0,0,0,.45)' : rgba(C.text, 0.16),
-        '--halo': rgba(C.accent, dark ? 0.22 : 0.16), '--mark': rgba(C.accent, 0.3),
-        '--scan': rgba(C.text, 0.06),
-        '--blob1': rgba(C.accent, design.background.style === 'grain' ? (dark ? 0.11 : 0.1) : (dark ? 0.2 : 0.16)), '--blob2': rgba(C.accent2, design.background.style === 'grain' ? (dark ? 0.06 : 0.06) : (dark ? 0.14 : 0.12)),
-        '--vignette': dark ? 'rgba(0,0,0,.55)' : (design.background.style === 'paper' ? 'rgba(110,80,40,.22)' : rgba(C.text, 0.06)),
+                '--glow': rgba(C.accent, design.background.style === 'grain' ? (dark ? 0.07 : 0.06) : (dark ? 0.12 : 0.1)),
+        '--vignette': dark ? 'rgba(0,0,0,.35)' : (design.background.style === 'paper' ? 'rgba(110,80,40,.22)' : rgba(C.text, 0.06)),
         '--cap-shadow': dark ? '0 3px 0 rgba(0,0,0,.35), 0 6px 26px rgba(0,0,0,.6)' : 'none',
         '--cap-box': dark ? 'rgba(0,0,0,.72)' : C.text,
         '--cap-box-text': dark ? C.text : C.background,
@@ -1207,7 +1116,7 @@
       gsap.config({ force3D: false });   // 2D transforms only: identical rasterization whichever way a frame is reached
       var tl = gsap.timeline({ paused: true });
 
-      buildBackground(stage, design, colors, total, timing, tl, rand, L);
+      buildBackground(stage, design, colors);
 
       // ---- scenes
       var waits = [];
@@ -1225,19 +1134,20 @@
         if (sc.beat) sEl.setAttribute('data-beat', sc.beat);
         var inner = el('div', 'scene-inner'), drift = el('div', 'scene-drift'), frame = el('div', 'frame');
         var chip = null;
-        if (plain(sc.text)) {
-          var slot = el('div', 'chip-slot');
-          chip = el('div', 'chip fit', '<span>' + rich(sc.text) + '</span>');
-          tagLang(chip, sc.text);
-          chip.style.fontSize = 'calc(var(--kw, 1) * var(--ts) * 36px)';
-          slot.appendChild(chip); frame.appendChild(slot);
-        }
+        if (plain(sc.text)) { chip = el('div', 'chip fit', rich(sc.text)); tagLang(chip, sc.text); }
         var body = el('div', 'body');
         var pic = sc.type === 'image' ? (sc.data.url ? { src: sc.data.url, credit: sc.data.credit || (sc.image && sc.image.credit) || '' } : sc.image) : sc.image;
         var photo = pic ? { url: resolveMedia(pic.src, options.mediaBase), credit: pic.credit || '' } : null;
         if (photo && !photo.url) photo = null;
         var ctx = { design: design, waits: waits, photo: photo };
         var b = BUILD[sc.type](sc, ctx);
+        // the overlay label and a chart's title share a header row pinned to the top of the content area
+        if (chip || b.head) {
+          var head = el('div', 'head');
+          if (chip) head.appendChild(chip);
+          if (b.head) head.appendChild(b.head);
+          frame.appendChild(head);
+        }
         body.appendChild(b.stack);
         frame.appendChild(body);
         var meta = buildMeta(sc, photo, design);
@@ -1307,24 +1217,21 @@
           var first = true;
           if (i > 0 && trans !== 'cut' && trans !== 'wipe') {
             var dur = 2 * o, at = x.clipStart;
-            if (trans === 'fade') tw(tl, x.inner, { opacity: 0, y: a.dist(20) }, { opacity: 1, y: 0, duration: dur * 0.7, ease: 'power2.out' }, at + dur * 0.3);
-            else if (trans === 'slide') tw(tl, x.inner, { xPercent: 26 * M.dist, opacity: 0 }, { xPercent: 0, opacity: 1, duration: dur * 0.65, ease: E.out }, at + dur * 0.35);
-            else if (trans === 'zoom') tw(tl, x.inner, { scale: 0.86, opacity: 0 }, { scale: 1, opacity: 1, duration: dur * 0.65, ease: E.out }, at + dur * 0.35);
+            if (trans === 'fade') tw(tl, x.inner, { opacity: 0 }, { opacity: 1, duration: dur * 0.7, ease: 'power2.out' }, at + dur * 0.3);
+            else if (trans === 'slide') tw(tl, x.inner, { xPercent: 8 * M.dist, opacity: 0 }, { xPercent: 0, opacity: 1, duration: dur * 0.65, ease: E.out }, at + dur * 0.35);
+            else if (trans === 'zoom') tw(tl, x.inner, { scale: 0.97, opacity: 0 }, { scale: 1, opacity: 1, duration: dur * 0.65, ease: E.out }, at + dur * 0.35);
             first = false;
           }
           if (i < built.length - 1 && trans !== 'cut' && trans !== 'wipe') {
             var dur2 = 2 * o, at2 = e - o;
-            if (trans === 'fade') tw(tl, x.inner, { opacity: 1, y: 0 }, { opacity: 0, y: -a.dist(20), duration: dur2 * 0.55, ease: 'power2.in' }, at2, first ? undefined : false);
-            else if (trans === 'slide') tw(tl, x.inner, { xPercent: 0, opacity: 1 }, { xPercent: -26 * M.dist, opacity: 0, duration: dur2 * 0.6, ease: 'power2.in' }, at2, first ? undefined : false);
-            else if (trans === 'zoom') tw(tl, x.inner, { scale: 1, opacity: 1 }, { scale: 1.14, opacity: 0, duration: dur2 * 0.6, ease: 'power2.in' }, at2, first ? undefined : false);
+            if (trans === 'fade') tw(tl, x.inner, { opacity: 1 }, { opacity: 0, duration: dur2 * 0.55, ease: 'power2.in' }, at2, first ? undefined : false);
+            else if (trans === 'slide') tw(tl, x.inner, { xPercent: 0, opacity: 1 }, { xPercent: -8 * M.dist, opacity: 0, duration: dur2 * 0.6, ease: 'power2.in' }, at2, first ? undefined : false);
+            else if (trans === 'zoom') tw(tl, x.inner, { scale: 1, opacity: 1 }, { scale: 1.03, opacity: 0, duration: dur2 * 0.6, ease: 'power2.in' }, at2, first ? undefined : false);
           }
-          // hold: slow push-in so nothing is ever frozen (linear on purpose, like a camera dolly)
-          tw(tl, x.drift, { scale: 1, y: 0 }, { scale: 1 + 0.018 * M.dist, y: -6 * M.dist, duration: Math.max(0.1, x.clipEnd - x.clipStart), ease: 'none' }, x.clipStart);
+          // Holds stay still: text that drifts or grows moves off the grid it shares with the other scenes.
 
-          // overlay chip
-          if (x.chip) {
-            tw(tl, x.chip, { scale: 0.5, rotate: -9, opacity: 0 }, { scale: 1, rotate: -2, opacity: 1, duration: a.dur(0.6), ease: E.pop }, a.t0 + a.st(0.3));
-          }
+          // overlay label
+          if (x.chip) tw(tl, x.chip, { x: -a.dist(16), opacity: 0 }, { x: 0, opacity: 1, duration: a.dur(0.6), ease: E.out }, a.t0);
           if (x.backdrop) x.backdrop.anim(tl, a);
           if (x.meta) tw(tl, x.meta, { opacity: 0, y: 12 }, { opacity: 1, y: 0, duration: 0.5, ease: 'power2.out' }, a.t0 + Math.min(0.7, d * 0.2));
           x.b.anim(tl, a);

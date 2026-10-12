@@ -46,7 +46,7 @@ Fields are separated by `|`, in this order. Trailing fields are optional. Number
 | `title` | title \| subtitle \| kicker | Opening or section title |
 | `stat` | value \| label \| context | One big number that carries the beat |
 | `bars` | title \| Label: value \| Label: value … | 2–6 values to compare as a bar chart |
-| `compare` | title \| Label: value \| Label: value | Before/after, this vs that (exactly two) |
+| `compare` | title \| Label: value \| Label: value | Before/after, this vs that (exactly two). The **second** item is the subject (the after, the new thing, the claim) and takes the accent. Two numbers draw bars; two short phrases draw side-by-side panels |
 | `list` | title \| item \| item … | 2–5 short points, steps, or reasons |
 | `quote` | quote \| source | A real quote from a source in the notes |
 | `timeline` | title \| date: label \| date: label … | 2–5 dated events in order |
@@ -66,6 +66,10 @@ Visual: end | Follow for one money rule a day | Follow @explainedin90s
 ```
 
 Keep on-screen words few: titles under 6 words, labels under 4, list items under 6. The voiceover explains; the screen shows the one thing to remember.
+
+Every scene sits on one grid: a `Text:` overlay and a chart's title share a header row pinned to the top, the visual is centred below it, and captions and the source line align to the same left edge. Holds are still, and headings keep one size across scenes, so write titles that fit in two lines rather than relying on the player to shrink them.
+
+`studio.py scenes` warns about what makes a video look generated: the same headline on screen twice, more than two `text` scenes, bars without numbers, a compare mixing a number with a phrase, and chart values with no unit. Fix every warning.
 The examples above demonstrate syntax. Replace their figures and placeholder quote with evidence from the story's notes.
 
 ## Scene JSON
