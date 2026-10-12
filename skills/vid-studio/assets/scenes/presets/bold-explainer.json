@@ -1,12 +1,12 @@
 {
   "id": "bold-explainer",
   "name": "Bold Explainer",
-  "description": "Warm charcoal, marigold numbers and a characterful grotesque in sentence case. Fast, confident, built for Shorts that explain one thing.",
+  "description": "Warm charcoal, marigold numbers and a characterful grotesque. Frosted glass panels over a soft warm light, photos framed like a magazine. Fast and confident, built for Shorts that explain one thing.",
   "design": {
     "aspect": "9:16",
     "colors": {
-      "background": "#121212",
-      "surface": "#1E1E1E",
+      "background": "#121110",
+      "surface": "#1D1B19",
       "text": "#F7F3EA",
       "muted": "#9C978D",
       "accent": "#FFC233",
@@ -37,11 +37,15 @@
       "size": "medium"
     },
     "background": {
-      "style": "grain",
+      "style": "ambient",
       "pattern": "none"
     },
+    "surfaces": {
+      "style": "glass"
+    },
     "images": {
-      "treatment": "dim"
+      "treatment": "dim",
+      "layout": "auto"
     },
     "sources": {
       "show": true
@@ -49,7 +53,7 @@
     "progress": {
       "show": true
     },
-    "radius": 12,
+    "radius": 16,
     "logo": {
       "text": "",
       "position": "top-left"

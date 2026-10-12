@@ -9,13 +9,18 @@ Visual: stat | ₹6,500 | Jaquar sensor tap | starting price
 Image: media/sensor-tap.jpg | Photo: BPE innovationas / Wikimedia Commons, CC BY-SA 4.0
 ```
 
-- `Image: path | credit` puts the photo full-screen behind that beat's scene, dimmed or tinted by the channel's look, drifting slowly. The scene (number, chart, text) sits on top.
+- `Image: path | credit` gives that beat a photo. On a stat, punchline, quote, list, title or end card, the photo is framed in the top of the frame, drifting slowly, with the scene's panel overlapping its lower edge and a blurred copy of the photo filling the background. On a chart or a message, it fills the screen behind the scene, dimmed or tinted by the look. Add `| card` or `| full` at the end of the line to choose for yourself.
 - `Visual: image | what it shows | path | credit` makes the photo itself the scene, for beats where seeing the thing *is* the point. Without a path, it's an "Image needed" card in the preview, and the render warns about it.
-- The credit shows small in the corner. Keep it short: `Photo: Name / Source, License`.
+- The credit shows small on the photo (or at the bottom of the frame). Keep it short: `Photo: Name / Source, License`.
+- Because photos are usually framed rather than stretched to the full 1080×1920, a 1024 px photo looks sharp. An `image` scene whose photo is too small to fill the screen is framed automatically instead of blown up.
 
 ## Which beats get a photo
 
-Two to four photos in a 60-second script is usually right. Use them for beats about **real, specific things**: a product, a place, a building, an institution, a screen in an app, a document, a person's role ("a plumber fitting a CPVC pipe"). Leave out beats that are about numbers, mechanisms, or ideas; the scene alone is stronger there. Never put a photo behind the `end` beat.
+Two to four photos in a 60-second script is usually right; `studio.py scenes` warns when a video of 30 seconds or more has none. Use them for beats about **real, specific things**: a product, a place, a building, an institution, a screen in an app, a document, a person's role ("a plumber fitting a CPVC pipe").
+
+**Put people in the frame.** Hands on a phone, a shopkeeper at a counter, a vegetable market, a street, a family at home: photos of people and everyday places are what make a video feel made by people. Use them for the moment the story turns on (story.md's "The moment"): the call, the counter, salary day. They're illustrative, so never imply that the people shown are the people in the story, and never use a photo of an identifiable person for a beat about wrongdoing.
+
+Leave out beats that are about numbers or mechanisms alone; the scene is stronger there.
 
 ## Where photos come from
 

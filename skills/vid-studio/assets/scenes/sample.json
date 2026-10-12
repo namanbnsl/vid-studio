@@ -3,25 +3,47 @@
   {
    "beat": "Hook",
    "type": "title",
-   "duration": 4.0,
-   "vo": "Five thousand rupees a month, every month, at an assumed eight percent a year.",
+   "duration": 4.5,
+   "vo": "Say you're twenty-five, and five thousand rupees goes into an SIP every salary day, at an assumed eight percent.",
    "text": "",
    "data": {
     "title": "What a ₹5,000 SIP becomes",
     "subtitle": "Worked at 8% a year, before tax and fees",
     "kicker": "Worked example"
+   },
+   "image": {
+    "src": "/scenes/samples/mumbai-night.jpg",
+    "credit": "Photo: Matthias / Flickr, CC BY 2.0"
    }
   },
   {
    "beat": "Twenty years",
    "type": "stat",
-   "duration": 5.0,
-   "vo": "After twenty years that's about twenty-nine lakh, and only twelve lakh of it is money you paid in.",
+   "duration": 5.5,
+   "vo": "Twenty years later you're forty-five, and it's about twenty-nine lakh. Only twelve lakh of that came out of your salary.",
    "text": "",
    "data": {
     "value": "₹29.6 lakh",
     "label": "After 20 years",
     "context": "You paid in ₹12 lakh. The rest is returns."
+   }
+  },
+  {
+   "beat": "Salary day",
+   "type": "message",
+   "duration": 4.5,
+   "vo": "And on salary day, the only sign of it is one line from your bank, which is the whole point.",
+   "text": "Example message",
+   "data": {
+    "title": "Your bank",
+    "items": [
+     "₹5,000 debited for your monthly SIP",
+     "Next debit on the 1st of next month"
+    ]
+   },
+   "image": {
+    "src": "/scenes/samples/phone-hand.jpg",
+    "credit": "Photo: Erik Hersman / Flickr, CC BY 2.0"
    }
   },
   {
@@ -140,11 +162,12 @@
    "beat": "Set it up",
    "type": "image",
    "duration": 3.5,
-   "vo": "You set the date once, and the bank does the rest.",
-   "text": "",
+   "vo": "You set the date once, on your phone, and the bank does the rest.",
+   "text": "Set the date once",
    "data": {
-    "description": "Phone screen confirming a monthly SIP debit of ₹5,000 on the 1st",
-    "url": ""
+    "description": "A hand holding a phone",
+    "url": "/scenes/samples/iphone-hand.jpg",
+    "credit": "Photo: Global X / Flickr, CC BY 2.0"
    }
   },
   {
@@ -163,25 +186,47 @@
   {
    "beat": "Hook",
    "type": "title",
-   "duration": 4.0,
-   "vo": "हर महीने पाँच हज़ार रुपये, और सालाना आठ परसेंट का अंदाज़ा.",
+   "duration": 4.5,
+   "vo": "मान लो आप पच्चीस के हो, और हर सैलरी वाले दिन पाँच हज़ार रुपये SIP में जाते हैं, आठ परसेंट के अंदाज़े पर.",
    "text": "",
    "data": {
     "title": "₹5,000 की SIP कितनी बनती है",
     "subtitle": "8% सालाना मानकर, टैक्स और फ़ीस से पहले",
     "kicker": "हिसाब का उदाहरण"
+   },
+   "image": {
+    "src": "/scenes/samples/mumbai-night.jpg",
+    "credit": "Photo: Matthias / Flickr, CC BY 2.0"
    }
   },
   {
    "beat": "Twenty years",
    "type": "stat",
-   "duration": 5.0,
-   "vo": "बीस साल बाद ये करीब उनतीस लाख बनते हैं, और इनमें आपके लगाए सिर्फ़ बारह लाख हैं.",
+   "duration": 5.5,
+   "vo": "बीस साल बाद आप पैंतालीस के हो, और ये करीब उनतीस लाख है. इनमें आपकी सैलरी से गए सिर्फ़ बारह लाख.",
    "text": "",
    "data": {
     "value": "₹29.6 लाख",
     "label": "20 साल बाद",
     "context": "आपने लगाए ₹12 लाख, बाकी रिटर्न है"
+   }
+  },
+  {
+   "beat": "Salary day",
+   "type": "message",
+   "duration": 4.5,
+   "vo": "और सैलरी वाले दिन इसकी बस एक निशानी होती है: bank का एक message.",
+   "text": "उदाहरण",
+   "data": {
+    "title": "आपका bank",
+    "items": [
+     "आपकी monthly SIP के ₹5,000 कटे",
+     "अगली किस्त अगले महीने की 1 तारीख़ को"
+    ]
+   },
+   "image": {
+    "src": "/scenes/samples/phone-hand.jpg",
+    "credit": "Photo: Erik Hersman / Flickr, CC BY 2.0"
    }
   },
   {
@@ -300,11 +345,12 @@
    "beat": "Set it up",
    "type": "image",
    "duration": 3.5,
-   "vo": "तारीख एक बार तय करो, बाकी काम bank करता है.",
-   "text": "",
+   "vo": "तारीख एक बार phone पर तय करो, बाकी काम bank करता है.",
+   "text": "तारीख एक बार तय करो",
    "data": {
-    "description": "फ़ोन पर हर महीने की 1 तारीख को ₹5,000 की SIP कटने का मैसेज",
-    "url": ""
+    "description": "फ़ोन पकड़े हुए एक हाथ",
+    "url": "/scenes/samples/iphone-hand.jpg",
+    "credit": "Photo: Global X / Flickr, CC BY 2.0"
    }
   },
   {

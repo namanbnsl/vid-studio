@@ -1,7 +1,7 @@
 {
   "id": "studio-white",
   "name": "Studio White",
-  "description": "Gallery white, near-black type and an electric blue. Sora headlines and clean slides, for product and tech explainers.",
+  "description": "Gallery white, near-black type and an electric blue. Clear glass over a pale blue light, Sora headlines and clean slides, for product and tech explainers.",
   "design": {
     "aspect": "9:16",
     "colors": {
@@ -30,18 +30,22 @@
       "transition": "slide"
     },
     "captions": {
-      "style": "highlight",
+      "style": "glass",
       "position": "lower",
       "highlight": "accent",
       "max_words": 4,
       "size": "medium"
     },
     "background": {
-      "style": "solid",
+      "style": "ambient",
       "pattern": "none"
     },
+    "surfaces": {
+      "style": "glass"
+    },
     "images": {
-      "treatment": "natural"
+      "treatment": "natural",
+      "layout": "auto"
     },
     "sources": {
       "show": true
@@ -49,7 +53,7 @@
     "progress": {
       "show": true
     },
-    "radius": 14,
+    "radius": 18,
     "logo": {
       "text": "",
       "position": "top-left"

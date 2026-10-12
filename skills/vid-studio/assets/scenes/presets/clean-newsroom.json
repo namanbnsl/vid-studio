@@ -1,7 +1,7 @@
 {
   "id": "clean-newsroom",
   "name": "Broadsheet",
-  "description": "Newsprint white, black serif headlines and a single editorial red. Steady fades; the look of a paper's explainer desk.",
+  "description": "Newsprint white, black serif headlines and a single editorial red. Square white panels, black-and-white photos and steady fades: the look of a front page.",
   "design": {
     "aspect": "9:16",
     "colors": {
@@ -40,8 +40,12 @@
       "style": "solid",
       "pattern": "none"
     },
+    "surfaces": {
+      "style": "solid"
+    },
     "images": {
-      "treatment": "mono"
+      "treatment": "mono",
+      "layout": "auto"
     },
     "sources": {
       "show": true
@@ -49,7 +53,7 @@
     "progress": {
       "show": true
     },
-    "radius": 2,
+    "radius": 3,
     "logo": {
       "text": "",
       "position": "top-left"

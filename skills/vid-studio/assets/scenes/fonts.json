@@ -292,6 +292,38 @@
    ]
   },
   {
+   "family": "Inter Tight",
+   "category": "sans",
+   "devanagari": false,
+   "weights": [
+    100,
+    200,
+    300,
+    400,
+    500,
+    600,
+    700,
+    800,
+    900
+   ]
+  },
+  {
+   "family": "Geist",
+   "category": "sans",
+   "devanagari": false,
+   "weights": [
+    100,
+    200,
+    300,
+    400,
+    500,
+    600,
+    700,
+    800,
+    900
+   ]
+  },
+  {
    "family": "Sora",
    "category": "sans",
    "devanagari": false,

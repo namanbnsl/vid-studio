@@ -1,7 +1,7 @@
 {
   "id": "monsoon",
   "name": "Monsoon",
-  "description": "Deep teal, warm paper white and saffron. Eczar, an expressive Devanagari serif, makes Hindi headlines look designed, not typed.",
+  "description": "Deep teal, warm paper white and saffron, with glass that catches a saffron glow. Eczar, an expressive Devanagari serif, makes Hindi headlines feel like print.",
   "design": {
     "aspect": "9:16",
     "colors": {
@@ -37,11 +37,15 @@
       "size": "medium"
     },
     "background": {
-      "style": "solid",
+      "style": "ambient",
       "pattern": "none"
     },
+    "surfaces": {
+      "style": "glass"
+    },
     "images": {
-      "treatment": "dim"
+      "treatment": "dim",
+      "layout": "auto"
     },
     "sources": {
       "show": true
@@ -49,7 +53,7 @@
     "progress": {
       "show": true
     },
-    "radius": 8,
+    "radius": 18,
     "logo": {
       "text": "",
       "position": "top-left"

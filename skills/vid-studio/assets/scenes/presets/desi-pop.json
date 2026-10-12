@@ -1,7 +1,7 @@
 {
   "id": "desi-pop",
   "name": "Desi Pop",
-  "description": "Haldi cream, aubergine type and rani pink. Round, friendly Baloo and a little bounce, for lifestyle and money tips in Hindi.",
+  "description": "Haldi cream, aubergine type and rani pink on solid, rounded panels. Friendly Baloo and a little bounce, for lifestyle and money tips in Hindi or Hinglish.",
   "design": {
     "aspect": "9:16",
     "colors": {
@@ -40,8 +40,12 @@
       "style": "solid",
       "pattern": "none"
     },
+    "surfaces": {
+      "style": "solid"
+    },
     "images": {
-      "treatment": "natural"
+      "treatment": "natural",
+      "layout": "auto"
     },
     "sources": {
       "show": true
@@ -49,7 +53,7 @@
     "progress": {
       "show": true
     },
-    "radius": 20,
+    "radius": 22,
     "logo": {
       "text": "",
       "position": "top-left"

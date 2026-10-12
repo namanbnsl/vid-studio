@@ -1,0 +1,63 @@
+{
+  "id": "frosted-night",
+  "name": "Frosted Night",
+  "description": "Ink-blue night, frosted glass and periwinkle numbers, with a coral second colour. Inter Tight headlines, glass captions and calm, smooth motion: a premium default for any explainer.",
+  "design": {
+    "aspect": "9:16",
+    "colors": {
+      "background": "#0A0C12",
+      "surface": "#141824",
+      "text": "#F3F5FA",
+      "muted": "#8D94A7",
+      "accent": "#9DB7FF",
+      "accent2": "#FF9B7A",
+      "negative": "#FF6B7D"
+    },
+    "fonts": {
+      "display": "Inter Tight",
+      "body": "Mukta",
+      "mono": "JetBrains Mono"
+    },
+    "type": {
+      "scale": 1.0,
+      "display_case": "none",
+      "display_weight": 700,
+      "tracking": -0.035
+    },
+    "motion": {
+      "energy": "medium",
+      "easing": "smooth",
+      "transition": "fade"
+    },
+    "captions": {
+      "style": "glass",
+      "position": "lower",
+      "highlight": "accent",
+      "max_words": 4,
+      "size": "medium"
+    },
+    "background": {
+      "style": "ambient",
+      "pattern": "none"
+    },
+    "surfaces": {
+      "style": "glass"
+    },
+    "images": {
+      "treatment": "dim",
+      "layout": "auto"
+    },
+    "sources": {
+      "show": true
+    },
+    "progress": {
+      "show": true
+    },
+    "radius": 18,
+    "logo": {
+      "text": "",
+      "position": "top-left"
+    },
+    "custom_css": ""
+  }
+}

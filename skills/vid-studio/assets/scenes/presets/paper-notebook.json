@@ -1,7 +1,7 @@
 {
   "id": "paper-notebook",
   "name": "Paper Notebook",
-  "description": "Ruled cream paper, pencil-dark ink and a terracotta pen. Handwritten headlines for study notes and how-tos.",
+  "description": "Ruled cream paper, pencil-dark ink and a terracotta pen, with no panels: just writing on the page. Handwritten headlines for study notes and how-tos.",
   "design": {
     "aspect": "9:16",
     "colors": {
@@ -40,8 +40,12 @@
       "style": "paper",
       "pattern": "lines"
     },
+    "surfaces": {
+      "style": "flat"
+    },
     "images": {
-      "treatment": "natural"
+      "treatment": "natural",
+      "layout": "auto"
     },
     "sources": {
       "show": true

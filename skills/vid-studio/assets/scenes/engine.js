@@ -17,20 +17,21 @@
   var COMPOSITION_ID = 'vid';
 
   // family -> [weights available on Google Fonts, devanagari (1/0), category]
-  var FONT_TABLE = {"Anton":[[400],0,"display"],"Bebas Neue":[[400],0,"display"],"Archivo Black":[[400],0,"display"],"Oswald":[[200,300,400,500,600,700],0,"display"],"Unbounded":[[200,300,400,500,600,700,800,900],0,"display"],"Syne":[[400,500,600,700,800],0,"display"],"Teko":[[300,400,500,600,700],1,"display"],"Rajdhani":[[300,400,500,600,700],1,"display"],"Khand":[[300,400,500,600,700],1,"display"],"Yatra One":[[400],1,"display"],"Rozha One":[[400],1,"display"],"Baloo 2":[[400,500,600,700,800],1,"display"],"Gotu":[[400],1,"display"],"DM Serif Display":[[400],0,"serif"],"Fraunces":[[100,200,300,400,500,600,700,800,900],0,"serif"],"Playfair Display":[[400,500,600,700,800,900],0,"serif"],"Instrument Serif":[[400],0,"serif"],"Tiro Devanagari Hindi":[[400],1,"serif"],"Noto Serif Devanagari":[[100,200,300,400,500,600,700,800,900],1,"serif"],"Martel":[[200,300,400,600,700,800,900],1,"serif"],"Eczar":[[400,500,600,700,800],1,"serif"],"Laila":[[300,400,500,600,700],1,"serif"],"Karma":[[300,400,500,600,700],1,"serif"],"Kurale":[[400],1,"serif"],"Inter":[[100,200,300,400,500,600,700,800,900],0,"sans"],"Space Grotesk":[[300,400,500,600,700],0,"sans"],"Sora":[[100,200,300,400,500,600,700,800],0,"sans"],"Manrope":[[200,300,400,500,600,700,800],0,"sans"],"Bricolage Grotesque":[[200,300,400,500,600,700,800],0,"sans"],"Mukta":[[200,300,400,500,600,700,800],1,"sans"],"Hind":[[300,400,500,600,700],1,"sans"],"Poppins":[[100,200,300,400,500,600,700,800,900],1,"sans"],"Noto Sans Devanagari":[[100,200,300,400,500,600,700,800,900],1,"sans"],"Anek Devanagari":[[100,200,300,400,500,600,700,800],1,"sans"],"Palanquin":[[100,200,300,400,500,600,700],1,"sans"],"Sarala":[[400,700],1,"sans"],"Martel Sans":[[200,300,400,600,700,800,900],1,"sans"],"Yantramanav":[[100,300,400,500,700,900],1,"sans"],"JetBrains Mono":[[100,200,300,400,500,600,700,800],0,"mono"],"IBM Plex Mono":[[100,200,300,400,500,600,700],0,"mono"],"Space Mono":[[400,700],0,"mono"],"DM Mono":[[300,400,500],0,"mono"],"Caveat":[[400,500,600,700],0,"hand"],"Kalam":[[300,400,700],1,"hand"],"Amita":[[400,700],1,"hand"]};
+  var FONT_TABLE = {"Anton":[[400],0,"display"],"Bebas Neue":[[400],0,"display"],"Archivo Black":[[400],0,"display"],"Oswald":[[200,300,400,500,600,700],0,"display"],"Unbounded":[[200,300,400,500,600,700,800,900],0,"display"],"Syne":[[400,500,600,700,800],0,"display"],"Teko":[[300,400,500,600,700],1,"display"],"Rajdhani":[[300,400,500,600,700],1,"display"],"Khand":[[300,400,500,600,700],1,"display"],"Yatra One":[[400],1,"display"],"Rozha One":[[400],1,"display"],"Baloo 2":[[400,500,600,700,800],1,"display"],"Gotu":[[400],1,"display"],"DM Serif Display":[[400],0,"serif"],"Fraunces":[[100,200,300,400,500,600,700,800,900],0,"serif"],"Playfair Display":[[400,500,600,700,800,900],0,"serif"],"Instrument Serif":[[400],0,"serif"],"Tiro Devanagari Hindi":[[400],1,"serif"],"Noto Serif Devanagari":[[100,200,300,400,500,600,700,800,900],1,"serif"],"Martel":[[200,300,400,600,700,800,900],1,"serif"],"Eczar":[[400,500,600,700,800],1,"serif"],"Laila":[[300,400,500,600,700],1,"serif"],"Karma":[[300,400,500,600,700],1,"serif"],"Kurale":[[400],1,"serif"],"Inter":[[100,200,300,400,500,600,700,800,900],0,"sans"],"Space Grotesk":[[300,400,500,600,700],0,"sans"],"Inter Tight":[[100,200,300,400,500,600,700,800,900],0,"sans"],"Geist":[[100,200,300,400,500,600,700,800,900],0,"sans"],"Sora":[[100,200,300,400,500,600,700,800],0,"sans"],"Manrope":[[200,300,400,500,600,700,800],0,"sans"],"Bricolage Grotesque":[[200,300,400,500,600,700,800],0,"sans"],"Mukta":[[200,300,400,500,600,700,800],1,"sans"],"Hind":[[300,400,500,600,700],1,"sans"],"Poppins":[[100,200,300,400,500,600,700,800,900],1,"sans"],"Noto Sans Devanagari":[[100,200,300,400,500,600,700,800,900],1,"sans"],"Anek Devanagari":[[100,200,300,400,500,600,700,800],1,"sans"],"Palanquin":[[100,200,300,400,500,600,700],1,"sans"],"Sarala":[[400,700],1,"sans"],"Martel Sans":[[200,300,400,600,700,800,900],1,"sans"],"Yantramanav":[[100,300,400,500,700,900],1,"sans"],"JetBrains Mono":[[100,200,300,400,500,600,700,800],0,"mono"],"IBM Plex Mono":[[100,200,300,400,500,600,700],0,"mono"],"Space Mono":[[400,700],0,"mono"],"DM Mono":[[300,400,500],0,"mono"],"Caveat":[[400,500,600,700],0,"hand"],"Kalam":[[300,400,700],1,"hand"],"Amita":[[400,700],1,"hand"]};
 
   var DEFAULT_DESIGN = {
     aspect: '9:16',
-    colors: { background: '#121212', surface: '#1E1E1E', text: '#F7F3EA', muted: '#9C978D', accent: '#FFC233', accent2: '#FF7A45', negative: '#FF5D5D' },
+    colors: { background: '#121110', surface: '#1D1B19', text: '#F7F3EA', muted: '#9C978D', accent: '#FFC233', accent2: '#FF7A45', negative: '#FF5D5D' },
     fonts: { display: 'Bricolage Grotesque', body: 'Mukta', mono: 'JetBrains Mono' },
     type: { scale: 1.0, display_case: 'none', display_weight: 800, tracking: -0.03 },
     motion: { energy: 'high', easing: 'snappy', transition: 'slide' },
     captions: { style: 'highlight', position: 'lower', highlight: 'accent', max_words: 4, size: 'medium' },
-    background: { style: 'grain', pattern: 'none' },
-    images: { treatment: 'dim' },
+    background: { style: 'ambient', pattern: 'none' },
+    surfaces: { style: 'glass' },
+    images: { treatment: 'dim', layout: 'auto' },
     sources: { show: true },
     progress: { show: true },
-    radius: 12,
+    radius: 16,
     logo: { text: '', position: 'top-left' },
     custom_css: ''
   };
@@ -48,16 +49,20 @@
     energy: ['calm', 'medium', 'high'],
     easing: ['smooth', 'snappy', 'bouncy'],
     transition: ['cut', 'fade', 'slide', 'zoom', 'wipe'],
-    capStyle: ['none', 'plain', 'boxed', 'karaoke', 'highlight', 'pop'],
+    capStyle: ['none', 'plain', 'boxed', 'karaoke', 'highlight', 'glass', 'pop'],
     capPos: ['lower', 'middle', 'upper'],
-    bgStyle: ['solid', 'gradient', 'grain', 'paper'],
+    bgStyle: ['solid', 'gradient', 'grain', 'paper', 'ambient'],
+    surface: ['glass', 'solid', 'flat'],
+    imgLayout: ['auto', 'full'],
     pattern: ['none', 'grid', 'dots', 'lines'],
     logoPos: ['top-left', 'top-right', 'bottom-left', 'bottom-right'],
     capSize: ['small', 'medium', 'large'],
     treatment: ['natural', 'dim', 'mono', 'duotone']
   };
   var CAP_SIZE = { small: 0.88, medium: 1.08, large: 1.3 };
-  var TYPES = ['title', 'stat', 'bars', 'compare', 'list', 'quote', 'timeline', 'text', 'image', 'end'];
+  var TYPES = ['title', 'stat', 'bars', 'compare', 'list', 'quote', 'timeline', 'text', 'image', 'message', 'end'];
+  // With layout "auto", a beat photo is framed above these scenes (a photo card); charts and the rest put it behind.
+  var CARD_PHOTO = ['title', 'stat', 'text', 'quote', 'list', 'end'];
 
   var MOTION = {
     calm: { dur: 1.3, dist: 0.6, st: 1.35, tx: 0.9 },
@@ -240,6 +245,8 @@
     d.captions.max_words = clamp(Math.round(num(d.captions.max_words, 4)), 1, 8);
     d.captions.size = pick(d.captions.size, ENUM.capSize, 'medium');
     d.images.treatment = pick(d.images.treatment, ENUM.treatment, 'dim');
+    d.images.layout = pick(d.images.layout, ENUM.imgLayout, 'auto');
+    d.surfaces.style = pick(d.surfaces.style, ENUM.surface, 'glass');
     d.sources.show = d.sources.show !== false;
     d.progress.show = d.progress.show !== false;
     d.background.style = pick(d.background.style, ENUM.bgStyle, 'solid');
@@ -379,7 +386,9 @@
   function normalizeImage(img) {
     if (typeof img === 'string') img = { src: img };
     if (!isObj(img) || typeof img.src !== 'string' || !img.src.trim()) return null;
-    return { src: img.src.trim(), credit: String(img.credit || '').trim() };
+    var out = { src: img.src.trim(), credit: String(img.credit || '').trim() };
+    if (img.layout === 'card' || img.layout === 'full') out.layout = img.layout;
+    return out;
   }
   // Relative media paths ("media/x.jpg") resolve against options.mediaBase; absolute URLs pass through.
   function resolveMedia(src, base) {
@@ -508,6 +517,12 @@
   function drawLine(tl, a, line, at) {
     tw(tl, line, { scaleX: 0 }, { scaleX: 1, duration: a.dur(0.8), ease: a.E.inOut }, at);
   }
+  // A surface (glass, solid or flat, per the look) rises into place; its contents animate on top of it.
+  function cardIn(tl, a, card, at) {
+    tw(tl, card, { y: a.dist(36), opacity: 0, scale: 0.985 }, { y: 0, opacity: 1, scale: 1, duration: a.dur(0.8), ease: a.E.out }, at);
+  }
+  var ARROW = '<svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.6" stroke-linecap="round" stroke-linejoin="round"><path d="M5 12h14M13 6l6 6-6 6"/></svg>';
+  var PERSON = '<svg viewBox="0 0 24 24" fill="currentColor"><circle cx="12" cy="8.5" r="4.2"/><path d="M3.8 21c.7-4.4 4.1-7 8.2-7s7.5 2.6 8.2 7z"/></svg>';
 
   BUILD.title = function (sc) {
     var d = sc.data, st = el('div', 'stack');
@@ -531,19 +546,21 @@
 
   BUILD.stat = function (sc) {
     var d = sc.data, st = el('div', 'stack');
+    var card = el('div', 'card stat-card'); st.appendChild(card);
     var label = null, ctx = null, line = null;
-    if (plain(d.label)) { label = el('div', 'stat-label fit', rich(d.label)); tagLang(label, d.label); st.appendChild(label); }
+    if (plain(d.label)) { label = el('div', 'stat-label fit', rich(d.label)); tagLang(label, d.label); card.appendChild(label); }
     var p = parseValue(d.value);
     var val = el('div', 'value disp fit', valueHTML(d.value || '', p));
-    tagLang(val, d.value); st.appendChild(val);
+    tagLang(val, d.value); card.appendChild(val);
     if (plain(d.context)) {
-      line = el('div', 'stat-line'); st.appendChild(line);
-      ctx = el('div', 'context fit', rich(d.context)); tagLang(ctx, d.context); st.appendChild(ctx);
+      line = el('div', 'stat-line'); card.appendChild(line);
+      ctx = el('div', 'context fit', rich(d.context)); tagLang(ctx, d.context); card.appendChild(ctx);
     }
     return {
       stack: st,
       anim: function (tl, a) {
         var at = a.t0;
+        cardIn(tl, a, card, at); at += a.st(0.12);
         if (label) { fadeUp(tl, a, label, at, 18); at += a.st(0.15); }
         tw(tl, val, { yPercent: 8, opacity: 0 }, { yPercent: 0, opacity: 1, duration: a.dur(0.8), ease: a.E.out }, at);
         countUp(tl, q(val, '.num'), p, at, a.dur(1.3), a.E.num);
@@ -580,7 +597,7 @@
         return { bar: bar, value: v, label: lab, zone: zone, h: h, val: q(v, '.num'), p: it.p };
       });
       var base = el('div', 'cc-base'); chart.appendChild(base);
-      st.appendChild(chart);
+      var ccard = el('div', 'card chart-card'); ccard.appendChild(chart); st.appendChild(ccard);
       return {
         head: head, stack: st,
         post: function () {
@@ -593,6 +610,7 @@
         },
         anim: function (tl, a) {
           var at = revealHead(tl, a, head, a.t0);
+          cardIn(tl, a, ccard, Math.max(a.t0, at - a.st(0.3)));
           drawLine(tl, a, base, at);
           var gap = a.st(Math.min(0.18, 0.9 / rows.length)), bd = a.dur(1.0);
           rows.forEach(function (r, i) {
@@ -619,11 +637,12 @@
       row.appendChild(hd); row.appendChild(track); bars.appendChild(row);
       return { head: hd, fill: fill, val: q(v, '.num'), p: it.p };
     });
-    st.appendChild(bars);
+    var bcard = el('div', 'card chart-card'); bcard.appendChild(bars); st.appendChild(bcard);
     return {
       head: head, stack: st,
       anim: function (tl, a) {
         var at = revealHead(tl, a, head, a.t0);
+        cardIn(tl, a, bcard, Math.max(a.t0, at - a.st(0.3)));
         var gap = a.st(Math.min(0.2, 1.0 / Math.max(1, rows.length)));
         var bd = a.dur(1.0);
         rows.forEach(function (r, i) {
@@ -678,7 +697,8 @@
     } else {
       // words, not numbers: two labelled panels
       parts = items.map(function (it, i) {
-        var col = el('div', 'col panel' + (i === 1 ? ' subject' : ''));
+        if (i === 1) cols.appendChild(el('div', 'vs', ARROW));
+        var col = el('div', 'col panel card' + (i === 1 ? ' subject' : ''));
         var lab = el('div', 'col-label', rich(it.label)); tagLang(lab, it.label);
         var v = el('div', 'panel-value fit', rich(it.value)); tagLang(v, it.value);
         col.appendChild(lab); col.appendChild(v); cols.appendChild(col);
@@ -686,7 +706,9 @@
       });
       st.className = 'stack';   // panels are centred like any other statement
     }
-    st.appendChild(cols);
+    var cmpCard = null;
+    if (numeric) { cmpCard = el('div', 'card chart-card'); cmpCard.appendChild(cols); st.appendChild(cmpCard); }
+    else st.appendChild(cols);
     return {
       head: head, stack: st,
       post: function () {
@@ -699,6 +721,8 @@
       anim: function (tl, a) {
         var at = revealHead(tl, a, head, a.t0);
         var bd = a.dur(1.1);
+        if (cmpCard) cardIn(tl, a, cmpCard, Math.max(a.t0, at - a.st(0.3)));
+        else { var vs = q(cols, '.vs'); if (vs) tw(tl, vs, { scale: 0, opacity: 0 }, { scale: 1, opacity: 1, duration: a.dur(0.5), ease: a.E.pop }, at + 0.1 + a.st(0.3)); }
         if (base) drawLine(tl, a, base, at);
         parts.forEach(function (pt, i) {
           var t = at + 0.1 + i * a.st(0.4);
@@ -726,7 +750,7 @@
       var idx = el('span', 'idx tnum', String(i + 1));
       var t = el('span', 'item-text fit', rich(txt)); tagLang(t, txt);
       li.appendChild(line); li.appendChild(idx); li.appendChild(t); ol.appendChild(li);
-      return { line: line, idx: idx, text: t };
+      return { li: li, line: line, idx: idx, text: t };
     });
     ol.style.setProperty('--n', String(Math.max(1, items.length)));
     var end = el('span', 'item-line end'); ol.appendChild(end);
@@ -740,6 +764,7 @@
         items.forEach(function (it, i) {
           var t = at + i * gap;
           drawLine(tl, a, it.line, t);
+          tw(tl, it.li, { y: a.dist(22), opacity: 0 }, { y: 0, opacity: 1, duration: a.dur(0.6), ease: a.E.out }, t);
           tw(tl, it.idx, { opacity: 0, y: a.dist(16) }, { opacity: 1, y: 0, duration: a.dur(0.5), ease: a.E.out }, t + 0.05);
           tw(tl, it.text, { x: -a.dist(24), opacity: 0 }, { x: 0, opacity: 1, duration: a.dur(0.6), ease: a.E.out }, t + 0.1);
         });
@@ -750,16 +775,23 @@
 
   BUILD.quote = function (sc) {
     var d = sc.data, st = el('div', 'stack');
+    var card = el('figure', 'card quote-card'); st.appendChild(card);
+    var mark = el('div', 'qmark disp', '“'); card.appendChild(mark);
     var wrap = el('div', 'quote');
     var bar = el('span', 'quote-bar'); wrap.appendChild(bar);
-    var qt = el('blockquote', 'quote-text fit', wordsHTML('“' + plain(d.quote || d.text || '') + '”', { mask: false }));
-    tagLang(qt, d.quote); wrap.appendChild(qt); st.appendChild(wrap);
+    var qt = el('blockquote', 'quote-text fit', wordsHTML(plain(d.quote || d.text || ''), { mask: false }));
+    tagLang(qt, d.quote); wrap.appendChild(qt); card.appendChild(wrap);
     var src = null;
-    if (plain(d.source)) { src = el('div', 'source', rich(d.source)); tagLang(src, d.source); st.appendChild(src); }
+    if (plain(d.source)) {
+      src = el('figcaption', 'source', '<span class="src-av">' + PERSON + '</span><span class="src-name">' + rich(d.source) + '</span>');
+      tagLang(src, d.source); card.appendChild(src);
+    }
     return {
       stack: st,
       anim: function (tl, a) {
         var at = a.t0;
+        cardIn(tl, a, card, at);
+        tw(tl, mark, { opacity: 0, y: a.dist(20) }, { opacity: 1, y: 0, duration: a.dur(0.6), ease: a.E.out }, at + a.st(0.1));
         tw(tl, bar, { scaleY: 0 }, { scaleY: 1, duration: a.dur(0.7), ease: a.E.inOut }, at);
         var ws = qa(qt, '.w');
         var span = Math.min((a.e - at) * 0.45, ws.length * 0.1 * a.f + 0.2);
@@ -825,7 +857,8 @@
     var txt = d.text || d.title || sc.text || '';
     var hasStar = /\*/.test(txt);
     var p = el('p', 'punch disp fit', wordsHTML(txt, { autoEm: hasStar ? null : function (w) { return /[0-9०-९₹$%]/.test(w); } }));
-    tagLang(p, txt); st.appendChild(p);
+    var pw = el('div', 'punch-wrap'); pw.appendChild(p);
+    tagLang(p, txt); st.appendChild(pw);
     if (plain(txt).length <= 14) p.classList.add('short');   // a figure or a few words: set it like a poster
     return {
       stack: st,
@@ -846,7 +879,7 @@
       st.className = 'stack photo-only';
       return { stack: st, anim: function () {} };
     }
-    var card = el('div', 'img-card');
+    var card = el('div', 'img-card card');
     var inner = el('div', 'ph');
     inner.innerHTML = '<div class="ph-tag">Image needed</div>';
     var desc = el('div', 'ph-desc fit', rich(d.description || ''));
@@ -862,37 +895,110 @@
     };
   };
 
-  // Full-bleed photo behind a scene: decoded before fitting, slow Ken Burns across the clip.
-  function buildBackdrop(photo, sc, ctx) {
-    var wrap = el('div', 'backdrop' + (sc.type === 'image' ? ' is-hero' : ''));
+  // The moment on a phone: a call or a text, bubble by bubble. Lines starting "you:" (or "me:", "आप:", "मैं:")
+  // are the viewer's own replies, on the right in the accent; the rest arrive on the left, each after a moment of
+  // typing dots. Bubbles keep their final size from the start, so nothing reflows while it plays.
+  BUILD.message = function (sc) {
+    var d = sc.data, st = el('div', 'stack');
+    var card = el('div', 'card msg-card'); st.appendChild(card);
+    var who = plain(d.title);
+    var head = el('div', 'msg-head', '<span class="msg-av">' + PERSON + '</span><span class="msg-who">' + rich(who) + '</span>');
+    tagLang(head, who); card.appendChild(head);
+    var thread = el('div', 'msg-thread'); card.appendChild(thread);
+    var bubbles = (Array.isArray(d.items) ? d.items : []).slice(0, 5).map(function (raw) {
+      raw = typeof raw === 'string' ? raw : (raw && (raw.text || raw.label)) || '';
+      var m = /^\s*(you|me|\u0906\u092A|\u092E\u0948\u0902)\s*:\s*/i.exec(raw);
+      var txt = m ? raw.slice(m[0].length) : raw;
+      var b = el('div', 'bubble ' + (m ? 'out' : 'in'));
+      var body = el('span', 'bubble-text', rich(txt)); tagLang(b, txt);
+      b.appendChild(body);
+      var dots = null;
+      if (!m) { dots = el('span', 'dots', '<i></i><i></i><i></i>'); b.appendChild(dots); }
+      thread.appendChild(b);
+      return { el: b, body: body, dots: dots, out: !!m };
+    });
+    return {
+      stack: st,
+      anim: function (tl, a) {
+        var at = a.t0;
+        cardIn(tl, a, card, at);
+        fadeUp(tl, a, head, at + a.st(0.1), 12);
+        var n = Math.max(1, bubbles.length);
+        var gap = clamp(Math.max(0.4, (a.e - at) * 0.6) / n, 0.35 * a.f, 1.4);
+        bubbles.forEach(function (b, i) {
+          var t = at + a.st(0.25) + i * gap;
+          tw(tl, b.el, { scale: 0.86, opacity: 0, y: a.dist(14) }, { scale: 1, opacity: 1, y: 0, duration: a.dur(0.45), ease: a.E.pop }, t);
+          if (b.dots) {
+            var typing = Math.min(0.55, gap * 0.45);
+            tw(tl, b.body, { opacity: 0 }, { opacity: 1, duration: 0.2, ease: 'power1.out' }, t + typing);
+            tw(tl, b.dots, { opacity: 1 }, { opacity: 0, duration: 0.15, ease: 'power1.out' }, t + typing - 0.05);
+            tw(tl, qa(b.dots, 'i'), { y: 0 }, { y: -7, duration: 0.18, ease: 'sine.inOut', yoyo: true, repeat: 1, stagger: 0.09 }, t + 0.05);
+          }
+        });
+      }
+    };
+  };
+
+  // A photo framed above the scene: the content's panel overlaps its lower edge, like a magazine layout.
+  function buildPhotoCard(photo, sc, ctx) {
+    var wrap = el('div', 'photo-card');
     var img = el('img');
     img.alt = plain(sc.data.description || sc.beat || '');
     img.decoding = 'sync';
     img.src = photo.url;
     wrap.appendChild(img);
     if (ctx.design.images.treatment === 'duotone') wrap.appendChild(el('div', 'tint'));
+    wrap.appendChild(el('div', 'pc-shade'));
+    if (photo.credit) { var c = el('div', 'pc-credit', rich(photo.credit)); tagLang(c, photo.credit); wrap.appendChild(c); }
+    var ok = true;
+    ctx.waits.push(withTimeout(img.decode ? img.decode().catch(function () { ok = false; }) :
+      new Promise(function (res) { img.onload = res; img.onerror = function () { ok = false; res(); }; }), 8000).then(function () {
+      if (!ok || !img.naturalWidth) wrap.setAttribute('data-failed', '1');
+    }));
+    return {
+      el: wrap, img: img,
+      anim: function (tl, a) {
+        tw(tl, wrap, { opacity: 0, y: a.dist(28), scale: 0.97 }, { opacity: 1, y: 0, scale: 1, duration: a.dur(0.9), ease: a.E.out }, a.t0 - 0.05);
+        var zoomIn = a.rand() > 0.3, dx = (a.rand() - 0.5) * 4;
+        tw(tl, img, { scale: zoomIn ? 1.04 : 1.12, xPercent: -dx / 2 }, { scale: zoomIn ? 1.12 : 1.04, xPercent: dx / 2, duration: Math.max(0.1, a.clipEnd - a.clipStart), ease: 'none' }, a.clipStart);
+      }
+    };
+  }
+
+  // Full-bleed photo behind a scene: decoded before fitting, slow Ken Burns across the clip.
+  function buildBackdrop(photo, sc, ctx, mode) {
+    var wrap = el('div', 'backdrop is-' + mode);
+    var img = el('img');
+    img.alt = plain(sc.data.description || sc.beat || '');
+    img.decoding = 'sync';
+    img.src = photo.url;
+    wrap.appendChild(img);
+    if (ctx.design.images.treatment === 'duotone' && mode !== 'ambient') wrap.appendChild(el('div', 'tint'));
     wrap.appendChild(el('div', 'scrim'));
     var ok = true;
     ctx.waits.push(withTimeout(img.decode ? img.decode().catch(function () { ok = false; }) :
       new Promise(function (res) { img.onload = res; img.onerror = function () { ok = false; res(); }; }), 8000).then(function () {
       if (!ok || !img.naturalWidth) { wrap.style.display = 'none'; wrap.setAttribute('data-failed', '1'); }
     }));
-    return {
-      el: wrap, img: img,
+    var self = {
+      el: wrap, img: img, mode: mode,
       anim: function (tl, a) {
         if (wrap.style.display === 'none') return;
+        var mode = self.mode;
         // drift direction varies per scene but is fixed for a given script, so renders repeat exactly
         var dx = (a.rand() - 0.5) * 3, dy = (a.rand() - 0.5) * 2, zoomIn = a.rand() > 0.35;
         var s0 = zoomIn ? 1.02 : 1.08, s1 = zoomIn ? 1.08 : 1.02;
+        if (mode === 'ambient') { s0 += 0.25; s1 += 0.25; }
         tw(tl, img, { scale: s0, xPercent: -dx / 2, yPercent: -dy / 2 }, { scale: s1, xPercent: dx / 2, yPercent: dy / 2, duration: Math.max(0.1, a.clipEnd - a.clipStart), ease: 'none' }, a.clipStart);
       }
     };
+    return self;
   }
 
   // One line of small print at the very bottom of the frame: where a fact comes from, and who took the photo.
-  function buildMeta(sc, photo, design, L) {
+  function buildMeta(sc, photo, design, L, creditShown) {
     var src = design.sources.show ? sc.source : '';
-    var credit = photo && photo.credit ? photo.credit : '';
+    var credit = photo && photo.credit && !creditShown ? photo.credit : '';
     if (!src && !credit) return null;
     var row = el('div', 'meta-row');
     row.style.cssText = 'left:' + L.meta.left + 'px;top:' + L.meta.top + 'px;width:' + L.meta.width + 'px;height:' + L.meta.height + 'px';
@@ -904,21 +1010,23 @@
 
   BUILD.end = function (sc, ctx) {
     var d = sc.data, st = el('div', 'stack');
+    var card = el('div', 'card end-card'); st.appendChild(card);
     var logoText = ctx.design.logo.text.trim();
     var lg = null;
-    if (logoText) { lg = el('div', 'end-logo', '<span class="logo-mark"></span><span>' + rich(logoText) + '</span>'); tagLang(lg, logoText); st.appendChild(lg); }
+    if (logoText) { lg = el('div', 'end-logo', '<span class="logo-mark"></span><span>' + rich(logoText) + '</span>'); tagLang(lg, logoText); card.appendChild(lg); }
     var title = el('h1', 'end-title disp fit', wordsHTML(d.title || ''));
-    tagLang(title, d.title); st.appendChild(title);
+    tagLang(title, d.title); card.appendChild(title);
     var cta = null;
     if (plain(d.cta)) {
-      cta = el('div', 'cta fit', '<span>' + rich(d.cta) + '</span><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.6" stroke-linecap="round" stroke-linejoin="round"><path d="M5 12h14M13 6l6 6-6 6"/></svg>');
+      cta = el('div', 'cta fit', '<span>' + rich(d.cta) + '</span>' + ARROW);
       tagLang(cta, d.cta);
-      st.appendChild(cta);
+      card.appendChild(cta);
     }
     return {
       stack: st,
       anim: function (tl, a) {
         var at = a.t0;
+        cardIn(tl, a, card, at); at += a.st(0.12);
         if (lg) { fadeUp(tl, a, lg, at, 14); at += a.st(0.2); }
         var end = revealWords(tl, title, at, a, { stagger: 0.07 });
         if (cta) fadeUp(tl, a, cta, end + 0.05, 20);
@@ -949,13 +1057,18 @@
     return r.getBoundingClientRect().width * ratio;
   }
   function fitScene(sceneEl) {
-    var body = q(sceneEl, '.body'), st = q(sceneEl, '.stack');
+    var body = q(sceneEl, '.body'), st = q(sceneEl, '.stack'), pc = q(sceneEl, '.photo-card');
     if (!body || !st) return;
     var k = 1;
+    // in a wide frame the photo sits beside the panel (.pc-row), so it takes no height from it
+    var row = pc && sceneEl.parentNode && sceneEl.parentNode.classList.contains('pc-row');
+    if (pc) pc.style.minHeight = row ? '0px' : Math.round(body.clientHeight * 0.4) + 'px';
     for (var i = 0; i < 20; i++) {
       sceneEl.style.setProperty('--k', k.toFixed(4));
       fitWidths(sceneEl);
-      var need = st.scrollHeight, have = body.clientHeight;
+      // with a photo card, the stack shares the body with the photo's minimum height (less the panel's overlap)
+      var need = st.scrollHeight + (pc && !row ? parseFloat(pc.style.minHeight) + (parseFloat(root.getComputedStyle(st).marginTop) || 0) : 0);
+      var have = body.clientHeight;
       if (need <= have + 16 || k < 0.35) break;
       k *= clamp(Math.sqrt(have / need), 0.8, 0.97);
     }
@@ -1032,7 +1145,7 @@
         var wordsH = ch.map(function (i) { return '<span class="w">' + wrapDv(esc(sp.words[i])) + '</span>'; }).join(' ');
         inner.innerHTML = style === 'boxed' ? '<span class="line">' + wordsH + '</span>' : wordsH;
         var pill = null;
-        if (style === 'highlight') { pill = el('span', 'cap-hl'); inner.insertBefore(pill, inner.firstChild); }
+        if (style === 'highlight' || style === 'glass') { pill = el('span', 'cap-hl'); inner.insertBefore(pill, inner.firstChild); }
         tagLang(inner, text);
         cap.appendChild(inner);
         layer.appendChild(cap);
@@ -1097,6 +1210,14 @@
     var bg = el('div', 'bg');
     bg.setAttribute('data-track-index', '0');
     var style = design.background.style, pat = design.background.pattern;
+    var blobs = [];
+    // ambient: three very soft fields of light (accent, second accent, a neutral) that drift a little from beat
+    // to beat, so glass has something to catch. No blur filters: radial gradients are soft and cheap to paint.
+    if (style === 'ambient') {
+      var amb = el('div', 'bg-amb');
+      ['a1', 'a2', 'a3'].forEach(function (k) { var b = el('div', 'blob ' + k); amb.appendChild(b); blobs.push(b); });
+      bg.appendChild(amb);
+    }
     // flat colour by default; `gradient` is a barely-there tonal step from the top, never a glow
     if (style === 'gradient') bg.appendChild(el('div', 'bg-tone'));
     var patEl = null;
@@ -1110,14 +1231,15 @@
       bg.appendChild(patEl);
     }
     var noise = null;
-    if (style === 'grain' || style === 'paper') {
+    if (style === 'grain' || style === 'paper' || style === 'ambient') {
       noise = el('div', 'bg-noise');
-      noise.style.backgroundImage = noiseURI(style, colors.dark);
-      noise.style.opacity = style === 'grain' ? (colors.dark ? '0.07' : '0.06') : '1';
+      noise.style.backgroundImage = noiseURI(style === 'paper' ? 'paper' : 'grain', colors.dark);
+      noise.style.opacity = style === 'paper' ? '1' : style === 'ambient' ? (colors.dark ? '0.06' : '0.05') : (colors.dark ? '0.07' : '0.06');
       if (style === 'paper') noise.style.mixBlendMode = 'multiply';
       bg.appendChild(noise);
     }
     stage.appendChild(bg);
+    return { blobs: blobs };
   }
 
   // ---------------------------------------------------------------- build
@@ -1174,7 +1296,17 @@
         '--cap-box-text': dark ? C.text : C.background,
         '--cap-dim': rgba(C.text, 0.55),
         '--cap-k': String(CAP_SIZE[design.captions.size]),
-        '--scrim': rgba(C.background, 0.62), '--scrim-hero': rgba(C.background, 0.2),
+        '--scrim': rgba(C.background, 0.58), '--scrim-hero': rgba(C.background, 0.12),
+        '--scrim-amb': rgba(C.background, dark ? 0.42 : 0.5),
+        '--fade-top': rgba(C.background, 0.45), '--fade-bot': rgba(C.background, 0.86),
+        '--cap-glass': dark ? rgba(C.background, 0.5) : rgba('#FFFFFF', 0.72),
+        '--glass': rgba(dark ? C.text : '#FFFFFF', dark ? 0.075 : 0.56), '--glass-strong': rgba(dark ? C.text : '#FFFFFF', dark ? 0.13 : 0.82),
+        '--glass-border': rgba(dark ? C.text : '#FFFFFF', dark ? 0.15 : 0.9), '--glass-edge': dark ? 'rgba(0,0,0,.28)' : rgba(C.text, 0.09),
+        '--glass-hi': rgba('#FFFFFF', dark ? 0.16 : 0.95), '--glass-dark': rgba(C.background, 0.62),
+        '--glass-shadow': dark ? '0 44px 90px -42px rgba(0,0,0,.8)' : '0 34px 70px -40px ' + rgba(C.text, 0.4),
+        '--accent-soft': rgba(C.accent, dark ? 0.16 : 0.13), '--accent-line': rgba(C.accent, dark ? 0.5 : 0.55),
+        '--amb1': rgba(C.accent, dark ? 0.26 : 0.22), '--amb2': rgba(C.accent2, dark ? 0.17 : 0.15), '--amb3': rgba(dark ? C.text : C.accent2, dark ? 0.07 : 0.08),
+        '--r-card': Math.min(56, Math.round(design.radius * 2.75)) + 'px', '--r-sm': Math.min(30, Math.round(design.radius * 1.4)) + 'px',
         '--photo-shadow': dark ? '0 2px 28px rgba(0,0,0,.55)' : 'none',
         '--cl': L.content.left + 'px', '--ct': L.content.top + 'px', '--cw': L.content.width + 'px', '--ch': L.content.height + 'px'
       };
@@ -1189,6 +1321,7 @@
       if (reuse) stage.innerHTML = '';
       stage.className = 'vid-stage ar-' + (L.landscape ? 'landscape' : 'portrait') + ' aspect-' + design.aspect.replace(':', 'x') +
         ' energy-' + design.motion.energy + ' tx-' + design.motion.transition + ' bg-' + design.background.style + (dark ? ' is-dark' : ' is-light') +
+        ' surf-' + design.surfaces.style + (L.content.width > L.content.height * 0.9 ? ' pc-row' : '') +
         ' img-' + design.images.treatment + ' cap-size-' + design.captions.size;
       stage.setAttribute('data-composition-id', COMPOSITION_ID);
       stage.setAttribute('data-start', '0');
@@ -1220,7 +1353,7 @@
       gsap.config({ force3D: false });   // 2D transforms only: identical rasterization whichever way a frame is reached
       var tl = gsap.timeline({ paused: true });
 
-      buildBackground(stage, design, colors);
+      var bgParts = buildBackground(stage, design, colors);
 
       // ---- scenes
       var waits = [];
@@ -1243,6 +1376,8 @@
         var pic = sc.type === 'image' ? (sc.data.url ? { src: sc.data.url, credit: sc.data.credit || (sc.image && sc.image.credit) || '' } : sc.image) : sc.image;
         var photo = pic ? { url: resolveMedia(pic.src, options.mediaBase), credit: pic.credit || '' } : null;
         if (photo && !photo.url) photo = null;
+        var mode = !photo ? null : sc.type === 'image' ? 'hero' :
+          (sc.image && sc.image.layout) || (design.images.layout === 'full' ? 'full' : CARD_PHOTO.indexOf(sc.type) >= 0 ? 'card' : 'full');
         var ctx = { design: design, waits: waits, photo: photo };
         var b = BUILD[sc.type](sc, ctx);
         // the overlay label and a chart's title share a header row pinned to the top of the content area
@@ -1252,14 +1387,16 @@
           if (b.head) head.appendChild(b.head);
           frame.appendChild(head);
         }
+        var pcard = mode === 'card' ? buildPhotoCard(photo, sc, ctx) : null;
+        if (pcard) { body.appendChild(pcard.el); sEl.classList.add('has-pcard'); }
         body.appendChild(b.stack);
         frame.appendChild(body);
-        var meta = buildMeta(sc, photo, design, L);
-        var backdrop = photo ? buildBackdrop(photo, sc, ctx) : null;
-        if (backdrop) { inner.appendChild(backdrop.el); sEl.classList.add('has-photo'); }
+        var meta = buildMeta(sc, photo, design, L, !!pcard);
+        var backdrop = photo ? buildBackdrop(photo, sc, ctx, mode === 'card' ? 'ambient' : mode) : null;
+        if (backdrop) { inner.appendChild(backdrop.el); sEl.classList.add(mode === 'card' ? 'has-ambient-photo' : 'has-photo'); }
         drift.appendChild(frame); if (meta) drift.appendChild(meta); inner.appendChild(drift); sEl.appendChild(inner);
         stage.appendChild(sEl);
-        return { sc: sc, el: sEl, inner: inner, drift: drift, chip: chip, b: b, backdrop: backdrop, meta: meta, clipStart: clipStart, clipEnd: clipEnd, t: t };
+        return { sc: sc, el: sEl, inner: inner, drift: drift, chip: chip, b: b, backdrop: backdrop, pcard: pcard, meta: meta, clipStart: clipStart, clipEnd: clipEnd, t: t, photoCredit: photo ? photo.credit : '' };
       });
 
       // ---- logo, wipe, guides
@@ -1290,14 +1427,35 @@
       return Promise.all(waits).then(function () {
         if (container.__vidSeq !== my) throw Object.assign(new Error('superseded'), { cancelled: true });
         built.forEach(function (x) {
+          if (x.pcard && x.pcard.el.hasAttribute('data-failed')) {
+            x.pcard.el.parentNode.removeChild(x.pcard.el);
+            x.pcard = null;
+            x.el.classList.remove('has-pcard');
+          }
           if (x.backdrop && x.backdrop.el.hasAttribute('data-failed')) {
-            x.el.classList.remove('has-photo');
+            x.el.classList.remove('has-photo', 'has-ambient-photo');
             if (x.sc.type === 'image') {
               var fallback = BUILD.image(x.sc, { design: design, waits: [] });
               x.b.stack.replaceWith(fallback.stack);
               x.b = fallback;
             }
           }
+        });
+        // An image scene's photo that would be upscaled a lot to fill the frame looks soft: frame it instead,
+        // over a blurred copy of itself.
+        built.forEach(function (x) {
+          if (x.sc.type !== 'image' || !x.backdrop || !x.el.classList.contains('has-photo')) return;
+          var im = x.backdrop.img, scale = Math.max(W / (im.naturalWidth || W), H / (im.naturalHeight || H));
+          if (scale < 1.6) return;
+          var photo = { url: im.src, credit: x.photoCredit };
+          var pc = buildPhotoCard(photo, x.sc, { design: design, waits: [] });
+          pc.el.classList.add('is-hero-card');
+          x.b.stack.replaceWith(pc.el);
+          x.backdrop.el.className = 'backdrop is-ambient';
+          x.backdrop.mode = 'ambient';
+          x.el.classList.remove('has-photo'); x.el.classList.add('has-ambient-photo', 'has-pcard');
+          x.pcard = pc;
+          if (x.meta) { var cr = q(x.meta, '.credit'); if (cr) cr.parentNode.removeChild(cr); }
         });
         // ---- fit (fonts are loaded or frozen to system fallbacks)
         built.forEach(function (x) {
@@ -1343,9 +1501,32 @@
           // overlay label
           if (x.chip) tw(tl, x.chip, { x: -a.dist(16), opacity: 0 }, { x: 0, opacity: 1, duration: a.dur(0.6), ease: E.out }, a.t0);
           if (x.backdrop) x.backdrop.anim(tl, a);
+          if (x.pcard) x.pcard.anim(tl, a);
           if (x.meta) tw(tl, x.meta, { opacity: 0, y: 12 }, { opacity: 1, y: 0, duration: 0.5, ease: 'power2.out' }, a.t0 + Math.min(0.7, d * 0.2));
           x.b.anim(tl, a);
         });
+
+        // the ambient light moves a little at every beat, so the frame never sits dead still between scenes
+        if (bgParts.blobs.length) {
+          var spots = function (i) {
+            var r = mulberry32(9001 + i * 131);
+            return [
+              { xPercent: -50 + (r() - 0.5) * 40, yPercent: -50 + (r() - 0.5) * 24, scale: 0.9 + r() * 0.3 },
+              { xPercent: -50 + (r() - 0.5) * 50, yPercent: -50 + (r() - 0.5) * 30, scale: 0.85 + r() * 0.35 },
+              { xPercent: -50 + (r() - 0.5) * 30, yPercent: -50 + (r() - 0.5) * 30, scale: 1 + r() * 0.2 }
+            ];
+          };
+          bgParts.blobs.forEach(function (blob, j) {
+            var prev = spots(0)[j];
+            gsap.set(blob, prev);
+            for (var si = 1; si < built.length; si++) {
+              var next = spots(si)[j];
+              var at = Math.max(0, timing[si].start - 0.5);
+              tw(tl, blob, prev, Object.assign({ duration: Math.min(2.2, timing[si].duration + 0.5), ease: 'sine.inOut' }, next), at, si === 1 ? undefined : false);
+              prev = next;
+            }
+          });
+        }
 
         // the progress line fills one segment per beat, at the pace of the voiceover
         progFills.forEach(function (f, i) {
