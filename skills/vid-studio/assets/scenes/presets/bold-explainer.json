@@ -1,28 +1,28 @@
 {
   "id": "bold-explainer",
   "name": "Bold Explainer",
-  "description": "Dark, loud and fast: condensed all-caps headlines, hot-yellow numbers and karaoke captions. Built for Shorts that explain one thing hard.",
+  "description": "Warm charcoal, marigold numbers and a characterful grotesque in sentence case. Fast, confident, built for Shorts that explain one thing.",
   "design": {
     "aspect": "9:16",
     "colors": {
-      "background": "#0E0E10",
-      "surface": "#1A1A1F",
-      "text": "#F5F5F0",
-      "muted": "#9A9AA2",
-      "accent": "#FFD23F",
-      "accent2": "#3DDC97",
-      "negative": "#FF5A5F"
+      "background": "#121212",
+      "surface": "#1E1E1E",
+      "text": "#F7F3EA",
+      "muted": "#9C978D",
+      "accent": "#FFC233",
+      "accent2": "#FF7A45",
+      "negative": "#FF5D5D"
     },
     "fonts": {
-      "display": "Anton",
+      "display": "Bricolage Grotesque",
       "body": "Mukta",
       "mono": "JetBrains Mono"
     },
     "type": {
       "scale": 1.0,
-      "display_case": "upper",
+      "display_case": "none",
       "display_weight": 800,
-      "tracking": -0.01
+      "tracking": -0.03
     },
     "motion": {
       "energy": "high",
@@ -30,16 +30,26 @@
       "transition": "slide"
     },
     "captions": {
-      "style": "karaoke",
+      "style": "highlight",
       "position": "lower",
       "highlight": "accent",
-      "max_words": 4
+      "max_words": 4,
+      "size": "medium"
     },
     "background": {
       "style": "grain",
-      "pattern": "grid"
+      "pattern": "none"
     },
-    "radius": 18,
+    "images": {
+      "treatment": "dim"
+    },
+    "sources": {
+      "show": true
+    },
+    "progress": {
+      "show": true
+    },
+    "radius": 12,
     "logo": {
       "text": "",
       "position": "top-left"

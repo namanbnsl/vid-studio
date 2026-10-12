@@ -18,16 +18,17 @@ To start from a preset, `studio.py presets` lists them; set `"preset"` and drop 
 {
   "preset": "bold-explainer",
   "aspect": "9:16",
-  "colors": {"background": "#0E0E10", "surface": "#1A1A1F", "text": "#F5F5F0", "muted": "#9A9AA2",
-             "accent": "#FFD23F", "accent2": "#3DDC97", "negative": "#FF5A5F"},
-  "fonts": {"display": "Anton", "body": "Mukta", "mono": "JetBrains Mono"},
-  "type": {"scale": 1.0, "display_case": "upper", "display_weight": 800, "tracking": -0.01},
+  "colors": {"background": "#121212", "surface": "#1E1E1E", "text": "#F7F3EA", "muted": "#9C978D",
+             "accent": "#FFC233", "accent2": "#FF7A45", "negative": "#FF5D5D"},
+  "fonts": {"display": "Bricolage Grotesque", "body": "Mukta", "mono": "JetBrains Mono"},
+  "type": {"scale": 1.0, "display_case": "none", "display_weight": 800, "tracking": -0.03},
   "motion": {"energy": "high", "easing": "snappy", "transition": "slide"},
-  "captions": {"style": "karaoke", "position": "lower", "highlight": "accent", "max_words": 4, "size": "medium"},
-  "background": {"style": "grain", "pattern": "grid"},
+  "captions": {"style": "highlight", "position": "lower", "highlight": "accent", "max_words": 4, "size": "medium"},
+  "background": {"style": "grain", "pattern": "none"},
   "images": {"treatment": "dim"},
   "sources": {"show": true},
-  "radius": 18,
+  "progress": {"show": true},
+  "radius": 12,
   "logo": {"text": "PIPE GYAAN", "position": "top-left"},
   "custom_css": ""
 }
@@ -45,15 +46,20 @@ To start from a preset, `studio.py presets` lists them; set `"preset"` and drop 
 | `motion.energy` | `calm`, `medium`, or `high`: how fast and how much things move |
 | `motion.easing` | `smooth`, `snappy`, or `bouncy` |
 | `motion.transition` | Between scenes: `cut`, `fade`, `slide`, `zoom`, or `wipe` |
-| `captions.style` | `none`, `plain`, `boxed`, `karaoke` (words light up as spoken), or `pop` (one word at a time, big) |
+| `captions.style` | `none`, `plain`, `boxed`, `karaoke` (words light up as spoken), `highlight` (a pill in the highlight colour slides behind the word being spoken; the default), or `pop` (one or two words at a time, big) |
 | `captions.position` | `lower`, `middle`, or `upper` |
 | `captions.highlight` | `accent`, `accent2`, or `text` |
 | `captions.max_words` | Words per caption line, 1–8 |
 | `captions.size` | `small`, `medium`, or `large`. Captions carry the words while videos have no voiceover, so `medium` or `large` |
 | `images.treatment` | How beat photos (`Image:` lines) look: `natural`, `dim` (darkened for legible text), `mono` (black and white), or `duotone` (tinted from the background color to the accent, so photos from different sources look like one brand) |
-| `sources.show` | `true` shows each beat's `Source:` line as a small tag; `false` hides them |
-| `background.style` | `solid`, `gradient`, `grain`, or `paper` |
+| `sources.show` | `true` shows each beat's `Source:` line as one line of small print at the very bottom of the frame; `false` hides them |
+| `progress.show` | `true` draws a thin progress line at the top, one segment per beat, filling as the voiceover plays |
+| `background.style` | `solid` (flat colour, the default for most looks), `gradient` (a barely visible tonal step from the top), `grain` (fine film grain), or `paper` (paper texture) |
 | `background.pattern` | `none`, `grid`, `dots`, or `lines` |
 | `radius` | Corner radius of cards and bars, in px at 1080 wide (0–48) |
 | `logo.text` / `logo.position` | A text wordmark shown small on every scene (empty for none); `top-left`, `top-right`, `bottom-left`, `bottom-right` |
 | `custom_css` | Extra CSS for the composition, for anything the keys can't express. Scenes use CSS variables like `--accent` and classes like `.scene-stat .value`; keep it small. |
+
+## Taste
+
+The scenes are flat colour, type and data. Keep them that way: one accent for the thing that matters in each scene (the number, the highlighted bar, the spoken word), a muted colour for everything else, and no gradients, glows or patterns unless the user asks for them. Headlines read better in sentence case (`display_case: none`); keep `upper` for condensed display faces. Check that `accent` reads on `background` (contrast 3:1 or more for big numbers) and that `text` reads at 4.5:1.

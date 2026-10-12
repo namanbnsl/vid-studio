@@ -46,13 +46,14 @@ STAGES = ["script", "ready", "published"]
 DEFAULT_PRESET = "bold-explainer"
 DEFAULT_DESIGN = {
     "preset": DEFAULT_PRESET, "aspect": "9:16",
-    "colors": {"background": "#0E0E10", "surface": "#1A1A1F", "text": "#F5F5F0", "muted": "#9A9AA2",
-               "accent": "#FFD23F", "accent2": "#3DDC97", "negative": "#FF5A5F"},
-    "fonts": {"display": "Anton", "body": "Mukta", "mono": "JetBrains Mono"},
-    "type": {"scale": 1.0, "display_case": "upper", "display_weight": 800, "tracking": -0.01},
+    "colors": {"background": "#121212", "surface": "#1E1E1E", "text": "#F7F3EA", "muted": "#9C978D",
+               "accent": "#FFC233", "accent2": "#FF7A45", "negative": "#FF5D5D"},
+    "fonts": {"display": "Bricolage Grotesque", "body": "Mukta", "mono": "JetBrains Mono"},
+    "type": {"scale": 1.0, "display_case": "none", "display_weight": 800, "tracking": -0.03},
     "motion": {"energy": "high", "easing": "snappy", "transition": "slide"},
-    "captions": {"style": "karaoke", "position": "lower", "highlight": "accent", "max_words": 4, "size": "medium"},
-    "background": {"style": "grain", "pattern": "grid"}, "images": {"treatment": "dim"}, "sources": {"show": True}, "radius": 18,
+    "captions": {"style": "highlight", "position": "lower", "highlight": "accent", "max_words": 4, "size": "medium"},
+    "background": {"style": "grain", "pattern": "none"}, "images": {"treatment": "dim"}, "sources": {"show": True},
+    "progress": {"show": True}, "radius": 12,
     "logo": {"text": "", "position": "top-left"}, "custom_css": "",
 }
 HOOK_STYLES = ["question", "surprising-stat", "myth-bust", "story", "stakes", "contrast"]
@@ -1139,7 +1140,7 @@ def save_design(root: Path, channel_id: str, design: dict) -> dict:
         "aspect": ["9:16", "16:9", "1:1", "4:5"], "type.display_case": ["upper", "title", "none"],
         "motion.energy": ["calm", "medium", "high"], "motion.easing": ["smooth", "snappy", "bouncy"],
         "motion.transition": ["cut", "fade", "slide", "zoom", "wipe"],
-        "captions.style": ["none", "plain", "boxed", "karaoke", "pop"], "captions.position": ["lower", "middle", "upper"],
+        "captions.style": ["none", "plain", "boxed", "karaoke", "highlight", "pop"], "captions.position": ["lower", "middle", "upper"],
         "captions.highlight": ["accent", "accent2", "text"], "background.style": ["solid", "gradient", "grain", "paper"],
         "background.pattern": ["none", "grid", "dots", "lines"], "logo.position": ["top-left", "top-right", "bottom-left", "bottom-right"],
         "captions.size": ["small", "medium", "large"], "images.treatment": ["natural", "dim", "mono", "duotone"],
@@ -1165,8 +1166,9 @@ def save_design(root: Path, channel_id: str, design: dict) -> dict:
                 raise ValueError(f"design.fonts.{key}: unknown family {value!r}; choose a family from studio.py fonts")
             if key in ("display", "body") and language in ("hindi", "hinglish") and not catalog[value]["devanagari"]:
                 raise ValueError(f"design.fonts.{key}: {value!r} does not support Devanagari; choose a family from studio.py fonts --devanagari for {language.title()}")
-    if not isinstance(design["sources"]["show"], bool):
-        raise ValueError("design.sources.show must be true or false")
+    for group in ("sources", "progress"):
+        if not isinstance(design[group]["show"], bool):
+            raise ValueError(f"design.{group}.show must be true or false")
     check_text(design["logo"]["text"], "design.logo.text", 200)
     css = check_text(design["custom_css"], "design.custom_css", 20000)
     if re.search(r"</style|<script", css, re.I):
@@ -1264,6 +1266,74 @@ def word_count(text: str) -> int:
 
 def total_duration(scenes: list[dict]) -> float:
     return round(sum(scene["duration"] for scene in scenes), 1)
+
+
+UNIT_HINT = re.compile(r"[\d%₹$€£]|index|score|points|rank|rating|lakh|crore|litre|liter|kg|km|hour|minute|day|month|year|"
+                       r"रुपये|लाख|करोड़|लीटर|साल|महीने|घंटे|मिनट|दिन", re.I)
+
+
+MACHINE_PHRASES = [
+    "here's why", "here's the catch", "here's the thing", "the kicker", "plot twist", "let's dive", "let's get into",
+    "without further ado", "let that sink in", "read that again", "this changes everything", "game-changer", "game changer",
+    "until it doesn't", "let's check", "buckle up", "stay tuned", "but wait", "the answer might surprise", "in today's",
+    "it's important to note", "it's worth mentioning", "plays a crucial role", "a testament to", "delve",
+    "seamless", "in conclusion", "to sum up", "smash that", "like, share and subscribe", "have you ever wondered",
+    "follow for more", "follow to keep up",
+    "दोस्तों", "आपको बता दें", "गौरतलब है", "तो चलिए", "आज की इस वीडियो", "अंत तक ज़रूर",
+]
+
+
+def voice_warnings(scene: dict) -> list[str]:
+    """Spoken patterns that make a script sound generated (script-craft.md §5 and §9)."""
+    spoken = spoken_text(scene["vo"])
+    low = spoken.casefold().replace("’", "'")
+    found = [p for p in MACHINE_PHRASES if p in low]
+    warnings = [f"{scene['beat']}: \"{p}\" sounds machine-made; say the fact itself" for p in found]
+    sentences = [x for x in re.split(r"(?<=[.!?।])\s+", spoken) if x.strip()]
+    run = best = 0
+    for sentence in sentences:
+        run = run + 1 if word_count(sentence) <= 3 else 0
+        best = max(best, run)
+    if best >= 3:
+        warnings.append(f"{scene['beat']}: {best} fragment sentences in a row; join them into one sentence that explains")
+    return warnings
+
+
+def scene_warnings(scenes: list[dict]) -> list[str]:
+    """On-screen problems that make a video look generated: repeated lines, slogan runs, charts without meaning."""
+    warnings, seen = [], {}
+    for scene in scenes:
+        if scene["duration"] > 12:
+            warnings.append(f"{scene['beat']} runs over 12s ({scene['duration']:.1f}s); split it into smaller beats")
+        warnings += voice_warnings(scene)
+        data, kind = scene["data"], scene["type"]
+        if word_count(scene["text"]) > 8 or (kind == "text" and word_count(data.get("text", "")) > 8):
+            warnings.append(f"{scene['beat']} has more than 8 words of on-screen text; shorten it")
+        # chart titles may repeat across a deliberate series; headline lines may not
+        headline = data.get("title", "") if kind in ("title", "end") else data.get("text", "") if kind == "text" else ""
+        for line in (scene["text"], headline):
+            key = re.sub(r"[^\w\s]", "", line.replace("*", "")).casefold().split()
+            if key:
+                first = seen.setdefault(" ".join(key), scene["beat"])
+                if first != scene["beat"]:
+                    warnings.append(f"{scene['beat']} repeats on-screen text from {first} (\"{clean_text(line.replace('*', ''), 40)}\"); show something new")
+        if kind in ("bars", "compare"):
+            values = [str(item.get("value", "")) for item in data.get("items", []) if isinstance(item, dict)]
+            numeric = [v for v in values if re.search(r"[\d\u0966-\u096F]", v)]
+            if kind == "bars" and len(numeric) < len(values):
+                warnings.append(f"{scene['beat']}: every bar needs a number; use a list for words")
+            elif kind == "compare" and 0 < len(numeric) < len(values):
+                warnings.append(f"{scene['beat']}: compare either two numbers or two short phrases, not one of each")
+            elif numeric and all(re.fullmatch(r"[\d.,\s]+", v) for v in values) and not UNIT_HINT.search(data.get("title", "")):
+                warnings.append(f"{scene['beat']}: the values have no unit; say what is measured (₹, %, litres, a named index) "
+                                "in the values or the title. Never chart a claim as invented numbers")
+    texts = [s["beat"] for s in scenes if s["type"] == "text"]
+    if len(texts) > 2:
+        warnings.append(f"{len(texts)} text scenes ({', '.join(texts)}): slogans on screen read as generated; "
+                        "keep at most two, and show a number, chart, list, or photo instead")
+    if not scenes or scenes[-1]["type"] != "end":
+        warnings.append("the last beat is missing an end scene")
+    return warnings
 
 
 def script_json(value) -> str:
@@ -1695,13 +1765,8 @@ def cmd_scenes(ws: Path, args) -> None:
         print(f"{i}. {scene['beat']} · {scene['type']} · {scene['duration']:.1f}s · {clean_text(scene['vo'], 60)}")
     target = voice["length_seconds"]
     print(f"Total {script['duration']:.1f}s (target {target:g}s)")
-    for scene in scenes:
-        if scene["duration"] > 12:
-            print(f"Warning: {scene['beat']} runs over 12s ({scene['duration']:.1f}s); split it into smaller beats")
-        if word_count(scene["text"]) > 8 or (scene["type"] == "text" and word_count(scene["data"]["text"]) > 8):
-            print(f"Warning: {scene['beat']} has more than 8 words of on-screen text; shorten it")
-    if not scenes or scenes[-1]["type"] != "end":
-        print("Warning: the last beat is missing an end scene")
+    for warning in scene_warnings(scenes):
+        print(f"Warning: {warning}")
     if abs(script["duration"] - target) > target * 0.10:
         print("Warning: total duration is more than 10% off the channel's target")
 

@@ -326,6 +326,65 @@ Visual: end | Follow | Subscribe
             with self.assertRaises(ValueError):
                 studio.parse_scenes(text, bad)
 
+    def test_scene_warnings_catch_generated_looking_screens(self):
+        warnings = studio.scene_warnings(studio.parse_scenes("""## Hook
+Line.
+Visual: text | Slow, then *sudden*
+## Claim
+Line.
+Visual: compare | पानी की खपत | आम नल: 100 | Sensor नल: 50
+## Words
+Line.
+Visual: bars | Access | Haiku: hosted | Mistral: 60%
+## Mixed
+Line.
+Visual: compare | Result | A: 43 | B: no valid improvement
+## Two
+Line.
+Visual: text | Another line
+## Three
+Line.
+Visual: text | A third line
+## End
+Visual: end | Slow, then sudden. | Follow
+"""))
+        joined = "\n".join(warnings)
+        self.assertIn("End repeats on-screen text from Hook", joined)
+        self.assertIn("Claim: the values have no unit", joined)
+        self.assertIn("Words: every bar needs a number", joined)
+        self.assertIn("Mixed: compare either two numbers or two short phrases", joined)
+        self.assertIn("3 text scenes (Hook, Two, Three)", joined)
+        self.assertEqual(len(warnings), 5)
+        spoken = studio.scene_warnings(studio.parse_scenes("""## Hook
+Haiku beats Mistral. Until it doesn't. Here's why.
+Visual: stat | 43 | Index points
+## Chain
+Same money. Same rate. Only time changed.
+Visual: stat | 2× | More
+## End
+Follow for more AI news.
+Visual: end | Test your own task | Follow
+"""))
+        self.assertEqual([w.split(":")[0] for w in spoken], ["Hook", "Hook", "Hook", "Chain", "End"])
+        self.assertIn('"until it doesn\'t" sounds machine-made', spoken[1])
+        self.assertIn("3 fragment sentences in a row", spoken[3])
+        clean = studio.parse_scenes("""## Series
+Line.
+Visual: compare | Intelligence Index | A: 43 | B: 38
+## Again
+Line.
+Visual: compare | Intelligence Index | A High: 38 | B: 38
+## Panels
+Line.
+Visual: compare | Approve करने पर | वो कहते हैं: पैसे आएँगे | असल में: पैसे जाएँगे
+## End
+Visual: end | Test the task you have | Follow
+""")
+        self.assertEqual(studio.scene_warnings(clean), [])
+        for name in ("english-60s", "hinglish-60s", "hindi-45s"):
+            example = (Path(studio.__file__).resolve().parents[1] / "assets" / "examples" / f"{name}.md").read_text(encoding="utf-8")
+            self.assertEqual(studio.scene_warnings(studio.parse_scenes(example)), [], name)
+
     def test_scene_pipe_fields_and_unknown_types(self):
         examples = {
             "title | A | B | C": ("title", {"title": "A", "subtitle": "B", "kicker": "C"}),
@@ -509,7 +568,7 @@ Visual: end | Follow | Subscribe
     def test_design_font_catalog_and_devanagari(self):
         assets = self.production_assets()
         studio.save(assets / "fonts.json", {"fonts": [
-            {"family": "Anton", "category": "display", "devanagari": False, "weights": [400]},
+            {"family": "Bricolage Grotesque", "category": "display", "devanagari": False, "weights": [400]},
             {"family": "Mukta", "category": "sans-serif", "devanagari": True, "weights": [400, 800]},
             {"family": "JetBrains Mono", "category": "monospace", "devanagari": False, "weights": [400]},
         ]})
@@ -518,16 +577,16 @@ Visual: end | Follow | Subscribe
             with self.assertRaisesRegex(ValueError, "display.*Devanagari"):
                 studio.save_design(self.home, channel["id"], {})
             with self.assertRaisesRegex(ValueError, "body.*Devanagari"):
-                studio.save_design(self.home, channel["id"], {"fonts": {"display": "Mukta", "body": "Anton"}})
+                studio.save_design(self.home, channel["id"], {"fonts": {"display": "Mukta", "body": "Bricolage Grotesque"}})
             saved = studio.save_design(self.home, channel["id"], {"fonts": {"display": "Mukta"}})
             self.assertEqual(saved["fonts"]["display"], "Mukta")
         studio.add_channel(self.home, {"name": "English"})
         studio.save_design(self.home, "english", {})
         with self.assertRaisesRegex(ValueError, "unknown family"):
             studio.save_design(self.home, "english", {"fonts": {"mono": "Missing"}})
-        self.assertIn("Anton · display · devanagari no", self.cli("fonts"))
+        self.assertIn("Bricolage Grotesque · display · devanagari no", self.cli("fonts"))
         self.assertIn("Mukta", self.cli("fonts", "--devanagari"))
-        self.assertNotIn("Anton", self.cli("fonts", "--devanagari"))
+        self.assertNotIn("Bricolage Grotesque", self.cli("fonts", "--devanagari"))
 
     def test_voice_defaults_merge_and_validation(self):
         self.production_assets()

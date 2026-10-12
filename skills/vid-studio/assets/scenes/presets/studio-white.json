@@ -1,0 +1,59 @@
+{
+  "id": "studio-white",
+  "name": "Studio White",
+  "description": "Gallery white, near-black type and an electric blue. Sora headlines and clean slides, for product and tech explainers.",
+  "design": {
+    "aspect": "9:16",
+    "colors": {
+      "background": "#FAFAF7",
+      "surface": "#FFFFFF",
+      "text": "#0F0F10",
+      "muted": "#6E6E73",
+      "accent": "#2F5BFF",
+      "accent2": "#FF6A3D",
+      "negative": "#E5484D"
+    },
+    "fonts": {
+      "display": "Sora",
+      "body": "Mukta",
+      "mono": "JetBrains Mono"
+    },
+    "type": {
+      "scale": 1.0,
+      "display_case": "none",
+      "display_weight": 700,
+      "tracking": -0.03
+    },
+    "motion": {
+      "energy": "medium",
+      "easing": "snappy",
+      "transition": "slide"
+    },
+    "captions": {
+      "style": "highlight",
+      "position": "lower",
+      "highlight": "accent",
+      "max_words": 4,
+      "size": "medium"
+    },
+    "background": {
+      "style": "solid",
+      "pattern": "none"
+    },
+    "images": {
+      "treatment": "natural"
+    },
+    "sources": {
+      "show": true
+    },
+    "progress": {
+      "show": true
+    },
+    "radius": 14,
+    "logo": {
+      "text": "",
+      "position": "top-left"
+    },
+    "custom_css": ""
+  }
+}

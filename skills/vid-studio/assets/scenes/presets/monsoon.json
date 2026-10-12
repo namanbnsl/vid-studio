@@ -1,0 +1,59 @@
+{
+  "id": "monsoon",
+  "name": "Monsoon",
+  "description": "Deep teal, warm paper white and saffron. Eczar, an expressive Devanagari serif, makes Hindi headlines look designed, not typed.",
+  "design": {
+    "aspect": "9:16",
+    "colors": {
+      "background": "#0F2A2C",
+      "surface": "#16393C",
+      "text": "#F1EDE4",
+      "muted": "#93ABA7",
+      "accent": "#FF9F1C",
+      "accent2": "#7FD1B9",
+      "negative": "#FF6B5A"
+    },
+    "fonts": {
+      "display": "Eczar",
+      "body": "Mukta",
+      "mono": "IBM Plex Mono"
+    },
+    "type": {
+      "scale": 1.0,
+      "display_case": "none",
+      "display_weight": 700,
+      "tracking": -0.01
+    },
+    "motion": {
+      "energy": "medium",
+      "easing": "smooth",
+      "transition": "fade"
+    },
+    "captions": {
+      "style": "highlight",
+      "position": "lower",
+      "highlight": "accent",
+      "max_words": 4,
+      "size": "medium"
+    },
+    "background": {
+      "style": "solid",
+      "pattern": "none"
+    },
+    "images": {
+      "treatment": "dim"
+    },
+    "sources": {
+      "show": true
+    },
+    "progress": {
+      "show": true
+    },
+    "radius": 8,
+    "logo": {
+      "text": "",
+      "position": "top-left"
+    },
+    "custom_css": ""
+  }
+}

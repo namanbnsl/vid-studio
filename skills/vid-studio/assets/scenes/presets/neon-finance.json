@@ -1,17 +1,17 @@
 {
   "id": "neon-finance",
-  "name": "Neon Finance",
-  "description": "Deep navy with electric cyan and lime, squared-off Rajdhani caps and quick zooms. A markets-desk look that works in Hindi.",
+  "name": "Night Desk",
+  "description": "Midnight navy, mint numbers and an amber second colour. Squared Rajdhani headlines with full Hindi support; a calm markets desk.",
   "design": {
     "aspect": "9:16",
     "colors": {
-      "background": "#071430",
-      "surface": "#0E2149",
-      "text": "#EAF2FF",
-      "muted": "#8EA3C7",
-      "accent": "#22E4FF",
-      "accent2": "#B8FF3C",
-      "negative": "#FF4F7B"
+      "background": "#0A1222",
+      "surface": "#121C33",
+      "text": "#EAF1FF",
+      "muted": "#8A9AB8",
+      "accent": "#3DE0C8",
+      "accent2": "#FFB547",
+      "negative": "#FF5C7A"
     },
     "fonts": {
       "display": "Rajdhani",
@@ -20,26 +20,36 @@
     },
     "type": {
       "scale": 1.0,
-      "display_case": "upper",
+      "display_case": "none",
       "display_weight": 700,
-      "tracking": 0.01
+      "tracking": 0.0
     },
     "motion": {
       "energy": "high",
       "easing": "snappy",
-      "transition": "zoom"
+      "transition": "slide"
     },
     "captions": {
-      "style": "karaoke",
+      "style": "highlight",
       "position": "lower",
-      "highlight": "accent2",
-      "max_words": 3
+      "highlight": "accent",
+      "max_words": 4,
+      "size": "medium"
     },
     "background": {
-      "style": "gradient",
-      "pattern": "lines"
+      "style": "solid",
+      "pattern": "none"
     },
-    "radius": 14,
+    "images": {
+      "treatment": "dim"
+    },
+    "sources": {
+      "show": true
+    },
+    "progress": {
+      "show": true
+    },
+    "radius": 10,
     "logo": {
       "text": "",
       "position": "top-left"

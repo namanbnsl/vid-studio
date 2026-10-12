@@ -1,28 +1,28 @@
 {
   "id": "calm-minimal",
   "name": "Calm Minimal",
-  "description": "Soft stone neutrals, deep green accent, airy Poppins type and slow fades. Quiet confidence for personal finance and wellbeing.",
+  "description": "Oat paper, ink and one deep green. A quiet serif, slow fades and lots of air, for considered explainers.",
   "design": {
     "aspect": "9:16",
     "colors": {
-      "background": "#EEEBE5",
-      "surface": "#F8F6F2",
-      "text": "#1F1E1B",
-      "muted": "#67635B",
-      "accent": "#2F5D50",
-      "accent2": "#93673F",
-      "negative": "#B0473A"
+      "background": "#F3F0EA",
+      "surface": "#FFFFFF",
+      "text": "#1C1B19",
+      "muted": "#75716A",
+      "accent": "#2E6B5A",
+      "accent2": "#C77D3A",
+      "negative": "#B5483C"
     },
     "fonts": {
-      "display": "Poppins",
-      "body": "Mukta",
-      "mono": "Anek Devanagari"
+      "display": "Instrument Serif",
+      "body": "Hind",
+      "mono": "IBM Plex Mono"
     },
     "type": {
-      "scale": 0.95,
+      "scale": 1.05,
       "display_case": "none",
-      "display_weight": 600,
-      "tracking": -0.03
+      "display_weight": 400,
+      "tracking": -0.01
     },
     "motion": {
       "energy": "calm",
@@ -30,16 +30,26 @@
       "transition": "fade"
     },
     "captions": {
-      "style": "plain",
+      "style": "highlight",
       "position": "lower",
       "highlight": "accent",
-      "max_words": 6
+      "max_words": 5,
+      "size": "medium"
     },
     "background": {
-      "style": "gradient",
+      "style": "solid",
       "pattern": "none"
     },
-    "radius": 28,
+    "images": {
+      "treatment": "natural"
+    },
+    "sources": {
+      "show": true
+    },
+    "progress": {
+      "show": true
+    },
+    "radius": 6,
     "logo": {
       "text": "",
       "position": "top-left"

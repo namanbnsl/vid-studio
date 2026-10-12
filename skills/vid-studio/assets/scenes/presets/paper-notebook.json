@@ -1,45 +1,55 @@
 {
   "id": "paper-notebook",
   "name": "Paper Notebook",
-  "description": "Warm paper, ruled lines and handwritten Kalam headings in sienna ink. Feels like a teacher's notes; great for Hindi.",
+  "description": "Ruled cream paper, pencil-dark ink and a terracotta pen. Handwritten headlines for study notes and how-tos.",
   "design": {
     "aspect": "9:16",
     "colors": {
-      "background": "#F3EBDD",
+      "background": "#F2EBDD",
       "surface": "#FBF6EC",
-      "text": "#2A2420",
-      "muted": "#6A5D50",
-      "accent": "#B53A0A",
-      "accent2": "#2F6F4F",
-      "negative": "#B91C1C"
+      "text": "#2A251F",
+      "muted": "#7E7466",
+      "accent": "#C4461B",
+      "accent2": "#2F6D8C",
+      "negative": "#B23A2A"
     },
     "fonts": {
       "display": "Kalam",
-      "body": "Hind",
-      "mono": "Kalam"
+      "body": "Mukta",
+      "mono": "Space Mono"
     },
     "type": {
-      "scale": 1.05,
+      "scale": 1.0,
       "display_case": "none",
       "display_weight": 700,
-      "tracking": 0
+      "tracking": 0.0
     },
     "motion": {
-      "energy": "medium",
+      "energy": "calm",
       "easing": "smooth",
-      "transition": "wipe"
+      "transition": "fade"
     },
     "captions": {
-      "style": "karaoke",
+      "style": "highlight",
       "position": "lower",
       "highlight": "accent",
-      "max_words": 4
+      "max_words": 5,
+      "size": "medium"
     },
     "background": {
       "style": "paper",
       "pattern": "lines"
     },
-    "radius": 10,
+    "images": {
+      "treatment": "natural"
+    },
+    "sources": {
+      "show": true
+    },
+    "progress": {
+      "show": true
+    },
+    "radius": 6,
     "logo": {
       "text": "",
       "position": "top-left"
