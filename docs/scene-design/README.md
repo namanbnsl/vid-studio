@@ -58,7 +58,7 @@ Every preset is redesigned with its own palette and type pairing, and there are 
 
 ## The empty band at the bottom is on purpose
 
-The bottom 20% of a 9:16 frame sits under the platform's own interface: the channel name, the title and the buttons. Nothing important goes there. Captions sit just above that band, and the source line marks its top edge.
+The bottom 20% of a 9:16 frame sits under the platform's own interface: the channel name, the title and the buttons. Nothing important goes there. Captions sit just above that band. The source line is small print on the frame's bottom edge, under the interface, where it's on record without competing with the content.
 
 ![Safe area](assets/safe-area.jpg)
 
@@ -68,7 +68,7 @@ The bottom 20% of a 9:16 frame sits under the platform's own interface: the chan
 - A thin progress line at the top, one segment per beat, fills as the voiceover plays (`progress.show`).
 - The `Text:` label and the chart title share a header row in the same place in every scene. Headings keep one size across scenes.
 - Charts, lists and timelines fill the space under the header instead of huddling under the title. A stat, punchline, quote or end card is centred in that space. Short punchlines ("50 · 30 · 20") are set poster-size.
-- The source and photo credit are one line of small print on the bottom edge of the safe area, in the same place every time.
+- The source and photo credit are one line of small print on the very bottom edge of the frame, in the same place every time.
 - Captions are centred on the canvas, clear of the side buttons, and bottom-anchored in their band.
 
 **Charts**

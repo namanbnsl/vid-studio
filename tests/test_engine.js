@@ -96,7 +96,7 @@ test('photo, source, and caption-size settings normalize to safe values', () => 
   assert.equal(api.normalizeDesign({ captions: { style: 'shimmer' } }).captions.style, 'plain');
   // small print and captions are reserved at the bottom of the safe area, below the content
   const L = api.layout({});
-  assert.equal(L.meta.top + L.meta.height, 1920 - 384);
+  assert.equal(L.meta.top + L.meta.height, 1920 - 28);
   assert.ok(L.captions.top + L.captions.height <= L.meta.top);
   assert.ok(L.content.top + L.content.height <= L.captions.top);
   assert.equal(L.captions.left + L.captions.width, 1080 - L.captions.left, 'captions are centred on the canvas');

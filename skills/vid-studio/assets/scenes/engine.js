@@ -395,7 +395,7 @@
   function dimensions(aspect) { var d = ASPECTS[aspect] || ASPECTS['9:16']; return { width: d[0], height: d[1] }; }
 
   // The frame, top to bottom: progress line, logo, content (header row + visual), captions, then one line of
-  // small print (source and photo credit) on the bottom edge of the safe area, the same place in every scene.
+  // small print (source and photo credit) at the very bottom of the frame, the same place in every scene.
   function layout(design) {
     design = normalizeDesign(design);
     var W = ASPECTS[design.aspect][0], H = ASPECTS[design.aspect][1];
@@ -407,8 +407,9 @@
       progress = { top: top, height: 6, left: left, width: right - left };
       top += 6 + (landscape ? 36 : 52);
     }
-    var meta = { top: bottom - 36, height: 36, left: left, width: right - left };
-    bottom = meta.top - (landscape ? 20 : 28);
+    // the small print sits below the safe area, on the frame's bottom edge, so it costs the content no height
+    var mh = 36, mpad = landscape ? 20 : 28;
+    var meta = { top: H - mpad - mh, height: mh, left: left, width: right - left };
     var logo = null;
     if (design.logo.text.trim()) {
       var lp = design.logo.position, isTop = lp.indexOf('top') === 0, lh = 40, lg = landscape ? 28 : 44;
@@ -888,7 +889,7 @@
     };
   }
 
-  // One line of small print on the bottom edge of the safe area: where a fact comes from, and who took the photo.
+  // One line of small print at the very bottom of the frame: where a fact comes from, and who took the photo.
   function buildMeta(sc, photo, design, L) {
     var src = design.sources.show ? sc.source : '';
     var credit = photo && photo.credit ? photo.credit : '';

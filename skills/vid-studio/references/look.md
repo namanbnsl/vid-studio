@@ -52,7 +52,7 @@ To start from a preset, `studio.py presets` lists them; set `"preset"` and drop 
 | `captions.max_words` | Words per caption line, 1–8 |
 | `captions.size` | `small`, `medium`, or `large`. Captions carry the words while videos have no voiceover, so `medium` or `large` |
 | `images.treatment` | How beat photos (`Image:` lines) look: `natural`, `dim` (darkened for legible text), `mono` (black and white), or `duotone` (tinted from the background color to the accent, so photos from different sources look like one brand) |
-| `sources.show` | `true` shows each beat's `Source:` line as one line of small print at the bottom of the safe area; `false` hides them |
+| `sources.show` | `true` shows each beat's `Source:` line as one line of small print at the very bottom of the frame; `false` hides them |
 | `progress.show` | `true` draws a thin progress line at the top, one segment per beat, filling as the voiceover plays |
 | `background.style` | `solid` (flat colour, the default for most looks), `gradient` (a barely visible tonal step from the top), `grain` (fine film grain), or `paper` (paper texture) |
 | `background.pattern` | `none`, `grid`, `dots`, or `lines` |
