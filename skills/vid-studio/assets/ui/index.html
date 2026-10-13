@@ -948,7 +948,7 @@ function empty(title, text, action, label, iconName = action === "research" ? "r
 
 // ------------------------------------------------------------------ scenes: parser and preview player
 // Mirrors parse_scenes in studio.py (see references/scenes.md), so previews update while you type.
-const SCENE_TYPES = ["title", "stat", "bars", "compare", "list", "quote", "timeline", "text", "image", "end"];
+const SCENE_TYPES = ["title", "stat", "bars", "compare", "list", "quote", "timeline", "text", "image", "message", "end"];
 const spokenText = t => String(t).replace(/!?\[([^\]]+)\]\([^)]*\)/g, "$1").replace(/\[(\d+(?:\s*[,–—-]\s*\d+)*)\](?!\()/g, "")
   .replace(/\*\*|__|[*_`]/g, "").replace(/\s+/g, " ").trim();
 const wordCount = t => t.split(/\s+/).filter(w => /[\p{L}\p{N}]/u.test(w)).length;
@@ -973,7 +973,13 @@ function parseScenes(src, wpm = 160) {
     const fixed = (b.duration || "").match(/^(\d+(?:\.\d+)?)\s*s?$/i);
     if (fixed) duration = Math.min(60, Math.max(1, Math.floor(Number(fixed[1]) * 10 + 0.5) / 10));
     const scene = { beat: b.beat, type, duration, vo, text: b.text, data };
-    if (b.image) { const i = b.image.indexOf("|"); scene.image = i < 0 ? { src: b.image.trim(), credit: "" } : { src: b.image.slice(0, i).trim(), credit: b.image.slice(i + 1).trim() }; }
+    if (b.image) {
+      const i = b.image.indexOf("|"), rest = i < 0 ? "" : b.image.slice(i + 1);
+      // an optional last field places the photo: "top" (across the top of the frame) or "full" (behind the scene)
+      const m = rest.match(/^(?:(.*?)\s*\|)?\s*(top|full)\s*$/i);
+      scene.image = { src: (i < 0 ? b.image : b.image.slice(0, i)).trim(), credit: (m ? m[1] || "" : rest).trim() };
+      if (m) scene.image.layout = m[2].toLowerCase();
+    }
     if (b.source) scene.source = b.source;
     if (b.note) scene.note = b.note;
     return scene;
@@ -989,7 +995,7 @@ function sceneData(visual, vo) {
     case "title": return [type, { title: v(0), subtitle: v(1), kicker: v(2) }];
     case "stat": return [type, { value: v(0), label: v(1), context: v(2) }];
     case "bars": case "compare": return [type, { title: v(0), items: f.slice(1).map(x => { const [label, value] = pair(x, false); return { label, value }; }) }];
-    case "list": return [type, { title: v(0), items: f.slice(1) }];
+    case "list": case "message": return [type, { title: v(0), items: f.slice(1) }];
     case "quote": return [type, { quote: v(0), source: v(1) }];
     case "timeline": return [type, { title: v(0), items: f.slice(1).map(x => { const [date, label] = pair(x, true); return { date, label }; }) }];
     case "text": return [type, { text: v(0) || vo }];
@@ -1185,16 +1191,17 @@ function lookPanel(c) {
         <div class="row"><span>Easing</span>${seg("motion.easing", [["smooth", "Smooth"], ["snappy", "Snappy"], ["bouncy", "Bouncy"]], d.motion?.easing)}</div>
         <div class="row"><span>Transitions</span>${seg("motion.transition", [["cut", "Cut"], ["fade", "Fade"], ["slide", "Slide"], ["zoom", "Zoom"], ["wipe", "Wipe"]], d.motion?.transition)}</div></section>
       <section class="ctl"><h4>Captions</h4>
-        <div class="row"><span>Style</span>${seg("captions.style", [["none", "Off"], ["plain", "Plain"], ["boxed", "Boxed"], ["karaoke", "Karaoke"], ["highlight", "Highlight"], ["pop", "Pop"]], d.captions?.style)}</div>
+        <div class="row"><span>Style</span>${seg("captions.style", [["none", "Off"], ["plain", "Plain"], ["boxed", "Boxed"], ["karaoke", "Karaoke"], ["highlight", "Highlight"], ["underline", "Underline"], ["pop", "Pop"]], d.captions?.style)}</div>
         <div class="row"><span>Position</span>${seg("captions.position", [["upper", "Top"], ["middle", "Middle"], ["lower", "Bottom"]], d.captions?.position)}</div>
         <div class="row"><span>Highlight</span>${seg("captions.highlight", [["accent", "Accent"], ["accent2", "Second accent"], ["text", "Text"]], d.captions?.highlight)}</div>
         <div class="row"><span>Words at a time</span>${slider("captions.max_words", 1, 8, 1, d.captions?.max_words ?? 4, SHOW["captions.max_words"])}</div>
         <div class="row"><span>Size</span>${seg("captions.size", [["small", "Small"], ["medium", "Medium"], ["large", "Large"]], d.captions?.size || "medium")}</div></section>
       <section class="ctl"><h4>Photos &amp; sources</h4>
         <div class="row"><span>Photo treatment</span>${seg("images.treatment", [["natural", "Natural"], ["dim", "Dimmed"], ["mono", "Mono"], ["duotone", "Duotone"]], d.images?.treatment || "dim")}</div>
+        <div class="row"><span>Photo placement</span>${seg("images.layout", [["auto", "Across the top"], ["full", "Full screen"]], d.images?.layout || "auto")}</div>
         <div class="row"><span>Source tags</span>${seg("sources.show", [[true, "Show"], [false, "Hide"]], d.sources?.show !== false)}</div>
         <div class="row"><span>Progress line</span>${seg("progress.show", [[true, "Show"], [false, "Hide"]], d.progress?.show !== false)}</div>
-        <p class="muted small">Photos come from <code>Image:</code> lines on a script's beats. Duotone tints them in your colors so photos from different places still look like one channel. Source tags show a beat's <code>Source:</code> line as small print at the bottom, so viewers can see where a fact comes from. The progress line fills one segment per beat.</p></section>
+        <p class="muted small">Photos come from <code>Image:</code> lines on a script's beats. Across the top runs the photo edge to edge above a stat, punchline, quote, title or end card (beside it in wide formats); charts, lists and messages keep it full screen behind them, dimmed. Duotone tints them in your colors so photos from different places still look like one channel. Source tags show a beat's <code>Source:</code> line as small print at the bottom, so viewers can see where a fact comes from. The progress line fills one segment per beat.</p></section>
       <section class="ctl"><h4>Background &amp; shape</h4>
         <div class="row"><span>Texture</span>${seg("background.style", [["solid", "Solid"], ["gradient", "Gradient"], ["grain", "Grain"], ["paper", "Paper"]], d.background?.style)}</div>
         <div class="row"><span>Pattern</span>${seg("background.pattern", [["none", "None"], ["grid", "Grid"], ["dots", "Dots"], ["lines", "Lines"]], d.background?.pattern)}</div>
@@ -1240,7 +1247,7 @@ function saveDesign(view = CV) {
 
 // Voice ---------------------------------------------------------------
 const TONES = [["playful", "Serious", "Playful"], ["casual", "Formal", "Casual"], ["intensity", "Calm", "Intense"]];
-const HOOK_STYLES = [["question", "Question"], ["surprising-stat", "Surprising number"], ["myth-bust", "Myth-bust"], ["story", "Story"], ["stakes", "Stakes"], ["contrast", "Contrast"]];
+const HOOK_STYLES = [["question", "Question"], ["surprising-stat", "Surprising number"], ["myth-bust", "Myth-bust"], ["story", "Story"], ["moment", "Moment"], ["stakes", "Stakes"], ["contrast", "Contrast"]];
 function voicePanel(c) {
   const v = CV.voice, words = Math.round((v.length_seconds || 60) / 60 * (v.words_per_minute || 160));
   const lines = key => esc((v[key] || []).join("\n"));
@@ -1464,7 +1471,7 @@ function scriptTextChanged() {
   if (view.sideTab === "preview") debounce("script-preview", 500, () => { if (editor === view && route().id === view.data.id && view.sideTab === "preview") playerReload(view.design, scriptScenes()); });
 }
 
-const SCORE_LABELS = [["hook", "Hook"], ["clarity", "Clarity"], ["retention", "Retention"], ["specificity", "Specificity"], ["voice", "Voice"], ["natural", "Sounds human"], ["value", "Value"], ["accuracy", "Accuracy"]];
+const SCORE_LABELS = [["hook", "Hook"], ["clarity", "Clarity"], ["retention", "Retention"], ["specificity", "Specificity"], ["voice", "Voice"], ["human", "Human story"], ["natural", "Sounds human"], ["value", "Value"], ["accuracy", "Accuracy"]];
 function scriptSide() {
   const d = editor.data, open = openComments(d);
   const tabs = isPost() ? [] : [["preview", "Preview"], ["hooks", "Hooks"], ["quality", "Quality"], ["comments", "Comments"]];
@@ -1589,9 +1596,9 @@ const reviewScore = v => typeof v === "number" && Number.isFinite(v) ? Math.max(
 const avgScore = review => { const v = Object.values(review.scores || {}).map(reviewScore).filter(v => v !== null); return v.length ? v.reduce((a, b) => a + b, 0) / v.length : 0; };
 function qualityTab() {
   const r = editor.data.review;
-  if (!r) return `<p class="muted small">Your agent scores each draft on eight things (hook, clarity, retention, specificity, voice, sounds human, value, accuracy) and revises until every one is 8 or more. The scores show up here.</p>`;
+  if (!r) return `<p class="muted small">Your agent scores each draft on nine things (hook, clarity, retention, specificity, voice, human story, sounds human, value, accuracy) and revises until every one is 8 or more. The scores show up here.</p>`;
   return `<div class="score-head"><span class="score-big">${avgScore(r).toFixed(1)}</span><span class="muted small">average${r.at ? ` · reviewed ${esc(when(r.at))}` : ""}</span></div>
-    ${SCORE_LABELS.map(([key, label]) => { const v = reviewScore(r.scores?.[key]); return `<div class="score-row"><span>${label}</span><span class="meter"><i class="${v < 8 ? "low" : ""}" style="width:${(v || 0) * 10}%"></i></span><b>${esc(v ?? "–")}</b></div>`; }).join("")}
+    ${SCORE_LABELS.filter(([key]) => key !== "human" || r.scores?.[key] != null).map(([key, label]) => { const v = reviewScore(r.scores?.[key]); return `<div class="score-row"><span>${label}</span><span class="meter"><i class="${v < 8 ? "low" : ""}" style="width:${(v || 0) * 10}%"></i></span><b>${esc(v ?? "–")}</b></div>`; }).join("")}
     ${r.summary ? `<p class="review-summary">${esc(r.summary)}</p>` : ""}
     ${r.notes?.length ? `<ul class="review-notes">${r.notes.map(n => `<li>${esc(n)}</li>`).join("")}</ul>` : ""}`;
 }

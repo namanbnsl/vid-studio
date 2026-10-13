@@ -1,0 +1,59 @@
+{
+  "id": "swiss",
+  "name": "Swiss",
+  "description": "Off-white, black and one signal red on a strict grid. Inter Tight set tight, square corners, hard cuts between beats: information design, nothing else.",
+  "design": {
+    "aspect": "9:16",
+    "colors": {
+      "background": "#F1F0EC",
+      "surface": "#FFFFFF",
+      "text": "#0B0B0B",
+      "muted": "#6A6964",
+      "accent": "#E3001B",
+      "accent2": "#0A3D91",
+      "negative": "#E3001B"
+    },
+    "fonts": {
+      "display": "Inter Tight",
+      "body": "Mukta",
+      "mono": "JetBrains Mono"
+    },
+    "type": {
+      "scale": 1.0,
+      "display_case": "none",
+      "display_weight": 700,
+      "tracking": -0.045
+    },
+    "motion": {
+      "energy": "medium",
+      "easing": "snappy",
+      "transition": "cut"
+    },
+    "captions": {
+      "style": "underline",
+      "position": "lower",
+      "highlight": "accent",
+      "max_words": 4,
+      "size": "medium"
+    },
+    "background": {
+      "style": "solid",
+      "pattern": "none"
+    },
+    "images": {
+      "treatment": "natural"
+    },
+    "sources": {
+      "show": true
+    },
+    "progress": {
+      "show": true
+    },
+    "radius": 0,
+    "logo": {
+      "text": "",
+      "position": "top-left"
+    },
+    "custom_css": ""
+  }
+}

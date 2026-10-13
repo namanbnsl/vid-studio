@@ -52,11 +52,11 @@ DEFAULT_DESIGN = {
     "type": {"scale": 1.0, "display_case": "none", "display_weight": 800, "tracking": -0.03},
     "motion": {"energy": "high", "easing": "snappy", "transition": "slide"},
     "captions": {"style": "highlight", "position": "lower", "highlight": "accent", "max_words": 4, "size": "medium"},
-    "background": {"style": "grain", "pattern": "none"}, "images": {"treatment": "dim"}, "sources": {"show": True},
+    "background": {"style": "grain", "pattern": "none"}, "images": {"treatment": "dim", "layout": "auto"}, "sources": {"show": True},
     "progress": {"show": True}, "radius": 12,
     "logo": {"text": "", "position": "top-left"}, "custom_css": "",
 }
-HOOK_STYLES = ["question", "surprising-stat", "myth-bust", "story", "stakes", "contrast"]
+HOOK_STYLES = ["question", "surprising-stat", "myth-bust", "story", "moment", "stakes", "contrast"]
 DEFAULT_VOICE = {
     "length_seconds": 60, "words_per_minute": 160, "persona": "",
     "tone": {"playful": 50, "casual": 60, "intensity": 55}, "hook_styles": HOOK_STYLES,
@@ -732,7 +732,7 @@ class Studio:
         self.script(script_id)
         check_keys(review, {"scores", "summary", "notes", "at"}, "review")
         scores = review.get("scores")
-        keys = {"hook", "clarity", "retention", "specificity", "voice", "natural", "value", "accuracy"}
+        keys = {"hook", "clarity", "retention", "specificity", "voice", "human", "natural", "value", "accuracy"}
         check_keys(scores, keys, "review.scores")
         for key in sorted(keys):
             check_number(scores.get(key), f"review.scores.{key}", 1, 10, integer=True)
@@ -1140,8 +1140,9 @@ def save_design(root: Path, channel_id: str, design: dict) -> dict:
         "aspect": ["9:16", "16:9", "1:1", "4:5"], "type.display_case": ["upper", "title", "none"],
         "motion.energy": ["calm", "medium", "high"], "motion.easing": ["smooth", "snappy", "bouncy"],
         "motion.transition": ["cut", "fade", "slide", "zoom", "wipe"],
-        "captions.style": ["none", "plain", "boxed", "karaoke", "highlight", "pop"], "captions.position": ["lower", "middle", "upper"],
+        "captions.style": ["none", "plain", "boxed", "karaoke", "highlight", "underline", "pop"], "captions.position": ["lower", "middle", "upper"],
         "captions.highlight": ["accent", "accent2", "text"], "background.style": ["solid", "gradient", "grain", "paper"],
+        "images.layout": ["auto", "full"],
         "background.pattern": ["none", "grid", "dots", "lines"], "logo.position": ["top-left", "top-right", "bottom-left", "bottom-right"],
         "captions.size": ["small", "medium", "large"], "images.treatment": ["natural", "dim", "mono", "duotone"],
     }
@@ -1278,17 +1279,40 @@ MACHINE_PHRASES = [
     "until it doesn't", "let's check", "buckle up", "stay tuned", "but wait", "the answer might surprise", "in today's",
     "it's important to note", "it's worth mentioning", "plays a crucial role", "a testament to", "delve",
     "seamless", "in conclusion", "to sum up", "smash that", "like, share and subscribe", "have you ever wondered",
-    "follow for more", "follow to keep up",
+    "follow for more", "follow to keep up", "imagine a world", "picture this", "ever wondered", "let's break it down",
+    "let's break this down", "everything you need to know", "here's what you need to know", "you won't believe",
+    "nobody talks about", "no one talks about", "shocked everyone", "mind-blowing", "mind blowing", "at the end of the day",
+    "in a nutshell", "revolutionize", "revolutionise", "cutting-edge", "ever-evolving", "tapestry", "hey guys", "hi guys",
     "दोस्तों", "आपको बता दें", "गौरतलब है", "तो चलिए", "आज की इस वीडियो", "अंत तक ज़रूर",
 ]
 
 
+# First-person stories are only true if the channel's persona lived them (script-craft.md §3).
+ANECDOTE_PHRASES = ["my friend", "my uncle", "my aunt", "my cousin", "my neighbour", "my neighbor", "i remember when",
+                    "when i was", "i tried this", "मेरे दोस्त", "मेरे एक दोस्त", "मेरे चाचा", "मेरे मामा", "मेरी दोस्त"]
+NOT_X_ITS_Y = re.compile(r"\b(?:it|this|that)(?:'s| is| isn't) not\b[^.?!]{0,40}[.,;—–-]\s*(?:it|this|that)(?:'s| is)\b|"
+                         r"\b(?:it|this|that) isn't\b[^.?!]{0,40}[.;—–-]\s*(?:it|this|that)(?:'s| is)\b")
+
+
 def voice_warnings(scene: dict) -> list[str]:
-    """Spoken patterns that make a script sound generated (script-craft.md §5 and §9)."""
+    """Spoken patterns that make a script sound generated (script-craft.md §3, §6 and §10)."""
     spoken = spoken_text(scene["vo"])
     low = spoken.casefold().replace("’", "'")
     found = [p for p in MACHINE_PHRASES if p in low]
     warnings = [f"{scene['beat']}: \"{p}\" sounds machine-made; say the fact itself" for p in found]
+    named = re.search(r"\b[Mm]eet ([A-Z][a-z]+)\b", spoken)
+    if named:
+        warnings.append(f"{scene['beat']}: \"Meet {named[1]}\" reads as an invented character; use a sourced case, \"you\", or \"say your…\"")
+    if re.search(r"\bguys\b", low):
+        warnings.append(f"{scene['beat']}: \"guys\" talks to a crowd; talk to one person (\"you\")")
+    told = [p for p in ANECDOTE_PHRASES if p in low]
+    if told:
+        warnings.append(f"{scene['beat']}: \"{told[0]}\" is a personal story; keep it only if it really happened to the persona, "
+                        "otherwise use a sourced case or \"say you…\"")
+    if NOT_X_ITS_Y.search(low):
+        warnings.append(f"{scene['beat']}: a \"not X, it's Y\" reframe; just say what it is and why it matters")
+    if spoken.count("—") >= 2:
+        warnings.append(f"{scene['beat']}: {spoken.count('—')} em dashes; that's written rhythm, so split or join the sentences the way you'd say them")
     sentences = [x for x in re.split(r"(?<=[.!?।])\s+", spoken) if x.strip()]
     run = best = 0
     for sentence in sentences:
@@ -1327,6 +1351,18 @@ def scene_warnings(scenes: list[dict]) -> list[str]:
             elif numeric and all(re.fullmatch(r"[\d.,\s]+", v) for v in values) and not UNIT_HINT.search(data.get("title", "")):
                 warnings.append(f"{scene['beat']}: the values have no unit; say what is measured (₹, %, litres, a named index) "
                                 "in the values or the title. Never chart a claim as invented numbers")
+        if kind == "message" and not scene["text"].strip() and not scene.get("source"):
+            warnings.append(f"{scene['beat']}: label the message: \"Text: Example\" for a reconstruction, or a Source: line for a real one")
+    sentences = [x for scene in scenes for x in re.split(r"(?<=[.!?।])\s+", spoken_text(scene["vo"])) if word_count(x)]
+    if len(sentences) >= 8:
+        lengths = [word_count(x) for x in sentences]
+        mean = sum(lengths) / len(lengths)
+        spread = (sum((n - mean) ** 2 for n in lengths) / len(lengths)) ** 0.5
+        if spread < 0.22 * mean:
+            warnings.append(f"every sentence is about {round(mean)} words long; vary the rhythm: a longer explaining sentence, then a short one")
+    if total_duration(scenes) >= 30 and not any(s.get("image") or s["type"] == "image" for s in scenes):
+        warnings.append("no photos: give the 2–4 beats about real things, places or people an Image: line (images.md); "
+                        "a video with none looks templated")
     texts = [s["beat"] for s in scenes if s["type"] == "text"]
     if len(texts) > 2:
         warnings.append(f"{len(texts)} text scenes ({', '.join(texts)}): slogans on screen read as generated; "
@@ -1372,10 +1408,10 @@ def parse_scenes(text: str, words_per_minute=160) -> list[dict]:
             data = {key: values[i] if i < len(values) else "" for i, key in enumerate(fields[kind])}
             if kind == "text" and not data["text"]:
                 data["text"] = vo
-        elif kind in ("bars", "compare", "timeline", "list"):
+        elif kind in ("bars", "compare", "timeline", "list", "message"):
             items = []
             for value in values[1:]:
-                if kind == "list":
+                if kind in ("list", "message"):
                     items.append(value)
                 else:
                     left, separator, right = value.partition(":") if kind == "timeline" else value.rpartition(":")
@@ -1393,7 +1429,12 @@ def parse_scenes(text: str, words_per_minute=160) -> list[dict]:
         scene = {"beat": beat["beat"], "type": kind, "duration": duration, "vo": vo, "text": beat.get("text", ""), "data": data}
         if beat.get("image"):
             src, _, credit = beat["image"].partition("|")
+            # an optional last field places the photo: "top" (across the top of the frame) or "full" (behind the scene)
+            layout = re.match(r"^(?:(.*?)\s*\|)?\s*(top|full)\s*$", credit, re.I)
+            credit, layout = (layout[1] or "", layout[2].lower()) if layout else (credit, "")
             scene["image"] = {"src": src.strip(), "credit": credit.strip()}
+            if layout:
+                scene["image"]["layout"] = layout
         if beat.get("source"):
             scene["source"] = beat["source"]
         if beat.get("note"):
@@ -2061,7 +2102,8 @@ def make_handler(ws: Path):
                         raise KeyError("Hidden scene assets are not served")
                     content_types = {".js": "text/javascript; charset=utf-8", ".css": "text/css; charset=utf-8",
                                      ".html": "text/html; charset=utf-8", ".json": "application/json; charset=utf-8",
-                                     ".svg": "image/svg+xml", ".woff2": "font/woff2", ".png": "image/png"}
+                                     ".svg": "image/svg+xml", ".woff2": "font/woff2", ".png": "image/png",
+                                     ".jpg": "image/jpeg", ".jpeg": "image/jpeg", ".webp": "image/webp"}
                     return self.reply(200, asset.read_bytes(), content_types.get(asset.suffix.lower(), "application/octet-stream"))
                 if method == "GET" and len(parts) == 2 and parts[0] == "fonts" and re.fullmatch(r"[a-z0-9-]+\.woff2", parts[1]):
                     font = page.parent / "fonts" / parts[1]

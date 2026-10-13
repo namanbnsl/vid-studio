@@ -24,7 +24,7 @@ Source: Example source, 1 Oct 2026
 - `Visual: TYPE | field | field …`: the scene shown during this beat. One per beat; if a beat needs two visuals, split it into two beats.
 - `Text: …`: optional extra on-screen text (a short overlay, under 8 words).
 - `Note: …`: optional production note for the team (not shown, not spoken).
-- `Image: path | credit`: optional photo shown full-screen behind this beat's scene. The path is one of the script's images (`media/…`, from `studio.py media`) or an `https://` URL. See [images.md](images.md).
+- `Image: path | credit`: optional photo for this beat. The path is one of the script's images (`media/…`, from `studio.py media`) or an `https://` URL. On a stat, punchline, quote, list, message, title or end card it runs edge to edge across the top of the frame, sized to the space the scene leaves, and the scene sits below it (in wide formats it fills the left side and the text takes the right); on a chart it sits full-screen behind, faint. Add `| top` or `| full` at the end to choose. See [images.md](images.md).
 - `Source: …`: optional short name of where this beat's fact comes from ("RBI circular, 1 Oct 2026"). It shows small on screen, unless the channel's look turns source tags off.
 - `Duration: 4`: optional fixed length in seconds (1–60), instead of the length the voiceover takes. Use it for a beat with little or no voiceover that needs time on screen.
 - Anything before the first `##` (like a `# Title`) is ignored.
@@ -51,7 +51,8 @@ Fields are separated by `|`, in this order. Trailing fields are optional. Number
 | `quote` | quote \| source | A real quote from a source in the notes |
 | `timeline` | title \| date: label \| date: label … | 2–5 dated events in order |
 | `text` | text | A punchline or key sentence, big on screen |
-| `image` | description \| path \| credit | A photo or screenshot as the whole scene; the description says what it shows (it's the brief while the image is missing, and the alt text after) |
+| `image` | description \| path \| credit | A photo or screenshot as the whole scene; the description says what it shows (it's the brief while the image is missing, and the alt text after). A photo too small to fill the screen runs across the top instead of being blown up |
+| `message` | sender \| line \| line … | The call, text or notification the story turns on, as chat bubbles on a phone card (1–4 lines). Lines starting `you:` are the viewer's replies, on the right. Label a reconstruction with `Text: Example` and a real message with its `Source:` |
 | `end` | title \| call to action | The last beat |
 
 Example `Visual:` lines:
@@ -62,14 +63,15 @@ Visual: bars | Example volumes | Period 1: 36 | Period 2: 52 | Period 3: 64
 Visual: list | The mechanism | First step | Second step | Third step
 Visual: quote | Exact words from an opened source | Source name and date
 Visual: image | Close-up of a UPI Lite screen on a phone | media/upi-lite-screen.png | Screenshot: NPCI
+Visual: message | Unknown number | Sir, your refund is ready | you: Which refund? | Just approve it and enter your PIN
 Visual: end | Follow for one money rule a day | Follow @explainedin90s
 ```
 
 Keep on-screen words few: titles under 6 words, labels under 4, list items under 6. The voiceover explains; the screen shows the one thing to remember.
 
-Every scene sits on one grid. A thin progress line runs across the top, one segment per beat. A `Text:` overlay and a chart's title share a header row pinned under it, in the same place in every scene. Charts, lists and timelines fill the space below; a stat, a punchline, a quote or the end card is centred in it. Captions sit in their own band, centred, with the spoken word highlighted, and the `Source:` line and photo credit are one line of small print on the bottom edge of the safe area. Holds are still, and headings keep one size across scenes, so write titles that fit in two lines rather than relying on the player to shrink them. `bars` with short labels (up to 12 characters, like years) draw columns; longer labels draw horizontal rows.
+Every scene sits on one grid, and fills it. A thin progress line runs across the top, one segment per beat, with a folio at its end (`03 / 08`). A `Text:` overlay and a chart's title share a header row pinned under it, in the same place in every scene. Charts, lists, timelines and photo cards fill the space below, in flat colour, with hairlines between rows and no panels or shadows; a stat, a punchline, a quote or the end card is centred in it. Captions sit in their own band, centred, with the spoken word highlighted, and the `Source:` line and photo credit are one line of small print on the bottom edge of the safe area. Holds are still, and headings keep one size across scenes, so write titles that fit in two lines rather than relying on the player to shrink them. `bars` with short labels (up to 12 characters, like years) draw columns; longer labels draw horizontal rows.
 
-`studio.py scenes` warns about what makes a video look generated: the same headline on screen twice, more than two `text` scenes, bars without numbers, a compare mixing a number with a phrase, and chart values with no unit. Fix every warning.
+`studio.py scenes` warns about what makes a video look or sound generated: the same headline on screen twice, more than two `text` scenes, bars without numbers, a compare mixing a number with a phrase, chart values with no unit, an unlabelled message, no photos in a video of 30 seconds or more, and in the voiceover the phrases, invented characters, fake anecdotes, reframes, fragment chains and flat rhythm in script-craft.md. Fix every warning.
 The examples above demonstrate syntax. Replace their figures and placeholder quote with evidence from the story's notes.
 
 ## Scene JSON
@@ -81,7 +83,7 @@ The studio parses beats into this shape (the UI, the player, and `studio.py scen
  "data": {"value": "₹5,000", "label": "UPI Lite wallet limit", "context": "was ₹2,000"}}
 ```
 
-`data` keys per type: `title` {title, subtitle, kicker} · `stat` {value, label, context} · `bars` {title, items: [{label, value}]} · `compare` {title, items: [{label, value}] (two)} · `list` {title, items: [string]} · `quote` {quote, source} · `timeline` {title, items: [{date, label}]} · `text` {text} · `image` {description, url, credit} · `end` {title, cta}. A beat with an `Image:` line also has `"image": {"src", "credit"}`, and one with a `Source:` line has `"source"`. In `bars` and `compare`, `value` is the original text (`"₹1,000"`); the player extracts the number. An unknown type becomes `image` with the whole line as its description.
+`data` keys per type: `title` {title, subtitle, kicker} · `stat` {value, label, context} · `bars` {title, items: [{label, value}]} · `compare` {title, items: [{label, value}] (two)} · `list` {title, items: [string]} · `quote` {quote, source} · `timeline` {title, items: [{date, label}]} · `text` {text} · `image` {description, url, credit} · `message` {title (the sender), items: [string]} · `end` {title, cta}. A beat with an `Image:` line also has `"image": {"src", "credit"}` (plus `"layout": "top"|"full"` when the line chose one), and one with a `Source:` line has `"source"`. In `bars` and `compare`, `value` is the original text (`"₹1,000"`); the player extracts the number. An unknown type becomes `image` with the whole line as its description.
 
 ## Render
 

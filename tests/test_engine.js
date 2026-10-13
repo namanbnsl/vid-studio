@@ -115,6 +115,31 @@ test('photo, source, and caption-size settings normalize to safe values', () => 
   for (const bad of ['javascript:alert(1)', 'file:///etc/passwd', 'JaVaScRiPt:x', '']) assert.equal(api.resolveMedia(bad, base), '');
 });
 
+test('photo placement, underline captions and message scenes normalize to safe values', () => {
+  const { api } = engineHarness();
+  const d = api.normalizeDesign({});
+  assert.equal(d.images.layout, 'auto');
+  assert.equal(api.normalizeDesign({ images: { layout: 'collage' } }).images.layout, 'auto');
+  assert.equal(api.normalizeDesign({ images: { layout: 'full' } }).images.layout, 'full');
+  assert.equal(api.normalizeDesign({ captions: { style: 'underline' } }).captions.style, 'underline');
+  assert.equal(api.normalizeDesign({ background: { style: 'ambient' } }).background.style, 'solid', 'no ambient light: flat colour only');
+  assert.ok(api.TYPES.includes('message'));
+  const [m, top, full, odd] = json(api.normalizeScenes([
+    { type: 'message', data: { title: 'Unknown number', items: ['Sir, refund ready', 'you: Which refund?'] } },
+    { type: 'stat', data: {}, image: { src: 'media/a.jpg', credit: 'Photo: A', layout: 'top' } },
+    { type: 'bars', data: {}, image: { src: 'media/b.jpg', layout: 'full' } },
+    { type: 'text', data: {}, image: { src: 'media/c.jpg', layout: 'card' } }]));
+  assert.equal(m.type, 'message');
+  assert.deepEqual(m.data.items, ['Sir, refund ready', 'you: Which refund?']);
+  assert.deepEqual(top.image, { src: 'media/a.jpg', credit: 'Photo: A', layout: 'top' });
+  assert.equal(full.image.layout, 'full');
+  assert.deepEqual(odd.image, { src: 'media/c.jpg', credit: '' }, 'an unknown placement is dropped, so the look decides');
+  // the progress line leaves room for the folio at its end
+  const L = api.layout({});
+  assert.ok(L.progress.left + L.progress.width < L.content.left + L.content.width - 100);
+  assert.ok(api.FONTS['Inter Tight'], 'the Swiss look\'s font is in the font table');
+});
+
 test('empty compositions build static backgrounds with zero duration and replace the old timeline', async () => {
   const h = engineHarness();
   for (const style of ['solid', 'gradient', 'grain', 'paper']) {

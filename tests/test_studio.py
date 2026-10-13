@@ -385,6 +385,62 @@ Visual: end | Test the task you have | Follow
             example = (Path(studio.__file__).resolve().parents[1] / "assets" / "examples" / f"{name}.md").read_text(encoding="utf-8")
             self.assertEqual(studio.scene_warnings(studio.parse_scenes(example)), [], name)
 
+    def test_voice_lint_catches_invented_people_and_written_rhythm(self):
+        warnings = studio.scene_warnings(studio.parse_scenes("""## Hook
+Meet Rahul, a twenty-eight year old from Pune. Hey guys, this matters.
+Visual: stat | ₹6,500 | Price
+## Story
+My friend lost money this way. It's not a tap, it's a water meter. It works — mostly — on sensors.
+Visual: message | Unknown number | Sir, refund ready hai
+## End
+Visual: end | Check before you approve | Follow
+"""))
+        joined = "\n".join(warnings)
+        self.assertIn('"Meet Rahul" reads as an invented character', joined)
+        self.assertIn('"guys" talks to a crowd', joined)
+        self.assertIn('"my friend" is a personal story', joined)
+        self.assertIn('a "not X, it\'s Y" reframe', joined)
+        self.assertIn("2 em dashes", joined)
+        self.assertIn('Story: label the message', joined)
+        # a labelled reconstruction is fine; so is a real message with its source
+        for cue in ("Text: Example call", "Source: NPCI, Fraud Awareness"):
+            labelled = studio.parse_scenes(f"## Call\nWords.\nVisual: message | Unknown | Hi\n{cue}\n## End\nVisual: end | A | B")
+            self.assertEqual(studio.scene_warnings(labelled), [])
+        same = "## Beat\n" + " ".join(["This line has exactly six words."] * 9) + "\nVisual: stat | 6 | Words\n## End\nVisual: end | A | B"
+        self.assertIn("every sentence is about 6 words long", "\n".join(studio.scene_warnings(studio.parse_scenes(same))))
+        long_no_photo = "".join(f"## B{i}\n" + "word " * 30 + f"\nVisual: stat | {i}% | Share\n" for i in range(4)) + "## End\nVisual: end | A | B"
+        self.assertTrue(any(w.startswith("no photos") for w in studio.scene_warnings(studio.parse_scenes(long_no_photo))))
+        with_photo = long_no_photo.replace("## B0\n", "## B0\nImage: media/a.jpg | Photo: A\n")
+        self.assertFalse(any(w.startswith("no photos") for w in studio.scene_warnings(studio.parse_scenes(with_photo))))
+
+    def test_message_scenes_and_photo_placement_parse(self):
+        scenes = studio.parse_scenes("""## Call
+Words.
+Visual: message | Unknown number | Sir, refund ready hai | you: कौन? | बस approve कर दीजिए
+Image: media/a.jpg | Photo: A / Flickr, CC BY 2.0 | full
+## Card
+Image: media/b.jpg|TOP
+## Plain
+Image: media/c.jpg | Photo: C | extra
+""")
+        self.assertEqual(scenes[0]["type"], "message")
+        self.assertEqual(scenes[0]["data"], {"title": "Unknown number", "items": ["Sir, refund ready hai", "you: कौन?", "बस approve कर दीजिए"]})
+        self.assertEqual(scenes[0]["image"], {"src": "media/a.jpg", "credit": "Photo: A / Flickr, CC BY 2.0", "layout": "full"})
+        self.assertEqual(scenes[1]["image"], {"src": "media/b.jpg", "credit": "", "layout": "top"})
+        self.assertEqual(scenes[2]["image"], {"src": "media/c.jpg", "credit": "Photo: C | extra"})
+
+    def test_every_preset_is_a_valid_look(self):
+        catalog = {f["family"] for f in studio.fonts()["fonts"]}
+        ids = [p["id"] for p in studio.presets()]
+        self.assertIn("night-edition", ids)
+        self.assertIn("swiss", ids)
+        for preset in studio.presets():
+            design = studio.merged_design({"preset": preset["id"]})
+            self.assertEqual(set(design), set(studio.DEFAULT_DESIGN), preset["id"])
+            self.assertNotEqual(design["background"]["style"], "gradient", preset["id"])
+            for role, family in design["fonts"].items():
+                self.assertIn(family, catalog, f"{preset['id']}: {role}")
+
     def test_scene_pipe_fields_and_unknown_types(self):
         examples = {
             "title | A | B | C": ("title", {"title": "A", "subtitle": "B", "kicker": "C"}),
@@ -634,7 +690,7 @@ Visual: end | Test the task you have | Follow
                     [angles[0] | {"why": 1}, angles[1]]):
             with self.subTest(angles=bad), self.assertRaises(ValueError):
                 self.studio.save_angles(script["id"], bad)
-        scores = {key: 8 for key in ("hook", "clarity", "retention", "specificity", "voice", "natural", "value", "accuracy")}
+        scores = {key: 8 for key in ("hook", "clarity", "retention", "specificity", "voice", "human", "natural", "value", "accuracy")}
         review = self.studio.save_review(script["id"], {"scores": scores, "summary": "Strong", "notes": ["Check date"], "at": "ignored"})
         studio.parse_time(review["at"])
         self.assertEqual(self.studio.script(script["id"])["review"], review)
@@ -697,7 +753,7 @@ Visual: end | Test the task you have | Follow
         self.assertEqual(json.loads(self.cli("scenes", "--script", script["id"], "--json")), script["scenes"])
         angles = {"angles": [{"hook": "A", "angle": "B", "why": "C"}, {"hook": "D", "angle": "E", "why": "F"}]}
         self.assertIn("Saved 2 angles", self.cli("angles", "--script", script["id"], "--file", "-", stdin=json.dumps(angles)))
-        review = {"scores": {key: 7 for key in ("hook", "clarity", "retention", "specificity", "voice", "natural", "value", "accuracy")}, "summary": "Good", "notes": []}
+        review = {"scores": {key: 7 for key in ("hook", "clarity", "retention", "specificity", "voice", "human", "natural", "value", "accuracy")}, "summary": "Good", "notes": []}
         self.assertIn("hook 7/10", self.cli("review", "--script", script["id"], "--file", "-", stdin=json.dumps(review)))
         status = self.cli("status")
         self.assertIn("look bold-explainer", status)

@@ -25,7 +25,7 @@ To start from a preset, `studio.py presets` lists them; set `"preset"` and drop 
   "motion": {"energy": "high", "easing": "snappy", "transition": "slide"},
   "captions": {"style": "highlight", "position": "lower", "highlight": "accent", "max_words": 4, "size": "medium"},
   "background": {"style": "grain", "pattern": "none"},
-  "images": {"treatment": "dim"},
+  "images": {"treatment": "dim", "layout": "auto"},
   "sources": {"show": true},
   "progress": {"show": true},
   "radius": 12,
@@ -46,20 +46,29 @@ To start from a preset, `studio.py presets` lists them; set `"preset"` and drop 
 | `motion.energy` | `calm`, `medium`, or `high`: how fast and how much things move |
 | `motion.easing` | `smooth`, `snappy`, or `bouncy` |
 | `motion.transition` | Between scenes: `cut`, `fade`, `slide`, `zoom`, or `wipe` |
-| `captions.style` | `none`, `plain`, `boxed`, `karaoke` (words light up as spoken), `highlight` (a pill in the highlight colour slides behind the word being spoken; the default), or `pop` (one or two words at a time, big) |
+| `captions.style` | `none`, `plain`, `boxed`, `karaoke` (words light up as spoken), `highlight` (a pill in the highlight colour slides behind the word being spoken; the default), `underline` (a bar in the highlight colour sits under the spoken word; quieter, for editorial looks), or `pop` (one or two words at a time, big) |
 | `captions.position` | `lower`, `middle`, or `upper` |
 | `captions.highlight` | `accent`, `accent2`, or `text` |
 | `captions.max_words` | Words per caption line, 1–8 |
 | `captions.size` | `small`, `medium`, or `large`. Captions carry the words while videos have no voiceover, so `medium` or `large` |
+| `images.layout` | Where beat photos go: `auto` (edge to edge across the top of the frame above a stat, punchline, quote, list, message, title or end card, sized to what the scene leaves, or down the left side in wide formats; faint and full-screen behind charts) or `full` (always full-screen behind the scene, under the background colour). A beat can choose with `Image: path \| credit \| top` or `\| full` |
 | `images.treatment` | How beat photos (`Image:` lines) look: `natural`, `dim` (darkened for legible text), `mono` (black and white), or `duotone` (tinted from the background color to the accent, so photos from different sources look like one brand) |
 | `sources.show` | `true` shows each beat's `Source:` line as one line of small print at the very bottom of the frame; `false` hides them |
 | `progress.show` | `true` draws a thin progress line at the top, one segment per beat, filling as the voiceover plays |
-| `background.style` | `solid` (flat colour, the default for most looks), `gradient` (a barely visible tonal step from the top), `grain` (fine film grain), or `paper` (paper texture) |
+| `background.style` | `solid` (flat colour), `grain` (fine film grain), `paper` (paper texture), or `gradient` (a barely visible tonal step from the top; no look uses it) |
 | `background.pattern` | `none`, `grid`, `dots`, or `lines` |
-| `radius` | Corner radius of cards and bars, in px at 1080 wide (0–48) |
+| `radius` | Corner radius of bars, buttons and message bubbles, in px at 1080 wide (0–48). Photos are always square-cornered |
 | `logo.text` / `logo.position` | A text wordmark shown small on every scene (empty for none); `top-left`, `top-right`, `bottom-left`, `bottom-right` |
 | `custom_css` | Extra CSS for the composition, for anything the keys can't express. Scenes use CSS variables like `--accent` and classes like `.scene-stat .value`; keep it small. |
 
 ## Taste
 
-The scenes are flat colour, type and data. Keep them that way: one accent for the thing that matters in each scene (the number, the highlighted bar, the spoken word), a muted colour for everything else, and no gradients, glows or patterns unless the user asks for them. Headlines read better in sentence case (`display_case: none`); keep `upper` for condensed display faces. Check that `accent` reads on `background` (contrast 3:1 or more for big numbers) and that `text` reads at 4.5:1.
+Less is more. The scenes are flat colour, type, hairlines, data and real photographs, and nothing else: no gradients, glows, blurred backgrounds, glass, shadows or decorative shapes. Those effects are what make a video look generated.
+
+- **Type does the hierarchy.** The thing that matters in each scene (the number, the subject of a comparison, the highlighted bar, the spoken word) takes the accent and full-strength type; everything else is text or muted.
+- **Photos are photography.** They run edge to edge with a hard edge, at full colour, like the picture on a magazine page ([images.md](images.md)). Don't round them, frame them, blur them or run text across them.
+- **Structure comes from the grid:** the progress line and folio at the top, the label and title row, hairlines between rows, captions in their own band.
+
+Translate feelings into these settings. "More premium": a quieter palette with one accent, a serif or a tight grotesque for display, `medium` or `calm` energy, `fade` transitions, `underline` captions (Night Edition). "Like a newspaper": Broadsheet. "Information design": Swiss (square corners, hard cuts). "Louder": `highlight` or `pop` captions, `high` energy.
+
+Headlines read better in sentence case (`display_case: none`); keep `upper` for condensed display faces. Check that `accent` reads on `background` (contrast 3:1 or more for big numbers) and that `text` reads at 4.5:1.

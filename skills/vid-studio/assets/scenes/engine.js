@@ -17,7 +17,7 @@
   var COMPOSITION_ID = 'vid';
 
   // family -> [weights available on Google Fonts, devanagari (1/0), category]
-  var FONT_TABLE = {"Anton":[[400],0,"display"],"Bebas Neue":[[400],0,"display"],"Archivo Black":[[400],0,"display"],"Oswald":[[200,300,400,500,600,700],0,"display"],"Unbounded":[[200,300,400,500,600,700,800,900],0,"display"],"Syne":[[400,500,600,700,800],0,"display"],"Teko":[[300,400,500,600,700],1,"display"],"Rajdhani":[[300,400,500,600,700],1,"display"],"Khand":[[300,400,500,600,700],1,"display"],"Yatra One":[[400],1,"display"],"Rozha One":[[400],1,"display"],"Baloo 2":[[400,500,600,700,800],1,"display"],"Gotu":[[400],1,"display"],"DM Serif Display":[[400],0,"serif"],"Fraunces":[[100,200,300,400,500,600,700,800,900],0,"serif"],"Playfair Display":[[400,500,600,700,800,900],0,"serif"],"Instrument Serif":[[400],0,"serif"],"Tiro Devanagari Hindi":[[400],1,"serif"],"Noto Serif Devanagari":[[100,200,300,400,500,600,700,800,900],1,"serif"],"Martel":[[200,300,400,600,700,800,900],1,"serif"],"Eczar":[[400,500,600,700,800],1,"serif"],"Laila":[[300,400,500,600,700],1,"serif"],"Karma":[[300,400,500,600,700],1,"serif"],"Kurale":[[400],1,"serif"],"Inter":[[100,200,300,400,500,600,700,800,900],0,"sans"],"Space Grotesk":[[300,400,500,600,700],0,"sans"],"Sora":[[100,200,300,400,500,600,700,800],0,"sans"],"Manrope":[[200,300,400,500,600,700,800],0,"sans"],"Bricolage Grotesque":[[200,300,400,500,600,700,800],0,"sans"],"Mukta":[[200,300,400,500,600,700,800],1,"sans"],"Hind":[[300,400,500,600,700],1,"sans"],"Poppins":[[100,200,300,400,500,600,700,800,900],1,"sans"],"Noto Sans Devanagari":[[100,200,300,400,500,600,700,800,900],1,"sans"],"Anek Devanagari":[[100,200,300,400,500,600,700,800],1,"sans"],"Palanquin":[[100,200,300,400,500,600,700],1,"sans"],"Sarala":[[400,700],1,"sans"],"Martel Sans":[[200,300,400,600,700,800,900],1,"sans"],"Yantramanav":[[100,300,400,500,700,900],1,"sans"],"JetBrains Mono":[[100,200,300,400,500,600,700,800],0,"mono"],"IBM Plex Mono":[[100,200,300,400,500,600,700],0,"mono"],"Space Mono":[[400,700],0,"mono"],"DM Mono":[[300,400,500],0,"mono"],"Caveat":[[400,500,600,700],0,"hand"],"Kalam":[[300,400,700],1,"hand"],"Amita":[[400,700],1,"hand"]};
+  var FONT_TABLE = {"Anton":[[400],0,"display"],"Bebas Neue":[[400],0,"display"],"Archivo Black":[[400],0,"display"],"Oswald":[[200,300,400,500,600,700],0,"display"],"Unbounded":[[200,300,400,500,600,700,800,900],0,"display"],"Syne":[[400,500,600,700,800],0,"display"],"Teko":[[300,400,500,600,700],1,"display"],"Rajdhani":[[300,400,500,600,700],1,"display"],"Khand":[[300,400,500,600,700],1,"display"],"Yatra One":[[400],1,"display"],"Rozha One":[[400],1,"display"],"Baloo 2":[[400,500,600,700,800],1,"display"],"Gotu":[[400],1,"display"],"DM Serif Display":[[400],0,"serif"],"Fraunces":[[100,200,300,400,500,600,700,800,900],0,"serif"],"Playfair Display":[[400,500,600,700,800,900],0,"serif"],"Instrument Serif":[[400],0,"serif"],"Tiro Devanagari Hindi":[[400],1,"serif"],"Noto Serif Devanagari":[[100,200,300,400,500,600,700,800,900],1,"serif"],"Martel":[[200,300,400,600,700,800,900],1,"serif"],"Eczar":[[400,500,600,700,800],1,"serif"],"Laila":[[300,400,500,600,700],1,"serif"],"Karma":[[300,400,500,600,700],1,"serif"],"Kurale":[[400],1,"serif"],"Inter":[[100,200,300,400,500,600,700,800,900],0,"sans"],"Space Grotesk":[[300,400,500,600,700],0,"sans"],"Inter Tight":[[100,200,300,400,500,600,700,800,900],0,"sans"],"Geist":[[100,200,300,400,500,600,700,800,900],0,"sans"],"Sora":[[100,200,300,400,500,600,700,800],0,"sans"],"Manrope":[[200,300,400,500,600,700,800],0,"sans"],"Bricolage Grotesque":[[200,300,400,500,600,700,800],0,"sans"],"Mukta":[[200,300,400,500,600,700,800],1,"sans"],"Hind":[[300,400,500,600,700],1,"sans"],"Poppins":[[100,200,300,400,500,600,700,800,900],1,"sans"],"Noto Sans Devanagari":[[100,200,300,400,500,600,700,800,900],1,"sans"],"Anek Devanagari":[[100,200,300,400,500,600,700,800],1,"sans"],"Palanquin":[[100,200,300,400,500,600,700],1,"sans"],"Sarala":[[400,700],1,"sans"],"Martel Sans":[[200,300,400,600,700,800,900],1,"sans"],"Yantramanav":[[100,300,400,500,700,900],1,"sans"],"JetBrains Mono":[[100,200,300,400,500,600,700,800],0,"mono"],"IBM Plex Mono":[[100,200,300,400,500,600,700],0,"mono"],"Space Mono":[[400,700],0,"mono"],"DM Mono":[[300,400,500],0,"mono"],"Caveat":[[400,500,600,700],0,"hand"],"Kalam":[[300,400,700],1,"hand"],"Amita":[[400,700],1,"hand"]};
 
   var DEFAULT_DESIGN = {
     aspect: '9:16',
@@ -27,7 +27,7 @@
     motion: { energy: 'high', easing: 'snappy', transition: 'slide' },
     captions: { style: 'highlight', position: 'lower', highlight: 'accent', max_words: 4, size: 'medium' },
     background: { style: 'grain', pattern: 'none' },
-    images: { treatment: 'dim' },
+    images: { treatment: 'dim', layout: 'auto' },
     sources: { show: true },
     progress: { show: true },
     radius: 12,
@@ -48,16 +48,20 @@
     energy: ['calm', 'medium', 'high'],
     easing: ['smooth', 'snappy', 'bouncy'],
     transition: ['cut', 'fade', 'slide', 'zoom', 'wipe'],
-    capStyle: ['none', 'plain', 'boxed', 'karaoke', 'highlight', 'pop'],
+    capStyle: ['none', 'plain', 'boxed', 'karaoke', 'highlight', 'underline', 'pop'],
     capPos: ['lower', 'middle', 'upper'],
     bgStyle: ['solid', 'gradient', 'grain', 'paper'],
     pattern: ['none', 'grid', 'dots', 'lines'],
+    imgLayout: ['auto', 'full'],
     logoPos: ['top-left', 'top-right', 'bottom-left', 'bottom-right'],
     capSize: ['small', 'medium', 'large'],
     treatment: ['natural', 'dim', 'mono', 'duotone']
   };
   var CAP_SIZE = { small: 0.88, medium: 1.08, large: 1.3 };
-  var TYPES = ['title', 'stat', 'bars', 'compare', 'list', 'quote', 'timeline', 'text', 'image', 'end'];
+  var TYPES = ['title', 'stat', 'bars', 'compare', 'list', 'quote', 'timeline', 'text', 'image', 'message', 'end'];
+  // With images.layout "auto", these scenes put a beat's photo across the top of the frame, edge to edge, and
+  // sit below it; charts need the height, so their photo goes full-screen behind them, faint.
+  var TOP_PHOTO = ['title', 'stat', 'text', 'quote', 'list', 'message', 'end'];
 
   var MOTION = {
     calm: { dur: 1.3, dist: 0.6, st: 1.35, tx: 0.9 },
@@ -240,6 +244,7 @@
     d.captions.max_words = clamp(Math.round(num(d.captions.max_words, 4)), 1, 8);
     d.captions.size = pick(d.captions.size, ENUM.capSize, 'medium');
     d.images.treatment = pick(d.images.treatment, ENUM.treatment, 'dim');
+    d.images.layout = pick(d.images.layout, ENUM.imgLayout, 'auto');
     d.sources.show = d.sources.show !== false;
     d.progress.show = d.progress.show !== false;
     d.background.style = pick(d.background.style, ENUM.bgStyle, 'solid');
@@ -379,7 +384,9 @@
   function normalizeImage(img) {
     if (typeof img === 'string') img = { src: img };
     if (!isObj(img) || typeof img.src !== 'string' || !img.src.trim()) return null;
-    return { src: img.src.trim(), credit: String(img.credit || '').trim() };
+    var out = { src: img.src.trim(), credit: String(img.credit || '').trim() };
+    if (img.layout === 'top' || img.layout === 'full') out.layout = img.layout;
+    return out;
   }
   // Relative media paths ("media/x.jpg") resolve against options.mediaBase; absolute URLs pass through.
   function resolveMedia(src, base) {
@@ -404,7 +411,8 @@
     var ts = design.type.scale;
     var progress = null;
     if (design.progress.show) {
-      progress = { top: top, height: 6, left: left, width: right - left };
+      // the folio ("03 / 08") sits at the right end of the line
+      progress = { top: top, height: 4, left: left, width: right - left - (landscape ? 150 : 132) };
       top += 6 + (landscape ? 36 : 52);
     }
     // the small print sits below the safe area, on the frame's bottom edge, so it costs the content no height
@@ -684,7 +692,7 @@
         col.appendChild(lab); col.appendChild(v); cols.appendChild(col);
         return { col: col };
       });
-      st.className = 'stack';   // panels are centred like any other statement
+      // phrases: two rows that share the height, up to a limit
     }
     st.appendChild(cols);
     return {
@@ -862,6 +870,97 @@
     };
   };
 
+  // The moment on a phone: a call or a text, line by line. Lines starting "you:" (or "me:", "आप:", "मैं:") are
+  // the viewer's replies, on the right in the accent; the others arrive on the left, each after a beat of typing
+  // dots. Every bubble has its final size from the start, so nothing reflows while it plays.
+  BUILD.message = function (sc) {
+    var d = sc.data, st = el('div', 'stack');
+    var wrap = el('div', 'msg');
+    var who = plain(d.title), head = null;
+    if (who) { head = el('div', 'msg-who', rich(who)); tagLang(head, who); wrap.appendChild(head); }
+    var bubbles = (Array.isArray(d.items) ? d.items : []).slice(0, 5).map(function (raw) {
+      raw = typeof raw === 'string' ? raw : (raw && (raw.text || raw.label)) || '';
+      var m = /^\s*(you|me|\u0906\u092A|\u092E\u0948\u0902)\s*:\s*/i.exec(raw);
+      var txt = m ? raw.slice(m[0].length) : raw;
+      var b = el('div', 'bubble ' + (m ? 'out' : 'in'));
+      var body = el('span', 'bubble-text fit', rich(txt)); tagLang(b, txt);
+      b.appendChild(body);
+      var dots = null;
+      if (!m) { dots = el('span', 'dots', '<i></i><i></i><i></i>'); b.appendChild(dots); }
+      wrap.appendChild(b);
+      return { el: b, body: body, dots: dots };
+    });
+    st.appendChild(wrap);
+    return {
+      stack: st,
+      anim: function (tl, a) {
+        var at = a.t0;
+        if (head) fadeUp(tl, a, head, at, 12);
+        var n = Math.max(1, bubbles.length);
+        var gap = clamp(Math.max(0.4, (a.e - at) * 0.6) / n, 0.35 * a.f, 1.4);
+        bubbles.forEach(function (b, i) {
+          var t = at + a.st(0.2) + i * gap;
+          tw(tl, b.el, { opacity: 0, y: a.dist(16) }, { opacity: 1, y: 0, duration: a.dur(0.45), ease: a.E.out }, t);
+          if (b.dots) {
+            var typing = Math.min(0.55, gap * 0.45);
+            tw(tl, b.body, { opacity: 0 }, { opacity: 1, duration: 0.18, ease: 'power1.out' }, t + typing);
+            tw(tl, b.dots, { opacity: 1 }, { opacity: 0, duration: 0.12, ease: 'power1.out' }, t + typing - 0.04);
+          }
+        });
+      }
+    };
+  };
+
+  // A photo across the top of the frame, edge to edge with a hard edge, like the picture on a magazine page;
+  // the scene sits on the background below it. In a wide frame it fills the left side instead. Its size is set
+  // after measuring, to whatever the scene leaves (placeTopPhoto).
+  function buildTopPhoto(photo, sc, ctx) {
+    var wrap = el('div', 'photo-top');
+    var img = el('img');
+    img.alt = plain(sc.data.description || sc.beat || '');
+    img.decoding = 'sync';
+    img.src = photo.url;
+    wrap.appendChild(img);
+    if (ctx.design.images.treatment === 'duotone') wrap.appendChild(el('div', 'tint'));
+    if (photo.credit) { var c = el('div', 'pt-credit', rich(photo.credit)); tagLang(c, photo.credit); wrap.appendChild(c); }
+    var ok = true;
+    ctx.waits.push(withTimeout(img.decode ? img.decode().catch(function () { ok = false; }) :
+      new Promise(function (res) { img.onload = res; img.onerror = function () { ok = false; res(); }; }), 8000).then(function () {
+      if (!ok || !img.naturalWidth) wrap.setAttribute('data-failed', '1');
+    }));
+    return {
+      el: wrap, img: img,
+      anim: function (tl, a) {
+        // revealed by a clean wipe, then a slow push-in for the rest of the beat
+        tw(tl, wrap, { clipPath: a.wide ? 'inset(0% 100% 0% 0%)' : 'inset(0% 0% 100% 0%)' }, { clipPath: 'inset(0% 0% 0% 0%)', duration: a.dur(0.9), ease: a.E.inOut }, a.clipStart + 0.02);
+        tw(tl, img, { scale: 1.06 }, { scale: 1, duration: Math.max(0.1, a.clipEnd - a.clipStart), ease: 'none' }, a.clipStart);
+      }
+    };
+  }
+  // Size a top photo to the space the scene leaves: as tall as possible, never squeezing the content.
+  function placeTopPhoto(x, L) {
+    var frame = q(x.el, '.frame'), head = q(x.el, '.head'), st = q(x.el, '.stack');
+    var W = L.width, H = L.height, c = L.content, bottom = c.top + c.height, gap = L.landscape ? 72 : 64;
+    var wide = c.width > c.height * 0.9;
+    x.el.classList.add(wide ? 'photo-left' : 'photo-above');
+    if (wide) {
+      var pw = Math.round(W * 0.46), left = pw + gap, right = c.left + c.width;
+      x.photo.el.style.cssText += ';left:0;top:0;width:' + pw + 'px;height:' + H + 'px';
+      frame.style.left = left + 'px'; frame.style.width = (right - left) + 'px';
+      // the small print and this beat's captions move into the text column too
+      if (x.meta) { x.meta.style.left = left + 'px'; x.meta.style.width = (right - left) + 'px'; }
+      x.column = { left: left, width: right - left };
+      return;
+    }
+    x.el.style.setProperty('--k', '1');
+    fitWidths(x.el);
+    var need = (head ? head.offsetHeight : 0) + (x.sc.type === 'image' ? 0 : st.scrollHeight);
+    var maxH = H * (x.sc.type === 'image' ? 0.7 : 0.58), minH = H * 0.3;
+    var ph = Math.round(clamp(bottom - need - gap, minH, maxH));
+    x.photo.el.style.cssText += ';left:0;top:0;width:' + W + 'px;height:' + ph + 'px';
+    frame.style.top = (ph + gap) + 'px'; frame.style.height = Math.max(120, bottom - ph - gap) + 'px';
+  }
+
   // Full-bleed photo behind a scene: decoded before fitting, slow Ken Burns across the clip.
   function buildBackdrop(photo, sc, ctx) {
     var wrap = el('div', 'backdrop' + (sc.type === 'image' ? ' is-hero' : ''));
@@ -880,7 +979,7 @@
     return {
       el: wrap, img: img,
       anim: function (tl, a) {
-        if (wrap.style.display === 'none') return;
+        if (wrap.style.display === 'none' || wrap.hasAttribute('data-moved')) return;
         // drift direction varies per scene but is fixed for a given script, so renders repeat exactly
         var dx = (a.rand() - 0.5) * 3, dy = (a.rand() - 0.5) * 2, zoomIn = a.rand() > 0.35;
         var s0 = zoomIn ? 1.02 : 1.08, s1 = zoomIn ? 1.08 : 1.02;
@@ -890,9 +989,9 @@
   }
 
   // One line of small print at the very bottom of the frame: where a fact comes from, and who took the photo.
-  function buildMeta(sc, photo, design, L) {
+  function buildMeta(sc, photo, design, L, creditShown) {
     var src = design.sources.show ? sc.source : '';
-    var credit = photo && photo.credit ? photo.credit : '';
+    var credit = photo && photo.credit && !creditShown ? photo.credit : '';
     if (!src && !credit) return null;
     var row = el('div', 'meta-row');
     row.style.cssText = 'left:' + L.meta.left + 'px;top:' + L.meta.top + 'px;width:' + L.meta.width + 'px;height:' + L.meta.height + 'px';
@@ -997,7 +1096,7 @@
 
   // Captions read as captions, not as part of the graphic: centred, heavy, and in `highlight` style a pill
   // slides behind the word being spoken.
-  function buildCaptions(stage, scenes, timing, design, L, colors, tl, E, enabled) {
+  function buildCaptions(stage, scenes, timing, design, L, colors, tl, E, enabled, columns) {
     var style = design.captions.style;
     if (!enabled || style === 'none' || !L.captions) return;
     var layer = el('div', 'captions cap-' + style);
@@ -1024,6 +1123,8 @@
         if (ci === 0) start = s;
         var cap = el('div', 'cap clip');
         cap.id = 'cap-' + si + '-' + ci;
+        var col = columns && columns[si];
+        if (col) { cap.style.left = (col.left - L.captions.left) + 'px'; cap.style.right = 'auto'; cap.style.width = col.width + 'px'; }
         cap.setAttribute('data-start', r3(start));
         cap.setAttribute('data-duration', r3(end - start));
         cap.setAttribute('data-track-index', '2');
@@ -1032,7 +1133,7 @@
         var wordsH = ch.map(function (i) { return '<span class="w">' + wrapDv(esc(sp.words[i])) + '</span>'; }).join(' ');
         inner.innerHTML = style === 'boxed' ? '<span class="line">' + wordsH + '</span>' : wordsH;
         var pill = null;
-        if (style === 'highlight') { pill = el('span', 'cap-hl'); inner.insertBefore(pill, inner.firstChild); }
+        if (style === 'highlight' || style === 'underline') { pill = el('span', style === 'underline' ? 'cap-ul' : 'cap-hl'); inner.insertBefore(pill, inner.firstChild); }
         tagLang(inner, text);
         cap.appendChild(inner);
         layer.appendChild(cap);
@@ -1040,7 +1141,7 @@
       });
     });
     // measure
-    made.forEach(function (m) { fitCaption(m.cap, L.captions.width, L.captions.height); });
+    made.forEach(function (m) { fitCaption(m.cap, m.cap.offsetWidth || L.captions.width, L.captions.height); });
     // animate
     made.forEach(function (m) {
       gsap.set(m.inner, { visibility: m.start <= 0 ? 'visible' : 'hidden' });
@@ -1064,15 +1165,19 @@
       }
       if (m.pill && spans.length) {
         var fs = parseFloat((root.getComputedStyle ? root.getComputedStyle(m.inner).fontSize : '') || '64') || 64;
-        var px = fs * 0.12, py = fs * 0.02;
-        var box = function (w) { return { x: w.offsetLeft - px, y: w.offsetTop - py, width: w.offsetWidth + 2 * px, height: w.offsetHeight + 2 * py }; };
+        var px = fs * 0.12, py = fs * 0.02, ul = style === 'underline', th = Math.max(5, Math.round(fs * 0.085));
+        // highlight: a pill behind the word; underline: a bar under it, and the word keeps its colour
+        var box = ul ? function (w) { return { x: w.offsetLeft, y: w.offsetTop + w.offsetHeight - th * 1.1, width: w.offsetWidth, height: th }; }
+          : function (w) { return { x: w.offsetLeft - px, y: w.offsetTop - py, width: w.offsetWidth + 2 * px, height: w.offsetHeight + 2 * py }; };
         var boxes = spans.map(box);
         gsap.set(m.pill, boxes[0]);
         // a set (not a tween) per word keeps every frame consistent: no frame shows the pill between words
         // the pill jumps to each word as it is spoken, and that word flips to the pill's text colour in the same frame
         spans.forEach(function (w, j) {
           var at = m.times[m.ch[j]][0];
-          if (j > 0) { tl.set(m.pill, boxes[j], at); tl.set(w, { color: colors.onHighlight }, at); }
+          if (j > 0) tl.set(m.pill, boxes[j], at);
+          if (ul) return;
+          if (j > 0) tl.set(w, { color: colors.onHighlight }, at);
           else gsap.set(w, { color: colors.onHighlight });
           if (j < spans.length - 1) tl.set(w, { color: colors.capText }, m.times[m.ch[j + 1]][0]);
         });
@@ -1174,7 +1279,8 @@
         '--cap-box-text': dark ? C.text : C.background,
         '--cap-dim': rgba(C.text, 0.55),
         '--cap-k': String(CAP_SIZE[design.captions.size]),
-        '--scrim': rgba(C.background, 0.62), '--scrim-hero': rgba(C.background, 0.2),
+        '--scrim': rgba(C.background, 0.86), '--scrim-hero': rgba(C.background, 0.2),
+        '--bubble': rgba(C.text, dark ? 0.11 : 0.075),
         '--photo-shadow': dark ? '0 2px 28px rgba(0,0,0,.55)' : 'none',
         '--cl': L.content.left + 'px', '--ct': L.content.top + 'px', '--cw': L.content.width + 'px', '--ch': L.content.height + 'px'
       };
@@ -1243,6 +1349,8 @@
         var pic = sc.type === 'image' ? (sc.data.url ? { src: sc.data.url, credit: sc.data.credit || (sc.image && sc.image.credit) || '' } : sc.image) : sc.image;
         var photo = pic ? { url: resolveMedia(pic.src, options.mediaBase), credit: pic.credit || '' } : null;
         if (photo && !photo.url) photo = null;
+        var mode = !photo ? null : sc.type === 'image' ? 'hero' :
+          (sc.image && sc.image.layout) || (design.images.layout === 'full' ? 'full' : TOP_PHOTO.indexOf(sc.type) >= 0 ? 'top' : 'full');
         var ctx = { design: design, waits: waits, photo: photo };
         var b = BUILD[sc.type](sc, ctx);
         // the overlay label and a chart's title share a header row pinned to the top of the content area
@@ -1254,12 +1362,21 @@
         }
         body.appendChild(b.stack);
         frame.appendChild(body);
-        var meta = buildMeta(sc, photo, design, L);
-        var backdrop = photo ? buildBackdrop(photo, sc, ctx) : null;
-        if (backdrop) { inner.appendChild(backdrop.el); sEl.classList.add('has-photo'); }
+        var top = mode === 'top' ? buildTopPhoto(photo, sc, ctx) : null;
+        var meta = buildMeta(sc, photo, design, L, !!top);
+        var backdrop = photo && !top ? buildBackdrop(photo, sc, ctx) : null;
+        if (backdrop) { inner.appendChild(backdrop.el); sEl.classList.add(mode === 'hero' ? 'has-hero' : 'has-photo'); }
+        if (top) { inner.appendChild(top.el); sEl.classList.add('has-top-photo'); }
+        // over a full-screen photo, captions sit on a plain band of the background colour
+        var band = null;
+        if (mode === 'hero' && L.captions) {
+          band = el('div', 'cap-band');
+          band.style.top = (L.captions.top - (L.landscape ? 28 : 40)) + 'px';
+          inner.appendChild(band);
+        }
         drift.appendChild(frame); if (meta) drift.appendChild(meta); inner.appendChild(drift); sEl.appendChild(inner);
         stage.appendChild(sEl);
-        return { sc: sc, el: sEl, inner: inner, drift: drift, chip: chip, b: b, backdrop: backdrop, meta: meta, clipStart: clipStart, clipEnd: clipEnd, t: t };
+        return { sc: sc, el: sEl, inner: inner, drift: drift, chip: chip, b: b, backdrop: backdrop, photo: top, meta: meta, clipStart: clipStart, clipEnd: clipEnd, t: t, credit: photo ? photo.credit : '' };
       });
 
       // ---- logo, wipe, guides
@@ -1278,6 +1395,15 @@
         prog.style.cssText = 'left:' + L.progress.left + 'px;top:' + L.progress.top + 'px;width:' + L.progress.width + 'px;height:' + L.progress.height + 'px';
         scenes.forEach(function () { var seg = el('span', 'seg', '<i></i>'); prog.appendChild(seg); progFills.push(q(seg, 'i')); });
         stage.appendChild(prog);
+        // a folio, like a page number: "03 / 08", at the end of the line
+        var pad2 = function (n) { return (n < 10 ? '0' : '') + n; };
+        var folio = el('div', 'folio tnum');
+        folio.style.cssText = 'top:' + (L.progress.top + L.progress.height / 2) + 'px;right:' + (W - L.progress.left - L.progress.width) + 'px';
+        var folioNums = scenes.map(function (s, i) {
+          var f = el('span', 'folio-n', '<b>' + pad2(i + 1) + '</b> / ' + pad2(scenes.length));
+          folio.appendChild(f); return f;
+        });
+        stage.appendChild(folio);
       }
       var wipe = null;
       if (trans === 'wipe' && scenes.length > 1 && o > 0) {
@@ -1290,8 +1416,25 @@
       return Promise.all(waits).then(function () {
         if (container.__vidSeq !== my) throw Object.assign(new Error('superseded'), { cancelled: true });
         built.forEach(function (x) {
+          if (x.photo && x.photo.el.hasAttribute('data-failed')) {
+            x.photo.el.parentNode.removeChild(x.photo.el);
+            x.photo = null;
+            x.el.classList.remove('has-top-photo');
+          }
+          // an image scene's photo that would be blown up to fill the frame looks soft: show it as a top photo
+          if (x.sc.type === 'image' && x.backdrop && !x.backdrop.el.hasAttribute('data-failed')) {
+            var im = x.backdrop.img;
+            if (Math.max(W / (im.naturalWidth || W), H / (im.naturalHeight || H)) >= 1.6) {
+              x.backdrop.el.style.display = 'none'; x.backdrop.el.setAttribute('data-moved', '1');
+              x.photo = buildTopPhoto({ url: im.src, credit: x.credit }, x.sc, { design: design, waits: [] });
+              x.inner.insertBefore(x.photo.el, x.drift);
+              x.el.classList.remove('has-hero'); x.el.classList.add('has-top-photo');
+              var cb = q(x.el, '.cap-band'); if (cb) cb.parentNode.removeChild(cb);
+              if (x.meta) { var cr = q(x.meta, '.credit'); if (cr) cr.parentNode.removeChild(cr); }
+            }
+          }
           if (x.backdrop && x.backdrop.el.hasAttribute('data-failed')) {
-            x.el.classList.remove('has-photo');
+            x.el.classList.remove('has-photo', 'has-hero');
             if (x.sc.type === 'image') {
               var fallback = BUILD.image(x.sc, { design: design, waits: [] });
               x.b.stack.replaceWith(fallback.stack);
@@ -1301,6 +1444,7 @@
         });
         // ---- fit (fonts are loaded or frozen to system fallbacks)
         built.forEach(function (x) {
+          if (x.photo) placeTopPhoto(x, L);
           fitScene(x.el);
           if (x.b.post) x.b.post(L.landscape);
         });
@@ -1310,7 +1454,7 @@
           var s = x.t.start, d = x.t.duration, e = s + d;
           var enterDelay = i === 0 ? 0.15 : trans === 'cut' ? 0.05 : trans === 'wipe' ? o * 0.6 : o * 0.4;
           var a = {
-            design: design, E: E, M: M, colors: colors, landscape: L.landscape, rand: rand,
+            design: design, E: E, M: M, colors: colors, landscape: L.landscape, rand: rand, wide: /\bphoto-left\b/.test(x.el.className),
             s: s, d: d, e: e, t0: s + enterDelay, clipStart: x.clipStart, clipEnd: x.clipEnd,
             f: clamp(d / 4.5, 0.45, 1)
           };
@@ -1343,6 +1487,7 @@
           // overlay label
           if (x.chip) tw(tl, x.chip, { x: -a.dist(16), opacity: 0 }, { x: 0, opacity: 1, duration: a.dur(0.6), ease: E.out }, a.t0);
           if (x.backdrop) x.backdrop.anim(tl, a);
+          if (x.photo) x.photo.anim(tl, a);
           if (x.meta) tw(tl, x.meta, { opacity: 0, y: 12 }, { opacity: 1, y: 0, duration: 0.5, ease: 'power2.out' }, a.t0 + Math.min(0.7, d * 0.2));
           x.b.anim(tl, a);
         });
@@ -1350,6 +1495,11 @@
         // the progress line fills one segment per beat, at the pace of the voiceover
         progFills.forEach(function (f, i) {
           tw(tl, f, { scaleX: 0 }, { scaleX: 1, duration: Math.max(0.1, timing[i].duration), ease: 'none' }, timing[i].start);
+        });
+        (typeof folioNums !== 'undefined' ? folioNums : []).forEach(function (f, i) {
+          gsap.set(f, { visibility: i === 0 ? 'visible' : 'hidden' });
+          if (i > 0) tl.set(f, { visibility: 'visible' }, timing[i].start);
+          if (i < folioNums.length - 1) tl.set(f, { visibility: 'hidden' }, timing[i + 1].start);
         });
         if (wipe) {
           gsap.set(wipe, { x: 0, xPercent: -125, skewX: -8 });
@@ -1369,7 +1519,7 @@
           });
         }
 
-        buildCaptions(stage, scenes, timing, design, L, colors, tl, E, options.captions !== false);
+        buildCaptions(stage, scenes, timing, design, L, colors, tl, E, options.captions !== false, built.map(function (x) { return x.column || null; }));
 
         if (options.safeArea) stage.appendChild(guides(L));
 

@@ -65,19 +65,23 @@
 .vid-stage .stack { flex: none; display: flex; flex-direction: column; width: 100%; }
 .vid-stage .stack.fill { flex: 1; min-height: 0; justify-content: center; }
 
-/* ---------- progress line: one segment per beat ---------- */
-.vid-stage .progress { position: absolute; display: flex; gap: 8px; pointer-events: none; }
-.vid-stage .progress .seg { flex: 1; height: 100%; border-radius: 3px; background: var(--track-strong); overflow: hidden; }
+/* ---------- progress line: one segment per beat, and a folio ("03 / 08") at its end ---------- */
+.vid-stage .progress { position: absolute; display: flex; gap: 6px; pointer-events: none; }
+.vid-stage .progress .seg { flex: 1; height: 100%; background: var(--track-strong); overflow: hidden; }
 .vid-stage .progress .seg i { display: block; height: 100%; background: var(--text); transform-origin: 0 50%; }
+.vid-stage .folio { position: absolute; height: 0; pointer-events: none; }
+.vid-stage .folio-n { position: absolute; right: 0; top: 0; transform: translateY(-50%); white-space: nowrap;
+  font: 500 calc(var(--ts) * 24px)/1 var(--font-body); letter-spacing: .06em; color: var(--muted); }
+.vid-stage .folio-n b { font-weight: 700; color: var(--text); }
 
 /* ---------- labels: the Text: overlay and a title's kicker ---------- */
 .vid-stage .chip, .vid-stage .kicker {
-  display: flex; align-items: center; gap: .55em; max-width: 100%;
+  align-self: flex-start; display: flex; align-items: center; gap: .55em; max-width: 100%;
   font: 700 calc(var(--kw, 1) * var(--ts) * 32px)/1.2 var(--font-body);
   letter-spacing: .08em; text-transform: uppercase; color: var(--accent);
   white-space: nowrap;
 }
-.vid-stage .chip::before, .vid-stage .kicker::before { content: ""; flex: none; width: .5em; height: .5em; background: currentColor; border-radius: min(var(--radius), 2px); }
+.vid-stage .chip::before, .vid-stage .kicker::before { content: ""; flex: none; width: 1.4em; height: 3px; background: currentColor; }
 .vid-stage .chip.has-dv, .vid-stage .kicker.has-dv { letter-spacing: .02em; line-height: 1.4; }
 .vid-stage .kicker { margin-bottom: calc(var(--k) * 36px); }
 
@@ -168,15 +172,17 @@
 .vid-stage .scene-compare .col-label.has-dv { line-height: 1.45; }
 .vid-stage .scene-compare .col.subject .col-label { color: var(--text); }
 .vid-stage .scene-compare .ref-line { position: absolute; left: 0; right: 0; height: 0; border-top: 3px dashed var(--muted); opacity: .7; transform-origin: 0 50%; }
-/* words instead of numbers: two panels */
-.vid-stage .scene-compare .cols-text { flex: none; min-height: 0; gap: 5%; }
-.vid-stage .scene-compare .panel { justify-content: flex-start; gap: calc(var(--k) * 24px); min-height: calc(var(--k) * 380px); padding: calc(var(--k) * 44px) calc(var(--k) * 38px); background: var(--surface); border-radius: min(var(--radius), 16px); }
-.vid-stage .scene-compare .panel .col-label { padding: 0; font-size: calc(var(--k) * var(--ts) * 34px); }
-.vid-stage .scene-compare .panel.subject { background: var(--accent); }
-.vid-stage .scene-compare .panel.subject .col-label { color: var(--on-accent); opacity: .75; }
-.vid-stage .scene-compare .panel.subject .panel-value { color: var(--on-accent); }
-.vid-stage .scene-compare .panel-value { font: 700 calc(var(--k) * var(--kw, 1) * var(--ts) * 62px)/1.18 var(--font-body); color: var(--text); }
-.vid-stage .scene-compare .panel-value.has-dv { line-height: 1.42; }
+/* words instead of numbers: two rows divided by hairlines; the subject gets the accent rule and full-strength type */
+.vid-stage .scene-compare .cols-text { flex: 1; max-height: calc(var(--k) * 820px); min-height: 0; flex-direction: column; gap: 0; }
+.vid-stage .scene-compare .panel { position: relative; flex: 1 1 0; justify-content: center; gap: calc(var(--k) * 18px); padding: calc(var(--k) * 46px) 0 calc(var(--k) * 46px) calc(var(--k) * 44px); border-top: 2px solid var(--line); }
+.vid-stage .scene-compare .panel:last-child { border-bottom: 2px solid var(--line); }
+.vid-stage .scene-compare .panel .col-label { padding: 0; font: 700 calc(var(--k) * var(--ts) * 28px)/1.3 var(--font-body); letter-spacing: .1em; text-transform: uppercase; color: var(--muted); }
+.vid-stage .scene-compare .panel .col-label.has-dv { letter-spacing: .01em; text-transform: none; font-size: calc(var(--k) * var(--ts) * 34px); }
+.vid-stage .scene-compare .panel-value { font-family: var(--font-display); font-weight: var(--display-weight); letter-spacing: var(--tracking); font-size: calc(var(--k) * var(--kw, 1) * var(--ts) * 104px); line-height: 1.06; color: var(--muted); }
+.vid-stage .scene-compare .panel-value.has-dv { line-height: 1.34; letter-spacing: 0; }
+.vid-stage .scene-compare .panel.subject::before { content: ""; position: absolute; left: 0; top: calc(var(--k) * 46px); bottom: calc(var(--k) * 46px); width: 8px; background: var(--accent); }
+.vid-stage .scene-compare .panel.subject .col-label { color: var(--accent); }
+.vid-stage .scene-compare .panel.subject .panel-value { color: var(--text); }
 
 /* ---------- list ---------- */
 .vid-stage .scene-list .items { position: relative; flex: 1; max-height: calc(var(--n) * var(--k) * 220px); width: 100%; display: flex; flex-direction: column; }
@@ -224,6 +230,19 @@
 .vid-stage .scene-image .ph-desc { font: 600 calc(var(--k) * var(--kw, 1) * var(--ts) * 52px)/1.25 var(--font-body); color: var(--text); }
 .vid-stage .scene-image .ph-desc.has-dv { line-height: 1.5; }
 
+/* ---------- message: the call or text the story turns on ---------- */
+.vid-stage .msg { display: flex; flex-direction: column; gap: calc(var(--k) * 20px); }
+.vid-stage .msg-who { font: 700 calc(var(--k) * var(--ts) * 28px)/1.3 var(--font-body); letter-spacing: .1em; text-transform: uppercase; color: var(--muted);
+  padding-bottom: calc(var(--k) * 26px); margin-bottom: calc(var(--k) * 14px); border-bottom: 2px solid var(--line); }
+.vid-stage .msg-who.has-dv { letter-spacing: .01em; text-transform: none; }
+.vid-stage .bubble { position: relative; align-self: flex-start; max-width: 86%; padding: .5em .78em .56em; border-radius: .9em .9em .9em .22em;
+  font: 600 calc(var(--k) * var(--ts) * 48px)/1.3 var(--font-body); color: var(--text); background: var(--bubble); }
+.vid-stage .bubble.has-dv { line-height: 1.5; }
+.vid-stage .bubble.out { align-self: flex-end; border-radius: .9em .9em .22em .9em; background: var(--accent); color: var(--on-accent); }
+.vid-stage .bubble-text { display: block; }
+.vid-stage .bubble .dots { position: absolute; left: .78em; top: 50%; transform: translateY(-50%); display: flex; gap: .22em; opacity: 0; }
+.vid-stage .bubble .dots i { width: .24em; height: .24em; border-radius: 50%; background: var(--muted); }
+
 /* ---------- end ---------- */
 .vid-stage .scene-end .end-logo { display: flex; align-items: center; gap: 16px; font: 800 calc(var(--k) * var(--ts) * 36px)/1 var(--font-body); letter-spacing: .12em; text-transform: uppercase; color: var(--text); margin-bottom: calc(var(--k) * 56px); }
 .vid-stage .scene-end .end-logo .logo-mark { width: 26px; height: 26px; border-radius: min(var(--radius), 7px); background: var(--accent); }
@@ -241,6 +260,8 @@
 .vid-stage .cap-inner.has-dv { line-height: 1.55; }
 .vid-stage .cap-inner .w { position: relative; z-index: 1; }
 .vid-stage .cap-hl { position: absolute; left: 0; top: 0; z-index: 0; background: var(--cap-hl); border-radius: min(var(--radius), 12px); }
+.vid-stage .cap-ul { position: absolute; left: 0; top: 0; z-index: 0; background: var(--cap-hl); }
+.vid-stage .cap-underline .cap-inner { word-spacing: .1em; }
 .vid-stage .cap-highlight .cap-inner { word-spacing: .12em; }
 .vid-stage .cap-highlight .cap-inner .w { text-shadow: none; }
 .vid-stage .cap-boxed .cap-inner { text-shadow: none; }
@@ -276,8 +297,24 @@
 .vid-stage.img-dim .backdrop img { filter: brightness(.85) saturate(.9); }
 .vid-stage.img-mono .backdrop img { filter: grayscale(1) contrast(1.08) brightness(.86); }
 .vid-stage.img-duotone .backdrop img { filter: grayscale(1) contrast(1.18) brightness(.92); }
-.vid-stage.img-natural .backdrop:not(.is-hero) .scrim { opacity: .7; }
-.vid-stage .scene.has-photo .frame { text-shadow: var(--photo-shadow); }
+.vid-stage .scene.has-photo .frame, .vid-stage .scene.has-hero .frame { text-shadow: var(--photo-shadow); }
+/* the image scene: the photo is the scene, untouched; the label becomes a solid block, captions sit on a band */
+.vid-stage .backdrop.is-hero .scrim { display: none; }
+.vid-stage .scene.has-hero .chip { padding: .5em .8em; background: var(--accent); color: var(--on-accent); text-shadow: none; }
+.vid-stage .scene.has-hero .chip::before { display: none; }
+.vid-stage .cap-band { position: absolute; left: 0; right: 0; bottom: 0; background: var(--bg); }
+
+/* a photo across the top of the frame (or down its left side in wide frames), edge to edge, hard-edged */
+.vid-stage .photo-top { position: absolute; overflow: hidden; background: var(--surface); }
+.vid-stage .photo-top img { position: absolute; inset: 0; width: 100%; height: 100%; object-fit: cover; transform-origin: 50% 40%; }
+.vid-stage .photo-top .tint { position: absolute; inset: 0; background: var(--accent); mix-blend-mode: color; opacity: .55; }
+.vid-stage.img-mono .photo-top img { filter: grayscale(1) contrast(1.08); }
+.vid-stage.img-duotone .photo-top img { filter: grayscale(1) contrast(1.18); }
+.vid-stage .pt-credit { position: absolute; right: 30px; bottom: 22px; max-width: 70%; font: 500 20px/1.3 var(--font-body); color: rgba(255,255,255,.88);
+  text-shadow: 0 1px 6px rgba(0,0,0,.7); white-space: nowrap; overflow: hidden; text-overflow: ellipsis; }
+.vid-stage .scene.photo-left .pt-credit { right: auto; left: 30px; }
+.vid-stage .scene.has-top-photo .body { justify-content: flex-start; }
+.vid-stage .scene-image.has-top-photo .stack.photo-only { flex: none; }
 .vid-stage .scene-image .stack.photo-only { flex: 1; }
 
 /* ---------- small print: source + photo credit, on the bottom edge of the safe area ---------- */

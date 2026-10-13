@@ -57,22 +57,25 @@ def serve(home: Path, open_browser: bool) -> None:
 # ---------------------------------------------------------------- sample data
 
 SENSOR_SCRIPT = """## Hook
-Jaquar के नए sensor नल ₹6,500 से शुरू होते हैं, और company कहती है कि इनसे आधा पानी बचता है. [1]
+सुबह brush करते वक़्त नल चलता रहता है, है ना? Jaquar कहता है उसके नए sensor नल यही पानी बचाकर आधा खर्च कर देते हैं. [1]
+Visual: stat | 50% | पानी की बचत | Jaquar का दावा
+Image: media/faucet.jpg | Photo: Michael Coté / Flickr, CC BY 2.0
+Source: Jaquar, October 2026
+
+## The price
+ये नल ₹6,500 से शुरू होते हैं. [1] हाथ नीचे आते ही पानी चलता है, हटते ही बंद.
 Visual: stat | ₹6,500 | Jaquar sensor नल | शुरुआती क़ीमत
 Source: Jaquar, October 2026
 
-## How it saves
-तरीका सीधा है: हाथ नीचे आते ही पानी चलता है और हटते ही बंद हो जाता है. Brush करते वक़्त जो पानी यूँ ही बहता रहता है, वही बचता है.
-Visual: list | पानी कहाँ बचता है | Brush करते वक़्त | बर्तन धोते वक़्त | साबुन लगाते वक़्त
-
 ## The catch
-लेकिन ये 50 percent वाला आँकड़ा Jaquar का अपना है, और किसी independent lab ने अभी तक इसे test नहीं किया. [1]
-Visual: stat | 50% | पानी की बचत | Jaquar का दावा, independent test नहीं
+पर सच कहूँ तो ये 50 percent वाला आँकड़ा मुझे खटकता है. ये Jaquar का अपना है, और किसी independent lab ने अभी तक इसे test नहीं किया. [1]
+Visual: compare | 50% बचत | Jaquar कहता है: आधा पानी | Lab test: अभी तक नहीं
 Source: Jaquar press release
 
 ## Where it pays
-तो लगाना है, तो kitchen में या उस bathroom में लगाओ जहाँ नल दिन भर चलता है. पैसा वहीं सबसे जल्दी वसूल होगा.
-Visual: image | Kitchen sink with a sensor tap, water running
+तो लगाना ही है, तो kitchen में लगाओ, जहाँ नल दिन भर चलता है. पैसा वहीं सबसे जल्दी वसूल होगा.
+Visual: image | Kitchen sink with a tap, by a window | media/kitchen-sink.jpg | Photo: Chalon Handmade / Flickr, CC BY 2.0
+Text: जो नल सबसे ज़्यादा चलता है
 
 ## End
 Sensor नल लगवाया है? Comment में बताओ कि पानी का bill कितना बदला.
@@ -114,19 +117,31 @@ def seed(home: Path) -> None:
     sensor = next(f for f in pipe.findings() if "Jaquar" in f["title"])
     story = pipe.create_story("Sensor taps: पैसा बचेगा या नहीं?", [sensor["id"]])
     pipe.update_story(story["id"], {
-        "notes": ("# Research notes\n\n## What's new\n- Jaquar's touchless range starts at **₹6,500**. [1]\n"
-                  "- The 50% water saving is the maker's claim; no independent test yet.\n\n"
-                  "## Sources\n1. Jaquar, Sensor faucets, https://www.jaquar.com/news/sensor\n")})
+        "notes": ("## Angle\nA touchless tap promises to halve water use. Worth it for a homeowner? Only where a tap runs a lot, "
+                  "and the 50% is the maker's own number.\n\n"
+                  "## The people\n- Homeowners and families who leave the tap running while brushing or washing dishes (typical, not a case).\n"
+                  "- Jaquar, which makes the claim [1].\n\n"
+                  "## The moment\nBrushing teeth in the morning with the tap running.\n\n"
+                  "## What happened / how it works\n- Jaquar's touchless range starts at **₹6,500**. [1]\n"
+                  "- The tap runs while hands are under it and stops when they move away. [1]\n\n"
+                  "## Numbers worth showing\n- ₹6,500: starting price [1]\n- 50%: water saving, the maker's own claim, untested [1]\n\n"
+                  "## Tension and caveats\nNo independent test of the 50% figure yet.\n\n"
+                  "## Pictures to find\n- A tap running into a sink\n- A kitchen sink with a tap\n\n"
+                  "## Sources\n[1] Jaquar, Sensor faucets, https://www.jaquar.com/news/sensor\n")})
     script = pipe.create_script(story["id"], "pipe-gyaan")
     pipe.update_script(script["id"], {"stage": "ready", "text": SENSOR_SCRIPT})
+    samples = SKILL / "assets" / "scenes" / "samples"
+    for name, credit, page in [("faucet", "Photo: Michael Coté / Flickr, CC BY 2.0", "https://www.flickr.com/photos/cote/3023528357"),
+                               ("kitchen-sink", "Photo: Chalon Handmade / Flickr, CC BY 2.0", "https://www.flickr.com/photos/chalonuk/6207329924/")]:
+        pipe.add_media(script["id"], (samples / f"{name}.jpg").read_bytes(), name=name, credit=credit, source=page, license="CC BY 2.0")
     pipe.save_angles(script["id"], [
         {"hook": "Jaquar के नए sensor नल ₹6,500 से शुरू होते हैं, और company कहती है कि इनसे आधा पानी बचता है.", "angle": "Price vs claimed savings", "why": "Number first, claim second: the gap is the open loop.", "chosen": True},
         {"hook": "आपका नल रोज़ कितना पानी बहा देता है? ये वाला कहता है, आधा कम.", "angle": "Your daily waste", "why": "Makes it about the viewer, but the answer isn't sourced yet."},
         {"hook": "Touchless नल hospital के लिए बने थे. अब घर आ रहे हैं.", "angle": "Hospital tech goes home", "why": "Story hook; weaker stakes for a homeowner."}])
-    pipe.save_review(script["id"], {"scores": {"hook": 8, "clarity": 9, "retention": 7, "specificity": 8, "voice": 8, "natural": 7, "value": 8, "accuracy": 7},
-                                    "summary": "Strong price-first hook; the 50% claim still needs clear attribution.",
-                                    "notes": ["Retention dips in the middle beat; add a re-hook before the payback math.",
-                                              "Say that the 50% figure is Jaquar's own claim."]})
+    pipe.save_review(script["id"], {"scores": {"hook": 8, "clarity": 9, "retention": 7, "specificity": 8, "voice": 8, "human": 8, "natural": 8, "value": 8, "accuracy": 8},
+                                    "summary": "Opens on the morning brush, a moment every viewer knows; the 50% is clearly Jaquar's own claim. Retention dips before the payback.",
+                                    "notes": ["Human: the brushing moment carries the hook, and 'सच कहूँ तो… खटकता है' gives the persona a view the evidence earns.",
+                                              "Retention: 'The price' beat is a list of facts with no new question; add the payback math to give it a turn."]})
     pipe.add_comment(script["id"], "Can we name a real test, or show the payback math?", "किसी independent lab ने अभी तक इसे test नहीं किया")
     post = pipe.create_script(story["id"], "pipe-gyaan-whatsapp")
     pipe.update_script(post["id"], {"text": "*Sensor taps: पैसा बचेगा?*\n\nJaquar के नए sensor faucets ₹6,500 से शुरू। [1]\n\nhttps://www.jaquar.com/news/sensor\n",

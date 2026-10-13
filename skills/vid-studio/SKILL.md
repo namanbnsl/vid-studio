@@ -48,6 +48,7 @@ Start with `studio.py status`.
 - **Files are the state.** Read them fresh; the user also edits them through the UI. Never overwrite text the user wrote without being asked.
 - **Only cite pages you actually opened.** Your own knowledge can point you at where to look, but it is never a source.
 - **Never invent anything:** search results, numbers, quotes, or a running schedule. If a tool you need is missing, say so.
+- **Make it about people.** Findings say who a development lands on; story notes record the people, the moment they meet it, and what they ask; scripts are about someone and sound like one person talking to another ([script-craft.md](references/script-craft.md) §3). Real cases, the viewer, or openly hypothetical people only: never an invented person, anecdote, or case.
 - **Language.** A script's channel → `language` sets the language of that script (`script.md`) only. Everything else stays in English: findings, story notes, topics, source notes, and your replies.
   - `English`: plain English.
   - `Hindi`: Hindi in Devanagari, never romanized. Common English technical terms and brand names may stay in English.

@@ -1,0 +1,59 @@
+{
+  "id": "night-edition",
+  "name": "Night Edition",
+  "description": "A magazine at night: soft black, warm paper-white type, serif headlines and one brass accent. Photos run edge to edge; the spoken word is underlined, not boxed.",
+  "design": {
+    "aspect": "9:16",
+    "colors": {
+      "background": "#111214",
+      "surface": "#1B1C1F",
+      "text": "#EEEAE1",
+      "muted": "#8F8C85",
+      "accent": "#E7C46B",
+      "accent2": "#8DB3F2",
+      "negative": "#EE7B6B"
+    },
+    "fonts": {
+      "display": "Fraunces",
+      "body": "Mukta",
+      "mono": "IBM Plex Mono"
+    },
+    "type": {
+      "scale": 1.0,
+      "display_case": "none",
+      "display_weight": 600,
+      "tracking": -0.02
+    },
+    "motion": {
+      "energy": "medium",
+      "easing": "smooth",
+      "transition": "fade"
+    },
+    "captions": {
+      "style": "underline",
+      "position": "lower",
+      "highlight": "accent",
+      "max_words": 4,
+      "size": "medium"
+    },
+    "background": {
+      "style": "grain",
+      "pattern": "none"
+    },
+    "images": {
+      "treatment": "natural"
+    },
+    "sources": {
+      "show": true
+    },
+    "progress": {
+      "show": true
+    },
+    "radius": 4,
+    "logo": {
+      "text": "",
+      "position": "top-left"
+    },
+    "custom_css": ""
+  }
+}

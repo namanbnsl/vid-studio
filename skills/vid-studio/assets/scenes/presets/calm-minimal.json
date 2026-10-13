@@ -30,7 +30,7 @@
       "transition": "fade"
     },
     "captions": {
-      "style": "highlight",
+      "style": "underline",
       "position": "lower",
       "highlight": "accent",
       "max_words": 5,
