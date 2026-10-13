@@ -933,7 +933,7 @@ function renderChannels() {
   const kindLabel = c => c.kind === "post" ? "Text post" : "Video script";
   document.getElementById("app").innerHTML = `
     <section class="head"><div><h1>Channels</h1><p class="lede">Publishing destinations, shared across all projects. Set the voice, format, and look once; every script for that channel follows them.</p></div>
-      <div class="head-actions"><button class="btn ghost" data-action="voice-keys">${icon("key")}Voice providers</button><button class="btn primary" data-action="new-channel">${icon("plus")}New channel</button></div></section>
+      <div class="head-actions"><button class="btn primary" data-action="new-channel">${icon("plus")}New channel</button><button class="btn ghost small" data-action="voice-keys">${icon("key")}Voice provider keys</button></div></section>
     ${channels().length ? `<div class="list">${channels().map(c => `
       <article class="item" data-card="open-channel" data-id="${esc(c.id)}" tabindex="0">
         ${lookSwatch(c)}<div class="body"><h3><a href="${channelHref(c.id)}">${esc(c.name)}</a></h3><p>${esc([c.platform, kindLabel(c), c.language].filter(Boolean).join(" · "))}</p>
