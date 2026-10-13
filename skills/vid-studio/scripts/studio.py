@@ -29,6 +29,9 @@ from html.parser import HTMLParser
 from http.server import BaseHTTPRequestHandler, ThreadingHTTPServer
 from pathlib import Path
 
+sys.path.insert(0, str(Path(__file__).resolve().parent))
+import narration as tts  # noqa: E402
+
 SKILL_DIR = Path(__file__).resolve().parents[1]
 ASSETS = SKILL_DIR / "assets"
 SCENES_DIR = ASSETS / "scenes"
@@ -640,8 +643,9 @@ class Studio:
         version = hashlib.sha1(json.dumps([meta, text], sort_keys=True).encode()).hexdigest()[:16]
         channel = find_channel(self.root, meta["channel"])
         scenes = parse_scenes(text, channel_voice(self.root, channel["id"])["words_per_minute"]) if channel["kind"] == "video" else []
+        voiceover = self.narration_status(script_id, scenes, channel) if channel["kind"] == "video" else None
         return {**meta, "text": text, "comments": self.comments(script_id, text), "version": version,
-                "scenes": scenes, "duration": total_duration(scenes), "media": self.media(script_id),
+                "scenes": scenes, "duration": total_duration(scenes), "media": self.media(script_id), "narration": voiceover,
                 "video": self.video_status(script_id, scenes, channel) if channel["kind"] == "video" else None,
                 "angles": load(folder / "angles.json", {"angles": []})["angles"],
                 "review": load(folder / "review.json") if (folder / "review.json").is_file() else None}
@@ -652,7 +656,8 @@ class Studio:
             item = self.script(script_id)
             listed.append({key: item[key] for key in ("id", "title", "story", "channel", "stage", "published_url", "created", "updated", "version", "duration")}
                           | {"drafted": bool(item["text"].strip()), "open_comments": sum(1 for c in item["comments"] if not c.get("resolved_at")),
-                             "video": item["video"] and {k: item["video"][k] for k in ("status", "ready", "stale")}})
+                             "video": item["video"] and {k: item["video"][k] for k in ("status", "ready", "stale")},
+                             "narration": item["narration"] and {k: item["narration"][k] for k in ("provider", "status", "done", "missing")}})
         return sorted(listed, key=lambda s: s.get("updated", ""), reverse=True)
 
     def create_script(self, story_id: str, channel_id: str, title: str = "") -> dict:
@@ -773,6 +778,20 @@ class Studio:
                     old.unlink()
         if media.is_dir() and (folder / "media").resolve() != media.resolve():
             shutil.copytree(media, folder / "media", dirs_exist_ok=True)
+        # The voiceover travels too: one <audio> clip per beat, which HyperFrames places on its own track.
+        clips, start = [], 0.0
+        if (folder / "narration").is_dir():
+            shutil.rmtree(folder / "narration")
+        for i, scene in enumerate(script["scenes"]):
+            audio = scene.get("audio")
+            if audio:
+                (folder / "narration").mkdir(exist_ok=True)
+                shutil.copyfile(self.path("scripts", script_id, audio["src"]), folder / audio["src"])
+                clips.append(f'<audio id="vo-{i}" class="clip" src="{html.escape(audio["src"])}" data-start="{start:.3f}" '
+                             f'data-duration="{audio["duration"]:.3f}" data-track-index="3"></audio>')
+            start += scene["duration"]
+        if clips:
+            template = template.replace("</body>", "\n".join(clips) + "\n</body>", 1)
         write_text(folder / "index.html", template)
         return folder
 
@@ -811,6 +830,107 @@ class Studio:
             raise KeyError(f"Unknown media file: {file}")
         target.unlink()
         save(self.path("scripts", script_id, "media.json"), {"media": [m for m in self.media(script_id) if m["file"] != file]})
+
+    # voiceover: scripts/<id>/narration holds one WAV per beat, named by what was said and how, and narration.json
+
+    def narration_settings(self, channel: dict) -> dict:
+        return narration_style(self.root, channel["id"], channel_narration(self.root, channel["id"]))
+
+    def narration_status(self, script_id: str, scenes: list, channel: dict) -> dict:
+        """Give each beat that has a current clip its audio and its real length; report what's missing."""
+        settings = self.narration_settings(channel)
+        folder = self.path("scripts", script_id, "narration")
+        manifest = load(folder / "narration.json", {})
+        clips, language = manifest.get("clips", {}), channel["language"]
+        state = manifest.get("status") or "none"
+        if state == "narrating" and manifest.get("pid") not in (None, os.getpid()) and not pid_alive(manifest.get("pid")):
+            state, manifest["error"] = "failed", "The voiceover stopped before it finished"
+        result = {"provider": settings["provider"], "voice": settings["voice"], "pause": settings["pause"],
+                  "settings": tts.settings_key(settings, language) if settings["provider"] else "", "status": state,
+                  "progress": manifest.get("progress", 0), "error": manifest.get("error", ""), "finished": manifest.get("finished", ""),
+                  "done": 0, "missing": 0, "clips": {}}
+        if not settings["provider"]:
+            return result
+        for scene in scenes:
+            text = scene.get("say") or scene["vo"]
+            if not text:
+                continue
+            clip = clips.get(tts.clip_key(settings, language, text))
+            if not clip or not (folder / clip.get("file", "")).is_file():
+                result["missing"] += 1
+                continue
+            result["done"] += 1
+            result["clips"][text] = {k: clip.get(k) for k in ("file", "duration", "words", "caption")}
+            scene["audio"] = {"src": "narration/" + clip["file"], "duration": clip["duration"]}
+            if clip.get("words") and clip.get("caption") == scene["vo"]:
+                scene["audio"]["words"] = clip["words"]
+            if not scene.get("fixed"):
+                scene["duration"] = beat_seconds(clip["duration"], settings["pause"])
+        return result
+
+    def narrate_script(self, script_id: str, force: bool = False, progress=None) -> dict:
+        """Synthesize every beat without a current clip (all of them with force), then drop clips nothing uses."""
+        script = self.script(script_id)
+        channel = find_channel(self.root, script["channel"])
+        if channel["kind"] != "video":
+            raise ValueError("Only video scripts have a voiceover")
+        settings = self.narration_settings(channel)
+        if not settings["provider"]:
+            raise ValueError(f"Choose a voice for {channel['name']} first (Channels → {channel['name']} → Narration, or `studio.py narration --channel`)")
+        problem = tts.provider(settings["provider"]).problem(self.root)
+        if problem:
+            raise RuntimeError(problem)
+        folder = self.path("scripts", script_id, "narration")
+        folder.mkdir(parents=True, exist_ok=True)
+        path, language = folder / "narration.json", channel["language"]
+        manifest = load(path, {})
+        clips = manifest.get("clips", {})
+        wanted = {}
+        for scene in script["scenes"]:
+            text = scene.get("say") or scene["vo"]
+            if text:
+                wanted.setdefault(tts.clip_key(settings, language, text), (text, scene["vo"]))
+        todo = [key for key in wanted if force or key not in clips or not (folder / clips[key].get("file", "")).is_file()]
+        status = {"pid": os.getpid(), "started": now(), "provider": settings["provider"], "voice": settings["voice"]}
+        save(path, {"clips": clips, "status": "narrating", "progress": 0} | status)
+        try:
+            for n, key in enumerate(todo, 1):
+                text, caption = wanted[key]
+                audio = tts.speak(self.root, text, settings, language)
+                (folder / f"{key}.wav").write_bytes(audio.wav())
+                clips[key] = {"file": f"{key}.wav", "text": text, "caption": caption, "duration": round(audio.duration, 3),
+                              "words": tts.word_times(audio, caption) if text == caption else None,
+                              "settings": tts.settings_key(settings, language), "created": now()}
+                save(path, {"clips": clips, "status": "narrating", "progress": round(n / len(todo), 3)} | status)
+                if progress:
+                    progress(n, len(todo))
+        except BaseException as error:
+            save(path, {"clips": clips, "status": "failed", "error": str(error) or type(error).__name__, "finished": now()} | status)
+            raise
+        for key in [k for k in clips if k not in wanted]:
+            (folder / clips.pop(key).get("file", "")).unlink(missing_ok=True)
+        save(path, {"clips": clips, "status": "done", "progress": 1, "finished": now(), "made": len(todo)} | status)
+        return {"made": len(todo), "beats": len(wanted), "provider": settings["provider"]}
+
+    def captions_srt(self, script_id: str) -> str:
+        """The voiceover as SubRip captions: word-timed where the provider gave timings, else by beat."""
+        script = self.script(script_id)
+        cues, start = [], 0.0
+        for scene in script["scenes"]:
+            words, timed = scene["vo"].split(), (scene.get("audio") or {}).get("words")
+            if words:
+                if not timed or len(timed) != len(words):
+                    span = (scene.get("audio") or {}).get("duration") or scene["duration"]
+                    weights = [1 + 0.09 * len(re.sub(r"\W", "", w)) for w in words]
+                    total, acc, timed = sum(weights), 0.0, []
+                    for weight in weights:
+                        timed.append([span * acc / total, span * (acc + weight) / total])
+                        acc += weight
+                for i in range(0, len(words), 7):
+                    chunk = list(range(i, min(i + 7, len(words))))
+                    cues.append((start + timed[chunk[0]][0], start + timed[chunk[-1]][1], " ".join(words[j] for j in chunk)))
+            start += scene["duration"]
+        return tts.srt(cues)
 
     # rendering: scripts/<id>/render holds the exported composition, video.mp4, poster.jpg and render.json
 
@@ -862,8 +982,22 @@ class Studio:
                 save(status_path, status | {"progress": round(done / total, 3)})
 
         try:
+            narration = script["narration"] or {}
+            if narration.get("provider") and narration.get("missing"):
+                save(status_path, status | {"phase": "voiceover"})
+                self.narrate_script(script_id)
+                script = self.script(script_id)
+                fingerprint = media_fingerprint(self.path("scripts", script_id), script["scenes"], channel_design(self.root, channel["id"]))
+                save(status_path, status)
             self.export_script(script_id)
-            result = renderer.render(folder, folder / "video.mp4", quality=quality, progress=report, poster=folder / "poster.jpg")
+            track, clips, start = None, [], 0.0
+            for scene in script["scenes"]:
+                if scene.get("audio"):
+                    clips.append((start, folder / scene["audio"]["src"]))
+                start += scene["duration"]
+            if clips:
+                track = renderer.mix_voiceover(clips, total_duration(script["scenes"]), folder / "voiceover.wav")
+            result = renderer.render(folder, folder / "video.mp4", quality=quality, progress=report, poster=folder / "poster.jpg", audio=track)
         except BaseException as error:
             save(status_path, status | {"status": "failed", "error": str(error) or type(error).__name__, "finished": now()})
             raise
@@ -872,6 +1006,8 @@ class Studio:
         credits = [m for m in self.media(script_id) if m.get("credit")]
         if credits:
             write_text(folder / "credits.txt", "".join(f"{m['credit']}{' – ' + m['source'] if m.get('source') else ''}\n" for m in credits))
+        if any(scene.get("vo") for scene in script["scenes"]):
+            write_text(folder / "captions.srt", self.captions_srt(script_id))
         return result | {"credits": [m["credit"] for m in credits]}
 
     def delete_script(self, script_id: str) -> None:
@@ -965,6 +1101,11 @@ class Studio:
         if unknown:
             raise ValueError(f"Unknown topics: {', '.join(unknown)}")
         return list(dict.fromkeys(topic_ids))
+
+
+def beat_seconds(audio_seconds: float, pause: float) -> float:
+    """A narrated beat lasts as long as its voiceover plus a pause, in tenths, never under 1.5 s (as in the UI)."""
+    return min(60.0, max(1.5, math.floor((audio_seconds + pause) * 10 + 0.5) / 10))
 
 
 ASPECT_SIZES = {"9:16": (1080, 1920), "16:9": (1920, 1080), "1:1": (1080, 1080), "4:5": (1080, 1350)}
@@ -1211,6 +1352,36 @@ def save_voice(root: Path, channel_id: str, voice: dict) -> dict:
     return voice
 
 
+def channel_narration(root: Path, channel_id: str) -> dict:
+    """The channel's text-to-speech settings; an empty provider means videos render without a voiceover."""
+    return tts.clean_settings(load(channel_folder(root, channel_id) / "narration.json", {}))
+
+
+def save_narration(root: Path, channel_id: str, settings: dict) -> dict:
+    folder = channel_folder(root, channel_id)
+    if find_channel(root, channel_id)["kind"] != "video":
+        raise ValueError("Only video channels have a voiceover")
+    settings = tts.clean_settings(deep_merge(load(folder / "narration.json", {}), settings) if isinstance(settings, dict) else settings)
+    save(folder / "narration.json", settings)
+    return settings
+
+
+def narration_style(root: Path, channel_id: str, settings: dict) -> dict:
+    """Without a style line of its own, a voice that takes instructions reads in the channel's persona."""
+    if settings.get("style"):
+        return settings
+    persona = channel_voice(root, channel_id).get("persona", "").strip()
+    return settings | ({"style": f"Speak as this person, to one listener, naturally and not like an announcer: {persona}"} if persona else {})
+
+
+def speak_sample(root: Path, channel_id: str, text: str = "", changes: dict | None = None) -> bytes:
+    """A short WAV in the channel's voice (with unsaved changes applied), for trying voices."""
+    channel = find_channel(root, channel_id)
+    settings = tts.clean_settings(deep_merge(channel_narration(root, channel["id"]), changes or {}))
+    text = (text or "").strip()[:600] or tts.SAMPLE_TEXT.get(channel["language"], tts.SAMPLE_TEXT["English"])
+    return tts.speak(root, text, narration_style(root, channel["id"], settings), channel["language"]).wav()
+
+
 # ---------------------------------------------------------------- media and rendering
 
 MAX_MEDIA_BYTES = 15_000_000
@@ -1329,6 +1500,9 @@ def scene_warnings(scenes: list[dict]) -> list[str]:
     for scene in scenes:
         if scene["duration"] > 12:
             warnings.append(f"{scene['beat']} runs over 12s ({scene['duration']:.1f}s); split it into smaller beats")
+        if scene.get("audio") and scene["audio"]["duration"] > scene["duration"] + 0.05:
+            warnings.append(f"{scene['beat']}: the voiceover runs {scene['audio']['duration']:.1f}s but Duration: holds the beat to "
+                            f"{scene['duration']:.1f}s, so it gets cut off; remove the Duration: line or shorten the line")
         warnings += voice_warnings(scene)
         data, kind = scene["data"], scene["type"]
         if word_count(scene["text"]) > 8 or (kind == "text" and word_count(data.get("text", "")) > 8):
@@ -1391,7 +1565,7 @@ def parse_scenes(text: str, words_per_minute=160) -> list[dict]:
             beats.append(current)
         elif current is not None and line and not line.startswith("#"):
             cue = re.sub(r"^[-*]\s+", "", line)
-            match = re.match(r"^[*_]{0,2}(visual|text|note|image|source|duration)[*_]{0,2}\s*:[*_]{0,2}\s*(.*)$", cue, re.I)
+            match = re.match(r"^[*_]{0,2}(visual|text|note|image|source|duration|say)[*_]{0,2}\s*:[*_]{0,2}\s*(.*)$", cue, re.I)
             if match:
                 current[match[1].lower()] = match[2].strip()
             elif line:
@@ -1439,6 +1613,11 @@ def parse_scenes(text: str, words_per_minute=160) -> list[dict]:
             scene["source"] = beat["source"]
         if beat.get("note"):
             scene["note"] = beat["note"]
+        if fixed:
+            scene["fixed"] = True
+        # Say: is what the voiceover speaks when it differs from the captions ("₹12,000" → "twelve thousand rupees")
+        if spoken_text(beat.get("say", "")):
+            scene["say"] = spoken_text(beat["say"])
         scenes.append(scene)
     return scenes
 
@@ -1583,6 +1762,9 @@ def cmd_status(root: Path, args) -> None:
     print("Channels:" + ("" if listed_channels else " none"))
     for channel in listed_channels:
         look = f" · look {channel_design(root, channel['id'])['preset']}" if channel["kind"] == "video" else ""
+        if channel["kind"] == "video":
+            voiced = channel_narration(root, channel["id"])
+            look += f" · voiceover {voiced['provider']}{'/' + voiced['voice'] if voiced['voice'] else ''}" if voiced["provider"] else " · no voiceover"
         print(f"  {channel['id']} · {channel['name']} · {channel['language']} · {channel['kind']}{look}")
     if not project_dirs(root):
         print(f"No projects in {root}. Run `studio.py init`, then set up a project (references/setup.md).")
@@ -1803,9 +1985,13 @@ def cmd_scenes(ws: Path, args) -> None:
         return
     voice = channel_voice(studio.root, script["channel"])
     for i, scene in enumerate(scenes, 1):
-        print(f"{i}. {scene['beat']} · {scene['type']} · {scene['duration']:.1f}s · {clean_text(scene['vo'], 60)}")
+        voiced = " (voiced)" if scene.get("audio") else ""
+        print(f"{i}. {scene['beat']} · {scene['type']} · {scene['duration']:.1f}s{voiced} · {clean_text(scene['vo'], 60)}")
     target = voice["length_seconds"]
     print(f"Total {script['duration']:.1f}s (target {target:g}s)")
+    narration = script.get("narration") or {}
+    if narration.get("provider") and narration.get("missing"):
+        print(f"Voiceover: {narration['missing']} beat{'s' * (narration['missing'] != 1)} not voiced yet, so timed by the speaking pace (studio.py narrate --script {args.script})")
     for warning in scene_warnings(scenes):
         print(f"Warning: {warning}")
     if abs(script["duration"] - target) > target * 0.10:
@@ -1963,6 +2149,76 @@ def cmd_render(ws: Path, args) -> None:
             print(f"- {credit}")
 
 
+def cmd_voices_providers(root: Path, args) -> None:
+    for item in tts.providers(root):
+        state = "ready" if item["ready"] else item["problem"]
+        timing = " · word-timed captions" if item["word_timings"] else ""
+        print(f"{item['id']} · {item['name']} · {item['kind']} · {state}{timing}")
+    print("Pick one for a channel with `studio.py narration --channel C --file -` ({\"provider\": \"…\", \"voice\": \"…\"}).")
+
+
+def cmd_voices(root: Path, args) -> None:
+    chosen = tts.provider(args.provider)
+    problem = chosen.problem(root)
+    if problem:
+        raise RuntimeError(problem)
+    listed = chosen.voices(root, args.language)
+    for voice in listed:
+        extra = " · ".join(x for x in (voice.get("language"), voice.get("gender"), voice.get("category")) if x)
+        print(f"{voice['id']} · {voice.get('name') or voice['id']}" + (f" · {extra}" if extra else ""))
+    if not listed:
+        print("No voice list for this provider; pass any voice id it accepts.")
+    print(f"Default for {args.language}: {chosen.default_voice(args.language)}")
+
+
+def cmd_voice_key(root: Path, args) -> None:
+    chosen = tts.provider(args.provider)
+    if not chosen.key:
+        raise ValueError(f"{chosen.name} runs on this computer and needs no key")
+    value = "" if args.remove else (sys.stdin.readline() if args.key == "-" else args.key or "")
+    if not args.remove and not value.strip():
+        raise ValueError("Pass the key with --key KEY, or --key - to read it from stdin")
+    tts.set_secret(root, chosen.key, value)
+    print(f"{'Removed' if args.remove else 'Saved'} the {chosen.name} key in {tts.secrets_path(root)}" +
+          (f" (note: ${chosen.key} is also set in the environment and wins)" if os.environ.get(chosen.key) else ""))
+
+
+def cmd_narration(root: Path, args) -> None:
+    channel = find_channel(root, args.channel)
+    if args.file is None:
+        print(json.dumps(channel_narration(root, channel["id"]), indent=2, ensure_ascii=False))
+        return
+    settings = save_narration(root, channel["id"], read_json_file(args.file))
+    print(f"Saved narration for {channel['name']}: " + (f"{settings['provider']} · {settings['voice'] or 'default voice'}" if settings["provider"] else "no voiceover"))
+
+
+def cmd_say(root: Path, args) -> None:
+    channel = find_channel(root, args.channel)
+    out = Path(args.out).expanduser()
+    out.write_bytes(speak_sample(root, channel["id"], args.text or ""))
+    print(f"Saved a sample of {channel['name']}'s voice: {out}")
+
+
+def cmd_narrate(ws: Path, args) -> None:
+    studio = Studio(ws)
+    result = studio.narrate_script(args.script, args.force, lambda done, total: print(f"\rVoiceover {done}/{total} beats", end="", flush=True))
+    print()
+    script = studio.script(args.script)
+    print(f"{result['made']} of {result['beats']} beats voiced with {result['provider']}; the script now runs {script['duration']:.1f}s")
+    for warning in scene_warnings(script["scenes"]):
+        if "voiceover" in warning:
+            print(f"Warning: {warning}")
+
+
+def cmd_captions(ws: Path, args) -> None:
+    text = Studio(ws).captions_srt(args.script)
+    if args.out:
+        Path(args.out).expanduser().write_text(text, encoding="utf-8")
+        print(f"Saved captions: {args.out}")
+    else:
+        print(text, end="")
+
+
 def cmd_comments(ws: Path, args) -> None:
     studio = Studio(ws)
     script = studio.script(args.script)
@@ -2029,6 +2285,39 @@ def start_render(studio: "Studio", script_id: str, quality: str = "high") -> dic
     return studio.script(script_id)["video"]
 
 
+NARRATIONS: dict[str, threading.Thread] = {}
+
+
+def start_narration(studio: "Studio", script_id: str, force: bool = False) -> dict:
+    key = f"{studio.ws}:{script_id}"
+    if RENDERS.get(key) and RENDERS[key].is_alive():
+        raise RuntimeError("This script is rendering; its voiceover is made as part of the render")
+    running = NARRATIONS.get(key)
+    if not (running and running.is_alive()):
+        script = studio.script(script_id)
+        if not script["scenes"]:
+            raise ValueError("Write the script's beats before making the voiceover")
+        channel = find_channel(studio.root, script["channel"])
+        settings = studio.narration_settings(channel)
+        if not settings["provider"]:
+            raise ValueError(f"Choose a voice for {channel['name']} first (Channels → {channel['name']} → Narration)")
+        problem = tts.provider(settings["provider"]).problem(studio.root)
+        if problem:
+            raise RuntimeError(problem)
+        path = studio.path("scripts", script_id, "narration", "narration.json")
+        save(path, load(path, {}) | {"status": "narrating", "progress": 0, "pid": os.getpid(), "error": ""})
+
+        def run():
+            try:
+                Studio(studio.ws, studio.root).narrate_script(script_id, force)
+            except BaseException as error:
+                save(path, load(path, {}) | {"status": "failed", "error": str(error) or type(error).__name__, "finished": now()})
+
+        NARRATIONS[key] = threading.Thread(target=run, daemon=True)
+        NARRATIONS[key].start()
+    return studio.script(script_id)["narration"]
+
+
 def make_handler(ws: Path):
     lock = threading.Lock()
     page = ASSETS / "ui" / "index.html"
@@ -2052,9 +2341,26 @@ def make_handler(ws: Path):
             if not raw.path.is_file():
                 return self.reply(404, {"error": "Not found"})
             size = raw.path.stat().st_size
-            self.send_response(200)
+            # One byte range (what <audio> and <video> ask for to seek); anything else gets the whole file.
+            start, end = 0, size - 1
+            ranged = re.fullmatch(r"bytes=(\d*)-(\d*)", self.headers.get("Range") or "")
+            if ranged and (ranged[1] or ranged[2]) and size:
+                if ranged[1]:
+                    start, end = int(ranged[1]), min(size - 1, int(ranged[2])) if ranged[2] else size - 1
+                else:
+                    start = max(0, size - int(ranged[2]))
+                if start > end:
+                    self.send_response(416)
+                    self.send_header("Content-Range", f"bytes */{size}")
+                    self.send_header("Content-Length", "0")
+                    self.end_headers()
+                    return
+            self.send_response(206 if ranged and (start, end) != (0, size - 1) else 200)
             self.send_header("Content-Type", raw.content_type)
-            self.send_header("Content-Length", str(size))
+            self.send_header("Content-Length", str(end - start + 1 if size else 0))
+            self.send_header("Accept-Ranges", "bytes")
+            if ranged and (start, end) != (0, size - 1):
+                self.send_header("Content-Range", f"bytes {start}-{end}/{size}")
             self.send_header("Cache-Control", "no-store")
             self.send_header("X-Content-Type-Options", "nosniff")
             if raw.filename:
@@ -2062,7 +2368,14 @@ def make_handler(ws: Path):
                 self.send_header("Content-Disposition", f"attachment; filename=\"{ascii_name}\"; filename*=UTF-8''{urllib.parse.quote(raw.filename)}")
             self.end_headers()
             with raw.path.open("rb") as handle:
-                shutil.copyfileobj(handle, self.wfile, 1 << 20)
+                handle.seek(start)
+                remaining = end - start + 1 if size else 0
+                while remaining > 0:
+                    chunk = handle.read(min(1 << 20, remaining))
+                    if not chunk:
+                        break
+                    self.wfile.write(chunk)
+                    remaining -= len(chunk)
 
         def allowed(self, write: bool) -> bool:
             # Only this machine may talk to the server (blocks DNS rebinding). Writes also need a custom
@@ -2077,6 +2390,7 @@ def make_handler(ws: Path):
             if not self.allowed(method != "GET"):
                 return self.reply(403, {"error": "Forbidden"})
             path = urllib.parse.urlsplit(self.path).path.rstrip("/") or "/"
+            query = {k: v[-1] for k, v in urllib.parse.parse_qs(urllib.parse.urlsplit(self.path).query).items()}
             parts = [urllib.parse.unquote(p) for p in path.strip("/").split("/")] if path != "/" else []
             body = {}
             if method in ("POST", "PUT"):
@@ -2131,6 +2445,26 @@ def make_handler(ws: Path):
                     elif parts[:2] == ["api", "channels"] and len(parts) == 4 and parts[3] in ("design", "voice") and method in ("GET", "PUT"):
                         reader, writer = (channel_design, save_design) if parts[3] == "design" else (channel_voice, save_voice)
                         result = reader(ws, parts[2]) if method == "GET" else writer(ws, parts[2], body)
+                    elif parts == ["api", "voice-providers"] and method == "GET":
+                        result = tts.providers(ws)
+                    elif parts[:2] == ["api", "voice-providers"] and len(parts) == 4 and parts[3] == "key" and method == "PUT":
+                        chosen = tts.provider(parts[2])
+                        if not chosen.key:
+                            raise ValueError(f"{chosen.name} needs no key")
+                        tts.set_secret(ws, chosen.key, str(body.get("key") or ""))
+                        result = tts.providers(ws)
+                    elif parts[:2] == ["api", "voice-providers"] and len(parts) == 4 and parts[3] == "voices" and method == "GET":
+                        chosen = tts.provider(parts[2])
+                        problem = chosen.problem(ws)
+                        if problem:
+                            raise RuntimeError(problem)
+                        language = query.get("language") or "English"
+                        result = {"voices": chosen.voices(ws, language), "default": chosen.default_voice(language)}
+                    elif parts[:2] == ["api", "channels"] and len(parts) == 4 and parts[3] == "narration" and method in ("GET", "PUT"):
+                        result = channel_narration(ws, parts[2]) if method == "GET" else save_narration(ws, parts[2], body)
+                    elif parts[:2] == ["api", "channels"] and parts[3:] == ["narration", "sample"] and method == "POST":
+                        audio = speak_sample(ws, parts[2], str(body.get("text") or ""), body.get("settings") or {})
+                        result = {"audio": "data:audio/wav;base64," + base64.b64encode(audio).decode()}
                     elif parts[:2] == ["api", "channels"] and len(parts) == 3 and method == "PUT":
                         result = update_channel(ws, parts[2], body)
                     elif parts[:2] == ["api", "channels"] and len(parts) == 3 and method == "DELETE":
@@ -2183,6 +2517,20 @@ def make_handler(ws: Path):
                     return studio.update_story(item, body, version)
                 if method == "DELETE" and item:
                     return studio.delete_story(item) or {"ok": True}
+            if resource == "scripts" and item and len(parts) >= 3 and parts[2] in ("narrate", "narration", "captions.srt"):
+                studio.script(item)
+                if parts[2] == "narrate" and method == "POST":
+                    return start_narration(studio, item, bool(body.get("force")))
+                if parts[2] == "narration" and method == "GET" and len(parts) == 4:
+                    if not re.fullmatch(r"[0-9a-f]{12}\.wav", parts[3]):
+                        raise KeyError("Unknown voiceover clip")
+                    return Raw(studio.path("scripts", item, "narration", parts[3]), "audio/wav")
+                if parts[2] == "captions.srt" and method == "GET":
+                    title = studio.script(item)["title"]
+                    target = studio.path("scripts", item, "render", "captions.srt")
+                    target.parent.mkdir(parents=True, exist_ok=True)
+                    write_text(target, studio.captions_srt(item))
+                    return Raw(target, "application/x-subrip; charset=utf-8", (slugify(title, 60) or item) + ".srt")
             if resource == "scripts" and item and len(parts) >= 3 and parts[2] in ("media", "render", "video", "poster.jpg"):
                 folder = studio.path("scripts", item)
                 studio.script(item)
@@ -2420,6 +2768,28 @@ def main(argv=None) -> None:
     sub.add_argument("--license")
     sub.add_argument("--remove", metavar="FILE", help="File name in media/ to remove")
 
+    command("voice-providers", cmd_voices_providers, "List text-to-speech providers and whether each is ready")
+    sub = command("voices", cmd_voices, "List a provider's voices")
+    sub.add_argument("--provider", required=True, choices=list(tts.PROVIDERS))
+    sub.add_argument("--language", default="English", help="English, Hindi, Hinglish, or a code like hi-IN")
+    sub = command("voice-key", cmd_voice_key, "Save (or remove) a provider's API key in the studio's .secrets.json")
+    sub.add_argument("--provider", required=True, choices=[p for p, x in tts.PROVIDERS.items() if x.key])
+    sub.add_argument("--key", help="The key, or - to read it from stdin")
+    sub.add_argument("--remove", action="store_true")
+    sub = command("narration", cmd_narration, "Read or save a video channel's voiceover settings")
+    sub.add_argument("--channel", required=True, help="Channel ID or name")
+    sub.add_argument("--file", help="JSON file, or - for stdin; omitted to read")
+    sub = command("say", cmd_say, "Speak a line in a channel's voiceover, to try the voice")
+    sub.add_argument("--channel", required=True)
+    sub.add_argument("--text", help="Defaults to a sample line in the channel's language")
+    sub.add_argument("--out", default="sample.wav")
+    sub = command("narrate", cmd_narrate, "Make the voiceover for a video script (beats without a current clip)")
+    sub.add_argument("--script", required=True)
+    sub.add_argument("--force", action="store_true", help="Redo every beat")
+    sub = command("captions", cmd_captions, "Write the voiceover as SRT captions")
+    sub.add_argument("--script", required=True)
+    sub.add_argument("--out", help="File to write (default: print)")
+
     sub = command("comments", cmd_comments, "List a script's open comments in the order they appear")
     sub.add_argument("--script", required=True)
 
@@ -2431,7 +2801,8 @@ def main(argv=None) -> None:
     args = parser.parse_args(argv)
     root = workspace_path(args.workspace)
     try:
-        if args.command in ("init", "projects", "new-project", "status", "serve", "channels", "add-channel", "design", "voice", "presets", "fonts", "images"):
+        if args.command in ("init", "projects", "new-project", "status", "serve", "channels", "add-channel", "design", "voice", "presets", "fonts", "images",
+                            "voice-providers", "voices", "voice-key", "narration", "say"):
             args.handler(root, args)
         else:
             args.handler(find_project(root, args.project), args)

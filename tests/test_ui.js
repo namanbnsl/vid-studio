@@ -317,3 +317,23 @@ test('script preview hides planning comments while keeping comments inside code 
   assert.match(rendered, /<h2>Hook<\/h2>/);
   assert.match(rendered, /&lt;!-- literal code --&gt;/);
 });
+
+test('narration saves keep their own saved marker and count toward unsaved changes', async () => {
+  const h = harness(), writes = [];
+  h.context.a = Object.assign(view('a'), { narration: { provider: '' }, savedNarration: '{"provider":""}' });
+  h.context.write = async (method, path, body) => { writes.push([path, structuredClone(body)]); return { ...body, pause: 0.3 }; };
+  h.run('api = write; CV = a; a.narration.provider = "sarvam";');
+  assert.equal(h.run('channelDirty(a)'), true);
+  await h.run('queueChannelSave(a, "narration", a.narration)');
+  assert.deepEqual(writes, [['channels/a/narration', { provider: 'sarvam' }]]);
+  assert.equal(h.context.a.savedNarration, '{"provider":"sarvam","pause":0.3}');
+  assert.equal(h.context.a.savedFields, '{"format":"old"}');
+  assert.equal(h.run('channelDirty(a)'), false);
+});
+
+test('pronunciations parse one "written = said" pair per line', () => {
+  const h = harness();
+  assert.deepEqual(JSON.parse(h.run('JSON.stringify(parseLexicon("UPI = U P I\\n bad line \\nHDPE=H D P E\\n= x\\nNPCI = N P C I = ok"))')),
+    { UPI: 'U P I', HDPE: 'H D P E', NPCI: 'N P C I = ok' });
+  assert.equal(h.run('lexiconText({UPI: "U P I", A: "B"})'), 'UPI = U P I\nA = B');
+});

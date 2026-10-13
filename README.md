@@ -31,6 +31,8 @@ Video scripts are written as beats: what's said, plus a `Visual:` line naming a 
 
 **Images.** Photos run edge to edge across the top of the frame, like the picture on a magazine page, with the scene set below (beside it in wide formats), or faint behind charts. Your agent picks photos for the beats about real things and people: openly licensed photos from Wikimedia Commons and Openverse (no API key; it looks at previews before choosing), or images it generates with its own image tool, if it has one. Generated images are never used for real people, products, logos, or documents. Every photo is saved with the script and credited on screen. You can also add your own photo to any beat from the script page.
 
+**Voiceover.** Give a video channel a narrator on its **Narration** tab: a voice on your computer (the system voice, or free offline [Piper](https://github.com/OHF-Voice/piper1-gpl) voices), or ElevenLabs, Sarvam AI, OpenAI or Google Cloud with your own API key. Hear samples, set the speed, the pause between beats, and how words are pronounced. Each beat is voiced on its own and reused until its line changes; beats then last as long as the voice takes, captions follow it (word by word with ElevenLabs), and a `Say:` line lets the voice read "twelve thousand rupees" while the screen shows ₹12,000. The MP4 gets the voiceover, mixed to a loudness phones expect, plus an `.srt` captions file.
+
 **Download.** Click **Render MP4** on a script, then **Download MP4**: the video renders on your computer (1080p, 30 fps) with Chrome and ffmpeg, which you need installed. Your agent can do the same with `studio.py render --script ID --out ~/Desktop`. `studio.py export` writes the same video as a [HyperFrames](https://github.com/heygen-com/hyperframes) project instead.
 
 The steps that need an AI each have a button that copies a prompt. Paste it into Claude or ChatGPT, and the results show up in the UI:
@@ -53,8 +55,9 @@ Your agent creates the studio (`~/vid-studio` by default, one folder per project
 ```
 skills/vid-studio/
   SKILL.md            entry point
-  references/         setup, research, story, write, script craft, scenes, images, look, schedule
+  references/         setup, research, story, write, script craft, scenes, images, look, narration, schedule
   scripts/studio.py   helper and local web server (Python 3 standard library)
+  scripts/narration.py text-to-speech providers: system, Piper, ElevenLabs, Sarvam, OpenAI, Google (standard library)
   scripts/render.py   MP4 renderer: drives a local Chrome and ffmpeg (standard library)
   assets/             workspace templates, the UI, the scene engine (assets/scenes), and example scripts
 ```

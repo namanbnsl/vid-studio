@@ -376,9 +376,18 @@
         beat: String(sc.beat || ''), type: type,
         duration: clamp(num(sc.duration, 3), 1, 600),
         vo: String(sc.vo || ''), text: String(sc.text || ''), data: data,
-        image: normalizeImage(sc.image), source: String(sc.source || '').trim()
+        image: normalizeImage(sc.image), source: String(sc.source || '').trim(),
+        audio: normalizeAudio(sc.audio)
       };
     });
+  }
+  // A beat's voiceover clip: {src, duration, words?: [[start, end], ...] per caption word}; null when silent.
+  function normalizeAudio(a) {
+    if (!isObj(a) || typeof a.src !== 'string' || !a.src.trim()) return null;
+    var out = { src: a.src.trim(), duration: clamp(num(a.duration, 0), 0, 600) };
+    if (Array.isArray(a.words) && a.words.every(function (w) { return Array.isArray(w) && w.length === 2 && isFinite(w[0]) && isFinite(w[1]); }))
+      out.words = a.words.map(function (w) { return [Number(w[0]), Number(w[1])]; });
+    return out;
   }
   // A beat's photo: "media/x.jpg" or {src, credit}; null when there is none.
   function normalizeImage(img) {
@@ -1116,7 +1125,16 @@
       });
       var tot = weights.reduce(function (a, b) { return a + b; }, 0);
       var acc = 0;
-      var times = weights.map(function (w) { var t0 = ws + (we - ws) * acc / tot; acc += w; return [t0, ws + (we - ws) * acc / tot]; });
+      var times;
+      var au = sc.audio;
+      if (au && au.words && au.words.length === sp.words.length) {
+        // the voiceover said when each word lands: captions follow it exactly
+        times = au.words.map(function (w) { return [s + Math.min(w[0], sc.duration), s + Math.min(Math.max(w[1], w[0]), sc.duration)]; });
+      } else {
+        // without word timings, spread the words over the clip (or the beat) by length and pauses
+        if (au && au.duration > 0) { ws = s + Math.min(0.05, au.duration * 0.05); we = s + Math.min(au.duration, sc.duration); }
+        times = weights.map(function (w) { var t0 = ws + (we - ws) * acc / tot; acc += w; return [t0, ws + (we - ws) * acc / tot]; });
+      }
       sp.chunks.forEach(function (ch, ci) {
         var start = times[ch[0]][0];
         var end = ci < sp.chunks.length - 1 ? times[sp.chunks[ci + 1][0]][0] : e;

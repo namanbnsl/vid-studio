@@ -365,6 +365,20 @@ details.ctl[open] summary h4 { margin-bottom: 12px; }
 .preset.on { border-color: var(--ink); box-shadow: inset 0 0 0 1px var(--ink); }
 .preset b { font-size: 13px; margin-top: 4px; }
 .preset .muted { display: -webkit-box; -webkit-line-clamp: 2; -webkit-box-orient: vertical; overflow: hidden; }
+.providers { display: grid; grid-template-columns: repeat(auto-fill, minmax(210px, 1fr)); gap: 8px; }
+.provider { display: grid; gap: 6px; align-content: start; text-align: left; padding: 10px 12px 12px; border: 1px solid var(--line); border-radius: 10px; background: var(--bg); cursor: pointer; font-size: 12px; line-height: 1.45; color: var(--ink-2); }
+.provider:hover { border-color: #cfcdc8; }
+.provider.on { border-color: var(--ink); box-shadow: inset 0 0 0 1px var(--ink); }
+.provider-top { display: flex; justify-content: space-between; align-items: center; gap: 8px; }
+.provider-top b { font-size: 13px; color: var(--ink); }
+.provider-state { font-size: 12px; color: var(--ink-3); display: inline-flex; gap: 4px; align-items: center; }
+.provider-state.ok { color: var(--ink); }
+.provider-state svg, .vo-box svg, .beat .muted svg { width: 13px; height: 13px; vertical-align: -2px; }
+.vo-box { border: 1px solid var(--line); border-radius: 10px; padding: 10px 12px; margin-bottom: 12px; display: grid; gap: 6px; }
+.vo-box p { margin: 0; }
+.vo-box .text-btn { padding: 4px; }
+.vo-box .pill.ok { background: #e7f6ec; color: #17663a; }
+.voice-card .btn { margin-top: 10px; }
 .swatches { display: flex; gap: 4px; align-items: center; height: 38px; padding: 0 10px; border-radius: 6px; border: 1px solid rgba(0,0,0,.06); }
 .swatches i { width: 16px; height: 16px; border-radius: 50%; box-shadow: 0 0 0 1px rgba(255,255,255,.15), 0 0 0 2px rgba(0,0,0,.05); }
 .colors { display: grid; grid-template-columns: repeat(auto-fill, minmax(140px, 1fr)); gap: 8px; }
@@ -547,6 +561,9 @@ const ICONS = {
   film: '<rect x="3" y="4" width="18" height="16" rx="2"/><path d="M7 4v16M17 4v16M3 9h4M3 15h4M17 9h4M17 15h4"/>',
   image: '<rect x="3" y="4" width="18" height="16" rx="2"/><circle cx="9" cy="10" r="2"/><path d="m21 17-5-5-9 8"/>',
   copy: '<rect x="9" y="9" width="12" height="12" rx="2"/><path d="M5 15V5a2 2 0 0 1 2-2h10"/>',
+  volume: '<path d="M11 5 6 9H3v6h3l5 4Z"/><path d="M15.5 8.5a5 5 0 0 1 0 7M18.5 5.5a9 9 0 0 1 0 13"/>',
+  mute: '<path d="M11 5 6 9H3v6h3l5 4Z"/><path d="m16 9 6 6M22 9l-6 6"/>',
+  key: '<circle cx="7.5" cy="15.5" r="4.5"/><path d="m10.7 12.3 9.3-9.3M17 6l3 3M14 9l2 2"/>',
 };
 const icon = name => `<svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.8" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true">${ICONS[name]}</svg>`;
 const esc = v => String(v ?? "").replace(/[&<>"']/g, c => ({ "&": "&amp;", "<": "&lt;", ">": "&gt;", '"': "&quot;", "'": "&#39;" }[c]));
@@ -916,7 +933,7 @@ function renderChannels() {
   const kindLabel = c => c.kind === "post" ? "Text post" : "Video script";
   document.getElementById("app").innerHTML = `
     <section class="head"><div><h1>Channels</h1><p class="lede">Publishing destinations, shared across all projects. Set the voice, format, and look once; every script for that channel follows them.</p></div>
-      <div class="head-actions"><button class="btn primary" data-action="new-channel">${icon("plus")}New channel</button></div></section>
+      <div class="head-actions"><button class="btn ghost" data-action="voice-keys">${icon("key")}Voice providers</button><button class="btn primary" data-action="new-channel">${icon("plus")}New channel</button></div></section>
     ${channels().length ? `<div class="list">${channels().map(c => `
       <article class="item" data-card="open-channel" data-id="${esc(c.id)}" tabindex="0">
         ${lookSwatch(c)}<div class="body"><h3><a href="${channelHref(c.id)}">${esc(c.name)}</a></h3><p>${esc([c.platform, kindLabel(c), c.language].filter(Boolean).join(" · "))}</p>
@@ -960,9 +977,9 @@ function parseScenes(src, wpm = 160) {
   for (const raw of String(src || "").replace(/\r\n?/g, "\n").split("\n")) {
     const line = raw.trim();
     const heading = line.match(/^##\s+(.*)$/);
-    if (heading) { beat = { beat: heading[1].replace(/[#*_]/g, "").trim(), vo: [], visual: null, text: "", note: "", image: "", source: "", duration: "" }; beats.push(beat); continue; }
+    if (heading) { beat = { beat: heading[1].replace(/[#*_]/g, "").trim(), vo: [], visual: null, text: "", note: "", image: "", source: "", duration: "", say: "" }; beats.push(beat); continue; }
     if (!beat || !line || /^#/.test(line)) continue;
-    const label = line.replace(/^[-*]\s+/, "").match(/^[*_]{0,2}(visual|text|note|image|source|duration)[*_]{0,2}\s*:[*_]{0,2}\s*(.*)$/i);
+    const label = line.replace(/^[-*]\s+/, "").match(/^[*_]{0,2}(visual|text|note|image|source|duration|say)[*_]{0,2}\s*:[*_]{0,2}\s*(.*)$/i);
     if (label) beat[label[1].toLowerCase()] = label[2].trim();
     else beat.vo.push(line);
   }
@@ -982,6 +999,9 @@ function parseScenes(src, wpm = 160) {
     }
     if (b.source) scene.source = b.source;
     if (b.note) scene.note = b.note;
+    if (fixed) scene.fixed = true;
+    // Say: is what the voiceover speaks when it differs from the captions
+    if (spokenText(b.say)) scene.say = spokenText(b.say);
     return scene;
   });
 }
@@ -1009,7 +1029,7 @@ function sceneData(visual, vo) {
 const PLAYER = { frame: null, ready: false, pending: null, duration: 0, time: 0, playing: false, scene: -1, scenes: [], scrubbing: false };
 function mountPlayer(host, payload) {
   PLAYER.mediaBase = payload?.options?.mediaBase || "";
-  host.innerHTML = `<iframe class="player-frame" src="/scenes/player.html" title="Video preview"></iframe>`;
+  host.innerHTML = `<iframe class="player-frame" src="/scenes/player.html" title="Video preview" allow="autoplay"></iframe>`;
   Object.assign(PLAYER, { frame: host.querySelector("iframe"), ready: false, pending: payload, duration: 0, time: 0, playing: false, scene: -1, scenes: [] });
 }
 const playerSend = message => PLAYER.frame?.contentWindow?.postMessage(message, location.origin);
@@ -1024,7 +1044,7 @@ function playerReload(design, scenes, extra = {}) {
 window.addEventListener("message", event => {
   if (!PLAYER.frame || event.source !== PLAYER.frame.contentWindow) return;
   const m = event.data || {};
-  if (m.type === "ready") { PLAYER.ready = true; if (PLAYER.pending) { playerSend({ type: "load", ...PLAYER.pending }); PLAYER.pending = null; } }
+  if (m.type === "ready") { PLAYER.ready = true; if (PLAYER.muted) playerSend({ type: "mute", muted: true }); if (PLAYER.pending) { playerSend({ type: "load", ...PLAYER.pending }); PLAYER.pending = null; } }
   else if (m.type === "loaded") { PLAYER.duration = m.duration || 0; PLAYER.scenes = m.scenes || []; document.querySelector(".player-error")?.remove(); updatePlayerBar(); }
   else if (m.type === "time") { Object.assign(PLAYER, { time: m.time, playing: m.playing, scene: m.scene }); updatePlayerBar(); }
   else if (m.type === "error") {
@@ -1033,8 +1053,9 @@ window.addEventListener("message", event => {
     host.querySelector(".player-error").textContent = m.message;
   }
 });
-const playerBar = () => `<div class="player-bar"><button type="button" class="icon-btn play-btn" data-action="player-toggle" aria-label="Play">${icon("play")}</button>
-    <input type="range" class="scrub" id="scrub" min="0" max="1000" value="0" aria-label="Seek"><span class="ptime" id="ptime">0s</span></div>`;
+const playerBar = (sound = false) => `<div class="player-bar"><button type="button" class="icon-btn play-btn" data-action="player-toggle" aria-label="Play">${icon("play")}</button>
+    <input type="range" class="scrub" id="scrub" min="0" max="1000" value="0" aria-label="Seek"><span class="ptime" id="ptime">0s</span>
+    ${sound ? `<button type="button" class="icon-btn" data-action="player-mute" aria-label="${PLAYER.muted ? "Unmute" : "Mute"}" title="Voiceover sound">${icon(PLAYER.muted ? "mute" : "volume")}</button>` : ""}</div>`;
 function updatePlayerBar() {
   const btn = document.querySelector(".play-btn");
   if (btn) { btn.innerHTML = icon(PLAYER.playing ? "pause" : "play"); btn.setAttribute("aria-label", PLAYER.playing ? "Pause" : "Play"); }
@@ -1061,13 +1082,15 @@ const channelViews = new Map(), saveQueues = new Map();
 let channelRenderToken = 0, editorRenderToken = 0;
 const channelRoute = id => route().scope === "channels" && route().id === id;
 const channelKey = (view, resource) => `channel:${view.id}:${resource}`;
-const channelDirty = view => JSON.stringify(view.design) !== view.savedDesign || JSON.stringify(view.voice) !== view.savedVoice || JSON.stringify(view.fields) !== view.savedFields;
+const channelDirty = view => JSON.stringify(view.design) !== view.savedDesign || JSON.stringify(view.voice) !== view.savedVoice || JSON.stringify(view.fields) !== view.savedFields
+  || (view.narration !== undefined && JSON.stringify(view.narration) !== view.savedNarration);
+const SAVE_MARKERS = { design: "savedDesign", voice: "savedVoice", narration: "savedNarration" };
 // Queue immutable snapshots: edits on another channel cannot cancel or redirect a pending write.
 function queueChannelSave(view, resource, snapshot) {
   const key = channelKey(view, resource), body = structuredClone(snapshot);
   const next = (saveQueues.get(key) || Promise.resolve()).catch(() => {}).then(async () => {
     const saved = await api("PUT", `channels/${enc(view.id)}${resource === "fields" ? "" : "/" + resource}`, body);
-    const marker = resource === "design" ? "savedDesign" : resource === "voice" ? "savedVoice" : "savedFields";
+    const marker = SAVE_MARKERS[resource] || "savedFields";
     view[marker] = JSON.stringify(resource === "fields" ? body : saved);
     if (JSON.stringify(view[resource]) === JSON.stringify(body) && resource !== "fields") view[resource] = saved;
     if (CV === view && channelRoute(view.id)) { const note = document.getElementById("save-note"); if (note) note.textContent = channelDirty(view) ? "Saving…" : "Saved"; }
@@ -1122,15 +1145,18 @@ async function renderChannel(id, tab) {
       CV = channelViews.get(id) || null;
     }
     if (!CV) {
-      const [design, voice] = await Promise.all([api("GET", `channels/${enc(id)}/design`), api("GET", `channels/${enc(id)}/voice`)]);
+      const video = c.kind === "video";
+      const [design, voice, narration] = await Promise.all([api("GET", `channels/${enc(id)}/design`), api("GET", `channels/${enc(id)}/voice`),
+        video ? api("GET", `channels/${enc(id)}/narration`) : Promise.resolve(undefined)]);
       if (!current()) return;
-      CV = { id, design, voice, fields: { format: c.format || "" }, savedFields: JSON.stringify({ format: c.format || "" }), ask: {}, setup: setupChannel === id, sample: c.language === "English" ? "en" : "hi",
-        savedDesign: JSON.stringify(design), savedVoice: JSON.stringify(voice), safeArea: false };
+      CV = { id, design, voice, narration, fields: { format: c.format || "" }, savedFields: JSON.stringify({ format: c.format || "" }), ask: {}, setup: setupChannel === id, sample: c.language === "English" ? "en" : "hi",
+        savedDesign: JSON.stringify(design), savedVoice: JSON.stringify(voice), savedNarration: JSON.stringify(narration), safeArea: false, voices: {}, sampleText: "" };
       channelViews.set(id, CV);
     }
   } catch (e) { if (!current()) return; app.innerHTML = `<div class="empty"><h3>Couldn't open this channel</h3><p>${esc(e.message)}</p></div>`; return; }
-  const tabs = c.kind === "video" ? [["look", "Look"], ["voice", "Voice"]] : [["voice", "Voice"]];
+  const tabs = c.kind === "video" ? [["look", "Look"], ["voice", "Voice"], ["narration", "Narration"]] : [["voice", "Voice"]];
   if (!tabs.some(t => t[0] === tab)) tab = tabs[0][0];
+  if (tab === "narration" && !VOICE_PROVIDERS) { try { await loadVoiceProviders(); } catch (e) { toast(e.message, "error"); } if (!current()) return; }
   CV.tab = tab;
   document.title = `${c.name} · Vid Studio`;
   const steps = [["basics", "Basics"], ...tabs];
@@ -1141,11 +1167,13 @@ async function renderChannel(id, tab) {
     ${CV.setup ? `<ol class="stepper">${steps.map(([key, label], i) => {
       const at = steps.findIndex(x => x[0] === tab), state = i < at ? "done" : i === at ? "on" : "";
       return `<li class="${state}"><span class="step-n">${state === "done" ? icon("check") : i + 1}</span>${label}</li>`; }).join("")}</ol>`
-      : `<nav class="tabs" aria-label="Channel">${tabs.map(([key, label]) => `<a href="${channelHref(c.id, key)}" class="${tab === key ? "on" : ""}">${icon(key === "look" ? "palette" : "mic")}${label}</a>`).join("")}</nav>`}
-    <section id="channel-panel">${tab === "look" ? lookPanel(c) : voicePanel(c)}</section>
-    ${CV.setup ? `<div class="setup-next"><span class="muted small">Everything saves as you go, and you can change it any time.</span>${tab === "look"
-      ? `<a class="btn primary" href="${channelHref(c.id, "voice")}">Next: Voice</a>` : `<button class="btn primary" data-action="finish-setup">Finish setup</button>`}</div>` : ""}`;
+      : `<nav class="tabs" aria-label="Channel">${tabs.map(([key, label]) => `<a href="${channelHref(c.id, key)}" class="${tab === key ? "on" : ""}">${icon(key === "look" ? "palette" : key === "narration" ? "volume" : "mic")}${label}</a>`).join("")}</nav>`}
+    <section id="channel-panel">${tab === "look" ? lookPanel(c) : tab === "narration" ? narrationPanel(c) : voicePanel(c)}</section>
+    ${CV.setup ? `<div class="setup-next"><span class="muted small">Everything saves as you go, and you can change it any time.</span>${(() => {
+      const next = tabs[tabs.findIndex(t => t[0] === tab) + 1];
+      return next ? `<a class="btn primary" href="${channelHref(c.id, next[0])}">Next: ${next[1]}</a>` : `<button class="btn primary" data-action="finish-setup">Finish setup</button>`; })()}</div>` : ""}`;
   if (tab === "look") mountPlayer(document.getElementById("look-player"), lookPayload());
+  if (tab === "narration") loadVoices(CV, c);
   restoreFocus(focus);
 }
 
@@ -1313,6 +1341,90 @@ function saveVoice(view = CV) {
   return queueChannelSave(view, "voice", view.voice).catch(() => null);
 }
 
+// Narration ------------------------------------------------------------
+let VOICE_PROVIDERS = null, SAMPLE_AUDIO = null;   // [{id, name, kind, ready, problem, needs_key, key_set, models, note, …}]
+async function loadVoiceProviders() { VOICE_PROVIDERS = await api("GET", "voice-providers"); return VOICE_PROVIDERS; }
+const voiceProvider = id => (VOICE_PROVIDERS || []).find(p => p.id === id);
+const lexiconText = lex => Object.entries(lex || {}).map(([k, v]) => `${k} = ${v}`).join("\n");
+function parseLexicon(text) {
+  const out = {};
+  for (const line of String(text).split("\n")) { const i = line.indexOf("="); if (i > 0 && line.slice(0, i).trim() && line.slice(i + 1).trim()) out[line.slice(0, i).trim()] = line.slice(i + 1).trim(); }
+  return out;
+}
+function narrationPanel(c) {
+  const n = CV.narration || {}, chosen = voiceProvider(n.provider);
+  const card = p => `<button type="button" class="provider ${n.provider === p.id ? "on" : ""}" data-action="pick-provider" data-id="${esc(p.id)}">
+      <span class="provider-top"><b>${esc(p.name)}</b><span class="pill">${p.kind === "local" ? "On this computer" : "Cloud"}</span></span>
+      <span class="muted">${esc(p.note)}</span>
+      <span class="provider-state ${p.ready ? "ok" : ""}">${p.ready ? `${icon("check")}Ready${p.needs_key ? (p.key_from_env ? " · key from environment" : " · key saved") : ""}` : esc(p.problem)}</span></button>`;
+  const voices = CV.voices[`${n.provider}:${c.language}`];
+  const voiceList = !n.provider ? "" : voices == null ? `<p class="muted small">Loading voices…</p>`
+    : voices.error ? `<p class="beat-warn">${esc(voices.error)}</p>`
+    : `<select class="font-select" data-narration="voice" aria-label="Voice"><option value="">Default (${esc(voices.default || "provider's choice")})</option>${voices.voices.map(v =>
+        `<option value="${esc(v.id)}" ${v.id === n.voice ? "selected" : ""}>${esc(v.name || v.id)}${[v.language, v.gender].filter(Boolean).length ? " · " + esc([v.language, v.gender].filter(Boolean).join(", ")) : ""}${v.downloaded === false ? " · downloads once" : ""}</option>`).join("")}
+        ${n.voice && !voices.voices.some(v => v.id === n.voice) ? `<option selected value="${esc(n.voice)}">${esc(n.voice)}</option>` : ""}</select>`;
+  return `<div class="studio-split">
+    <div class="controls">
+      <section class="ctl"><h4>Who reads the script <button type="button" class="btn ghost small" data-action="voice-keys">${icon("key")}API keys</button></h4>
+        <div class="providers">
+          <button type="button" class="provider ${!n.provider ? "on" : ""}" data-action="pick-provider" data-id=""><span class="provider-top"><b>No voiceover</b></span>
+            <span class="muted">Videos render silent, with beats timed by the speaking pace. Record your own voice over them later.</span></button>
+          ${(VOICE_PROVIDERS || []).map(card).join("")}</div></section>
+      ${n.provider ? `<section class="ctl"><h4>Voice</h4>
+        ${chosen && !chosen.ready ? `<p class="beat-warn">${esc(chosen.problem)}${chosen.needs_key ? ` · <button type="button" class="text-btn" data-action="voice-keys" data-id="${esc(chosen.id)}">Add key</button>` : ""}</p>` : ""}
+        <div class="row"><span>Voice</span>${voiceList}</div>
+        <div class="row"><span>Or a voice ID</span><input class="text-input" data-narration="voice" value="${esc(n.voice || "")}" placeholder="Paste any voice ID the provider accepts, e.g. a cloned voice"></div>
+        ${chosen?.models?.length ? `<div class="row"><span>Model</span><select class="font-select" data-narration="model" aria-label="Model"><option value="">Default (${esc(chosen.models[0].label)})</option>${chosen.models.map(m => `<option value="${esc(m.id)}" ${m.id === n.model ? "selected" : ""}>${esc(m.label)}</option>`).join("")}</select></div>` : ""}
+        ${chosen && !chosen.word_timings ? `<p class="muted small">Captions follow this voice beat by beat. ElevenLabs also gives word timings, so captions land on the exact word.</p>` : ""}</section>
+      <section class="ctl"><h4>Delivery</h4>
+        <div class="row"><span>Speed</span><div class="slider"><input type="range" min="0.7" max="1.3" step="0.05" value="${esc(n.speed ?? 1)}" data-narration="speed" data-number><output data-narration-show="speed">${Math.round((n.speed ?? 1) * 100)}%</output></div></div>
+        <div class="row"><span>Pause after a beat</span><div class="slider"><input type="range" min="0" max="1.5" step="0.05" value="${esc(n.pause ?? 0.3)}" data-narration="pause" data-number><output data-narration-show="pause">${Number(n.pause ?? 0.3).toFixed(2)} s</output></div></div>
+        ${n.provider === "openai" ? `<div class="row"><span>How to speak</span><textarea class="text-area" rows="2" data-narration="style" placeholder="Leave empty to use the channel's persona">${esc(n.style || "")}</textarea></div>` : ""}</section>
+      <section class="ctl"><h4>Pronunciation</h4>
+        <textarea class="text-area mono" rows="4" data-narration-lexicon placeholder="One per line: how a word is written = how to say it&#10;UPI = U P I&#10;HDPE = H D P E">${esc(lexiconText(n.lexicon))}</textarea>
+        <p class="muted small">Applies to every script on this channel. For one line, add <code>Say:</code> under a beat: the voice reads that, the captions keep what's written.</p></section>` : ""}
+    </div>
+    <div class="preview-col">
+      <div class="voice-card"><h4>Hear it</h4>
+        <textarea class="text-area" id="sample-text" rows="3" placeholder="A line in ${esc(c.language)}; leave empty for a sample">${esc(CV.sampleText || "")}</textarea>
+        <button type="button" class="btn" data-action="play-sample" ${n.provider && chosen?.ready ? "" : "disabled"}>${icon("play")}Play sample</button>
+        <p class="muted small">${n.provider ? (chosen?.kind === "cloud" ? `Sends the line to ${esc(chosen.name)}.` : "Runs on this computer.") : "Pick who reads the script first."}</p></div>
+      <p class="save-note" id="save-note"></p>
+      <div class="ask"><h4>${icon("volume")}How the voiceover works</h4><p class="muted small">Make the voiceover on a script page, or it's made when you render. Each beat lasts as long as its voice plus the pause, captions follow the voice, and clips are reused until a line or these settings change.</p></div>
+    </div></div>`;
+}
+async function loadVoices(view, c) {
+  const n = view.narration, key = `${n.provider}:${c.language}`;
+  if (!n.provider || key in view.voices) return;
+  if (!voiceProvider(n.provider)?.ready) { view.voices[key] = { voices: [], default: "" }; return; }
+  view.voices[key] = null;  // loading
+  try { view.voices[key] = await api("GET", `voice-providers/${enc(n.provider)}/voices?language=${enc(c.language)}`); }
+  catch (e) { view.voices[key] = { error: `Couldn't list voices: ${e.message}`, voices: [] }; }
+  if (CV === view && channelRoute(view.id) && view.tab === "narration") renderChannel(view.id, "narration");
+}
+function narrationChanged() {
+  const note = document.getElementById("save-note"); if (note) note.textContent = "Saving…";
+  scheduleChannelSave(CV, "narration");
+}
+function voiceKeysDialog(only) {
+  const list = (VOICE_PROVIDERS || []).filter(p => p.needs_key && (!only || p.id === only));
+  openDialog({
+    title: only ? `${voiceProvider(only)?.name} API key` : "Voice provider keys",
+    sub: "Keys are saved in this studio's <code>.secrets.json</code>, readable only by you, and never shown again. A key set in the environment wins.",
+    body: list.map(p => field(`${esc(p.name)}${p.key_set ? ` <span class="pill">${p.key_from_env ? "from environment" : "saved"}</span>` : ""}`,
+      `<input type="password" name="${esc(p.id)}" autocomplete="off" placeholder="${p.key_set ? "Leave empty to keep the saved key" : "Paste the key"}">`,
+      `<a href="${safeUrl(p.key_url)}" target="_blank" rel="noopener noreferrer">Get a key</a> · <code>${esc(p.key_name)}</code>${p.key_set && !p.key_from_env ? ` · <button type="button" class="text-btn" data-remove-key="${esc(p.id)}">Remove</button>` : ""}`)).join(""),
+    onOpen: form => form.querySelectorAll("[data-remove-key]").forEach(b => b.onclick = async () => {
+      await api("PUT", `voice-providers/${enc(b.dataset.removeKey)}/key`, { key: "" }); await loadVoiceProviders(); dialog.close(); toast("Key removed"); if (CV) renderChannel(CV.id, CV.tab);
+    }),
+    onSubmit: async form => {
+      for (const p of list) { const value = form[p.id].value.trim(); if (value) VOICE_PROVIDERS = await api("PUT", `voice-providers/${enc(p.id)}/key`, { key: value }); }
+      if (CV) { CV.voices = {}; if (channelRoute(CV.id)) renderChannel(CV.id, CV.tab); }
+      toast("Saved");
+    },
+  });
+}
+
 // Controls write straight into the open channel's look or voice, then save on their own.
 document.addEventListener("input", event => {
   if (!CV) return;
@@ -1329,6 +1441,17 @@ document.addEventListener("input", event => {
   } else if (el.dataset.voiceLines) {
     CV.voice[el.dataset.voiceLines] = el.value.split("\n").map(x => x.trim()).filter(Boolean);
     voiceChanged();
+  } else if (el.dataset.narration) {
+    setPath(CV.narration, el.dataset.narration, el.dataset.number !== undefined ? Number(el.value) : el.value);
+    const show = document.querySelector(`[data-narration-show="${CSS.escape(el.dataset.narration)}"]`);
+    if (show) show.textContent = el.dataset.narration === "speed" ? `${Math.round(el.value * 100)}%` : `${Number(el.value).toFixed(2)} s`;
+    if (el.tagName === "SELECT" || el.dataset.narration === "voice") document.querySelectorAll('[data-narration="voice"]').forEach(x => { if (x !== el) x.value = el.value; });
+    narrationChanged();
+  } else if (el.dataset.narrationLexicon !== undefined) {
+    CV.narration.lexicon = parseLexicon(el.value);
+    narrationChanged();
+  } else if (el.id === "sample-text") {
+    CV.sampleText = el.value;
   } else if (el.dataset.channelField) {
     CV.fields[el.dataset.channelField] = el.value;
     scheduleChannelSave(CV, "fields");
@@ -1339,6 +1462,7 @@ document.addEventListener("input", event => {
 });
 document.addEventListener("change", event => {
   if (CV && event.target.matches("select[data-design]")) { setPath(CV.design, event.target.dataset.design, event.target.value); designChanged(event.target.dataset.design); }
+
 });
 
 // ------------------------------------------------------------------ story and script editor
@@ -1373,6 +1497,7 @@ async function renderEditor(kind, id) {
         const [design, voice] = await Promise.all([api("GET", `channels/${channel}/design`), api("GET", `channels/${channel}/voice`)]).catch(() => [null, null]);
         if (!current() || editor !== view) return;
         Object.assign(view, { design, voice });
+        if (!VOICE_PROVIDERS) loadVoiceProviders().then(() => { if (editor === view) updateVideoBox(); }).catch(() => {});
         editor.sideTab = docText().trim() ? "preview" : "hooks";
       }
     }
@@ -1454,7 +1579,20 @@ function storySide() {
 }
 
 const wpm = () => editor.voice?.words_per_minute || 160;
-const scriptScenes = () => parseScenes(docText(), wpm());
+// A beat with a current voiceover clip lasts as long as the clip plus the channel's pause (as narration_status in studio.py).
+function withNarration(scenes, n) {
+  if (!n || !n.provider) return scenes;
+  for (const x of scenes) {
+    const clip = n.clips?.[x.say || x.vo];
+    if (!(x.say || x.vo) || !clip) continue;
+    x.audio = { src: "narration/" + clip.file, duration: clip.duration };
+    if (clip.words && clip.caption === x.vo) x.audio.words = clip.words;
+    if (!x.fixed) x.duration = Math.min(60, Math.max(1.5, Math.floor((clip.duration + n.pause) * 10 + 0.5) / 10));
+  }
+  return scenes;
+}
+const scriptScenes = () => withNarration(parseScenes(docText(), wpm()), editor.data.narration);
+const voiceoverMissing = () => scriptScenes().filter(x => (x.say || x.vo) && !x.audio).length;
 const scriptPayload = () => ({ design: editor.design, scenes: scriptScenes() });
 const scriptApi = (id = editor.data.id, project = PROJECT) => `/api/p/${enc(project)}/scripts/${enc(id)}`;
 const scriptMediaBase = () => scriptApi() + "/";
@@ -1489,6 +1627,19 @@ function scriptSide() {
     <section><button class="text-btn danger-text" data-action="delete-script" data-id="${esc(d.id)}">Delete script</button></section>`;
 }
 
+function voiceoverBox() {
+  const n = editor.data.narration, c = channelById(editor.data.channel) || {};
+  if (!n) return "";
+  if (!n.provider) return `<div class="vo-box"><p class="muted small">${icon("mute")}No voiceover: the video renders silent. <a href="${channelHref(editor.data.channel, "narration")}">Pick a voice for ${esc(c.name || "this channel")}</a>.</p></div>`;
+  const beats = scriptScenes().filter(x => x.say || x.vo).length, missing = voiceoverMissing(), done = beats - missing;
+  const who = esc([voiceProvider(n.provider)?.name || n.provider, n.voice].filter(Boolean).join(" · "));
+  if (n.status === "narrating") return `<div class="vo-box"><div class="render-bar"><i style="width:${Math.round((n.progress || 0) * 100)}%"></i></div><p class="muted small">Recording the voiceover with ${who}… ${Math.round((n.progress || 0) * 100)}%</p></div>`;
+  return `<div class="vo-box">${n.status === "failed" && n.error ? `<p class="beat-warn">Voiceover failed: ${esc(n.error)}</p>` : ""}
+    <p class="small">${icon("volume")}<b>Voiceover</b> · ${who} · ${beats ? `${done} of ${plural(beats, "beat")}` : "no lines yet"}</p>
+    ${beats ? `<div class="inline">${missing ? `<button class="btn small" data-action="narrate">${done ? `Update ${plural(missing, "beat")}` : "Make voiceover"}</button>` : `<span class="pill ok">Up to date</span>`}
+      ${done ? `<button class="text-btn" data-action="narrate" data-id="force">Redo all</button><a class="text-btn" href="${scriptApi()}/captions.srt" download>Captions (.srt)</a>` : ""}</div>` : ""}
+    ${missing && done ? `<p class="muted small">Changed lines are timed by the speaking pace until they're voiced.</p>` : ""}</div>`;
+}
 function videoBox() {
   const v = editor.data.video;
   if (!v) return "";
@@ -1502,14 +1653,14 @@ function videoBox() {
         <p class="muted small">${v.size ? `${(v.size / 1e6).toFixed(1)} MB · ` : ""}rendered ${esc(when(v.finished))}</p>
         <button class="text-btn" data-action="render-video">${v.stale ? "Re-render with your changes" : "Render again"}</button></div></div>
       ${v.stale ? `<p class="beat-warn">The script, images, or look changed since this render.</p>` : ""}`;
-  else body = `<button class="btn" data-action="render-video">${icon("film")}Render MP4</button><p class="muted small">Renders on this computer (Chrome + ffmpeg). It can take a few minutes.</p>`;
-  return `<h4>Video</h4>${v.status === "failed" && v.error ? `<p class="beat-warn">Last render failed: ${esc(v.error)}</p>` : ""}${body}${placeholders}`;
+  else body = `<button class="btn" data-action="render-video">${icon("film")}Render MP4</button><p class="muted small">Renders on this computer (Chrome + ffmpeg). It can take a few minutes${editor.data.narration?.provider && voiceoverMissing() ? ", and records the voiceover first" : ""}.</p>`;
+  return `<h4>Video</h4>${voiceoverBox()}${v.status === "failed" && v.error ? `<p class="beat-warn">Last render failed: ${esc(v.error)}</p>` : ""}${body}${placeholders}`;
 }
 const updateVideoBox = () => { const box = document.getElementById("video-box"); if (box && editor) box.innerHTML = videoBox(); };
 
 function previewTab() {
   if (!editor.design) return `<p class="muted small">Couldn't load this channel's look.</p>`;
-  return `<div class="device aspect-${esc((editor.design.aspect || "9:16").replace(":", "x"))}" id="script-player"></div>${playerBar()}
+  return `<div class="device aspect-${esc((editor.design.aspect || "9:16").replace(":", "x"))}" id="script-player"></div>${playerBar(Boolean(editor.data.narration?.provider))}
     <h4 class="beats-head">Beats <span class="muted small">click to jump · add a photo to any beat</span></h4>
     <div class="beats" id="beat-list">${beatList()}</div>
     ${mediaLibrary()}
@@ -1522,12 +1673,13 @@ function beatList() {
   const warnings = [];
   scenes.forEach(x => { if (x.duration > 12) warnings.push(`“${x.beat}” runs ${x.duration}s. Split it, or the screen sits still too long.`); });
   if (scenes.at(-1).type !== "end") warnings.push("The last beat isn't an end scene.");
+  scenes.forEach(x => { if (x.audio && x.audio.duration > x.duration + 0.05) warnings.push(`“${x.beat}”: the voiceover runs ${x.audio.duration.toFixed(1)}s but Duration: holds it to ${x.duration}s.`); });
   const total = scenes.reduce((sum, x) => sum + x.duration, 0), target = editor.voice?.length_seconds;
   if (target && Math.abs(total - target) > target * 0.10) warnings.push(`${fmtTime(total)} is ${total > target ? "over" : "under"} the ${fmtTime(target)} target.`);
   return scenes.map((x, i) => {
     const photo = mediaUrl(scenePhoto(x)), needs = x.type === "image" && !x.data.url && !x.image;
     return `<div class="beat-row" data-beat-index="${i}"><button type="button" class="beat" data-action="seek-beat" data-id="${i}">
-        <span class="beat-type">${esc(x.type)}</span><b>${esc(x.beat)}</b><span class="muted">${x.duration}s</span></button>
+        <span class="beat-type">${esc(x.type)}</span><b>${esc(x.beat)}</b><span class="muted" title="${x.audio ? "Timed by the voiceover" : "Estimated from the speaking pace"}">${x.audio ? icon("volume") : ""}${x.duration}s</span></button>
       ${photo ? `<span class="beat-thumb" style="background-image:url('${esc(photo)}')" title="${esc(x.image?.credit || x.data.credit || "")}"></span>
         <button type="button" class="icon-btn" data-action="beat-image-remove" data-id="${i}" aria-label="Remove the photo from ${esc(x.beat)}" title="Remove photo">${icon("x")}</button>`
         : `<button type="button" class="icon-btn ${needs ? "needs" : ""}" data-action="beat-image" data-id="${i}" aria-label="Add a photo to ${esc(x.beat)}" title="${needs ? "This beat needs an image" : "Add a photo behind this beat"}">${icon("image")}</button>`}</div>`;
@@ -1622,7 +1774,7 @@ function commentsTab() {
 
 // Beat scripts: Visual, Text, and Note lines show as cues under the spoken lines, not as more voiceover.
 function scriptMarkdown(src) {
-  return markdown(src).replace(/(^|<br>|<p>)\s*(?:<em>|<strong>)?(Visual|Text|Note|Image|Source|Duration)(?:<\/em>|<\/strong>)?\s*:\s*(?:<\/em>|<\/strong>)?\s*(.*?)(?=<br>|<\/p>)/gi,
+  return markdown(src).replace(/(^|<br>|<p>)\s*(?:<em>|<strong>)?(Visual|Text|Note|Image|Source|Duration|Say)(?:<\/em>|<\/strong>)?\s*:\s*(?:<\/em>|<\/strong>)?\s*(.*?)(?=<br>|<\/p>)/gi,
     (_, lead, label, rest) => `${lead}<span class="cue cue-${label.toLowerCase()}"><b>${label}</b>${rest}</span>`);
 }
 
@@ -2077,6 +2229,25 @@ const actions = {
     });
   },
   async "remove-example"(index) { const view = CV; view.voice.examples = view.voice.examples.filter((_, i) => i !== Number(index)); await saveVoice(view); if (CV === view && channelRoute(view.id)) renderChannel(view.id, "voice"); },
+  "pick-provider"(id) {
+    const view = CV, before = view.narration.provider;
+    if (before === id) return;
+    view.narration = { ...view.narration, provider: id, voice: "", model: "" };
+    narrationChanged();
+    renderChannel(view.id, "narration");
+    const p = voiceProvider(id);
+    if (p && !p.ready && p.needs_key) voiceKeysDialog(id);
+  },
+  "voice-keys"(id) { (VOICE_PROVIDERS ? Promise.resolve() : loadVoiceProviders()).then(() => voiceKeysDialog(id)); },
+  async "play-sample"(_, el) {
+    const view = CV, label = el.innerHTML;
+    el.disabled = true; el.innerHTML = `${icon("volume")}Speaking…`;
+    try {
+      const { audio } = await api("POST", `channels/${enc(view.id)}/narration/sample`, { text: document.getElementById("sample-text")?.value || "", settings: view.narration });
+      SAMPLE_AUDIO?.pause(); SAMPLE_AUDIO = new Audio(audio); await SAMPLE_AUDIO.play();
+    } catch (e) { toast(e.message, "error"); }
+    finally { el.disabled = false; el.innerHTML = label; }
+  },
   "finish-setup"() {
     setupChannel = null; CV.setup = false;
     toast("Channel ready. Send a story to production to write its first script");
@@ -2119,6 +2290,16 @@ const actions = {
       if (editor === view && PROJECT === project) updateVideoBox();
     } catch (e) { toast(e.message, "error"); }
   },
+  async narrate(mode) {
+    const view = editor, project = PROJECT;
+    if (view.dirty && !(await saveDoc())) return;
+    if (editor !== view || PROJECT !== project) return;
+    try {
+      view.data.narration = await api("POST", `p/${enc(project)}/scripts/${enc(view.data.id)}/narrate`, { force: mode === "force" });
+      if (editor === view && PROJECT === project) updateVideoBox();
+    } catch (e) { toast(e.message, "error"); }
+  },
+  "player-mute"(_, el) { PLAYER.muted = !PLAYER.muted; playerSend({ type: "mute", muted: PLAYER.muted }); el.innerHTML = icon(PLAYER.muted ? "mute" : "volume"); el.setAttribute("aria-label", PLAYER.muted ? "Unmute" : "Mute"); },
   "side-tab"(key) { editor.sideTab = key; rerender(); },
   async "choose-angle"(id) {
     const view = editor, project = PROJECT;
@@ -2359,6 +2540,11 @@ async function poll() {
             changed = true;
           }
           if (JSON.stringify(remote.video) !== JSON.stringify(view.data.video)) { view.data.video = remote.video; if (!changed) updateVideoBox(); }
+          if (JSON.stringify(remote.narration) !== JSON.stringify(view.data.narration)) {
+            const clipsChanged = JSON.stringify(remote.narration?.clips) !== JSON.stringify(view.data.narration?.clips);
+            view.data.narration = remote.narration;
+            if (!changed) { updateVideoBox(); if (clipsChanged) scriptTextChanged(); }
+          }
           if (!isPost()) {
             const id = enc(view.data.channel);
             const [design, voice] = await Promise.all([api("GET", `channels/${id}/design`), api("GET", `channels/${id}/voice`)]);

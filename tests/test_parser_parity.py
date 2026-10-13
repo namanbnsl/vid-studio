@@ -28,6 +28,7 @@ class ParserParityTest(unittest.TestCase):
             "## Photo\nWords.\nImage: media/a.jpg | Photo: A | extra\n**Source:** RBI\nDuration: 3.25 S\n## Bare\nImage:\nSource:\nDuration: 0\n## Big\nDuration: 99s\nVisual: image | Tap | media/t.png | Photo: B",
             "## Card\nImage: media/a.jpg | Photo: A / Flickr, CC BY 2.0 | full\n## Only\nImage: media/b.jpg|TOP\n## Piped\nImage: media/c.jpg | A | B | top",
             "## Call\nVisual: message | Unknown number | Sir, refund ready hai | you: कौन? | बस approve कर दीजिए\nText: Example",
+            "## Price\nये ₹6,500 का है. [1]\n**Say:** ये साढ़े छह हज़ार रुपये का है.\nDuration: 4\n## Empty say\nWords here.\nSay: [2] *\n## Unvoiced\nSay: Only the voice speaks.",
         ]
         inputs = [{"text": text, "wpm": wpm} for text in cases for wpm in (80, 160, 175, 260)]
         program = parser + "\nconst fs=require('node:fs');process.stdout.write(JSON.stringify(JSON.parse(fs.readFileSync(0,'utf8')).map(x=>parseScenes(x.text,x.wpm))));"

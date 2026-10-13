@@ -220,11 +220,39 @@ def default_workers() -> int:
     return max(1, min(4, (os.cpu_count() or 2) // 2))
 
 
+def mix_voiceover(clips: list, duration: float, output: Path) -> Path:
+    """One 48 kHz track from (start seconds, WAV path) clips, padded or cut to the video's length.
+
+    Each clip is resampled on its own (providers differ), placed at its beat's start, and the mix is
+    loudness-normalised for phones (about -16 LUFS, peaks under -1.5 dB).
+    """
+    if not find_ffmpeg():
+        raise RuntimeError("Mixing the voiceover needs ffmpeg")
+    if not clips:
+        raise ValueError("No voiceover clips to mix")
+    output = Path(output)
+    inputs, chains = [], []
+    for i, (start, path) in enumerate(clips):
+        inputs += ["-i", str(path)]
+        delay = max(0, round(float(start) * 1000))
+        chains.append(f"[{i}:a]aresample=48000,aformat=sample_fmts=fltp:channel_layouts=mono,adelay={delay}:all=1[a{i}]")
+    mix = "".join(f"[a{i}]" for i in range(len(clips)))
+    # Pad before loudnorm (padding after it comes up short), with margin; -t then cuts to the exact length.
+    graph = ";".join(chains) + f";{mix}amix=inputs={len(clips)}:normalize=0:dropout_transition=0," \
+        f"apad=whole_dur={float(duration) + 0.5:.3f},loudnorm=I=-16:TP=-1.5:LRA=11,aresample=48000[out]"
+    done = subprocess.run([find_ffmpeg(), "-y", "-loglevel", "error", *inputs, "-filter_complex", graph, "-map", "[out]",
+                           "-t", f"{float(duration):.3f}", "-ac", "2", "-ar", "48000", "-c:a", "pcm_s16le", str(output)], capture_output=True, text=True)
+    if done.returncode:
+        raise RuntimeError(f"ffmpeg couldn't mix the voiceover: {done.stderr.strip()[-400:]}")
+    return output
+
+
 def render(folder: Path, output: Path, fps: int = 30, quality: str = "high", progress=None, poster: Path | None = None,
-           workers: int | None = None) -> dict:
+           workers: int | None = None, audio: Path | None = None) -> dict:
     """Render folder/index.html to output (MP4). progress(done_frames, total_frames) is called as frames land.
 
-    Several browsers render interleaved frames in parallel; frames reach ffmpeg in order.
+    Several browsers render interleaved frames in parallel; frames reach ffmpeg in order. With audio (a WAV
+    as long as the video), that is the soundtrack; otherwise the MP4 gets a silent one, which platforms expect.
     """
     problems = missing_tools()
     if problems:
@@ -252,11 +280,11 @@ def render(folder: Path, output: Path, fps: int = 30, quality: str = "high", pro
         output.parent.mkdir(parents=True, exist_ok=True)
         encoder = subprocess.Popen(
             [find_ffmpeg(), "-y", "-loglevel", "error", "-f", "image2pipe", "-framerate", str(fps), "-c:v", "mjpeg", "-i", "-",
-             "-f", "lavfi", "-i", "anullsrc=r=48000:cl=stereo",
+             *(["-i", str(audio)] if audio else ["-f", "lavfi", "-i", "anullsrc=r=48000:cl=stereo"]),
              "-map", "0:v", "-map", "1:a", "-shortest",
              "-vf", f"scale={out_width}:{out_height}:flags=lanczos",
              "-c:v", "libx264", "-preset", preset, "-crf", str(crf), "-pix_fmt", "yuv420p", "-profile:v", "high",
-             "-r", str(fps), "-c:a", "aac", "-b:a", "128k", "-movflags", "+faststart", str(partial)],
+             "-r", str(fps), "-c:a", "aac", "-b:a", "192k" if audio else "128k", "-movflags", "+faststart", str(partial)],
             stdin=subprocess.PIPE, stderr=subprocess.PIPE)
         # The poster is the hook's settled frame: about 1.6 s in, or earlier in a shorter first scene.
         first_scene = float(info.get("first") or 0)
@@ -310,7 +338,7 @@ def render(folder: Path, output: Path, fps: int = 30, quality: str = "high", pro
             raise RuntimeError(f"ffmpeg failed: {error[-400:]}")
         os.replace(partial, output)
         return {"output": str(output), "frames": frames, "fps": fps, "width": out_width, "height": out_height, "workers": count,
-                "duration": duration, "fonts": info.get("fonts"), "seconds": round(time.monotonic() - started, 1)}
+                "duration": duration, "fonts": info.get("fonts"), "audio": bool(audio), "seconds": round(time.monotonic() - started, 1)}
     finally:
         cancelled.set()
         if encoder and encoder.poll() is None:

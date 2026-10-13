@@ -55,6 +55,32 @@
 
   var state = { tl: null, duration: 0, scenes: [], stage: null, playing: false, loop: true, time: 0, wall0: 0, t0: 0, lastPost: 0, lastScene: -1 };
   var pending = null, building = false;
+  // the voiceover: one <audio> per narrated beat, kept in step with the timeline while playing
+  var voice = { clips: [], muted: false };
+  function setClips(scenes, base) {
+    voice.clips.forEach(function (c) { c.el.pause(); c.el.removeAttribute('src'); });
+    voice.clips = [];
+    var start = 0;
+    (scenes || []).forEach(function (sc) {
+      var a = sc && sc.audio, d = Number(sc && sc.duration) || 0;
+      var src = a && VidScenes.resolveMedia(a.src, base);
+      if (src) {
+        var el = new Audio();
+        el.preload = 'auto'; el.src = src; el.muted = voice.muted;
+        voice.clips.push({ start: start, duration: Math.min(Number(a.duration) || d, d || Infinity), el: el });
+      }
+      start += d;
+    });
+  }
+  function syncVoice() {
+    var t = state.time;
+    voice.clips.forEach(function (c) {
+      var offset = t - c.start, live = state.playing && offset >= 0 && offset < c.duration - 0.03;
+      if (!live) { if (!c.el.paused) c.el.pause(); return; }
+      if (c.el.paused || Math.abs(c.el.currentTime - offset) > 0.25) { try { c.el.currentTime = offset; } catch (e) { /* not loaded yet */ } }
+      if (c.el.paused) { var p = c.el.play(); if (p && p.catch) p.catch(function () { /* autoplay blocked until a click */ }); }
+    });
+  }
 
   function post(m) { if (window.parent && window.parent !== window && location.origin !== 'null') window.parent.postMessage(m, location.origin); }
   function sceneAt(t) {
@@ -103,7 +129,7 @@
     state.playing = true; state.t0 = state.time; state.wall0 = performance.now();
     ui(); sendTime(true);
   }
-  function pause() { state.playing = false; ui(); sendTime(true); }
+  function pause() { state.playing = false; syncVoice(); ui(); sendTime(true); }
   function tick(now) {
     if (state.playing && state.tl) {
       var t = state.t0 + (now - state.wall0) / 1000;
@@ -112,6 +138,7 @@
         else { t = state.duration - 0.001; state.playing = false; setTime(t); sendTime(true); }
       }
       if (state.playing) { state.time = t; state.tl.time(t, true); ui(); sendTime(false); }
+      syncVoice();
     }
     requestAnimationFrame(tick);
   }
@@ -144,6 +171,7 @@
     VidScenes.build(scaler, job.design || {}, job.scenes || [], { captions: opts.captions !== false, safeArea: !!opts.safeArea, mediaBase: opts.mediaBase || '' })
       .then(function (res) {
         state.tl = res.timeline; state.duration = res.duration; state.stage = res.stage;
+        setClips(opts.audio === false ? [] : job.scenes, opts.mediaBase || '');
         state.scenes = res.scenes.map(function (s) { return { start: s.start, duration: s.duration, type: s.type }; });
         if (opts.loop != null) state.loop = !!opts.loop;
         var empty = !state.scenes.length;
@@ -175,6 +203,7 @@
       else if (m.type === 'pause') pause();
       else if (m.type === 'seek') { if (state.playing) { state.t0 = Number(m.time) || 0; state.wall0 = performance.now(); } setTime(Number(m.time) || 0, true); }
       else if (m.type === 'seekScene') seekScene(Number(m.index) || 0);
+      else if (m.type === 'mute') { voice.muted = !!m.muted; voice.clips.forEach(function (c) { c.el.muted = voice.muted; }); }
     } catch (err) { post({ type: 'error', message: String(err && err.message || err) }); }
   });
   window.addEventListener('resize', fit);
@@ -215,7 +244,7 @@
   }
   post({ type: 'ready' });
   // debugging/testing hook
-  window.__player = { state: state, setTime: setTime, play: play, pause: pause, load: load };
+  window.__player = { state: state, voice: voice, setTime: setTime, play: play, pause: pause, load: load };
 })();
 </script>
 </body>
