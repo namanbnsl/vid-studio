@@ -9,10 +9,10 @@ Visual: stat | ₹6,500 | Jaquar sensor tap | starting price
 Image: media/sensor-tap.jpg | Photo: BPE innovationas / Wikimedia Commons, CC BY-SA 4.0
 ```
 
-- `Image: path | credit` gives that beat a photo. On a stat, punchline, quote, list, title or end card, the photo is framed in the top of the frame, drifting slowly, with the scene's panel overlapping its lower edge and a blurred copy of the photo filling the background. On a chart or a message, it fills the screen behind the scene, dimmed or tinted by the look. Add `| card` or `| full` at the end of the line to choose for yourself.
+- `Image: path | credit` gives that beat a photo. On a stat, punchline, quote, list, message, title or end card, the photo runs edge to edge across the top of the frame with a hard edge, as tall as the scene below it allows, like the picture on a magazine page; in wide formats it fills the left side. On a chart, it fills the screen behind the scene, faint under the background colour. Add `| top` or `| full` at the end of the line to choose for yourself.
 - `Visual: image | what it shows | path | credit` makes the photo itself the scene, for beats where seeing the thing *is* the point. Without a path, it's an "Image needed" card in the preview, and the render warns about it.
 - The credit shows small on the photo (or at the bottom of the frame). Keep it short: `Photo: Name / Source, License`.
-- Because photos are usually framed rather than stretched to the full 1080×1920, a 1024 px photo looks sharp. An `image` scene whose photo is too small to fill the screen is framed automatically instead of blown up.
+- Because photos usually take the top of the frame rather than the full 1080×1920, a 1024 px photo looks sharp. An `image` scene whose photo is too small to fill the screen runs across the top instead of being blown up.
 
 ## Which beats get a photo
 

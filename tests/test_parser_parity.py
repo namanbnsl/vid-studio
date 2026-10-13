@@ -26,7 +26,7 @@ class ParserParityTest(unittest.TestCase):
             "## Hindi\nयह है नया नियम । [1, 2] [1–3]\nVisual: compare | Cap | Old: ₹500 | Now: ₹1,000",
             "## Timeline\r\nVisual: timeline | Dates | 2024: First: launch | : blank\r\n## End\r\nBye",
             "## Photo\nWords.\nImage: media/a.jpg | Photo: A | extra\n**Source:** RBI\nDuration: 3.25 S\n## Bare\nImage:\nSource:\nDuration: 0\n## Big\nDuration: 99s\nVisual: image | Tap | media/t.png | Photo: B",
-            "## Card\nImage: media/a.jpg | Photo: A / Flickr, CC BY 2.0 | full\n## Only\nImage: media/b.jpg|CARD\n## Piped\nImage: media/c.jpg | A | B | card",
+            "## Card\nImage: media/a.jpg | Photo: A / Flickr, CC BY 2.0 | full\n## Only\nImage: media/b.jpg|TOP\n## Piped\nImage: media/c.jpg | A | B | top",
             "## Call\nVisual: message | Unknown number | Sir, refund ready hai | you: कौन? | बस approve कर दीजिए\nText: Example",
         ]
         inputs = [{"text": text, "wpm": wpm} for text in cases for wpm in (80, 160, 175, 260)]

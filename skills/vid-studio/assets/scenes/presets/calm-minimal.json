@@ -1,7 +1,7 @@
 {
   "id": "calm-minimal",
   "name": "Calm Minimal",
-  "description": "Oat paper, ink and one deep green, under milky glass and a soft morning light. A quiet serif, slow fades and lots of air, for considered explainers.",
+  "description": "Oat paper, ink and one deep green. A quiet serif, slow fades and lots of air, for considered explainers.",
   "design": {
     "aspect": "9:16",
     "colors": {
@@ -30,22 +30,18 @@
       "transition": "fade"
     },
     "captions": {
-      "style": "glass",
+      "style": "underline",
       "position": "lower",
       "highlight": "accent",
       "max_words": 5,
       "size": "medium"
     },
     "background": {
-      "style": "ambient",
+      "style": "solid",
       "pattern": "none"
     },
-    "surfaces": {
-      "style": "glass"
-    },
     "images": {
-      "treatment": "natural",
-      "layout": "auto"
+      "treatment": "natural"
     },
     "sources": {
       "show": true
@@ -53,7 +49,7 @@
     "progress": {
       "show": true
     },
-    "radius": 14,
+    "radius": 6,
     "logo": {
       "text": "",
       "position": "top-left"

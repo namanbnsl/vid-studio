@@ -1,7 +1,7 @@
 {
   "id": "chalk-bold",
   "name": "Chalkboard",
-  "description": "Slate green, chalk white and a yellow stick of chalk on solid board-coloured panels. Rounded Baloo type that reads well in Hindi and English, for classroom-style explainers.",
+  "description": "Slate green, chalk white and a yellow stick of chalk. Rounded Baloo type that reads well in Hindi; a classroom that moves.",
   "design": {
     "aspect": "9:16",
     "colors": {
@@ -40,12 +40,8 @@
       "style": "grain",
       "pattern": "none"
     },
-    "surfaces": {
-      "style": "solid"
-    },
     "images": {
-      "treatment": "dim",
-      "layout": "auto"
+      "treatment": "dim"
     },
     "sources": {
       "show": true
@@ -53,7 +49,7 @@
     "progress": {
       "show": true
     },
-    "radius": 16,
+    "radius": 14,
     "logo": {
       "text": "",
       "position": "top-left"

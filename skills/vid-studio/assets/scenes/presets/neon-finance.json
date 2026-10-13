@@ -1,7 +1,7 @@
 {
   "id": "neon-finance",
   "name": "Night Desk",
-  "description": "Midnight navy, mint numbers and an amber second colour, on frosted panels under a cool light. Squared Rajdhani headlines with full Devanagari support: the default for Hindi and Hinglish.",
+  "description": "Midnight navy, mint numbers and an amber second colour. Squared Rajdhani headlines with full Hindi support; a calm markets desk.",
   "design": {
     "aspect": "9:16",
     "colors": {
@@ -37,15 +37,11 @@
       "size": "medium"
     },
     "background": {
-      "style": "ambient",
+      "style": "solid",
       "pattern": "none"
     },
-    "surfaces": {
-      "style": "glass"
-    },
     "images": {
-      "treatment": "dim",
-      "layout": "auto"
+      "treatment": "dim"
     },
     "sources": {
       "show": true
@@ -53,7 +49,7 @@
     "progress": {
       "show": true
     },
-    "radius": 16,
+    "radius": 10,
     "logo": {
       "text": "",
       "position": "top-left"

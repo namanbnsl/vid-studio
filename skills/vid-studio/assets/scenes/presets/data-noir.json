@@ -1,7 +1,7 @@
 {
   "id": "data-noir",
   "name": "Data Noir",
-  "description": "Black, white and one vermilion. Sharp-cornered smoked glass over a faint red light, tight grotesque numbers and hard cuts, for markets and tech.",
+  "description": "Black, white and one vermilion. Tight grotesque numbers and hard cuts, for markets and tech where the chart is the story.",
   "design": {
     "aspect": "9:16",
     "colors": {
@@ -37,15 +37,11 @@
       "size": "medium"
     },
     "background": {
-      "style": "ambient",
+      "style": "solid",
       "pattern": "none"
     },
-    "surfaces": {
-      "style": "glass"
-    },
     "images": {
-      "treatment": "mono",
-      "layout": "auto"
+      "treatment": "mono"
     },
     "sources": {
       "show": true
@@ -53,7 +49,7 @@
     "progress": {
       "show": true
     },
-    "radius": 6,
+    "radius": 0,
     "logo": {
       "text": "",
       "position": "top-left"

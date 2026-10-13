@@ -419,25 +419,25 @@ Words.
 Visual: message | Unknown number | Sir, refund ready hai | you: कौन? | बस approve कर दीजिए
 Image: media/a.jpg | Photo: A / Flickr, CC BY 2.0 | full
 ## Card
-Image: media/b.jpg|CARD
+Image: media/b.jpg|TOP
 ## Plain
 Image: media/c.jpg | Photo: C | extra
 """)
         self.assertEqual(scenes[0]["type"], "message")
         self.assertEqual(scenes[0]["data"], {"title": "Unknown number", "items": ["Sir, refund ready hai", "you: कौन?", "बस approve कर दीजिए"]})
         self.assertEqual(scenes[0]["image"], {"src": "media/a.jpg", "credit": "Photo: A / Flickr, CC BY 2.0", "layout": "full"})
-        self.assertEqual(scenes[1]["image"], {"src": "media/b.jpg", "credit": "", "layout": "card"})
+        self.assertEqual(scenes[1]["image"], {"src": "media/b.jpg", "credit": "", "layout": "top"})
         self.assertEqual(scenes[2]["image"], {"src": "media/c.jpg", "credit": "Photo: C | extra"})
 
     def test_every_preset_is_a_valid_look(self):
         catalog = {f["family"] for f in studio.fonts()["fonts"]}
         ids = [p["id"] for p in studio.presets()]
-        self.assertIn("frosted-night", ids)
-        self.assertIn("daylight", ids)
+        self.assertIn("night-edition", ids)
+        self.assertIn("swiss", ids)
         for preset in studio.presets():
             design = studio.merged_design({"preset": preset["id"]})
             self.assertEqual(set(design), set(studio.DEFAULT_DESIGN), preset["id"])
-            self.assertIn(design["surfaces"]["style"], ("glass", "solid", "flat"), preset["id"])
+            self.assertNotEqual(design["background"]["style"], "gradient", preset["id"])
             for role, family in design["fonts"].items():
                 self.assertIn(family, catalog, f"{preset['id']}: {role}")
 

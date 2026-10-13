@@ -46,15 +46,14 @@ STAGES = ["script", "ready", "published"]
 DEFAULT_PRESET = "bold-explainer"
 DEFAULT_DESIGN = {
     "preset": DEFAULT_PRESET, "aspect": "9:16",
-    "colors": {"background": "#121110", "surface": "#1D1B19", "text": "#F7F3EA", "muted": "#9C978D",
+    "colors": {"background": "#121212", "surface": "#1E1E1E", "text": "#F7F3EA", "muted": "#9C978D",
                "accent": "#FFC233", "accent2": "#FF7A45", "negative": "#FF5D5D"},
     "fonts": {"display": "Bricolage Grotesque", "body": "Mukta", "mono": "JetBrains Mono"},
     "type": {"scale": 1.0, "display_case": "none", "display_weight": 800, "tracking": -0.03},
     "motion": {"energy": "high", "easing": "snappy", "transition": "slide"},
     "captions": {"style": "highlight", "position": "lower", "highlight": "accent", "max_words": 4, "size": "medium"},
-    "background": {"style": "ambient", "pattern": "none"}, "surfaces": {"style": "glass"},
-    "images": {"treatment": "dim", "layout": "auto"}, "sources": {"show": True},
-    "progress": {"show": True}, "radius": 16,
+    "background": {"style": "grain", "pattern": "none"}, "images": {"treatment": "dim", "layout": "auto"}, "sources": {"show": True},
+    "progress": {"show": True}, "radius": 12,
     "logo": {"text": "", "position": "top-left"}, "custom_css": "",
 }
 HOOK_STYLES = ["question", "surprising-stat", "myth-bust", "story", "moment", "stakes", "contrast"]
@@ -1141,9 +1140,9 @@ def save_design(root: Path, channel_id: str, design: dict) -> dict:
         "aspect": ["9:16", "16:9", "1:1", "4:5"], "type.display_case": ["upper", "title", "none"],
         "motion.energy": ["calm", "medium", "high"], "motion.easing": ["smooth", "snappy", "bouncy"],
         "motion.transition": ["cut", "fade", "slide", "zoom", "wipe"],
-        "captions.style": ["none", "plain", "boxed", "karaoke", "highlight", "glass", "pop"], "captions.position": ["lower", "middle", "upper"],
-        "captions.highlight": ["accent", "accent2", "text"], "background.style": ["solid", "gradient", "grain", "paper", "ambient"],
-        "surfaces.style": ["glass", "solid", "flat"], "images.layout": ["auto", "full"],
+        "captions.style": ["none", "plain", "boxed", "karaoke", "highlight", "underline", "pop"], "captions.position": ["lower", "middle", "upper"],
+        "captions.highlight": ["accent", "accent2", "text"], "background.style": ["solid", "gradient", "grain", "paper"],
+        "images.layout": ["auto", "full"],
         "background.pattern": ["none", "grid", "dots", "lines"], "logo.position": ["top-left", "top-right", "bottom-left", "bottom-right"],
         "captions.size": ["small", "medium", "large"], "images.treatment": ["natural", "dim", "mono", "duotone"],
     }
@@ -1430,8 +1429,8 @@ def parse_scenes(text: str, words_per_minute=160) -> list[dict]:
         scene = {"beat": beat["beat"], "type": kind, "duration": duration, "vo": vo, "text": beat.get("text", ""), "data": data}
         if beat.get("image"):
             src, _, credit = beat["image"].partition("|")
-            # an optional last field places the photo: "card" (framed above the scene) or "full" (behind it)
-            layout = re.match(r"^(?:(.*?)\s*\|)?\s*(card|full)\s*$", credit, re.I)
+            # an optional last field places the photo: "top" (across the top of the frame) or "full" (behind the scene)
+            layout = re.match(r"^(?:(.*?)\s*\|)?\s*(top|full)\s*$", credit, re.I)
             credit, layout = (layout[1] or "", layout[2].lower()) if layout else (credit, "")
             scene["image"] = {"src": src.strip(), "credit": credit.strip()}
             if layout:

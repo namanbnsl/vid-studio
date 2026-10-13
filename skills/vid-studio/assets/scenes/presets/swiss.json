@@ -1,17 +1,17 @@
 {
-  "id": "frosted-night",
-  "name": "Frosted Night",
-  "description": "Ink-blue night, frosted glass and periwinkle numbers, with a coral second colour. Inter Tight headlines, glass captions and calm, smooth motion: a premium default for any explainer.",
+  "id": "swiss",
+  "name": "Swiss",
+  "description": "Off-white, black and one signal red on a strict grid. Inter Tight set tight, square corners, hard cuts between beats: information design, nothing else.",
   "design": {
     "aspect": "9:16",
     "colors": {
-      "background": "#0A0C12",
-      "surface": "#141824",
-      "text": "#F3F5FA",
-      "muted": "#8D94A7",
-      "accent": "#9DB7FF",
-      "accent2": "#FF9B7A",
-      "negative": "#FF6B7D"
+      "background": "#F1F0EC",
+      "surface": "#FFFFFF",
+      "text": "#0B0B0B",
+      "muted": "#6A6964",
+      "accent": "#E3001B",
+      "accent2": "#0A3D91",
+      "negative": "#E3001B"
     },
     "fonts": {
       "display": "Inter Tight",
@@ -22,30 +22,26 @@
       "scale": 1.0,
       "display_case": "none",
       "display_weight": 700,
-      "tracking": -0.035
+      "tracking": -0.045
     },
     "motion": {
       "energy": "medium",
-      "easing": "smooth",
-      "transition": "fade"
+      "easing": "snappy",
+      "transition": "cut"
     },
     "captions": {
-      "style": "glass",
+      "style": "underline",
       "position": "lower",
       "highlight": "accent",
       "max_words": 4,
       "size": "medium"
     },
     "background": {
-      "style": "ambient",
+      "style": "solid",
       "pattern": "none"
     },
-    "surfaces": {
-      "style": "glass"
-    },
     "images": {
-      "treatment": "dim",
-      "layout": "auto"
+      "treatment": "natural"
     },
     "sources": {
       "show": true
@@ -53,7 +49,7 @@
     "progress": {
       "show": true
     },
-    "radius": 18,
+    "radius": 0,
     "logo": {
       "text": "",
       "position": "top-left"

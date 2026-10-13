@@ -21,17 +21,16 @@
 
   var DEFAULT_DESIGN = {
     aspect: '9:16',
-    colors: { background: '#121110', surface: '#1D1B19', text: '#F7F3EA', muted: '#9C978D', accent: '#FFC233', accent2: '#FF7A45', negative: '#FF5D5D' },
+    colors: { background: '#121212', surface: '#1E1E1E', text: '#F7F3EA', muted: '#9C978D', accent: '#FFC233', accent2: '#FF7A45', negative: '#FF5D5D' },
     fonts: { display: 'Bricolage Grotesque', body: 'Mukta', mono: 'JetBrains Mono' },
     type: { scale: 1.0, display_case: 'none', display_weight: 800, tracking: -0.03 },
     motion: { energy: 'high', easing: 'snappy', transition: 'slide' },
     captions: { style: 'highlight', position: 'lower', highlight: 'accent', max_words: 4, size: 'medium' },
-    background: { style: 'ambient', pattern: 'none' },
-    surfaces: { style: 'glass' },
+    background: { style: 'grain', pattern: 'none' },
     images: { treatment: 'dim', layout: 'auto' },
     sources: { show: true },
     progress: { show: true },
-    radius: 16,
+    radius: 12,
     logo: { text: '', position: 'top-left' },
     custom_css: ''
   };
@@ -49,20 +48,20 @@
     energy: ['calm', 'medium', 'high'],
     easing: ['smooth', 'snappy', 'bouncy'],
     transition: ['cut', 'fade', 'slide', 'zoom', 'wipe'],
-    capStyle: ['none', 'plain', 'boxed', 'karaoke', 'highlight', 'glass', 'pop'],
+    capStyle: ['none', 'plain', 'boxed', 'karaoke', 'highlight', 'underline', 'pop'],
     capPos: ['lower', 'middle', 'upper'],
-    bgStyle: ['solid', 'gradient', 'grain', 'paper', 'ambient'],
-    surface: ['glass', 'solid', 'flat'],
-    imgLayout: ['auto', 'full'],
+    bgStyle: ['solid', 'gradient', 'grain', 'paper'],
     pattern: ['none', 'grid', 'dots', 'lines'],
+    imgLayout: ['auto', 'full'],
     logoPos: ['top-left', 'top-right', 'bottom-left', 'bottom-right'],
     capSize: ['small', 'medium', 'large'],
     treatment: ['natural', 'dim', 'mono', 'duotone']
   };
   var CAP_SIZE = { small: 0.88, medium: 1.08, large: 1.3 };
   var TYPES = ['title', 'stat', 'bars', 'compare', 'list', 'quote', 'timeline', 'text', 'image', 'message', 'end'];
-  // With layout "auto", a beat photo is framed above these scenes (a photo card); charts and the rest put it behind.
-  var CARD_PHOTO = ['title', 'stat', 'text', 'quote', 'list', 'end'];
+  // With images.layout "auto", these scenes put a beat's photo across the top of the frame, edge to edge, and
+  // sit below it; charts need the height, so their photo goes full-screen behind them, faint.
+  var TOP_PHOTO = ['title', 'stat', 'text', 'quote', 'list', 'message', 'end'];
 
   var MOTION = {
     calm: { dur: 1.3, dist: 0.6, st: 1.35, tx: 0.9 },
@@ -246,7 +245,6 @@
     d.captions.size = pick(d.captions.size, ENUM.capSize, 'medium');
     d.images.treatment = pick(d.images.treatment, ENUM.treatment, 'dim');
     d.images.layout = pick(d.images.layout, ENUM.imgLayout, 'auto');
-    d.surfaces.style = pick(d.surfaces.style, ENUM.surface, 'glass');
     d.sources.show = d.sources.show !== false;
     d.progress.show = d.progress.show !== false;
     d.background.style = pick(d.background.style, ENUM.bgStyle, 'solid');
@@ -387,7 +385,7 @@
     if (typeof img === 'string') img = { src: img };
     if (!isObj(img) || typeof img.src !== 'string' || !img.src.trim()) return null;
     var out = { src: img.src.trim(), credit: String(img.credit || '').trim() };
-    if (img.layout === 'card' || img.layout === 'full') out.layout = img.layout;
+    if (img.layout === 'top' || img.layout === 'full') out.layout = img.layout;
     return out;
   }
   // Relative media paths ("media/x.jpg") resolve against options.mediaBase; absolute URLs pass through.
@@ -413,7 +411,8 @@
     var ts = design.type.scale;
     var progress = null;
     if (design.progress.show) {
-      progress = { top: top, height: 6, left: left, width: right - left };
+      // the folio ("03 / 08") sits at the right end of the line
+      progress = { top: top, height: 4, left: left, width: right - left - (landscape ? 150 : 132) };
       top += 6 + (landscape ? 36 : 52);
     }
     // the small print sits below the safe area, on the frame's bottom edge, so it costs the content no height
@@ -517,12 +516,6 @@
   function drawLine(tl, a, line, at) {
     tw(tl, line, { scaleX: 0 }, { scaleX: 1, duration: a.dur(0.8), ease: a.E.inOut }, at);
   }
-  // A surface (glass, solid or flat, per the look) rises into place; its contents animate on top of it.
-  function cardIn(tl, a, card, at) {
-    tw(tl, card, { y: a.dist(36), opacity: 0, scale: 0.985 }, { y: 0, opacity: 1, scale: 1, duration: a.dur(0.8), ease: a.E.out }, at);
-  }
-  var ARROW = '<svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.6" stroke-linecap="round" stroke-linejoin="round"><path d="M5 12h14M13 6l6 6-6 6"/></svg>';
-  var PERSON = '<svg viewBox="0 0 24 24" fill="currentColor"><circle cx="12" cy="8.5" r="4.2"/><path d="M3.8 21c.7-4.4 4.1-7 8.2-7s7.5 2.6 8.2 7z"/></svg>';
 
   BUILD.title = function (sc) {
     var d = sc.data, st = el('div', 'stack');
@@ -546,21 +539,19 @@
 
   BUILD.stat = function (sc) {
     var d = sc.data, st = el('div', 'stack');
-    var card = el('div', 'card stat-card'); st.appendChild(card);
     var label = null, ctx = null, line = null;
-    if (plain(d.label)) { label = el('div', 'stat-label fit', rich(d.label)); tagLang(label, d.label); card.appendChild(label); }
+    if (plain(d.label)) { label = el('div', 'stat-label fit', rich(d.label)); tagLang(label, d.label); st.appendChild(label); }
     var p = parseValue(d.value);
     var val = el('div', 'value disp fit', valueHTML(d.value || '', p));
-    tagLang(val, d.value); card.appendChild(val);
+    tagLang(val, d.value); st.appendChild(val);
     if (plain(d.context)) {
-      line = el('div', 'stat-line'); card.appendChild(line);
-      ctx = el('div', 'context fit', rich(d.context)); tagLang(ctx, d.context); card.appendChild(ctx);
+      line = el('div', 'stat-line'); st.appendChild(line);
+      ctx = el('div', 'context fit', rich(d.context)); tagLang(ctx, d.context); st.appendChild(ctx);
     }
     return {
       stack: st,
       anim: function (tl, a) {
         var at = a.t0;
-        cardIn(tl, a, card, at); at += a.st(0.12);
         if (label) { fadeUp(tl, a, label, at, 18); at += a.st(0.15); }
         tw(tl, val, { yPercent: 8, opacity: 0 }, { yPercent: 0, opacity: 1, duration: a.dur(0.8), ease: a.E.out }, at);
         countUp(tl, q(val, '.num'), p, at, a.dur(1.3), a.E.num);
@@ -597,7 +588,7 @@
         return { bar: bar, value: v, label: lab, zone: zone, h: h, val: q(v, '.num'), p: it.p };
       });
       var base = el('div', 'cc-base'); chart.appendChild(base);
-      var ccard = el('div', 'card chart-card'); ccard.appendChild(chart); st.appendChild(ccard);
+      st.appendChild(chart);
       return {
         head: head, stack: st,
         post: function () {
@@ -610,7 +601,6 @@
         },
         anim: function (tl, a) {
           var at = revealHead(tl, a, head, a.t0);
-          cardIn(tl, a, ccard, Math.max(a.t0, at - a.st(0.3)));
           drawLine(tl, a, base, at);
           var gap = a.st(Math.min(0.18, 0.9 / rows.length)), bd = a.dur(1.0);
           rows.forEach(function (r, i) {
@@ -637,12 +627,11 @@
       row.appendChild(hd); row.appendChild(track); bars.appendChild(row);
       return { head: hd, fill: fill, val: q(v, '.num'), p: it.p };
     });
-    var bcard = el('div', 'card chart-card'); bcard.appendChild(bars); st.appendChild(bcard);
+    st.appendChild(bars);
     return {
       head: head, stack: st,
       anim: function (tl, a) {
         var at = revealHead(tl, a, head, a.t0);
-        cardIn(tl, a, bcard, Math.max(a.t0, at - a.st(0.3)));
         var gap = a.st(Math.min(0.2, 1.0 / Math.max(1, rows.length)));
         var bd = a.dur(1.0);
         rows.forEach(function (r, i) {
@@ -697,18 +686,15 @@
     } else {
       // words, not numbers: two labelled panels
       parts = items.map(function (it, i) {
-        if (i === 1) cols.appendChild(el('div', 'vs', ARROW));
-        var col = el('div', 'col panel card' + (i === 1 ? ' subject' : ''));
+        var col = el('div', 'col panel' + (i === 1 ? ' subject' : ''));
         var lab = el('div', 'col-label', rich(it.label)); tagLang(lab, it.label);
         var v = el('div', 'panel-value fit', rich(it.value)); tagLang(v, it.value);
         col.appendChild(lab); col.appendChild(v); cols.appendChild(col);
         return { col: col };
       });
-      st.className = 'stack';   // panels are centred like any other statement
+      // phrases: two rows that share the height, up to a limit
     }
-    var cmpCard = null;
-    if (numeric) { cmpCard = el('div', 'card chart-card'); cmpCard.appendChild(cols); st.appendChild(cmpCard); }
-    else st.appendChild(cols);
+    st.appendChild(cols);
     return {
       head: head, stack: st,
       post: function () {
@@ -721,8 +707,6 @@
       anim: function (tl, a) {
         var at = revealHead(tl, a, head, a.t0);
         var bd = a.dur(1.1);
-        if (cmpCard) cardIn(tl, a, cmpCard, Math.max(a.t0, at - a.st(0.3)));
-        else { var vs = q(cols, '.vs'); if (vs) tw(tl, vs, { scale: 0, opacity: 0 }, { scale: 1, opacity: 1, duration: a.dur(0.5), ease: a.E.pop }, at + 0.1 + a.st(0.3)); }
         if (base) drawLine(tl, a, base, at);
         parts.forEach(function (pt, i) {
           var t = at + 0.1 + i * a.st(0.4);
@@ -750,7 +734,7 @@
       var idx = el('span', 'idx tnum', String(i + 1));
       var t = el('span', 'item-text fit', rich(txt)); tagLang(t, txt);
       li.appendChild(line); li.appendChild(idx); li.appendChild(t); ol.appendChild(li);
-      return { li: li, line: line, idx: idx, text: t };
+      return { line: line, idx: idx, text: t };
     });
     ol.style.setProperty('--n', String(Math.max(1, items.length)));
     var end = el('span', 'item-line end'); ol.appendChild(end);
@@ -764,7 +748,6 @@
         items.forEach(function (it, i) {
           var t = at + i * gap;
           drawLine(tl, a, it.line, t);
-          tw(tl, it.li, { y: a.dist(22), opacity: 0 }, { y: 0, opacity: 1, duration: a.dur(0.6), ease: a.E.out }, t);
           tw(tl, it.idx, { opacity: 0, y: a.dist(16) }, { opacity: 1, y: 0, duration: a.dur(0.5), ease: a.E.out }, t + 0.05);
           tw(tl, it.text, { x: -a.dist(24), opacity: 0 }, { x: 0, opacity: 1, duration: a.dur(0.6), ease: a.E.out }, t + 0.1);
         });
@@ -775,23 +758,16 @@
 
   BUILD.quote = function (sc) {
     var d = sc.data, st = el('div', 'stack');
-    var card = el('figure', 'card quote-card'); st.appendChild(card);
-    var mark = el('div', 'qmark disp', '“'); card.appendChild(mark);
     var wrap = el('div', 'quote');
     var bar = el('span', 'quote-bar'); wrap.appendChild(bar);
-    var qt = el('blockquote', 'quote-text fit', wordsHTML(plain(d.quote || d.text || ''), { mask: false }));
-    tagLang(qt, d.quote); wrap.appendChild(qt); card.appendChild(wrap);
+    var qt = el('blockquote', 'quote-text fit', wordsHTML('“' + plain(d.quote || d.text || '') + '”', { mask: false }));
+    tagLang(qt, d.quote); wrap.appendChild(qt); st.appendChild(wrap);
     var src = null;
-    if (plain(d.source)) {
-      src = el('figcaption', 'source', '<span class="src-av">' + PERSON + '</span><span class="src-name">' + rich(d.source) + '</span>');
-      tagLang(src, d.source); card.appendChild(src);
-    }
+    if (plain(d.source)) { src = el('div', 'source', rich(d.source)); tagLang(src, d.source); st.appendChild(src); }
     return {
       stack: st,
       anim: function (tl, a) {
         var at = a.t0;
-        cardIn(tl, a, card, at);
-        tw(tl, mark, { opacity: 0, y: a.dist(20) }, { opacity: 1, y: 0, duration: a.dur(0.6), ease: a.E.out }, at + a.st(0.1));
         tw(tl, bar, { scaleY: 0 }, { scaleY: 1, duration: a.dur(0.7), ease: a.E.inOut }, at);
         var ws = qa(qt, '.w');
         var span = Math.min((a.e - at) * 0.45, ws.length * 0.1 * a.f + 0.2);
@@ -857,8 +833,7 @@
     var txt = d.text || d.title || sc.text || '';
     var hasStar = /\*/.test(txt);
     var p = el('p', 'punch disp fit', wordsHTML(txt, { autoEm: hasStar ? null : function (w) { return /[0-9०-९₹$%]/.test(w); } }));
-    var pw = el('div', 'punch-wrap'); pw.appendChild(p);
-    tagLang(p, txt); st.appendChild(pw);
+    tagLang(p, txt); st.appendChild(p);
     if (plain(txt).length <= 14) p.classList.add('short');   // a figure or a few words: set it like a poster
     return {
       stack: st,
@@ -879,7 +854,7 @@
       st.className = 'stack photo-only';
       return { stack: st, anim: function () {} };
     }
-    var card = el('div', 'img-card card');
+    var card = el('div', 'img-card');
     var inner = el('div', 'ph');
     inner.innerHTML = '<div class="ph-tag">Image needed</div>';
     var desc = el('div', 'ph-desc fit', rich(d.description || ''));
@@ -895,61 +870,59 @@
     };
   };
 
-  // The moment on a phone: a call or a text, bubble by bubble. Lines starting "you:" (or "me:", "आप:", "मैं:")
-  // are the viewer's own replies, on the right in the accent; the rest arrive on the left, each after a moment of
-  // typing dots. Bubbles keep their final size from the start, so nothing reflows while it plays.
+  // The moment on a phone: a call or a text, line by line. Lines starting "you:" (or "me:", "आप:", "मैं:") are
+  // the viewer's replies, on the right in the accent; the others arrive on the left, each after a beat of typing
+  // dots. Every bubble has its final size from the start, so nothing reflows while it plays.
   BUILD.message = function (sc) {
     var d = sc.data, st = el('div', 'stack');
-    var card = el('div', 'card msg-card'); st.appendChild(card);
-    var who = plain(d.title);
-    var head = el('div', 'msg-head', '<span class="msg-av">' + PERSON + '</span><span class="msg-who">' + rich(who) + '</span>');
-    tagLang(head, who); card.appendChild(head);
-    var thread = el('div', 'msg-thread'); card.appendChild(thread);
+    var wrap = el('div', 'msg');
+    var who = plain(d.title), head = null;
+    if (who) { head = el('div', 'msg-who', rich(who)); tagLang(head, who); wrap.appendChild(head); }
     var bubbles = (Array.isArray(d.items) ? d.items : []).slice(0, 5).map(function (raw) {
       raw = typeof raw === 'string' ? raw : (raw && (raw.text || raw.label)) || '';
       var m = /^\s*(you|me|\u0906\u092A|\u092E\u0948\u0902)\s*:\s*/i.exec(raw);
       var txt = m ? raw.slice(m[0].length) : raw;
       var b = el('div', 'bubble ' + (m ? 'out' : 'in'));
-      var body = el('span', 'bubble-text', rich(txt)); tagLang(b, txt);
+      var body = el('span', 'bubble-text fit', rich(txt)); tagLang(b, txt);
       b.appendChild(body);
       var dots = null;
       if (!m) { dots = el('span', 'dots', '<i></i><i></i><i></i>'); b.appendChild(dots); }
-      thread.appendChild(b);
-      return { el: b, body: body, dots: dots, out: !!m };
+      wrap.appendChild(b);
+      return { el: b, body: body, dots: dots };
     });
+    st.appendChild(wrap);
     return {
       stack: st,
       anim: function (tl, a) {
         var at = a.t0;
-        cardIn(tl, a, card, at);
-        fadeUp(tl, a, head, at + a.st(0.1), 12);
+        if (head) fadeUp(tl, a, head, at, 12);
         var n = Math.max(1, bubbles.length);
         var gap = clamp(Math.max(0.4, (a.e - at) * 0.6) / n, 0.35 * a.f, 1.4);
         bubbles.forEach(function (b, i) {
-          var t = at + a.st(0.25) + i * gap;
-          tw(tl, b.el, { scale: 0.86, opacity: 0, y: a.dist(14) }, { scale: 1, opacity: 1, y: 0, duration: a.dur(0.45), ease: a.E.pop }, t);
+          var t = at + a.st(0.2) + i * gap;
+          tw(tl, b.el, { opacity: 0, y: a.dist(16) }, { opacity: 1, y: 0, duration: a.dur(0.45), ease: a.E.out }, t);
           if (b.dots) {
             var typing = Math.min(0.55, gap * 0.45);
-            tw(tl, b.body, { opacity: 0 }, { opacity: 1, duration: 0.2, ease: 'power1.out' }, t + typing);
-            tw(tl, b.dots, { opacity: 1 }, { opacity: 0, duration: 0.15, ease: 'power1.out' }, t + typing - 0.05);
-            tw(tl, qa(b.dots, 'i'), { y: 0 }, { y: -7, duration: 0.18, ease: 'sine.inOut', yoyo: true, repeat: 1, stagger: 0.09 }, t + 0.05);
+            tw(tl, b.body, { opacity: 0 }, { opacity: 1, duration: 0.18, ease: 'power1.out' }, t + typing);
+            tw(tl, b.dots, { opacity: 1 }, { opacity: 0, duration: 0.12, ease: 'power1.out' }, t + typing - 0.04);
           }
         });
       }
     };
   };
 
-  // A photo framed above the scene: the content's panel overlaps its lower edge, like a magazine layout.
-  function buildPhotoCard(photo, sc, ctx) {
-    var wrap = el('div', 'photo-card');
+  // A photo across the top of the frame, edge to edge with a hard edge, like the picture on a magazine page;
+  // the scene sits on the background below it. In a wide frame it fills the left side instead. Its size is set
+  // after measuring, to whatever the scene leaves (placeTopPhoto).
+  function buildTopPhoto(photo, sc, ctx) {
+    var wrap = el('div', 'photo-top');
     var img = el('img');
     img.alt = plain(sc.data.description || sc.beat || '');
     img.decoding = 'sync';
     img.src = photo.url;
     wrap.appendChild(img);
     if (ctx.design.images.treatment === 'duotone') wrap.appendChild(el('div', 'tint'));
-    wrap.appendChild(el('div', 'pc-shade'));
-    if (photo.credit) { var c = el('div', 'pc-credit', rich(photo.credit)); tagLang(c, photo.credit); wrap.appendChild(c); }
+    if (photo.credit) { var c = el('div', 'pt-credit', rich(photo.credit)); tagLang(c, photo.credit); wrap.appendChild(c); }
     var ok = true;
     ctx.waits.push(withTimeout(img.decode ? img.decode().catch(function () { ok = false; }) :
       new Promise(function (res) { img.onload = res; img.onerror = function () { ok = false; res(); }; }), 8000).then(function () {
@@ -958,41 +931,61 @@
     return {
       el: wrap, img: img,
       anim: function (tl, a) {
-        tw(tl, wrap, { opacity: 0, y: a.dist(28), scale: 0.97 }, { opacity: 1, y: 0, scale: 1, duration: a.dur(0.9), ease: a.E.out }, a.t0 - 0.05);
-        var zoomIn = a.rand() > 0.3, dx = (a.rand() - 0.5) * 4;
-        tw(tl, img, { scale: zoomIn ? 1.04 : 1.12, xPercent: -dx / 2 }, { scale: zoomIn ? 1.12 : 1.04, xPercent: dx / 2, duration: Math.max(0.1, a.clipEnd - a.clipStart), ease: 'none' }, a.clipStart);
+        // revealed by a clean wipe, then a slow push-in for the rest of the beat
+        tw(tl, wrap, { clipPath: a.wide ? 'inset(0% 100% 0% 0%)' : 'inset(0% 0% 100% 0%)' }, { clipPath: 'inset(0% 0% 0% 0%)', duration: a.dur(0.9), ease: a.E.inOut }, a.clipStart + 0.02);
+        tw(tl, img, { scale: 1.06 }, { scale: 1, duration: Math.max(0.1, a.clipEnd - a.clipStart), ease: 'none' }, a.clipStart);
       }
     };
   }
+  // Size a top photo to the space the scene leaves: as tall as possible, never squeezing the content.
+  function placeTopPhoto(x, L) {
+    var frame = q(x.el, '.frame'), head = q(x.el, '.head'), st = q(x.el, '.stack');
+    var W = L.width, H = L.height, c = L.content, bottom = c.top + c.height, gap = L.landscape ? 72 : 64;
+    var wide = c.width > c.height * 0.9;
+    x.el.classList.add(wide ? 'photo-left' : 'photo-above');
+    if (wide) {
+      var pw = Math.round(W * 0.46), left = pw + gap, right = c.left + c.width;
+      x.photo.el.style.cssText += ';left:0;top:0;width:' + pw + 'px;height:' + H + 'px';
+      frame.style.left = left + 'px'; frame.style.width = (right - left) + 'px';
+      // the small print and this beat's captions move into the text column too
+      if (x.meta) { x.meta.style.left = left + 'px'; x.meta.style.width = (right - left) + 'px'; }
+      x.column = { left: left, width: right - left };
+      return;
+    }
+    x.el.style.setProperty('--k', '1');
+    fitWidths(x.el);
+    var need = (head ? head.offsetHeight : 0) + (x.sc.type === 'image' ? 0 : st.scrollHeight);
+    var maxH = H * (x.sc.type === 'image' ? 0.7 : 0.58), minH = H * 0.3;
+    var ph = Math.round(clamp(bottom - need - gap, minH, maxH));
+    x.photo.el.style.cssText += ';left:0;top:0;width:' + W + 'px;height:' + ph + 'px';
+    frame.style.top = (ph + gap) + 'px'; frame.style.height = Math.max(120, bottom - ph - gap) + 'px';
+  }
 
   // Full-bleed photo behind a scene: decoded before fitting, slow Ken Burns across the clip.
-  function buildBackdrop(photo, sc, ctx, mode) {
-    var wrap = el('div', 'backdrop is-' + mode);
+  function buildBackdrop(photo, sc, ctx) {
+    var wrap = el('div', 'backdrop' + (sc.type === 'image' ? ' is-hero' : ''));
     var img = el('img');
     img.alt = plain(sc.data.description || sc.beat || '');
     img.decoding = 'sync';
     img.src = photo.url;
     wrap.appendChild(img);
-    if (ctx.design.images.treatment === 'duotone' && mode !== 'ambient') wrap.appendChild(el('div', 'tint'));
+    if (ctx.design.images.treatment === 'duotone') wrap.appendChild(el('div', 'tint'));
     wrap.appendChild(el('div', 'scrim'));
     var ok = true;
     ctx.waits.push(withTimeout(img.decode ? img.decode().catch(function () { ok = false; }) :
       new Promise(function (res) { img.onload = res; img.onerror = function () { ok = false; res(); }; }), 8000).then(function () {
       if (!ok || !img.naturalWidth) { wrap.style.display = 'none'; wrap.setAttribute('data-failed', '1'); }
     }));
-    var self = {
-      el: wrap, img: img, mode: mode,
+    return {
+      el: wrap, img: img,
       anim: function (tl, a) {
-        if (wrap.style.display === 'none') return;
-        var mode = self.mode;
+        if (wrap.style.display === 'none' || wrap.hasAttribute('data-moved')) return;
         // drift direction varies per scene but is fixed for a given script, so renders repeat exactly
         var dx = (a.rand() - 0.5) * 3, dy = (a.rand() - 0.5) * 2, zoomIn = a.rand() > 0.35;
         var s0 = zoomIn ? 1.02 : 1.08, s1 = zoomIn ? 1.08 : 1.02;
-        if (mode === 'ambient') { s0 += 0.25; s1 += 0.25; }
         tw(tl, img, { scale: s0, xPercent: -dx / 2, yPercent: -dy / 2 }, { scale: s1, xPercent: dx / 2, yPercent: dy / 2, duration: Math.max(0.1, a.clipEnd - a.clipStart), ease: 'none' }, a.clipStart);
       }
     };
-    return self;
   }
 
   // One line of small print at the very bottom of the frame: where a fact comes from, and who took the photo.
@@ -1010,23 +1003,21 @@
 
   BUILD.end = function (sc, ctx) {
     var d = sc.data, st = el('div', 'stack');
-    var card = el('div', 'card end-card'); st.appendChild(card);
     var logoText = ctx.design.logo.text.trim();
     var lg = null;
-    if (logoText) { lg = el('div', 'end-logo', '<span class="logo-mark"></span><span>' + rich(logoText) + '</span>'); tagLang(lg, logoText); card.appendChild(lg); }
+    if (logoText) { lg = el('div', 'end-logo', '<span class="logo-mark"></span><span>' + rich(logoText) + '</span>'); tagLang(lg, logoText); st.appendChild(lg); }
     var title = el('h1', 'end-title disp fit', wordsHTML(d.title || ''));
-    tagLang(title, d.title); card.appendChild(title);
+    tagLang(title, d.title); st.appendChild(title);
     var cta = null;
     if (plain(d.cta)) {
-      cta = el('div', 'cta fit', '<span>' + rich(d.cta) + '</span>' + ARROW);
+      cta = el('div', 'cta fit', '<span>' + rich(d.cta) + '</span><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.6" stroke-linecap="round" stroke-linejoin="round"><path d="M5 12h14M13 6l6 6-6 6"/></svg>');
       tagLang(cta, d.cta);
-      card.appendChild(cta);
+      st.appendChild(cta);
     }
     return {
       stack: st,
       anim: function (tl, a) {
         var at = a.t0;
-        cardIn(tl, a, card, at); at += a.st(0.12);
         if (lg) { fadeUp(tl, a, lg, at, 14); at += a.st(0.2); }
         var end = revealWords(tl, title, at, a, { stagger: 0.07 });
         if (cta) fadeUp(tl, a, cta, end + 0.05, 20);
@@ -1057,18 +1048,13 @@
     return r.getBoundingClientRect().width * ratio;
   }
   function fitScene(sceneEl) {
-    var body = q(sceneEl, '.body'), st = q(sceneEl, '.stack'), pc = q(sceneEl, '.photo-card');
+    var body = q(sceneEl, '.body'), st = q(sceneEl, '.stack');
     if (!body || !st) return;
     var k = 1;
-    // in a wide frame the photo sits beside the panel (.pc-row), so it takes no height from it
-    var row = pc && sceneEl.parentNode && sceneEl.parentNode.classList.contains('pc-row');
-    if (pc) pc.style.minHeight = row ? '0px' : Math.round(body.clientHeight * 0.4) + 'px';
     for (var i = 0; i < 20; i++) {
       sceneEl.style.setProperty('--k', k.toFixed(4));
       fitWidths(sceneEl);
-      // with a photo card, the stack shares the body with the photo's minimum height (less the panel's overlap)
-      var need = st.scrollHeight + (pc && !row ? parseFloat(pc.style.minHeight) + (parseFloat(root.getComputedStyle(st).marginTop) || 0) : 0);
-      var have = body.clientHeight;
+      var need = st.scrollHeight, have = body.clientHeight;
       if (need <= have + 16 || k < 0.35) break;
       k *= clamp(Math.sqrt(have / need), 0.8, 0.97);
     }
@@ -1110,7 +1096,7 @@
 
   // Captions read as captions, not as part of the graphic: centred, heavy, and in `highlight` style a pill
   // slides behind the word being spoken.
-  function buildCaptions(stage, scenes, timing, design, L, colors, tl, E, enabled) {
+  function buildCaptions(stage, scenes, timing, design, L, colors, tl, E, enabled, columns) {
     var style = design.captions.style;
     if (!enabled || style === 'none' || !L.captions) return;
     var layer = el('div', 'captions cap-' + style);
@@ -1137,6 +1123,8 @@
         if (ci === 0) start = s;
         var cap = el('div', 'cap clip');
         cap.id = 'cap-' + si + '-' + ci;
+        var col = columns && columns[si];
+        if (col) { cap.style.left = (col.left - L.captions.left) + 'px'; cap.style.right = 'auto'; cap.style.width = col.width + 'px'; }
         cap.setAttribute('data-start', r3(start));
         cap.setAttribute('data-duration', r3(end - start));
         cap.setAttribute('data-track-index', '2');
@@ -1145,7 +1133,7 @@
         var wordsH = ch.map(function (i) { return '<span class="w">' + wrapDv(esc(sp.words[i])) + '</span>'; }).join(' ');
         inner.innerHTML = style === 'boxed' ? '<span class="line">' + wordsH + '</span>' : wordsH;
         var pill = null;
-        if (style === 'highlight' || style === 'glass') { pill = el('span', 'cap-hl'); inner.insertBefore(pill, inner.firstChild); }
+        if (style === 'highlight' || style === 'underline') { pill = el('span', style === 'underline' ? 'cap-ul' : 'cap-hl'); inner.insertBefore(pill, inner.firstChild); }
         tagLang(inner, text);
         cap.appendChild(inner);
         layer.appendChild(cap);
@@ -1153,7 +1141,7 @@
       });
     });
     // measure
-    made.forEach(function (m) { fitCaption(m.cap, L.captions.width, L.captions.height); });
+    made.forEach(function (m) { fitCaption(m.cap, m.cap.offsetWidth || L.captions.width, L.captions.height); });
     // animate
     made.forEach(function (m) {
       gsap.set(m.inner, { visibility: m.start <= 0 ? 'visible' : 'hidden' });
@@ -1177,15 +1165,19 @@
       }
       if (m.pill && spans.length) {
         var fs = parseFloat((root.getComputedStyle ? root.getComputedStyle(m.inner).fontSize : '') || '64') || 64;
-        var px = fs * 0.12, py = fs * 0.02;
-        var box = function (w) { return { x: w.offsetLeft - px, y: w.offsetTop - py, width: w.offsetWidth + 2 * px, height: w.offsetHeight + 2 * py }; };
+        var px = fs * 0.12, py = fs * 0.02, ul = style === 'underline', th = Math.max(5, Math.round(fs * 0.085));
+        // highlight: a pill behind the word; underline: a bar under it, and the word keeps its colour
+        var box = ul ? function (w) { return { x: w.offsetLeft, y: w.offsetTop + w.offsetHeight - th * 1.1, width: w.offsetWidth, height: th }; }
+          : function (w) { return { x: w.offsetLeft - px, y: w.offsetTop - py, width: w.offsetWidth + 2 * px, height: w.offsetHeight + 2 * py }; };
         var boxes = spans.map(box);
         gsap.set(m.pill, boxes[0]);
         // a set (not a tween) per word keeps every frame consistent: no frame shows the pill between words
         // the pill jumps to each word as it is spoken, and that word flips to the pill's text colour in the same frame
         spans.forEach(function (w, j) {
           var at = m.times[m.ch[j]][0];
-          if (j > 0) { tl.set(m.pill, boxes[j], at); tl.set(w, { color: colors.onHighlight }, at); }
+          if (j > 0) tl.set(m.pill, boxes[j], at);
+          if (ul) return;
+          if (j > 0) tl.set(w, { color: colors.onHighlight }, at);
           else gsap.set(w, { color: colors.onHighlight });
           if (j < spans.length - 1) tl.set(w, { color: colors.capText }, m.times[m.ch[j + 1]][0]);
         });
@@ -1210,14 +1202,6 @@
     var bg = el('div', 'bg');
     bg.setAttribute('data-track-index', '0');
     var style = design.background.style, pat = design.background.pattern;
-    var blobs = [];
-    // ambient: three very soft fields of light (accent, second accent, a neutral) that drift a little from beat
-    // to beat, so glass has something to catch. No blur filters: radial gradients are soft and cheap to paint.
-    if (style === 'ambient') {
-      var amb = el('div', 'bg-amb');
-      ['a1', 'a2', 'a3'].forEach(function (k) { var b = el('div', 'blob ' + k); amb.appendChild(b); blobs.push(b); });
-      bg.appendChild(amb);
-    }
     // flat colour by default; `gradient` is a barely-there tonal step from the top, never a glow
     if (style === 'gradient') bg.appendChild(el('div', 'bg-tone'));
     var patEl = null;
@@ -1231,15 +1215,14 @@
       bg.appendChild(patEl);
     }
     var noise = null;
-    if (style === 'grain' || style === 'paper' || style === 'ambient') {
+    if (style === 'grain' || style === 'paper') {
       noise = el('div', 'bg-noise');
-      noise.style.backgroundImage = noiseURI(style === 'paper' ? 'paper' : 'grain', colors.dark);
-      noise.style.opacity = style === 'paper' ? '1' : style === 'ambient' ? (colors.dark ? '0.06' : '0.05') : (colors.dark ? '0.07' : '0.06');
+      noise.style.backgroundImage = noiseURI(style, colors.dark);
+      noise.style.opacity = style === 'grain' ? (colors.dark ? '0.07' : '0.06') : '1';
       if (style === 'paper') noise.style.mixBlendMode = 'multiply';
       bg.appendChild(noise);
     }
     stage.appendChild(bg);
-    return { blobs: blobs };
   }
 
   // ---------------------------------------------------------------- build
@@ -1296,17 +1279,8 @@
         '--cap-box-text': dark ? C.text : C.background,
         '--cap-dim': rgba(C.text, 0.55),
         '--cap-k': String(CAP_SIZE[design.captions.size]),
-        '--scrim': rgba(C.background, 0.58), '--scrim-hero': rgba(C.background, 0.12),
-        '--scrim-amb': rgba(C.background, dark ? 0.42 : 0.5),
-        '--fade-top': rgba(C.background, 0.45), '--fade-bot': rgba(C.background, 0.86),
-        '--cap-glass': dark ? rgba(C.background, 0.5) : rgba('#FFFFFF', 0.72),
-        '--glass': rgba(dark ? C.text : '#FFFFFF', dark ? 0.075 : 0.56), '--glass-strong': rgba(dark ? C.text : '#FFFFFF', dark ? 0.13 : 0.82),
-        '--glass-border': rgba(dark ? C.text : '#FFFFFF', dark ? 0.15 : 0.9), '--glass-edge': dark ? 'rgba(0,0,0,.28)' : rgba(C.text, 0.09),
-        '--glass-hi': rgba('#FFFFFF', dark ? 0.16 : 0.95), '--glass-dark': rgba(C.background, 0.62),
-        '--glass-shadow': dark ? '0 44px 90px -42px rgba(0,0,0,.8)' : '0 34px 70px -40px ' + rgba(C.text, 0.4),
-        '--accent-soft': rgba(C.accent, dark ? 0.16 : 0.13), '--accent-line': rgba(C.accent, dark ? 0.5 : 0.55),
-        '--amb1': rgba(C.accent, dark ? 0.26 : 0.22), '--amb2': rgba(C.accent2, dark ? 0.17 : 0.15), '--amb3': rgba(dark ? C.text : C.accent2, dark ? 0.07 : 0.08),
-        '--r-card': Math.min(56, Math.round(design.radius * 2.75)) + 'px', '--r-sm': Math.min(30, Math.round(design.radius * 1.4)) + 'px',
+        '--scrim': rgba(C.background, 0.86), '--scrim-hero': rgba(C.background, 0.2),
+        '--bubble': rgba(C.text, dark ? 0.11 : 0.075),
         '--photo-shadow': dark ? '0 2px 28px rgba(0,0,0,.55)' : 'none',
         '--cl': L.content.left + 'px', '--ct': L.content.top + 'px', '--cw': L.content.width + 'px', '--ch': L.content.height + 'px'
       };
@@ -1321,7 +1295,6 @@
       if (reuse) stage.innerHTML = '';
       stage.className = 'vid-stage ar-' + (L.landscape ? 'landscape' : 'portrait') + ' aspect-' + design.aspect.replace(':', 'x') +
         ' energy-' + design.motion.energy + ' tx-' + design.motion.transition + ' bg-' + design.background.style + (dark ? ' is-dark' : ' is-light') +
-        ' surf-' + design.surfaces.style + (L.content.width > L.content.height * 0.9 ? ' pc-row' : '') +
         ' img-' + design.images.treatment + ' cap-size-' + design.captions.size;
       stage.setAttribute('data-composition-id', COMPOSITION_ID);
       stage.setAttribute('data-start', '0');
@@ -1353,7 +1326,7 @@
       gsap.config({ force3D: false });   // 2D transforms only: identical rasterization whichever way a frame is reached
       var tl = gsap.timeline({ paused: true });
 
-      var bgParts = buildBackground(stage, design, colors);
+      buildBackground(stage, design, colors);
 
       // ---- scenes
       var waits = [];
@@ -1377,7 +1350,7 @@
         var photo = pic ? { url: resolveMedia(pic.src, options.mediaBase), credit: pic.credit || '' } : null;
         if (photo && !photo.url) photo = null;
         var mode = !photo ? null : sc.type === 'image' ? 'hero' :
-          (sc.image && sc.image.layout) || (design.images.layout === 'full' ? 'full' : CARD_PHOTO.indexOf(sc.type) >= 0 ? 'card' : 'full');
+          (sc.image && sc.image.layout) || (design.images.layout === 'full' ? 'full' : TOP_PHOTO.indexOf(sc.type) >= 0 ? 'top' : 'full');
         var ctx = { design: design, waits: waits, photo: photo };
         var b = BUILD[sc.type](sc, ctx);
         // the overlay label and a chart's title share a header row pinned to the top of the content area
@@ -1387,16 +1360,23 @@
           if (b.head) head.appendChild(b.head);
           frame.appendChild(head);
         }
-        var pcard = mode === 'card' ? buildPhotoCard(photo, sc, ctx) : null;
-        if (pcard) { body.appendChild(pcard.el); sEl.classList.add('has-pcard'); }
         body.appendChild(b.stack);
         frame.appendChild(body);
-        var meta = buildMeta(sc, photo, design, L, !!pcard);
-        var backdrop = photo ? buildBackdrop(photo, sc, ctx, mode === 'card' ? 'ambient' : mode) : null;
-        if (backdrop) { inner.appendChild(backdrop.el); sEl.classList.add(mode === 'card' ? 'has-ambient-photo' : 'has-photo'); }
+        var top = mode === 'top' ? buildTopPhoto(photo, sc, ctx) : null;
+        var meta = buildMeta(sc, photo, design, L, !!top);
+        var backdrop = photo && !top ? buildBackdrop(photo, sc, ctx) : null;
+        if (backdrop) { inner.appendChild(backdrop.el); sEl.classList.add(mode === 'hero' ? 'has-hero' : 'has-photo'); }
+        if (top) { inner.appendChild(top.el); sEl.classList.add('has-top-photo'); }
+        // over a full-screen photo, captions sit on a plain band of the background colour
+        var band = null;
+        if (mode === 'hero' && L.captions) {
+          band = el('div', 'cap-band');
+          band.style.top = (L.captions.top - (L.landscape ? 28 : 40)) + 'px';
+          inner.appendChild(band);
+        }
         drift.appendChild(frame); if (meta) drift.appendChild(meta); inner.appendChild(drift); sEl.appendChild(inner);
         stage.appendChild(sEl);
-        return { sc: sc, el: sEl, inner: inner, drift: drift, chip: chip, b: b, backdrop: backdrop, pcard: pcard, meta: meta, clipStart: clipStart, clipEnd: clipEnd, t: t, photoCredit: photo ? photo.credit : '' };
+        return { sc: sc, el: sEl, inner: inner, drift: drift, chip: chip, b: b, backdrop: backdrop, photo: top, meta: meta, clipStart: clipStart, clipEnd: clipEnd, t: t, credit: photo ? photo.credit : '' };
       });
 
       // ---- logo, wipe, guides
@@ -1415,6 +1395,15 @@
         prog.style.cssText = 'left:' + L.progress.left + 'px;top:' + L.progress.top + 'px;width:' + L.progress.width + 'px;height:' + L.progress.height + 'px';
         scenes.forEach(function () { var seg = el('span', 'seg', '<i></i>'); prog.appendChild(seg); progFills.push(q(seg, 'i')); });
         stage.appendChild(prog);
+        // a folio, like a page number: "03 / 08", at the end of the line
+        var pad2 = function (n) { return (n < 10 ? '0' : '') + n; };
+        var folio = el('div', 'folio tnum');
+        folio.style.cssText = 'top:' + (L.progress.top + L.progress.height / 2) + 'px;right:' + (W - L.progress.left - L.progress.width) + 'px';
+        var folioNums = scenes.map(function (s, i) {
+          var f = el('span', 'folio-n', '<b>' + pad2(i + 1) + '</b> / ' + pad2(scenes.length));
+          folio.appendChild(f); return f;
+        });
+        stage.appendChild(folio);
       }
       var wipe = null;
       if (trans === 'wipe' && scenes.length > 1 && o > 0) {
@@ -1427,13 +1416,25 @@
       return Promise.all(waits).then(function () {
         if (container.__vidSeq !== my) throw Object.assign(new Error('superseded'), { cancelled: true });
         built.forEach(function (x) {
-          if (x.pcard && x.pcard.el.hasAttribute('data-failed')) {
-            x.pcard.el.parentNode.removeChild(x.pcard.el);
-            x.pcard = null;
-            x.el.classList.remove('has-pcard');
+          if (x.photo && x.photo.el.hasAttribute('data-failed')) {
+            x.photo.el.parentNode.removeChild(x.photo.el);
+            x.photo = null;
+            x.el.classList.remove('has-top-photo');
+          }
+          // an image scene's photo that would be blown up to fill the frame looks soft: show it as a top photo
+          if (x.sc.type === 'image' && x.backdrop && !x.backdrop.el.hasAttribute('data-failed')) {
+            var im = x.backdrop.img;
+            if (Math.max(W / (im.naturalWidth || W), H / (im.naturalHeight || H)) >= 1.6) {
+              x.backdrop.el.style.display = 'none'; x.backdrop.el.setAttribute('data-moved', '1');
+              x.photo = buildTopPhoto({ url: im.src, credit: x.credit }, x.sc, { design: design, waits: [] });
+              x.inner.insertBefore(x.photo.el, x.drift);
+              x.el.classList.remove('has-hero'); x.el.classList.add('has-top-photo');
+              var cb = q(x.el, '.cap-band'); if (cb) cb.parentNode.removeChild(cb);
+              if (x.meta) { var cr = q(x.meta, '.credit'); if (cr) cr.parentNode.removeChild(cr); }
+            }
           }
           if (x.backdrop && x.backdrop.el.hasAttribute('data-failed')) {
-            x.el.classList.remove('has-photo', 'has-ambient-photo');
+            x.el.classList.remove('has-photo', 'has-hero');
             if (x.sc.type === 'image') {
               var fallback = BUILD.image(x.sc, { design: design, waits: [] });
               x.b.stack.replaceWith(fallback.stack);
@@ -1441,24 +1442,9 @@
             }
           }
         });
-        // An image scene's photo that would be upscaled a lot to fill the frame looks soft: frame it instead,
-        // over a blurred copy of itself.
-        built.forEach(function (x) {
-          if (x.sc.type !== 'image' || !x.backdrop || !x.el.classList.contains('has-photo')) return;
-          var im = x.backdrop.img, scale = Math.max(W / (im.naturalWidth || W), H / (im.naturalHeight || H));
-          if (scale < 1.6) return;
-          var photo = { url: im.src, credit: x.photoCredit };
-          var pc = buildPhotoCard(photo, x.sc, { design: design, waits: [] });
-          pc.el.classList.add('is-hero-card');
-          x.b.stack.replaceWith(pc.el);
-          x.backdrop.el.className = 'backdrop is-ambient';
-          x.backdrop.mode = 'ambient';
-          x.el.classList.remove('has-photo'); x.el.classList.add('has-ambient-photo', 'has-pcard');
-          x.pcard = pc;
-          if (x.meta) { var cr = q(x.meta, '.credit'); if (cr) cr.parentNode.removeChild(cr); }
-        });
         // ---- fit (fonts are loaded or frozen to system fallbacks)
         built.forEach(function (x) {
+          if (x.photo) placeTopPhoto(x, L);
           fitScene(x.el);
           if (x.b.post) x.b.post(L.landscape);
         });
@@ -1468,7 +1454,7 @@
           var s = x.t.start, d = x.t.duration, e = s + d;
           var enterDelay = i === 0 ? 0.15 : trans === 'cut' ? 0.05 : trans === 'wipe' ? o * 0.6 : o * 0.4;
           var a = {
-            design: design, E: E, M: M, colors: colors, landscape: L.landscape, rand: rand,
+            design: design, E: E, M: M, colors: colors, landscape: L.landscape, rand: rand, wide: /\bphoto-left\b/.test(x.el.className),
             s: s, d: d, e: e, t0: s + enterDelay, clipStart: x.clipStart, clipEnd: x.clipEnd,
             f: clamp(d / 4.5, 0.45, 1)
           };
@@ -1501,36 +1487,19 @@
           // overlay label
           if (x.chip) tw(tl, x.chip, { x: -a.dist(16), opacity: 0 }, { x: 0, opacity: 1, duration: a.dur(0.6), ease: E.out }, a.t0);
           if (x.backdrop) x.backdrop.anim(tl, a);
-          if (x.pcard) x.pcard.anim(tl, a);
+          if (x.photo) x.photo.anim(tl, a);
           if (x.meta) tw(tl, x.meta, { opacity: 0, y: 12 }, { opacity: 1, y: 0, duration: 0.5, ease: 'power2.out' }, a.t0 + Math.min(0.7, d * 0.2));
           x.b.anim(tl, a);
         });
 
-        // the ambient light moves a little at every beat, so the frame never sits dead still between scenes
-        if (bgParts.blobs.length) {
-          var spots = function (i) {
-            var r = mulberry32(9001 + i * 131);
-            return [
-              { xPercent: -50 + (r() - 0.5) * 40, yPercent: -50 + (r() - 0.5) * 24, scale: 0.9 + r() * 0.3 },
-              { xPercent: -50 + (r() - 0.5) * 50, yPercent: -50 + (r() - 0.5) * 30, scale: 0.85 + r() * 0.35 },
-              { xPercent: -50 + (r() - 0.5) * 30, yPercent: -50 + (r() - 0.5) * 30, scale: 1 + r() * 0.2 }
-            ];
-          };
-          bgParts.blobs.forEach(function (blob, j) {
-            var prev = spots(0)[j];
-            gsap.set(blob, prev);
-            for (var si = 1; si < built.length; si++) {
-              var next = spots(si)[j];
-              var at = Math.max(0, timing[si].start - 0.5);
-              tw(tl, blob, prev, Object.assign({ duration: Math.min(2.2, timing[si].duration + 0.5), ease: 'sine.inOut' }, next), at, si === 1 ? undefined : false);
-              prev = next;
-            }
-          });
-        }
-
         // the progress line fills one segment per beat, at the pace of the voiceover
         progFills.forEach(function (f, i) {
           tw(tl, f, { scaleX: 0 }, { scaleX: 1, duration: Math.max(0.1, timing[i].duration), ease: 'none' }, timing[i].start);
+        });
+        (typeof folioNums !== 'undefined' ? folioNums : []).forEach(function (f, i) {
+          gsap.set(f, { visibility: i === 0 ? 'visible' : 'hidden' });
+          if (i > 0) tl.set(f, { visibility: 'visible' }, timing[i].start);
+          if (i < folioNums.length - 1) tl.set(f, { visibility: 'hidden' }, timing[i + 1].start);
         });
         if (wipe) {
           gsap.set(wipe, { x: 0, xPercent: -125, skewX: -8 });
@@ -1550,7 +1519,7 @@
           });
         }
 
-        buildCaptions(stage, scenes, timing, design, L, colors, tl, E, options.captions !== false);
+        buildCaptions(stage, scenes, timing, design, L, colors, tl, E, options.captions !== false, built.map(function (x) { return x.column || null; }));
 
         if (options.safeArea) stage.appendChild(guides(L));
 

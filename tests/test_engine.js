@@ -73,7 +73,7 @@ function engineHarness(fonts) {
 test('malformed design groups default safely without mutating the input', () => {
   const { api } = engineHarness();
   const defaults = json(api.DEFAULT_DESIGN);
-  for (const group of ['colors', 'fonts', 'type', 'motion', 'captions', 'background', 'surfaces', 'images', 'sources', 'progress', 'logo']) {
+  for (const group of ['colors', 'fonts', 'type', 'motion', 'captions', 'background', 'images', 'sources', 'progress', 'logo']) {
     for (const bad of ['bad', false, 4, [], null]) {
       const input = { [group]: bad };
       assert.deepEqual(json(api.normalizeDesign(input))[group], defaults[group], `${group}: ${JSON.stringify(bad)}`);
@@ -115,32 +115,34 @@ test('photo, source, and caption-size settings normalize to safe values', () => 
   for (const bad of ['javascript:alert(1)', 'file:///etc/passwd', 'JaVaScRiPt:x', '']) assert.equal(api.resolveMedia(bad, base), '');
 });
 
-test('glass surfaces, ambient light, photo placement and message scenes normalize to safe values', () => {
+test('photo placement, underline captions and message scenes normalize to safe values', () => {
   const { api } = engineHarness();
   const d = api.normalizeDesign({});
-  assert.deepEqual([d.surfaces.style, d.background.style, d.images.layout], ['glass', 'ambient', 'auto'], 'glass over ambient light is the default');
-  const bad = api.normalizeDesign({ surfaces: { style: 'chrome' }, images: { layout: 'collage' }, background: { style: 'aurora' } });
-  assert.deepEqual([bad.surfaces.style, bad.images.layout, bad.background.style], ['glass', 'auto', 'solid']);
-  for (const style of ['glass', 'solid', 'flat']) assert.equal(api.normalizeDesign({ surfaces: { style } }).surfaces.style, style);
+  assert.equal(d.images.layout, 'auto');
+  assert.equal(api.normalizeDesign({ images: { layout: 'collage' } }).images.layout, 'auto');
   assert.equal(api.normalizeDesign({ images: { layout: 'full' } }).images.layout, 'full');
-  assert.equal(api.normalizeDesign({ captions: { style: 'glass' } }).captions.style, 'glass');
+  assert.equal(api.normalizeDesign({ captions: { style: 'underline' } }).captions.style, 'underline');
+  assert.equal(api.normalizeDesign({ background: { style: 'ambient' } }).background.style, 'solid', 'no ambient light: flat colour only');
   assert.ok(api.TYPES.includes('message'));
-  const [m, card, full, odd] = json(api.normalizeScenes([
+  const [m, top, full, odd] = json(api.normalizeScenes([
     { type: 'message', data: { title: 'Unknown number', items: ['Sir, refund ready', 'you: Which refund?'] } },
-    { type: 'stat', data: {}, image: { src: 'media/a.jpg', credit: 'Photo: A', layout: 'card' } },
+    { type: 'stat', data: {}, image: { src: 'media/a.jpg', credit: 'Photo: A', layout: 'top' } },
     { type: 'bars', data: {}, image: { src: 'media/b.jpg', layout: 'full' } },
-    { type: 'text', data: {}, image: { src: 'media/c.jpg', layout: 'sideways' } }]));
+    { type: 'text', data: {}, image: { src: 'media/c.jpg', layout: 'card' } }]));
   assert.equal(m.type, 'message');
   assert.deepEqual(m.data.items, ['Sir, refund ready', 'you: Which refund?']);
-  assert.deepEqual(card.image, { src: 'media/a.jpg', credit: 'Photo: A', layout: 'card' });
+  assert.deepEqual(top.image, { src: 'media/a.jpg', credit: 'Photo: A', layout: 'top' });
   assert.equal(full.image.layout, 'full');
   assert.deepEqual(odd.image, { src: 'media/c.jpg', credit: '' }, 'an unknown placement is dropped, so the look decides');
-  assert.ok(api.FONTS['Inter Tight'] && api.FONTS.Geist, 'the new looks\' fonts are in the font table');
+  // the progress line leaves room for the folio at its end
+  const L = api.layout({});
+  assert.ok(L.progress.left + L.progress.width < L.content.left + L.content.width - 100);
+  assert.ok(api.FONTS['Inter Tight'], 'the Swiss look\'s font is in the font table');
 });
 
 test('empty compositions build static backgrounds with zero duration and replace the old timeline', async () => {
   const h = engineHarness();
-  for (const style of ['solid', 'gradient', 'grain', 'paper', 'ambient']) {
+  for (const style of ['solid', 'gradient', 'grain', 'paper']) {
     for (const pattern of ['none', 'grid', 'dots', 'lines']) {
       const prior = h.document.body.__vidCurrent;
       const result = await h.api.build(h.document.body, { background: { style, pattern } }, []);

@@ -1,9 +1,9 @@
-# Human stories, premium scenes
+# Human stories, editorial scenes
 
-The videos were accurate and clean, but they still felt made by a machine. The scripts explained topics rather than telling anyone's story, and the frames were flat panels of type with a band of empty space under the content. This change works on both, from the research step to the rendered frame.
+The videos were accurate and clean, but they still felt made by a machine. The scripts explained topics rather than telling anyone's story, and the frames were type on a background with no pictures of real things. This change works on both, from the research step to the rendered frame.
 
 - **Content:** research and story notes now gather the people a story lands on, the everyday moment they meet it, and what they actually ask. Scripts are about someone, carry a point of view the evidence earns, and are scored and linted for it.
-- **Design:** frosted glass panels over ambient light, real photos framed like a magazine with a blurred copy behind them, scenes that fill the frame, a new scene for the call or text a story turns on, and twelve retuned looks, two of them new.
+- **Design:** an editorial print system. Flat colour, type, hairlines and real photographs, with no gradients, glass, blur or shadows. Photos run edge to edge across the top of the frame like the picture on a magazine page. A folio counts the beats, the spoken word can be underlined rather than boxed, a new scene shows the call or text a story turns on, and there are two new looks.
 
 Every image below was rendered by the real scene engine at 1080×1920 (or 1920×1080 and 1080×1080). "Before" is `main`'s engine, presets and examples; "after" is this branch.
 
@@ -15,13 +15,13 @@ Every image below was rendered by the real scene engine at 1080×1920 (or 1920×
 
 ### Same script, same photos: the engine alone
 
-The rewritten English script rendered on `main`'s engine, then on the new one. The difference here is design only.
+The rewritten English script rendered on `main`'s engine, then on this branch's. The difference here is design only: on `main` a photo can only sit dimmed behind a scene.
 
 ![Same script on the old and new engine](assets/same-script-engine.jpg)
 
 ### Motion: the first 15 seconds
 
-Old on the left, new on the right. The photo drifts inside its frame, the panel rises over it, and the ambient light moves a little at each beat.
+Old on the left, new on the right. The photo is revealed with a clean wipe and pushes in slowly; everything else is the old engine's restrained motion.
 
 ![English opening, before and after](assets/english-hook-before-after.gif)
 
@@ -29,7 +29,7 @@ Old on the left, new on the right. The photo drifts inside its frame, the panel 
 
 ![Hinglish example, before and after](assets/hinglish-before-after.jpg)
 
-The call the story turns on is now on screen, as a labelled reconstruction. The bubbles arrive one by one, each after a moment of typing dots, and the photo of a hand on a phone sits blurred behind the glass:
+The call the story turns on is now on screen, as a labelled reconstruction, under a photo of a hand on a phone. The bubbles arrive one by one, each after a moment of typing dots:
 
 ![The call, animated](assets/hinglish-call.gif)
 
@@ -81,23 +81,24 @@ End: "follow for more" sounds machine-made; say the fact itself
 
 ## What changed in the design
 
+Less is more. An earlier round of this branch tried frosted glass panels, ambient light fields and blurred photo backgrounds; they read as generated, so they're gone. No look uses a gradient, a glow, a blur or a drop shadow; the only shadow left is a soft one behind text set over a photo, so it stays legible. The look comes from four things:
+
+- **Photography.** On a stat, punchline, quote, list, message, title or end card, the beat's photo runs edge to edge across the top of the frame with a hard edge, at full colour. Its height is whatever the scene leaves: the engine measures the content and gives the photo the rest, between 30% and 58% of the frame. The photo is revealed with a wipe and pushes in slowly. In 16:9 and 1:1 it fills the left side, and that beat's text, captions and source line move into the right-hand column. On a chart the photo sits full-screen behind, faint under the background colour. An `image` scene's photo fills the frame, untouched, with captions on a plain band of the background colour; if the photo is too small to fill the frame without going soft (most openly licensed photos are about 1024 px), it runs across the top instead. Any beat can choose with `Image: path | credit | top` or `| full`.
+- **Type and one accent.** The subject of a comparison is set at full strength with an accent rule; the other side is muted. Two phrases are now two rows divided by hairlines that share the frame's height, instead of two small boxes.
+- **A grid and a folio.** Labels are small capitals led by a short rule. The progress line is thinner and ends in a folio, like a page number (`03 / 08`).
+- **The message scene** (`Visual: message | sender | line | you: reply | …`): flat bubbles under a small-caps sender line, arriving one by one.
+
+Captions gain an `underline` style: a bar in the accent under the spoken word, quieter than a highlight pill. Calm Minimal, Broadsheet and the two new looks use it.
+
 ### Twelve looks
 
-Each look renders the same three scenes here: a photo stat, a chart and the new message scene. Frosted Night and Daylight are new, as the reference dark and light premium looks; the other ten are retuned. Glass suits Bold Explainer, Studio White, Monsoon, Night Desk, Data Noir and Calm Minimal; Broadsheet, Chalkboard and Desi Pop use solid panels; Paper Notebook has none.
+Each look renders the same three scenes here: a photo stat, a chart and the message scene. Two are new: **Night Edition** (soft black, warm paper-white, Fraunces serif headlines, one brass accent) and **Swiss** (off-white, black, signal red, Inter Tight set tight, square corners, hard cuts). The other ten keep their palettes and type from `main`.
 
 ![All twelve looks](assets/looks-after.jpg)
 
-Before, on `main` (the message scene didn't exist yet):
+Before, on `main` (no photos, no message scene):
 
 ![The ten looks before](assets/looks-before.jpg)
-
-### The layers
-
-- **Surfaces** (`surfaces.style`: `glass`, `solid` or `flat`). Glass panels are frosted, with a hairline edge, a top highlight and a soft shadow, and they pick up whatever is behind them. Stats, charts, quotes, messages and end cards sit on one panel; list items and timeline events each get their own.
-- **Ambient light** (`background.style: ambient`). Three very soft fields in the look's accent colours, with fine grain. They drift a little at each beat, so the frame is never a dead slide. They're radial gradients, not blur filters, so they're cheap to render.
-- **Photo cards** (`images.layout: auto`). On a stat, punchline, quote, list, title or end card, the photo is framed at the top of the frame and drifts slowly inside it. The panel overlaps its lower edge, and a heavily blurred copy of the photo fills the background, so the glass takes on its colours. On charts and messages the photo sits full-screen behind a denser glass. In wide frames the photo sits beside the panel. An `image` scene whose photo would be blown up to fill the screen (most openly licensed photos are around 1024 px) is framed instead, so it stays sharp. Any beat can choose with `Image: path | credit | card` or `| full`.
-- **The message scene** (`Visual: message | sender | line | you: reply | …`) shows the call, text or notification the story turns on.
-- **Glass details:** `glass` captions (the highlight pill inside a frosted box that stays legible over photos), pill-shaped labels and source tags, numbered discs on list rows, a quote mark and speaker row on quotes, an arrow joining the two compare panels (stacked vertically in portrait, so they fill the frame), and a soft sheen on accent bars and buttons.
 
 ### Wide formats
 
@@ -105,7 +106,7 @@ Before, on `main` (the message scene didn't exist yet):
 
 ### In the studio
 
-The Look editor gains Panels (Glass, Solid, None), Ambient light, Photo placement (Framed, Full screen) and Glass captions. The live preview sample is rewritten around a person ("Say you're twenty-five") and now has photos and a message scene, so every look is judged with real images in it.
+The Look editor gains Photo placement (Across the top, Full screen), the Underline caption style and the two new looks. The live preview sample is rewritten around a person ("Say you're twenty-five") and now has photos and a message scene, so every look is judged with real images in it.
 
 ![Look editor](assets/look-editor.jpg)
 
@@ -121,4 +122,4 @@ node --test tests/test_ui.js tests/test_engine.js
 git diff --check
 ```
 
-New tests cover the voice lint (invented people, anecdotes, reframes, em dashes, rhythm, missing photos, unlabelled messages), `message` and photo-placement parsing in both parsers (the parity test), glass, ambient and placement normalization in the engine, and that every preset merges into a complete, valid look with fonts from the catalog. The demo script also went through the real renderer: 38.7 s at 720p, H.264, in 113 s, with its photo credits listed.
+New tests cover the voice lint (invented people, anecdotes, reframes, em dashes, rhythm, missing photos, unlabelled messages), `message` and photo-placement parsing in both parsers (the parity test), placement, caption and folio settings in the engine, and that every preset merges into a complete, valid look with fonts from the catalog. The demo script also went through the real renderer: 38.7 s at 720p, H.264, in 113 s, with its photo credits listed.
