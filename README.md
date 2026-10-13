@@ -19,7 +19,7 @@ The studio has three global tabs: **Research**, **Production**, and **Channels**
 
 **Production** shows scripts from every research project on one board, with optional project and channel filters. A story becomes one script per channel you send it to. Scripts move through stages (script, ready, published), and you can comment on any passage for your agent to address. Each script links back to its source story and to its channel.
 
-**Channels** manages publishing destinations (each YouTube channel, Instagram account, or WhatsApp channel), shared across the studio. They set each script's language, format, look, and voice. One research story can become an English Short, a Hinglish Reel, and a Hindi WhatsApp post. You can set up channels before adding a research project.
+**Channels** manages publishing destinations (each YouTube channel, Instagram account, TikTok account, or WhatsApp channel), shared across the studio, and connects video channels to their real accounts. They set each script's language, format, look, and voice. One research story can become an English Short, a Hinglish Reel, and a Hindi WhatsApp post. You can set up channels before adding a research project.
 
 The information flow is **Research story → Production scripts → Channels**. Research stays reusable; each script adapts that evidence for its destination. Projects organize Research and appear as source labels or optional filters in Production.
 
@@ -32,6 +32,8 @@ Video scripts are written as beats: what's said, plus a `Visual:` line naming a 
 **Images.** Photos run edge to edge across the top of the frame, like the picture on a magazine page, with the scene set below (beside it in wide formats), or faint behind charts. Your agent picks photos for the beats about real things and people: openly licensed photos from Wikimedia Commons and Openverse (no API key; it looks at previews before choosing), or images it generates with its own image tool, if it has one. Generated images are never used for real people, products, logos, or documents. Every photo is saved with the script and credited on screen. You can also add your own photo to any beat from the script page.
 
 **Voiceover.** Give a video channel a narrator on its **Narration** tab: a voice on your computer (the system voice, or free offline [Piper](https://github.com/OHF-Voice/piper1-gpl) voices), or ElevenLabs, Sarvam AI, OpenAI or Google Cloud with your own API key. Hear samples, set the speed, the pause between beats, and how words are pronounced. Each beat is voiced on its own and reused until its line changes; beats then last as long as the voice takes, captions follow it (word by word with ElevenLabs), and a `Say:` line lets the voice read "twelve thousand rupees" while the screen shows ₹12,000. The MP4 gets the voiceover, mixed to a loudness phones expect, plus an `.srt` captions file.
+
+**Publish.** Connect a video channel to its YouTube channel, Instagram professional account, or TikTok account on its **Publishing** tab. On a script's **Post** tab, check the title, description or caption, hashtags, visibility and (on YouTube) a release time, then click **Publish**: the MP4 uploads from your computer with each platform's official API, with the poster as the thumbnail, the voiceover's captions, and the sources and photo credits appended. The script moves to Published with its link, and its views show on the board. You bring your own Google Cloud or TikTok app (or an Instagram token), so nobody else holds your access; tokens stay in the studio's `.secrets.json`.
 
 **Download.** Click **Render MP4** on a script, then **Download MP4**: the video renders on your computer (1080p, 30 fps) with Chrome and ffmpeg, which you need installed. Your agent can do the same with `studio.py render --script ID --out ~/Desktop`. `studio.py export` writes the same video as a [HyperFrames](https://github.com/heygen-com/hyperframes) project instead.
 
@@ -55,9 +57,10 @@ Your agent creates the studio (`~/vid-studio` by default, one folder per project
 ```
 skills/vid-studio/
   SKILL.md            entry point
-  references/         setup, research, story, write, script craft, scenes, images, look, narration, schedule
+  references/         setup, research, story, write, script craft, scenes, images, look, narration, publish, schedule
   scripts/studio.py   helper and local web server (Python 3 standard library)
   scripts/narration.py text-to-speech providers: system, Piper, ElevenLabs, Sarvam, OpenAI, Google (standard library)
+  scripts/publish.py  YouTube, Instagram Reels and TikTok publishing with their official APIs (standard library)
   scripts/render.py   MP4 renderer: drives a local Chrome and ffmpeg (standard library)
   assets/             workspace templates, the UI, the scene engine (assets/scenes), and example scripts
 ```
