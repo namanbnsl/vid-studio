@@ -10,6 +10,7 @@ Providers:
   elevenlabs  ElevenLabs (API key); returns word timings, so captions land on the exact word
   sarvam      Sarvam AI Bulbul (API key); Indian voices for Hindi, Hinglish and Indian English
   openai      OpenAI speech (API key); takes speaking instructions from the channel's persona
+  gemini      Gemini 3.8 Flash TTS (API key from Google AI Studio); expressive, directed by the channel's persona
   google      Google Cloud Text-to-Speech (API key); Hindi and Indian English neural voices
 
 Keys come from the environment (ELEVENLABS_API_KEY, …) or from <studio>/.secrets.json, which the UI writes
@@ -596,8 +597,68 @@ class RecordedProvider(Provider):
         raise TTSError("This channel uses your own voice: record this beat on the script page, or upload a take")
 
 
+# Gemini's 30 prebuilt voices, with Google's one-word character for each.
+GEMINI_VOICES = [("Zephyr", "bright"), ("Puck", "upbeat"), ("Charon", "informative"), ("Kore", "firm"), ("Fenrir", "excitable"),
+                 ("Leda", "youthful"), ("Orus", "firm"), ("Aoede", "breezy"), ("Callirrhoe", "easy-going"), ("Autonoe", "bright"),
+                 ("Enceladus", "breathy"), ("Iapetus", "clear"), ("Umbriel", "easy-going"), ("Algieba", "smooth"), ("Despina", "smooth"),
+                 ("Erinome", "clear"), ("Algenib", "gravelly"), ("Rasalgethi", "informative"), ("Laomedeia", "upbeat"), ("Achernar", "soft"),
+                 ("Alnilam", "firm"), ("Schedar", "even"), ("Gacrux", "mature"), ("Pulcherrima", "forward"), ("Achird", "friendly"),
+                 ("Zubenelgenubi", "casual"), ("Vindemiatrix", "gentle"), ("Sadachbara", "lively"), ("Sadaltager", "knowledgeable"), ("Sulafat", "warm")]
+
+
+class GeminiProvider(Provider):
+    id, name, key = "gemini", "Gemini", "GEMINI_API_KEY"
+    key_url = "https://aistudio.google.com/apikey"
+    models = [("gemini-3.8-flash-tts", "Gemini 3.8 Flash TTS (most expressive)"), ("gemini-3.8-flash-lite-tts", "Gemini 3.8 Flash-Lite TTS (faster, cheaper)")]
+    note = "Gemini 3.8 Flash TTS: expressive voices in Hindi, Hinglish and English that act on directions, taken from the channel's persona."
+    BASE = "https://generativelanguage.googleapis.com/v1beta/models"
+    LIMIT = 3000  # characters per request, well under the model's 8,192 input tokens with room for the directions
+
+    def voices(self, root: Path, language: str) -> list[dict]:
+        return [{"id": name, "name": name, "gender": "", "language": character} for name, character in GEMINI_VOICES]
+
+    def default_voice(self, language: str) -> str:
+        return "Kore"
+
+    def prompt(self, text: str, settings: dict, language: str) -> str:
+        """Gemini speech is directed in words: who's speaking and how, then the exact line to say."""
+        notes = [settings.get("style") or "Speak naturally, to one listener, like a person explaining something, not an announcer."]
+        speed = settings.get("speed", 1.0)
+        if speed >= 1.08:
+            notes.append("Keep a brisk pace.")
+        elif speed <= 0.92:
+            notes.append("Take it slowly.")
+        if (language or "").casefold() == "hinglish":
+            notes.append("The line mixes Hindi and English the way people in India talk; pronounce each word in its own language.")
+        elif lang_family(language) == "hi":
+            notes.append("The line is in Hindi; keep English names and terms in their English pronunciation.")
+        return f"{' '.join(notes)}\nSay exactly this, and nothing else:\n{text}"
+
+    def synthesize(self, root: Path, text: str, settings: dict, language: str) -> Audio:
+        model, parts = settings.get("model") or self.models[0][0], []
+        voice = settings.get("voice") or self.default_voice(language)
+        for piece in split_text(text, self.LIMIT):
+            body = {"contents": [{"parts": [{"text": self.prompt(piece, settings, language)}]}],
+                    "generationConfig": {"responseModalities": ["AUDIO"],
+                                         "speechConfig": {"voiceConfig": {"prebuiltVoiceConfig": {"voiceName": voice}}}}}
+            data = http_json("POST", f"{self.BASE}/{urllib.parse.quote(model)}:generateContent", {"x-goog-api-key": secret(root, self.key)}, body)
+            found = [part["inlineData"] for candidate in data.get("candidates") or []
+                     for part in (candidate.get("content") or {}).get("parts") or [] if (part.get("inlineData") or {}).get("data")]
+            if not found:
+                reason = ((data.get("candidates") or [{}])[0].get("finishReason") or (data.get("promptFeedback") or {}).get("blockReason") or "no audio")
+                raise TTSError(f"Gemini returned no audio ({reason})")
+            for inline in found:
+                audio = base64.b64decode(inline["data"])
+                if audio[:4] == b"RIFF":
+                    parts.append(read_wav(audio))
+                else:  # raw 16-bit PCM, e.g. "audio/L16;codec=pcm;rate=24000"
+                    rate = re.search(r"rate=(\d+)", inline.get("mimeType") or "")
+                    parts.append(pcm_audio(audio, int(rate[1]) if rate else 24000))
+        return join(parts)
+
+
 PROVIDERS: dict[str, Provider] = {p.id: p for p in (RecordedProvider(), SystemProvider(), PiperProvider(), ElevenLabsProvider(), SarvamProvider(),
-                                                    OpenAIProvider(), GoogleProvider())}
+                                                    GeminiProvider(), OpenAIProvider(), GoogleProvider())}
 
 
 def provider(provider_id: str) -> Provider:

@@ -196,6 +196,34 @@ class ProviderTest(unittest.TestCase):
         self.assertTrue(calls[0]["url"].startswith("https://texttospeech.googleapis.com/v1/text:synthesize?key="))
         self.assertEqual((body["voice"], body["audioConfig"]["audioEncoding"]), ({"languageCode": "hi-IN", "name": "hi-IN-Neural2-A"}, "LINEAR16"))
 
+    def test_gemini_is_directed_and_accepts_wav_or_pcm(self):
+        tts.set_secret(self.root, "GEMINI_API_KEY", "key-GEMINI_API_KEY")
+        replies = iter([{"candidates": [{"content": {"parts": [{"inlineData": {"mimeType": "audio/wav", "data": base64.b64encode(tone(0.5)).decode()}}]}}]},
+                        {"candidates": [{"content": {"parts": [{"inlineData": {"mimeType": "audio/L16;codec=pcm;rate=24000",
+                                                                            "data": base64.b64encode(tts.read_wav(tone(0.4)).samples.tobytes()).decode()}}]}}]}])
+        calls, patch = self.fake_http(lambda call: next(replies))
+        with mock.patch.dict(os.environ, {"GEMINI_API_KEY": ""}), patch:
+            wav = tts.speak(self.root, "Your bill went up.", {"provider": "gemini", "voice": "Puck", "style": "A calm older sister.", "speed": 1.0}, "Hinglish")
+            pcm = tts.speak(self.root, "Your bill went up.", {"provider": "gemini", "model": "gemini-3.8-flash-lite-tts", "speed": 1.1}, "English")
+        first, second = calls
+        self.assertEqual(first["url"], "https://generativelanguage.googleapis.com/v1beta/models/gemini-3.8-flash-tts:generateContent")
+        self.assertEqual(first["headers"], {"x-goog-api-key": "key-GEMINI_API_KEY"})
+        config = first["body"]["generationConfig"]
+        self.assertEqual((config["responseModalities"], config["speechConfig"]["voiceConfig"]["prebuiltVoiceConfig"]["voiceName"]), (["AUDIO"], "Puck"))
+        prompt = first["body"]["contents"][0]["parts"][0]["text"]
+        self.assertTrue(prompt.startswith("A calm older sister."))
+        self.assertIn("mixes Hindi and English", prompt)
+        self.assertTrue(prompt.endswith("Say exactly this, and nothing else:\nYour bill went up."))
+        self.assertIn("gemini-3.8-flash-lite-tts:generateContent", second["url"])
+        self.assertIn("brisk pace", second["body"]["contents"][0]["parts"][0]["text"])
+        self.assertAlmostEqual(wav.duration, 0.5, delta=0.01)
+        self.assertEqual(pcm.rate, 24000)
+        self.assertAlmostEqual(pcm.duration, 0.4, delta=0.01)
+        self.assertEqual(len(tts.provider("gemini").voices(self.root, "Hindi")), 30)
+        with mock.patch.dict(os.environ, {"GEMINI_API_KEY": ""}), self.fake_http(lambda call: {"candidates": [{"finishReason": "SAFETY"}]})[1]:
+            with self.assertRaisesRegex(tts.TTSError, r"no audio \(SAFETY\)"):
+                tts.speak(self.root, "Hi.", {"provider": "gemini"}, "English")
+
     def test_missing_keys_and_tools_are_explained(self):
         tts.set_secret(self.root, "SARVAM_API_KEY", "")
         with self.assertRaisesRegex(tts.TTSError, "Add your Sarvam AI API key"):

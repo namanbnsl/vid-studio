@@ -13,6 +13,7 @@ A video channel can have a **narrator**: a text-to-speech voice that reads every
 | `piper` | on this computer | `pip install piper-tts`; each voice downloads once (~60 MB) | Free, offline, natural English and Hindi |
 | `elevenlabs` | cloud | `ELEVENLABS_API_KEY` | The most natural voices, cloned voices; word-timed captions |
 | `sarvam` | cloud | `SARVAM_API_KEY` | Indian voices for Hindi, Hinglish and Indian English |
+| `gemini` | cloud | `GEMINI_API_KEY` (from Google AI Studio) | Gemini 3.8 Flash TTS (or Flash-Lite): 30 expressive voices that act on directions; Hindi, Hinglish and English |
 | `openai` | cloud | `OPENAI_API_KEY` | Voices that follow speaking instructions (the channel's persona) |
 | `google` | cloud | `GOOGLE_TTS_API_KEY` (Text-to-Speech enabled) | Chirp 3 HD and Neural2 voices in Hindi and Indian English |
 
@@ -32,11 +33,11 @@ The user normally does this in the UI (Channels → the channel → Narration), 
    - `provider`: one of the ids above, or `""` for no voiceover.
    - `voice`, `model`: empty means the provider's default (`studio.py voices` shows it). ElevenLabs takes any voice id on the account, including cloned voices.
    - `speed` (0.7–1.3) and `pause` (seconds of air after each beat, 0–1.5).
-   - `style`: how to speak, for providers that take instructions (OpenAI). Empty uses the channel's persona.
+   - `style`: how to speak, for providers that take directions (Gemini, OpenAI). Empty uses the channel's persona.
    - `lexicon`: whole words and how to say them, for every script on the channel: acronyms, brand names, words the voice gets wrong.
 3. `studio.py say --channel C --text "…" --out sample.wav` speaks a line so the user can listen.
 
-Pick the provider and voice the user asked for. If they haven't chosen, suggest one (Sarvam or ElevenLabs for Hindi and Hinglish; ElevenLabs or OpenAI for English; `system` only to check timing) and let them choose; never sign them up for a paid service on your own.
+Pick the provider and voice the user asked for. If they haven't chosen, suggest one (Sarvam, ElevenLabs or Gemini for Hindi and Hinglish; ElevenLabs, Gemini or OpenAI for English; `system` only to check timing) and let them choose; never sign them up for a paid service on your own.
 
 ## Make the voiceover
 

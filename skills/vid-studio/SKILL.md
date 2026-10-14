@@ -13,7 +13,7 @@ The studio holds one or more **projects**: each is a subject area the user resea
 
 That's the research half. In the production half, a story becomes **scripts**: one per **channel** the user sends it to. Channels (a YouTube channel, Instagram account, WhatsApp channel, and so on) are shared by every project and live in `channels.json` at the studio root, with per-channel settings in `channels/<id>/`:
 - **Voice** (`voice.json`): length, pace, persona, tone, hook styles, rules, and example scripts the user loves. Together with the channel's language, kind (`video` script or text `post`), and format (beat structure), it shapes every script.
-- **Narration** (`narration.json`, video channels): the text-to-speech voice that reads its scripts, if any: a provider (on this computer, or ElevenLabs, Sarvam, OpenAI, Google), a voice, speed, and pronunciations.
+- **Narration** (`narration.json`, video channels): the text-to-speech voice that reads its scripts, if any: a provider (on this computer, or ElevenLabs, Sarvam, Gemini, OpenAI, Google Cloud), a voice, speed, and pronunciations.
 - **Look** (`design.json`, video channels): colors, fonts, motion, captions, photo treatment.
 - **Publishing** (`publish.json`, video channels): the YouTube, Instagram or TikTok account it posts to (the token stays in `.secrets.json`), and post defaults. Video scripts are written as beats with `Visual:` lines that become animated scenes in this look, with real photos behind the beats that need them; the studio previews them live and renders them to MP4.
 

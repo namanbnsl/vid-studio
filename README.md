@@ -27,7 +27,7 @@ A story becomes one **script** per channel, written in that channel's language (
 
 ## Produce
 
-Each **channel** has a look (twelve styles to start from, then colours, fonts with Hindi support, motion and captions), a writing voice, and a **narrator**. The narrator can be a voice on your computer, ElevenLabs, Sarvam AI, OpenAI or Google Cloud, or you: record each beat in the studio's teleprompter, or clone your voice. Every beat then lasts as long as its voice, captions follow the words, and the MP4 renders on your machine with Chrome and ffmpeg.
+Each **channel** has a look (twelve styles to start from, then colours, fonts with Hindi support, motion and captions), a writing voice, and a **narrator**. The narrator can be a voice on your computer, ElevenLabs, Sarvam AI, Gemini 3.8 Flash TTS, OpenAI or Google Cloud, or you: record each beat in the studio's teleprompter, or clone your voice. Every beat then lasts as long as its voice, captions follow the words, and the MP4 renders on your machine with Chrome and ffmpeg.
 
 ![A channel's look, with a live preview](docs/readme/look.jpg)
 
@@ -54,7 +54,7 @@ The workspace is plain JSON and Markdown in `~/vid-studio` (or `$VID_STUDIO_HOME
 
 - Python 3.10 or newer. The studio uses only the standard library.
 - Google Chrome (or Chromium) and ffmpeg, to render MP4s and convert recordings.
-- Optional: an API key for a cloud voice (ElevenLabs, Sarvam AI, OpenAI, Google Cloud); `espeak-ng` or [Piper](https://github.com/OHF-Voice/piper1-gpl) for free voices on your computer; your own Google Cloud or TikTok app, or an Instagram token, to publish.
+- Optional: an API key for a cloud voice (ElevenLabs, Sarvam AI, Gemini, OpenAI, Google Cloud); `espeak-ng` or [Piper](https://github.com/OHF-Voice/piper1-gpl) for free voices on your computer; your own Google Cloud or TikTok app, or an Instagram token, to publish.
 
 ## Files
 

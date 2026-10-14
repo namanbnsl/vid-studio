@@ -1533,7 +1533,7 @@ function narrationPanel(c) {
       <section class="ctl"><h4>Delivery</h4>
         <div class="row"><span>Speed</span><div class="slider"><input type="range" min="0.7" max="1.3" step="0.05" value="${esc(n.speed ?? 1)}" data-narration="speed" data-number><output data-narration-show="speed">${Math.round((n.speed ?? 1) * 100)}%</output></div></div>
         <div class="row"><span>Pause after a beat</span><div class="slider"><input type="range" min="0" max="1.5" step="0.05" value="${esc(n.pause ?? 0.3)}" data-narration="pause" data-number><output data-narration-show="pause">${Number(n.pause ?? 0.3).toFixed(2)} s</output></div></div>
-        ${n.provider === "openai" ? `<div class="row"><span>How to speak</span><textarea class="text-area" rows="2" data-narration="style" placeholder="Leave empty to use the channel's persona">${esc(n.style || "")}</textarea></div>` : ""}</section>
+        ${["openai", "gemini"].includes(n.provider) ? `<div class="row"><span>How to speak</span><textarea class="text-area" rows="2" data-narration="style" placeholder="Leave empty to use the channel's persona">${esc(n.style || "")}</textarea></div>` : ""}</section>
       <section class="ctl"><h4>Pronunciation</h4>
         <textarea class="text-area mono" rows="4" data-narration-lexicon placeholder="One per line: how a word is written = how to say it&#10;UPI = U P I&#10;HDPE = H D P E">${esc(lexiconText(n.lexicon))}</textarea>
         <p class="muted small">Applies to every script on this channel. For one line, add <code>Say:</code> under a beat: the voice reads that, the captions keep what's written.</p></section>` : ""}
@@ -1550,7 +1550,11 @@ function narrationPanel(c) {
 async function loadVoices(view, c) {
   const n = view.narration, key = `${n.provider}:${c.language}`;
   if (!n.provider || key in view.voices) return;
-  if (!voiceProvider(n.provider)?.ready) { view.voices[key] = { voices: [], default: "" }; return; }
+  if (!voiceProvider(n.provider)?.ready) {
+    view.voices[key] = { voices: [], default: "", error: `Add your ${voiceProvider(n.provider)?.name || ""} key to list its voices; you can still paste a voice ID below.` };
+    if (CV === view && channelRoute(view.id) && view.tab === "narration") renderChannel(view.id, "narration");
+    return;
+  }
   view.voices[key] = null;  // loading
   try { view.voices[key] = await api("GET", `voice-providers/${enc(n.provider)}/voices?language=${enc(c.language)}`); }
   catch (e) { view.voices[key] = { error: `Couldn't list voices: ${e.message}`, voices: [] }; }
