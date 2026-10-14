@@ -1,7 +1,7 @@
 {
   "id": "graphite",
   "name": "Graphite",
-  "description": "Near-black, soft white type and one warm accent. Geist throughout, flat rounded tiles, calm fades and an underline that follows the voice. Quiet, like a product film.",
+  "description": "Near-black, soft white type and one warm accent. Geist throughout, type on the background, calm fades and plain captions. Quiet, like a product film.",
   "design": {
     "aspect": "9:16",
     "colors": {
@@ -30,7 +30,7 @@
       "transition": "fade"
     },
     "captions": {
-      "style": "underline",
+      "style": "plain",
       "position": "lower",
       "highlight": "accent",
       "max_words": 4,

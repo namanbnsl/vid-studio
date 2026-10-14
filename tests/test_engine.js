@@ -140,8 +140,11 @@ test('photo placement, underline captions and message scenes normalize to safe v
   assert.equal(api.normalizeDesign({ cards: { style: 'chrome' } }).cards.style, 'glass');
   assert.equal(api.normalizeDesign({ cards: 'glass' }).cards.style, 'glass');
   // the progress line leaves room for the folio at its end
-  const L = api.layout({});
+  const L = api.layout({ cards: { style: 'flat' } });
   assert.ok(L.progress.left + L.progress.width < L.content.left + L.content.width - 100);
+  // with tiles there is no folio: the line runs the full width
+  const T = api.layout({});
+  assert.equal(T.progress.left + T.progress.width, T.content.left + T.content.width);
   assert.ok(api.FONTS['Inter Tight'], 'the Swiss look\'s font is in the font table');
 });
 

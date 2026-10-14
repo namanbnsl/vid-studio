@@ -1,4 +1,4 @@
-# Rounded tiles
+# Minimal scenes
 
 The flat editorial scenes read as slides: a heading, a few lines of type and a lot of empty frame. Photos ran as hard-edged strips, or sat behind charts under a scrim that turned them to mud. This change gives every scene a component and every photo a frame, and keeps the flat look's restraint. It has no gradients, glows, shadows or blurred colour fields. It looks like a product film, not a template.
 
@@ -10,7 +10,7 @@ Night Edition, the same sample script, frame for frame. Before:
 
 After:
 
-![After: rounded tiles](assets/after-night.jpg)
+![After: minimal scenes](assets/after-night.jpg)
 
 Graphite, a new look: near-black, soft white, one warm accent, Geist throughout.
 
@@ -18,13 +18,12 @@ Graphite, a new look: near-black, soft white, one warm accent, Geist throughout.
 
 ## What changed
 
-**One tile per idea, and only where it helps.** Charts, list points and compare phrases sit on flat, rounded tiles, one step lighter (or darker) than the background. Scenes that read better as type on the background drop the tile: the stat, the quote, the timeline (dates as display type on a rail that draws through them), the message (a chat screen with the sender centred above the bubbles) and the end card (a centred finale).
+**Type on the background.** With the default `glass`, nothing sits in a box unless a photo is behind it. Charts, list points, numbers, quotes and the end card are type and data on the plain background, on the heading's left edge. Where a full-screen photo sits behind a chart, a frosted pane appears to keep it readable. `solid` looks (Clean Newsroom, Paper Notebook) put charts, list points and compare phrases on flat tiles.
 
-The tiles:
-
-- A chart sits on one tile.
-- Each list point gets its own tile.
-- Two phrases in a compare sit on two tiles, with a small arrow from the first to the second.
+- The timeline sets its dates as display type on a rail that draws through them, and the last date takes the accent.
+- The message is a chat screen, with the sender centred above the bubbles.
+- The end card is a centred finale, and its call to action is an accent text link with an arrow.
+- The top of the frame is one thin progress line, with no scene counter.
 
 **Numbers are the hero.** A stat drops its tile, and the number is set as large as the frame allows. Its digits roll in like an odometer, with each column as wide as its final digit, so nothing shifts. A percentage up to 100 also fills a thin meter. A compare of two numbers leads with the difference between them (`2.4×`, `+38%`), with the two values as rows below on the same scale. A bar chart whose values share a unit ("lakh") shows it once, at the top.
 

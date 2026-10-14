@@ -334,6 +334,11 @@
    and the motion do the work. Over a full-screen photo a glass tile frosts the photo behind it.
    ====================================================================================================== */
 .vid-stage.cards .card { position: relative; border-radius: var(--radius); background: var(--card-fill); }
+/* glass is invisible on the plain background: content sits on the background, on the heading's left edge.
+   The pane only appears (frosted) where a photo is behind it. Solid keeps visible tiles. */
+.vid-stage.cards-glass .scene:not(.has-photo) .card { background: none; padding-left: 0; padding-right: 0; }
+.vid-stage.cards-glass .scene:not(.has-photo) .chart-card { padding-top: 0; padding-bottom: 0; }
+.vid-stage.cards .folio { display: none; }
 .vid-stage.cards .scene.has-photo .card { text-shadow: none; background: var(--card-fill-photo); }
 .vid-stage.cards-glass .scene.has-photo .card { -webkit-backdrop-filter: blur(40px) saturate(1.2); backdrop-filter: blur(40px) saturate(1.2); }
 
@@ -425,7 +430,7 @@
 .vid-stage.cards .scene-list .items { gap: calc(var(--k) * 16px); max-height: calc(var(--n) * var(--k) * 236px); }
 .vid-stage.cards .scene-list .item { padding: calc(var(--k) * 24px) calc(var(--k) * 48px) calc(var(--k) * 24px) calc(var(--k) * 40px); gap: calc(var(--k) * 36px); }
 .vid-stage.cards .scene-list .item-line { display: none; }
-.vid-stage.cards .scene-list .idx { width: 1.2em; font-size: calc(var(--k) * var(--ts) * 64px); }
+.vid-stage.cards .scene-list .idx { width: 1.2em; font-size: calc(var(--k) * var(--ts) * 64px); color: var(--muted); }
 .vid-stage.cards .scene-list .item-text { font-size: calc(var(--k) * var(--kw, 1) * var(--ts) * 58px); }
 
 /* quote */
@@ -470,7 +475,13 @@
 .vid-stage.cards .scene-end .cta > span:first-child { white-space: nowrap; }
 .vid-stage.cards .scene-end .cta .cta-ic { flex: none; width: 1.6em; height: 1.6em; border-radius: 50%; align-items: center; justify-content: center; background: rgba(0,0,0,.1); }
 
-/* captions */
+/* with glass the call to action is a text link in the accent, with its arrow; solid keeps the button */
+.vid-stage.cards-glass .scene-end .cta { background: none; color: var(--accent); padding: 0; gap: .45em; font-size: calc(var(--k) * var(--kw, 1) * var(--ts) * 46px); font-weight: 600; }
+.vid-stage.cards-glass .scene-end .cta .cta-ic { width: auto; height: auto; background: none; }
+.vid-stage.cards-glass .scene-end .cta svg { width: .8em; height: .8em; }
+
+/* captions: semibold, a touch tighter */
+.vid-stage.cards .cap-inner { font-weight: 600; letter-spacing: -.01em; }
 .vid-stage.cards .cap-hl { border-radius: calc(var(--radius) * .4); }
 
 /* photos: a rounded photo card on the plain background */

@@ -428,7 +428,9 @@
     var progress = null;
     if (design.progress.show) {
       // the folio ("03 / 08") sits at the right end of the line
-      progress = { top: top, height: 4, left: left, width: right - left - (landscape ? 168 : 156) };
+      // with tiles the line runs the full width and there is no folio; flat looks keep the folio at its end
+      var folio = design.cards.style === 'flat';
+      progress = { top: top, height: folio ? 4 : 3, left: left, width: right - left - (folio ? (landscape ? 168 : 156) : 0), folio: folio };
       top += 6 + (landscape ? 36 : 52);
     }
     // the small print sits below the safe area, on the frame's bottom edge, so it costs the content no height
@@ -1597,7 +1599,7 @@
         prog.style.cssText = 'left:' + L.progress.left + 'px;top:' + L.progress.top + 'px;width:' + L.progress.width + 'px;height:' + L.progress.height + 'px';
         scenes.forEach(function () { var seg = el('span', 'seg', '<i></i>'); prog.appendChild(seg); progFills.push(q(seg, 'i')); });
         stage.appendChild(prog);
-        // a folio, like a page number: "03 / 08", at the end of the line
+        // a folio, like a page number: "03 / 08", at the end of the line (flat looks only)
         var pad2 = function (n) { return (n < 10 ? '0' : '') + n; };
         var folio = el('div', 'folio tnum');
         folio.style.cssText = 'top:' + (L.progress.top + L.progress.height / 2) + 'px;right:' + (W - L.content.left - L.content.width) + 'px';
