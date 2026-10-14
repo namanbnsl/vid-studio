@@ -350,10 +350,20 @@
 .vid-stage.cards .rule { width: calc(var(--ts) * 72px); height: calc(var(--ts) * 5px); border-radius: 99px; }
 .vid-stage.cards .kicker { margin-bottom: calc(var(--k) * 28px); }
 
-/* progress, logo */
-.vid-stage.cards .progress { gap: 8px; }
+/* progress, logo: a quiet line; the beats ahead are barely there */
+.vid-stage.cards .progress { gap: 6px; }
+.vid-stage.cards .progress .seg { background: var(--track); }
+.vid-stage.cards .progress .seg i { opacity: .85; }
 .vid-stage.cards .progress .seg, .vid-stage.cards .progress .seg i { border-radius: 99px; }
 .vid-stage.cards .logo .logo-mark, .vid-stage.cards .scene-end .end-logo .logo-mark { border-radius: 50%; }
+
+/* title over its photo: the photo fills the frame under a light veil, the title sits near the bottom */
+.vid-stage.cards .scene-title.has-photo .backdrop .scrim { background: var(--title-veil); }
+.vid-stage.cards .scene-title.has-photo .body { justify-content: flex-end; }
+.vid-stage.cards .scene-title.has-photo .title { font-size: calc(var(--k) * var(--kw, 1) * var(--ts) * 160px); }
+.vid-stage.cards .scene-title.has-photo .subtitle { color: var(--text); opacity: .85; margin-top: calc(var(--k) * 32px); }
+.vid-stage.cards .scene-title.has-photo .rule { display: none; }
+.vid-stage.cards .scene-title.has-photo .kicker { margin-bottom: calc(var(--k) * 24px); }
 
 /* stat: the number is the hero, no tile; its digits roll in like an odometer */
 .vid-stage.cards .scene-stat .stat-label { font-size: calc(var(--k) * var(--ts) * 50px); font-weight: 600; color: var(--muted); margin-bottom: calc(var(--k) * 4px); }

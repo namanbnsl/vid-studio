@@ -865,10 +865,13 @@
       anim: function (tl, a) {
         var at = revealHead(tl, a, head, a.t0);
         var n = Math.max(1, items.length);
-        var gap = clamp(Math.max(0.3, (a.e - at) * 0.55) / n, 0.18 * a.f, 1.2);
+        // with tiles, the points arrive across most of the beat, about when each is said, and the earlier
+        // ones step back as the next lands, so the eye is always on the point being spoken
+        var gap = a.cards ? clamp((a.e - at) * 0.72 / n, 0.18 * a.f, 3) : clamp(Math.max(0.3, (a.e - at) * 0.55) / n, 0.18 * a.f, 1.2);
         items.forEach(function (it, i) {
           var t = at + i * gap;
           cardIn(tl, a, it.li, t);
+          if (a.cards && i < n - 1) tw(tl, it.li, { opacity: 1 }, { opacity: 0.38, duration: a.dur(0.6), ease: 'power2.inOut' }, t + gap, false);
           drawLine(tl, a, it.line, t);
           tw(tl, it.idx, { opacity: 0, y: a.dist(16) }, { opacity: 1, y: 0, duration: a.dur(0.5), ease: a.E.out }, t + 0.05);
           tw(tl, it.text, { x: -a.dist(24), opacity: 0 }, { x: 0, opacity: 1, duration: a.dur(0.6), ease: a.E.out }, t + 0.1);
@@ -1478,6 +1481,7 @@
         '--accent-soft': rgba(C.accent, dark ? 0.16 : 0.12),
         '--accent-line': rgba(C.accent, 0.6),
         '--scrim-flat': rgba(C.background, dark ? 0.74 : 0.8),
+        '--title-veil': rgba(C.background, dark ? 0.45 : 0.6),
         '--cl': L.content.left + 'px', '--ct': L.content.top + 'px', '--cw': L.content.width + 'px', '--ch': L.content.height + 'px'
       };
       if (L.captions) {
@@ -1545,8 +1549,10 @@
         var pic = sc.type === 'image' ? (sc.data.url ? { src: sc.data.url, credit: sc.data.credit || (sc.image && sc.image.credit) || '' } : sc.image) : sc.image;
         var photo = pic ? { url: resolveMedia(pic.src, options.mediaBase), credit: pic.credit || '' } : null;
         if (photo && !photo.url) photo = null;
+        // with tiles, a title's photo fills the frame and the title sits over it, near the bottom
         var mode = !photo ? null : sc.type === 'image' ? 'hero' :
-          (sc.image && sc.image.layout) || (design.images.layout === 'full' ? 'full' : TOP_PHOTO.indexOf(sc.type) >= 0 ? 'top' : 'full');
+          (sc.image && sc.image.layout) || (design.images.layout === 'full' ? 'full' :
+            sc.type === 'title' && design.cards.style !== 'flat' ? 'full' : TOP_PHOTO.indexOf(sc.type) >= 0 ? 'top' : 'full');
         var ctx = { design: design, waits: waits, photo: photo };
         var b = BUILD[sc.type](sc, ctx);
         // the overlay label and a chart's title share a header row pinned to the top of the content area

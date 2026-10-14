@@ -34,9 +34,9 @@ The tiles:
 
 **Labels are eyebrows.** `Text:` labels and kickers are small accent text in sentence case, not boxes. On a photo card the label sits on the photo's bottom-left corner, so the scene below keeps its full size.
 
-**Photos.** A photo above a scene is a rounded photo card on the plain background. In the image scene the photo takes the whole space. Behind a chart, the photo fills the frame under a flat veil, and the chart's tile frosts the part it covers. That is the only blur in the system, and it is there so the values stay readable.
+**Photos.** A title's photo fills the frame under a light veil, with the title set large near the bottom, like the opening of a film. A photo above any other scene is a rounded photo card on the plain background. In the image scene the photo takes the whole space. Behind a chart, the photo fills the frame under a flat veil, and the chart's tile frosts the part it covers. That is the only blur in the system, and it is there so the values stay readable.
 
-**Motion.** Tiles rise a short way and settle on a long ease, and fades lift slightly as one scene hands over to the next. Nothing bounces, and holds stay still.
+**Motion.** Tiles rise a short way and settle on a long ease, and fades lift slightly as one scene hands over to the next. List points arrive across the whole beat, and the earlier ones step back as each new one lands, so the eye is always on the point being spoken. The progress line is quieter: the beats still to come are barely there. Nothing bounces, and holds stay still.
 
 **Fixes.** The scene counter ("11 / 11") no longer sits on the progress line. A photo credit with no source beside it is no longer cut off. Text inside tiles is sized for a phone.
 
