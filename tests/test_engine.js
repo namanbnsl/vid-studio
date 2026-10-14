@@ -134,6 +134,12 @@ test('photo placement, underline captions and message scenes normalize to safe v
   assert.deepEqual(top.image, { src: 'media/a.jpg', credit: 'Photo: A', layout: 'top' });
   assert.equal(full.image.layout, 'full');
   assert.deepEqual(odd.image, { src: 'media/c.jpg', credit: '' }, 'an unknown placement is dropped, so the look decides');
+  // cards: glass by default, flat or solid on request, anything else falls back to glass
+  assert.equal(api.normalizeDesign({}).cards.style, 'glass');
+  assert.equal(api.normalizeDesign({ cards: { style: 'flat' } }).cards.style, 'flat');
+  assert.equal(api.normalizeDesign({ cards: { style: 'chrome' } }).cards.style, 'glass');
+  assert.equal(api.normalizeDesign({ cards: 'glass' }).cards.style, 'glass');
+  assert.equal(api.normalizeDesign({ background: { style: 'aura' } }).background.style, 'aura');
   // the progress line leaves room for the folio at its end
   const L = api.layout({});
   assert.ok(L.progress.left + L.progress.width < L.content.left + L.content.width - 100);
@@ -142,7 +148,7 @@ test('photo placement, underline captions and message scenes normalize to safe v
 
 test('empty compositions build static backgrounds with zero duration and replace the old timeline', async () => {
   const h = engineHarness();
-  for (const style of ['solid', 'gradient', 'grain', 'paper']) {
+  for (const style of ['solid', 'gradient', 'grain', 'paper', 'aura']) {
     for (const pattern of ['none', 'grid', 'dots', 'lines']) {
       const prior = h.document.body.__vidCurrent;
       const result = await h.api.build(h.document.body, { background: { style, pattern } }, []);

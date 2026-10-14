@@ -56,8 +56,8 @@ DEFAULT_DESIGN = {
     "type": {"scale": 1.0, "display_case": "none", "display_weight": 800, "tracking": -0.03},
     "motion": {"energy": "high", "easing": "snappy", "transition": "slide"},
     "captions": {"style": "highlight", "position": "lower", "highlight": "accent", "max_words": 4, "size": "medium"},
-    "background": {"style": "grain", "pattern": "none"}, "images": {"treatment": "dim", "layout": "auto"}, "sources": {"show": True},
-    "progress": {"show": True}, "radius": 12,
+    "background": {"style": "aura", "pattern": "none"}, "cards": {"style": "glass"}, "images": {"treatment": "dim", "layout": "auto"},
+    "sources": {"show": True}, "progress": {"show": True}, "radius": 28,
     "logo": {"text": "", "position": "top-left"}, "custom_css": "",
 }
 HOOK_STYLES = ["question", "surprising-stat", "myth-bust", "story", "moment", "stakes", "contrast"]
@@ -1405,7 +1405,8 @@ def save_design(root: Path, channel_id: str, design: dict) -> dict:
         "motion.energy": ["calm", "medium", "high"], "motion.easing": ["smooth", "snappy", "bouncy"],
         "motion.transition": ["cut", "fade", "slide", "zoom", "wipe"],
         "captions.style": ["none", "plain", "boxed", "karaoke", "highlight", "underline", "pop"], "captions.position": ["lower", "middle", "upper"],
-        "captions.highlight": ["accent", "accent2", "text"], "background.style": ["solid", "gradient", "grain", "paper"],
+        "captions.highlight": ["accent", "accent2", "text"], "background.style": ["solid", "gradient", "grain", "paper", "aura"],
+        "cards.style": ["glass", "solid", "flat"],
         "images.layout": ["auto", "full"],
         "background.pattern": ["none", "grid", "dots", "lines"], "logo.position": ["top-left", "top-right", "bottom-left", "bottom-right"],
         "captions.size": ["small", "medium", "large"], "images.treatment": ["natural", "dim", "mono", "duotone"],

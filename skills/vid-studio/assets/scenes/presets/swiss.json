@@ -40,6 +40,9 @@
       "style": "solid",
       "pattern": "none"
     },
+    "cards": {
+      "style": "flat"
+    },
     "images": {
       "treatment": "natural"
     },

@@ -438,6 +438,8 @@ Image: media/c.jpg | Photo: C | extra
             design = studio.merged_design({"preset": preset["id"]})
             self.assertEqual(set(design), set(studio.DEFAULT_DESIGN), preset["id"])
             self.assertNotEqual(design["background"]["style"], "gradient", preset["id"])
+            studio.check_keys(design["cards"], studio.DEFAULT_DESIGN["cards"], "design.cards")
+            self.assertIn(design["cards"]["style"], ("glass", "solid", "flat"), preset["id"])
             for role, family in design["fonts"].items():
                 self.assertIn(family, catalog, f"{preset['id']}: {role}")
 
@@ -602,7 +604,9 @@ Image: media/c.jpg | Photo: C | extra
                  ({"unknown": 1}, "Unknown design key"), ({"fonts": {"typo": "Anton"}}, "fonts key"),
                  ({"background": []}, "JSON object"), ({"preset": "missing"}, "preset id"),
                  ({"custom_css": "</STYLE><script>alert(1)"}, "CSS only"), ({"custom_css": "x" * 20001}, "20000"),
-                 ({"custom_css": 2}, "must be text"), ({"radius": float("nan")}, "radius")]
+                 ({"custom_css": 2}, "must be text"), ({"radius": float("nan")}, "radius"),
+                 ({"cards": {"style": "neon"}}, "cards.style"), ({"cards": {"shine": True}}, "cards key"),
+                 ({"background": {"style": "glow"}}, "background.style")]
         before = (self.home / "channels" / "shorts" / "design.json").read_bytes()
         for design, error in cases:
             with self.subTest(design=design), self.assertRaisesRegex(ValueError, error):

@@ -40,6 +40,9 @@
       "style": "solid",
       "pattern": "none"
     },
+    "cards": {
+      "style": "solid"
+    },
     "images": {
       "treatment": "mono"
     },
@@ -49,7 +52,7 @@
     "progress": {
       "show": true
     },
-    "radius": 2,
+    "radius": 14,
     "logo": {
       "text": "",
       "position": "top-left"

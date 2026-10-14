@@ -49,6 +49,11 @@
   {
    "beat": "The curve",
    "type": "bars",
+   "image": {
+    "src": "/scenes/samples/delhi-street.jpg",
+    "credit": "Photo: VasenkaPhotography / Flickr, CC BY 2.0",
+    "layout": "full"
+   },
    "duration": 5.5,
    "vo": "Most of the growth comes late. Ten years gets you to about nine lakh, and the next twenty add sixty-six more.",
    "text": "",
@@ -232,6 +237,11 @@
   {
    "beat": "The curve",
    "type": "bars",
+   "image": {
+    "src": "/scenes/samples/delhi-street.jpg",
+    "credit": "Photo: VasenkaPhotography / Flickr, CC BY 2.0",
+    "layout": "full"
+   },
    "duration": 5.5,
    "vo": "ज़्यादातर बढ़त बाद में आती है. दस साल में करीब नौ लाख, और अगले बीस साल में छियासठ लाख और.",
    "text": "",

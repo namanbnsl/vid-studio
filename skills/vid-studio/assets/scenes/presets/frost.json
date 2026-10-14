@@ -1,0 +1,63 @@
+{
+  "id": "frost",
+  "name": "Frost",
+  "description": "Ink-blue night, frosted glass cards and soft peach light with a touch of lilac. Geist headlines, calm fades and an underline that follows the voice. The house look.",
+  "design": {
+    "aspect": "9:16",
+    "colors": {
+      "background": "#0E1015",
+      "surface": "#191C23",
+      "text": "#F3F1EC",
+      "muted": "#9A9CA6",
+      "accent": "#F4B48C",
+      "accent2": "#A99CF4",
+      "negative": "#F0857A"
+    },
+    "fonts": {
+      "display": "Geist",
+      "body": "Mukta",
+      "mono": "JetBrains Mono"
+    },
+    "type": {
+      "scale": 1.0,
+      "display_case": "none",
+      "display_weight": 600,
+      "tracking": -0.035
+    },
+    "motion": {
+      "energy": "medium",
+      "easing": "smooth",
+      "transition": "fade"
+    },
+    "captions": {
+      "style": "underline",
+      "position": "lower",
+      "highlight": "accent",
+      "max_words": 4,
+      "size": "medium"
+    },
+    "background": {
+      "style": "aura",
+      "pattern": "none"
+    },
+    "cards": {
+      "style": "glass"
+    },
+    "images": {
+      "treatment": "natural",
+      "layout": "auto"
+    },
+    "sources": {
+      "show": true
+    },
+    "progress": {
+      "show": true
+    },
+    "radius": 30,
+    "logo": {
+      "text": "",
+      "position": "top-left"
+    },
+    "custom_css": ""
+  }
+}

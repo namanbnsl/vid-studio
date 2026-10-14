@@ -37,8 +37,11 @@
       "size": "medium"
     },
     "background": {
-      "style": "solid",
+      "style": "aura",
       "pattern": "none"
+    },
+    "cards": {
+      "style": "glass"
     },
     "images": {
       "treatment": "mono"
@@ -49,7 +52,7 @@
     "progress": {
       "show": true
     },
-    "radius": 0,
+    "radius": 22,
     "logo": {
       "text": "",
       "position": "top-left"

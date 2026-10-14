@@ -26,11 +26,12 @@
     type: { scale: 1.0, display_case: 'none', display_weight: 800, tracking: -0.03 },
     motion: { energy: 'high', easing: 'snappy', transition: 'slide' },
     captions: { style: 'highlight', position: 'lower', highlight: 'accent', max_words: 4, size: 'medium' },
-    background: { style: 'grain', pattern: 'none' },
+    background: { style: 'aura', pattern: 'none' },
+    cards: { style: 'glass' },
     images: { treatment: 'dim', layout: 'auto' },
     sources: { show: true },
     progress: { show: true },
-    radius: 12,
+    radius: 28,
     logo: { text: '', position: 'top-left' },
     custom_css: ''
   };
@@ -50,7 +51,8 @@
     transition: ['cut', 'fade', 'slide', 'zoom', 'wipe'],
     capStyle: ['none', 'plain', 'boxed', 'karaoke', 'highlight', 'underline', 'pop'],
     capPos: ['lower', 'middle', 'upper'],
-    bgStyle: ['solid', 'gradient', 'grain', 'paper'],
+    bgStyle: ['solid', 'gradient', 'grain', 'paper', 'aura'],
+    cardStyle: ['glass', 'solid', 'flat'],
     pattern: ['none', 'grid', 'dots', 'lines'],
     imgLayout: ['auto', 'full'],
     logoPos: ['top-left', 'top-right', 'bottom-left', 'bottom-right'],
@@ -101,6 +103,10 @@
   function lum(hex) {
     var c = rgb(hex).map(function (v) { v /= 255; return v <= 0.03928 ? v / 12.92 : Math.pow((v + 0.055) / 1.055, 2.4); });
     return 0.2126 * c[0] + 0.7152 * c[1] + 0.0722 * c[2];
+  }
+  function mix(a, b, t) {
+    var x = rgb(a), y = rgb(b);
+    return '#' + x.map(function (v, i) { return ('0' + Math.round(v + (y[i] - v) * t).toString(16)).slice(-2); }).join('');
   }
   function contrast(a, b) { var x = lum(a), y = lum(b); return (Math.max(x, y) + 0.05) / (Math.min(x, y) + 0.05); }
   function mulberry32(seed) {
@@ -249,6 +255,7 @@
     d.progress.show = d.progress.show !== false;
     d.background.style = pick(d.background.style, ENUM.bgStyle, 'solid');
     d.background.pattern = pick(d.background.pattern, ENUM.pattern, 'none');
+    d.cards.style = pick(d.cards.style, ENUM.cardStyle, 'glass');
     d.radius = clamp(num(d.radius, 18), 0, 64);
     if (!isObj(d.logo)) d.logo = clone(DEFAULT_DESIGN.logo);
     d.logo.text = typeof d.logo.text === 'string' ? d.logo.text : '';
@@ -421,7 +428,7 @@
     var progress = null;
     if (design.progress.show) {
       // the folio ("03 / 08") sits at the right end of the line
-      progress = { top: top, height: 4, left: left, width: right - left - (landscape ? 150 : 132) };
+      progress = { top: top, height: 4, left: left, width: right - left - (landscape ? 168 : 156) };
       top += 6 + (landscape ? 36 : 52);
     }
     // the small print sits below the safe area, on the frame's bottom edge, so it costs the content no height
@@ -522,6 +529,11 @@
       return o;
     });
   }
+  // a card settles into place: a short rise and fade, no bounce
+  function cardIn(tl, a, card, at) {
+    if (!a.cards) return;
+    tw(tl, card, { y: a.dist(28), opacity: 0 }, { y: 0, opacity: 1, duration: a.dur(0.8), ease: a.E.out }, at - 0.05);
+  }
   function drawLine(tl, a, line, at) {
     tw(tl, line, { scaleX: 0 }, { scaleX: 1, duration: a.dur(0.8), ease: a.E.inOut }, at);
   }
@@ -547,20 +559,22 @@
   };
 
   BUILD.stat = function (sc) {
-    var d = sc.data, st = el('div', 'stack');
+    var d = sc.data, st = el('div', 'stack'), box = el('div', 'card stat-card');
+    st.appendChild(box);
     var label = null, ctx = null, line = null;
-    if (plain(d.label)) { label = el('div', 'stat-label fit', rich(d.label)); tagLang(label, d.label); st.appendChild(label); }
+    if (plain(d.label)) { label = el('div', 'stat-label fit', rich(d.label)); tagLang(label, d.label); box.appendChild(label); }
     var p = parseValue(d.value);
     var val = el('div', 'value disp fit', valueHTML(d.value || '', p));
-    tagLang(val, d.value); st.appendChild(val);
+    tagLang(val, d.value); box.appendChild(val);
     if (plain(d.context)) {
-      line = el('div', 'stat-line'); st.appendChild(line);
-      ctx = el('div', 'context fit', rich(d.context)); tagLang(ctx, d.context); st.appendChild(ctx);
+      line = el('div', 'stat-line'); box.appendChild(line);
+      ctx = el('div', 'context fit', rich(d.context)); tagLang(ctx, d.context); box.appendChild(ctx);
     }
     return {
       stack: st,
       anim: function (tl, a) {
         var at = a.t0;
+        cardIn(tl, a, box, at);
         if (label) { fadeUp(tl, a, label, at, 18); at += a.st(0.15); }
         tw(tl, val, { yPercent: 8, opacity: 0 }, { yPercent: 0, opacity: 1, duration: a.dur(0.8), ease: a.E.out }, at);
         countUp(tl, q(val, '.num'), p, at, a.dur(1.3), a.E.num);
@@ -597,7 +611,8 @@
         return { bar: bar, value: v, label: lab, zone: zone, h: h, val: q(v, '.num'), p: it.p };
       });
       var base = el('div', 'cc-base'); chart.appendChild(base);
-      st.appendChild(chart);
+      var colCard = el('div', 'card chart-card'); colCard.appendChild(chart);
+      st.appendChild(colCard);
       return {
         head: head, stack: st,
         post: function () {
@@ -610,6 +625,7 @@
         },
         anim: function (tl, a) {
           var at = revealHead(tl, a, head, a.t0);
+          cardIn(tl, a, colCard, at - a.st(0.1));
           drawLine(tl, a, base, at);
           var gap = a.st(Math.min(0.18, 0.9 / rows.length)), bd = a.dur(1.0);
           rows.forEach(function (r, i) {
@@ -636,11 +652,13 @@
       row.appendChild(hd); row.appendChild(track); bars.appendChild(row);
       return { head: hd, fill: fill, val: q(v, '.num'), p: it.p };
     });
-    st.appendChild(bars);
+    var rowCard = el('div', 'card chart-card'); rowCard.appendChild(bars);
+    st.appendChild(rowCard);
     return {
       head: head, stack: st,
       anim: function (tl, a) {
         var at = revealHead(tl, a, head, a.t0);
+        cardIn(tl, a, rowCard, at - a.st(0.1));
         var gap = a.st(Math.min(0.2, 1.0 / Math.max(1, rows.length)));
         var bd = a.dur(1.0);
         rows.forEach(function (r, i) {
@@ -693,9 +711,10 @@
       if (delta) { ref = el('div', 'ref-line'); cols.appendChild(ref); }
       base = el('div', 'cc-base'); cols.appendChild(base);
     } else {
-      // words, not numbers: two labelled panels
+      // words, not numbers: two labelled panels, joined by a small arrow from the first to the second
       parts = items.map(function (it, i) {
-        var col = el('div', 'col panel' + (i === 1 ? ' subject' : ''));
+        if (i === 1) cols.appendChild(el('div', 'vs-row', '<span class="vs"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.4" stroke-linecap="round" stroke-linejoin="round"><path d="M12 5v14M6 13l6 6 6-6"/></svg></span>'));
+        var col = el('div', 'col panel card' + (i === 1 ? ' subject' : ''));
         var lab = el('div', 'col-label', rich(it.label)); tagLang(lab, it.label);
         var v = el('div', 'panel-value fit', rich(it.value)); tagLang(v, it.value);
         col.appendChild(lab); col.appendChild(v); cols.appendChild(col);
@@ -703,7 +722,10 @@
       });
       // phrases: two rows that share the height, up to a limit
     }
-    st.appendChild(cols);
+    var cmpCard = null;
+    if (numeric) { cmpCard = el('div', 'card chart-card'); cmpCard.appendChild(cols); st.appendChild(cmpCard); }
+    else st.appendChild(cols);
+    var vs = q(cols, '.vs');
     return {
       head: head, stack: st,
       post: function () {
@@ -716,6 +738,8 @@
       anim: function (tl, a) {
         var at = revealHead(tl, a, head, a.t0);
         var bd = a.dur(1.1);
+        if (cmpCard) cardIn(tl, a, cmpCard, at - a.st(0.1));
+        if (vs) tw(tl, vs, { scale: 0.6, opacity: 0 }, { scale: 1, opacity: 1, duration: a.dur(0.5), ease: a.E.out }, at + 0.1 + a.st(0.4) - 0.05);
         if (base) drawLine(tl, a, base, at);
         parts.forEach(function (pt, i) {
           var t = at + 0.1 + i * a.st(0.4);
@@ -738,12 +762,12 @@
     var ol = el('ol', 'items');
     var items = (Array.isArray(d.items) ? d.items : []).slice(0, 6).map(function (txt, i) {
       txt = typeof txt === 'string' ? txt : (txt && (txt.label || txt.text)) || '';
-      var li = el('li', 'item');
+      var li = el('li', 'item card');
       var line = el('span', 'item-line');
       var idx = el('span', 'idx tnum', String(i + 1));
       var t = el('span', 'item-text fit', rich(txt)); tagLang(t, txt);
       li.appendChild(line); li.appendChild(idx); li.appendChild(t); ol.appendChild(li);
-      return { line: line, idx: idx, text: t };
+      return { li: li, line: line, idx: idx, text: t };
     });
     ol.style.setProperty('--n', String(Math.max(1, items.length)));
     var end = el('span', 'item-line end'); ol.appendChild(end);
@@ -756,6 +780,7 @@
         var gap = clamp(Math.max(0.3, (a.e - at) * 0.55) / n, 0.18 * a.f, 1.2);
         items.forEach(function (it, i) {
           var t = at + i * gap;
+          cardIn(tl, a, it.li, t);
           drawLine(tl, a, it.line, t);
           tw(tl, it.idx, { opacity: 0, y: a.dist(16) }, { opacity: 1, y: 0, duration: a.dur(0.5), ease: a.E.out }, t + 0.05);
           tw(tl, it.text, { x: -a.dist(24), opacity: 0 }, { x: 0, opacity: 1, duration: a.dur(0.6), ease: a.E.out }, t + 0.1);
@@ -765,18 +790,24 @@
     };
   };
 
-  BUILD.quote = function (sc) {
-    var d = sc.data, st = el('div', 'stack');
-    var wrap = el('div', 'quote');
+  BUILD.quote = function (sc, ctx) {
+    var d = sc.data, st = el('div', 'stack'), cards = ctx.design.cards.style !== 'flat';
+    var wrap = el('div', 'quote card');
     var bar = el('span', 'quote-bar'); wrap.appendChild(bar);
-    var qt = el('blockquote', 'quote-text fit', wordsHTML('“' + plain(d.quote || d.text || '') + '”', { mask: false }));
+    // on a card the opening mark is set large above the words, so the words carry no marks of their own
+    var mark = cards ? el('span', 'qmark disp', '\u201C') : null;
+    if (mark) wrap.appendChild(mark);
+    var said = plain(d.quote || d.text || '').replace(/^["\u201C\u201D]+|["\u201C\u201D]+$/g, '');
+    var qt = el('blockquote', 'quote-text fit', wordsHTML(cards ? said : '\u201C' + said + '\u201D', { mask: false }));
     tagLang(qt, d.quote); wrap.appendChild(qt); st.appendChild(wrap);
     var src = null;
-    if (plain(d.source)) { src = el('div', 'source', rich(d.source)); tagLang(src, d.source); st.appendChild(src); }
+    if (plain(d.source)) { src = el('div', 'source', rich(d.source)); tagLang(src, d.source); (cards ? wrap : st).appendChild(src); }
     return {
       stack: st,
       anim: function (tl, a) {
         var at = a.t0;
+        cardIn(tl, a, wrap, at);
+        if (mark) fadeUp(tl, a, mark, at + a.st(0.1), 20);
         tw(tl, bar, { scaleY: 0 }, { scaleY: 1, duration: a.dur(0.7), ease: a.E.inOut }, at);
         var ws = qa(qt, '.w');
         var span = Math.min((a.e - at) * 0.45, ws.length * 0.1 * a.f + 0.2);
@@ -796,9 +827,9 @@
       var dot = el('div', 'tl-dot');
       var date = el('div', 'tl-date', rich(it.date)); tagLang(date, it.date);
       var lab = el('div', 'tl-label fit', rich(it.label)); tagLang(lab, it.label);
-      var txt = el('div', 'tl-text'); txt.appendChild(date); txt.appendChild(lab);
+      var txt = el('div', 'tl-text card'); txt.appendChild(date); txt.appendChild(lab);
       node.appendChild(dot); node.appendChild(txt); wrap.appendChild(node);
-      return { node: node, dot: dot, date: date, label: lab };
+      return { node: node, dot: dot, date: date, label: lab, txt: txt };
     });
     wrap.style.setProperty('--n', String(Math.max(1, items.length)));
     st.appendChild(wrap);
@@ -830,6 +861,7 @@
           else { var z = {}; z[prop] = 0; gsap.set(fill, z); }
           prev = to;
           tw(tl, it.dot, { scale: 0 }, { scale: 1, duration: a.dur(0.4), ease: a.E.out }, t);
+          cardIn(tl, a, it.txt, t);
           fadeUp(tl, a, it.date, t + 0.05, 16);
           fadeUp(tl, a, it.label, t + 0.12, 16);
         });
@@ -863,7 +895,7 @@
       st.className = 'stack photo-only';
       return { stack: st, anim: function () {} };
     }
-    var card = el('div', 'img-card');
+    var card = el('div', 'img-card card');
     var inner = el('div', 'ph');
     inner.innerHTML = '<div class="ph-tag">Image needed</div>';
     var desc = el('div', 'ph-desc fit', rich(d.description || ''));
@@ -884,9 +916,14 @@
   // dots. Every bubble has its final size from the start, so nothing reflows while it plays.
   BUILD.message = function (sc) {
     var d = sc.data, st = el('div', 'stack');
-    var wrap = el('div', 'msg');
+    var wrap = el('div', 'msg card');
     var who = plain(d.title), head = null;
-    if (who) { head = el('div', 'msg-who', rich(who)); tagLang(head, who); wrap.appendChild(head); }
+    if (who) {
+      // the sender's initial in a round avatar, like the top of a chat (cards only)
+      var initial = Array.from(who.replace(/[^\p{L}\p{N}]/gu, ''))[0] || '';
+      head = el('div', 'msg-who', (initial ? '<span class="avatar">' + esc(initial.toUpperCase()) + '</span>' : '') + '<span class="who">' + rich(who) + '</span>');
+      tagLang(head, who); wrap.appendChild(head);
+    }
     var bubbles = (Array.isArray(d.items) ? d.items : []).slice(0, 5).map(function (raw) {
       raw = typeof raw === 'string' ? raw : (raw && (raw.text || raw.label)) || '';
       var m = /^\s*(you|me|\u0906\u092A|\u092E\u0948\u0902)\s*:\s*/i.exec(raw);
@@ -904,6 +941,7 @@
       stack: st,
       anim: function (tl, a) {
         var at = a.t0;
+        cardIn(tl, a, wrap, at);
         if (head) fadeUp(tl, a, head, at, 12);
         var n = Math.max(1, bubbles.length);
         var gap = clamp(Math.max(0.4, (a.e - at) * 0.6) / n, 0.35 * a.f, 1.4);
@@ -940,6 +978,12 @@
     return {
       el: wrap, img: img,
       anim: function (tl, a) {
+        if (a.cards) {
+          // a photo card settles in like the other cards, then a slow push-in for the rest of the beat
+          tw(tl, wrap, { y: a.dist(36), opacity: 0 }, { y: 0, opacity: 1, duration: a.dur(0.9), ease: a.E.out }, a.clipStart + 0.02);
+          tw(tl, img, { scale: 1.06 }, { scale: 1, duration: Math.max(0.1, a.clipEnd - a.clipStart), ease: 'none' }, a.clipStart);
+          return;
+        }
         // revealed by a clean wipe, then a slow push-in for the rest of the beat
         tw(tl, wrap, { clipPath: a.wide ? 'inset(0% 100% 0% 0%)' : 'inset(0% 0% 100% 0%)' }, { clipPath: 'inset(0% 0% 0% 0%)', duration: a.dur(0.9), ease: a.E.inOut }, a.clipStart + 0.02);
         tw(tl, img, { scale: 1.06 }, { scale: 1, duration: Math.max(0.1, a.clipEnd - a.clipStart), ease: 'none' }, a.clipStart);
@@ -947,11 +991,30 @@
     };
   }
   // Size a top photo to the space the scene leaves: as tall as possible, never squeezing the content.
-  function placeTopPhoto(x, L) {
+  function placeTopPhoto(x, L, cards) {
     var frame = q(x.el, '.frame'), head = q(x.el, '.head'), st = q(x.el, '.stack');
     var W = L.width, H = L.height, c = L.content, bottom = c.top + c.height, gap = L.landscape ? 72 : 64;
     var wide = c.width > c.height * 0.9;
     x.el.classList.add(wide ? 'photo-left' : 'photo-above');
+    if (cards) {
+      // a rounded photo card inside the safe area, on the same edges as the cards below it
+      gap = L.landscape ? 64 : 48;
+      if (wide) {
+        var cw = Math.round((c.width - gap) * 0.46), tl0 = c.left + cw + gap;
+        x.photo.el.style.cssText += ';left:' + c.left + 'px;top:' + c.top + 'px;width:' + cw + 'px;height:' + c.height + 'px';
+        frame.style.left = tl0 + 'px'; frame.style.width = (c.left + c.width - tl0) + 'px';
+        if (x.meta) { x.meta.style.left = tl0 + 'px'; x.meta.style.width = (c.left + c.width - tl0) + 'px'; }
+        x.column = { left: tl0, width: c.left + c.width - tl0 };
+        return;
+      }
+      x.el.style.setProperty('--k', '1');
+      fitWidths(x.el);
+      var need0 = (head ? head.offsetHeight : 0) + (x.sc.type === 'image' ? 0 : st.scrollHeight);
+      var ch0 = Math.round(clamp(c.height - need0 - gap, H * 0.2, H * (x.sc.type === 'image' ? 0.62 : 0.4)));
+      x.photo.el.style.cssText += ';left:' + c.left + 'px;top:' + c.top + 'px;width:' + c.width + 'px;height:' + ch0 + 'px';
+      frame.style.top = (c.top + ch0 + gap) + 'px'; frame.style.height = Math.max(120, bottom - c.top - ch0 - gap) + 'px';
+      return;
+    }
     if (wide) {
       var pw = Math.round(W * 0.46), left = pw + gap, right = c.left + c.width;
       x.photo.el.style.cssText += ';left:0;top:0;width:' + pw + 'px;height:' + H + 'px';
@@ -968,6 +1031,23 @@
     var ph = Math.round(clamp(bottom - need - gap, minH, maxH));
     x.photo.el.style.cssText += ';left:0;top:0;width:' + W + 'px;height:' + ph + 'px';
     frame.style.top = (ph + gap) + 'px'; frame.style.height = Math.max(120, bottom - ph - gap) + 'px';
+  }
+
+  // The photo, blurred and veiled, as the light behind its own card: drawn once into a small canvas, so a
+  // frame costs no more to paint than a flat colour. Every photo scene takes its colours from its photo.
+  function buildAmbient(img, W, H) {
+    var wrap = el('div', 'ambient');
+    var cv = el('canvas');
+    var cw = Math.max(16, Math.round(W / 10)), ch = Math.max(16, Math.round(H / 10));
+    cv.width = cw; cv.height = ch;
+    try {
+      var g = cv.getContext('2d');
+      var iw = img.naturalWidth, ih = img.naturalHeight, s = Math.max(cw / iw, ch / ih) * 1.15;
+      g.filter = 'blur(' + Math.round(Math.min(cw, ch) / 14) + 'px) saturate(1.25)';
+      g.drawImage(img, (cw - iw * s) / 2, (ch - ih * s) / 2, iw * s, ih * s);
+    } catch (e) { return null; }
+    wrap.appendChild(cv);
+    return wrap;
   }
 
   // Full-bleed photo behind a scene: decoded before fitting, slow Ken Burns across the clip.
@@ -1011,22 +1091,24 @@
   }
 
   BUILD.end = function (sc, ctx) {
-    var d = sc.data, st = el('div', 'stack');
+    var d = sc.data, st = el('div', 'stack'), box = el('div', 'card end-card');
+    st.appendChild(box);
     var logoText = ctx.design.logo.text.trim();
     var lg = null;
-    if (logoText) { lg = el('div', 'end-logo', '<span class="logo-mark"></span><span>' + rich(logoText) + '</span>'); tagLang(lg, logoText); st.appendChild(lg); }
+    if (logoText) { lg = el('div', 'end-logo', '<span class="logo-mark"></span><span>' + rich(logoText) + '</span>'); tagLang(lg, logoText); box.appendChild(lg); }
     var title = el('h1', 'end-title disp fit', wordsHTML(d.title || ''));
-    tagLang(title, d.title); st.appendChild(title);
+    tagLang(title, d.title); box.appendChild(title);
     var cta = null;
     if (plain(d.cta)) {
-      cta = el('div', 'cta fit', '<span>' + rich(d.cta) + '</span><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.6" stroke-linecap="round" stroke-linejoin="round"><path d="M5 12h14M13 6l6 6-6 6"/></svg>');
+      cta = el('div', 'cta fit', '<span>' + rich(d.cta) + '</span><span class="cta-ic"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.6" stroke-linecap="round" stroke-linejoin="round"><path d="M5 12h14M13 6l6 6-6 6"/></svg></span>');
       tagLang(cta, d.cta);
-      st.appendChild(cta);
+      box.appendChild(cta);
     }
     return {
       stack: st,
       anim: function (tl, a) {
         var at = a.t0;
+        cardIn(tl, a, box, at);
         if (lg) { fadeUp(tl, a, lg, at, 14); at += a.st(0.2); }
         var end = revealWords(tl, title, at, a, { stagger: 0.07 });
         if (cta) fadeUp(tl, a, cta, end + 0.05, 20);
@@ -1232,15 +1314,23 @@
       patEl.style.cssText = cs;
       bg.appendChild(patEl);
     }
+    // aura: three soft fields of light in the look's colours, which glide to new places at each scene change
+    var blobs = [];
+    if (style === 'aura') {
+      var aura = el('div', 'bg-aura');
+      for (var b = 1; b <= 3; b++) { var blob = el('i', 'blob b' + b); aura.appendChild(blob); blobs.push(blob); }
+      bg.appendChild(aura);
+    }
     var noise = null;
-    if (style === 'grain' || style === 'paper') {
+    if (style === 'grain' || style === 'paper' || style === 'aura') {
       noise = el('div', 'bg-noise');
-      noise.style.backgroundImage = noiseURI(style, colors.dark);
-      noise.style.opacity = style === 'grain' ? (colors.dark ? '0.07' : '0.06') : '1';
+      noise.style.backgroundImage = noiseURI(style === 'aura' ? 'grain' : style, colors.dark);
+      noise.style.opacity = style === 'paper' ? '1' : style === 'aura' ? (colors.dark ? '0.05' : '0.04') : (colors.dark ? '0.07' : '0.06');
       if (style === 'paper') noise.style.mixBlendMode = 'multiply';
       bg.appendChild(noise);
     }
     stage.appendChild(bg);
+    return { blobs: blobs };
   }
 
   // ---------------------------------------------------------------- build
@@ -1300,6 +1390,25 @@
         '--scrim': rgba(C.background, 0.86), '--scrim-hero': rgba(C.background, 0.2),
         '--bubble': rgba(C.text, dark ? 0.11 : 0.075),
         '--photo-shadow': dark ? '0 2px 28px rgba(0,0,0,.55)' : 'none',
+        // cards: a pane tinted from the text colour (glass) or the surface colour (solid), a hairline edge lit
+        // from the top, and one long, soft shadow
+        '--card-fill': design.cards.style === 'solid' ? C.surface : dark
+          ? 'linear-gradient(165deg, ' + rgba(C.text, 0.1) + ', ' + rgba(C.text, 0.04) + ' 70%)'
+          : 'linear-gradient(165deg, rgba(255,255,255,.78), rgba(255,255,255,.5) 70%)',
+        // over a full-screen photo the pane takes the background colour, so muted text stays readable
+        '--card-fill-photo': design.cards.style === 'solid' ? C.surface
+          : 'linear-gradient(165deg, ' + rgba(C.background, dark ? 0.5 : 0.62) + ', ' + rgba(C.background, dark ? 0.62 : 0.74) + ')',
+        '--card-border': dark ? rgba(C.text, 0.11) : rgba(C.text, 0.08),
+        '--card-hi': dark ? rgba(C.text, 0.14) : 'rgba(255,255,255,.95)',
+        '--card-shadow': dark ? '0 40px 80px -40px rgba(0,0,0,.7)' : '0 32px 64px -36px ' + rgba(C.text, 0.3),
+        '--chip-fill': dark ? rgba(C.text, 0.08) : 'rgba(255,255,255,.62)',
+        '--knob': mix(C.background, C.text, dark ? 0.12 : 0.04),
+        '--grad': 'linear-gradient(135deg, ' + C.accent + ', ' + mix(C.accent, C.accent2, 0.3) + ')',
+        '--accent-soft': rgba(C.accent, dark ? 0.16 : 0.14),
+        '--accent-line': rgba(C.accent, 0.55),
+        '--aura-1': rgba(C.accent, dark ? 0.2 : 0.22), '--aura-2': rgba(C.accent2, dark ? 0.14 : 0.16), '--aura-3': rgba(C.text, dark ? 0.07 : 0.05),
+        '--veil': rgba(C.background, dark ? 0.5 : 0.72),
+        '--scrim-soft': 'linear-gradient(180deg, ' + rgba(C.background, 0.8) + ', ' + rgba(C.background, 0.5) + ' 42%, ' + rgba(C.background, 0.86) + ' 82%)',
         '--cl': L.content.left + 'px', '--ct': L.content.top + 'px', '--cw': L.content.width + 'px', '--ch': L.content.height + 'px'
       };
       if (L.captions) {
@@ -1313,7 +1422,7 @@
       if (reuse) stage.innerHTML = '';
       stage.className = 'vid-stage ar-' + (L.landscape ? 'landscape' : 'portrait') + ' aspect-' + design.aspect.replace(':', 'x') +
         ' energy-' + design.motion.energy + ' tx-' + design.motion.transition + ' bg-' + design.background.style + (dark ? ' is-dark' : ' is-light') +
-        ' img-' + design.images.treatment + ' cap-size-' + design.captions.size;
+        ' img-' + design.images.treatment + ' cap-size-' + design.captions.size + ' cards-' + design.cards.style + (design.cards.style !== 'flat' ? ' cards' : '');
       stage.setAttribute('data-composition-id', COMPOSITION_ID);
       stage.setAttribute('data-start', '0');
       stage.setAttribute('data-width', String(W));
@@ -1344,7 +1453,7 @@
       gsap.config({ force3D: false });   // 2D transforms only: identical rasterization whichever way a frame is reached
       var tl = gsap.timeline({ paused: true });
 
-      buildBackground(stage, design, colors);
+      var bgLayer = buildBackground(stage, design, colors);
 
       // ---- scenes
       var waits = [];
@@ -1389,7 +1498,7 @@
         var band = null;
         if (mode === 'hero' && L.captions) {
           band = el('div', 'cap-band');
-          band.style.top = (L.captions.top - (L.landscape ? 28 : 40)) + 'px';
+          band.style.top = (L.captions.top - (L.landscape ? 28 : 40) - (design.cards.style !== 'flat' ? (L.landscape ? 160 : 260) : 0)) + 'px';
           inner.appendChild(band);
         }
         drift.appendChild(frame); if (meta) drift.appendChild(meta); inner.appendChild(drift); sEl.appendChild(inner);
@@ -1445,6 +1554,7 @@
             if (Math.max(W / (im.naturalWidth || W), H / (im.naturalHeight || H)) >= 1.6) {
               x.backdrop.el.style.display = 'none'; x.backdrop.el.setAttribute('data-moved', '1');
               x.photo = buildTopPhoto({ url: im.src, credit: x.credit }, x.sc, { design: design, waits: [] });
+              x.photo.decoded = im;   // the new <img> may not be decoded yet; the ambient draws from this one
               x.inner.insertBefore(x.photo.el, x.drift);
               x.el.classList.remove('has-hero'); x.el.classList.add('has-top-photo');
               var cb = q(x.el, '.cap-band'); if (cb) cb.parentNode.removeChild(cb);
@@ -1461,8 +1571,14 @@
           }
         });
         // ---- fit (fonts are loaded or frozen to system fallbacks)
+        var cardsOn = design.cards.style !== 'flat';
         built.forEach(function (x) {
-          if (x.photo) placeTopPhoto(x, L);
+          if (x.photo) placeTopPhoto(x, L, cardsOn);
+          // a photo card stands in front of its own photo, blurred: the scene takes its colours from it
+          if (x.photo && cardsOn) {
+            var amb = buildAmbient(x.photo.decoded || x.photo.img, W, H);
+            if (amb) x.inner.insertBefore(amb, x.inner.firstChild);
+          }
           fitScene(x.el);
           if (x.b.post) x.b.post(L.landscape);
         });
@@ -1472,7 +1588,7 @@
           var s = x.t.start, d = x.t.duration, e = s + d;
           var enterDelay = i === 0 ? 0.15 : trans === 'cut' ? 0.05 : trans === 'wipe' ? o * 0.6 : o * 0.4;
           var a = {
-            design: design, E: E, M: M, colors: colors, landscape: L.landscape, rand: rand, wide: /\bphoto-left\b/.test(x.el.className),
+            design: design, E: E, M: M, colors: colors, landscape: L.landscape, rand: rand, cards: design.cards.style !== 'flat', wide: /\bphoto-left\b/.test(x.el.className),
             s: s, d: d, e: e, t0: s + enterDelay, clipStart: x.clipStart, clipEnd: x.clipEnd,
             f: clamp(d / 4.5, 0.45, 1)
           };
@@ -1509,6 +1625,25 @@
           if (x.meta) tw(tl, x.meta, { opacity: 0, y: 12 }, { opacity: 1, y: 0, duration: 0.5, ease: 'power2.out' }, a.t0 + Math.min(0.7, d * 0.2));
           x.b.anim(tl, a);
         });
+
+        // the aura's light moves once per scene, during the change, and holds still while the scene plays
+        if (bgLayer.blobs.length && scenes.length) {
+          var arand = mulberry32(4049 + scenes.length * 13);
+          var spots = scenes.map(function () {
+            return bgLayer.blobs.map(function (b, j) {
+              var zx = j === 0 ? [0.05, 0.6] : j === 1 ? [0.45, 1.0] : [0.1, 0.9];
+              var zy = j === 0 ? [0.0, 0.45] : j === 1 ? [0.45, 1.0] : [0.2, 0.8];
+              return { x: W * (zx[0] + arand() * (zx[1] - zx[0])), y: H * (zy[0] + arand() * (zy[1] - zy[0])), scale: 0.85 + arand() * 0.4 };
+            });
+          });
+          bgLayer.blobs.forEach(function (b, j) {
+            gsap.set(b, spots[0][j]);
+            for (var si = 1; si < scenes.length; si++) {
+              var mv = Math.min(1.6, timing[si - 1].duration * 0.8);
+              tl.fromTo(b, spots[si - 1][j], Object.assign({ duration: mv, ease: 'power2.inOut', immediateRender: false }, spots[si][j]), Math.max(0, timing[si].start - mv * 0.5));
+            }
+          });
+        }
 
         // the progress line fills one segment per beat, at the pace of the voiceover
         progFills.forEach(function (f, i) {
