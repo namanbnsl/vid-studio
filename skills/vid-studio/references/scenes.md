@@ -45,9 +45,9 @@ Fields are separated by `|`, in this order. Trailing fields are optional. Number
 | Type | Fields | Use it for |
 |---|---|---|
 | `title` | title \| subtitle \| kicker | Opening or section title |
-| `stat` | value \| label \| context | One big number that carries the beat |
-| `bars` | title \| Label: value \| Label: value … | 2–6 values to compare as a bar chart |
-| `compare` | title \| Label: value \| Label: value | Before/after, this vs that (exactly two). The **second** item is the subject (the after, the new thing, the claim) and takes the accent. Two numbers draw bars; two short phrases draw side-by-side panels |
+| `stat` | value \| label \| context | One big number that carries the beat. With tiles it is the hero of the frame, its digits rolling in like an odometer; a percentage up to 100 also draws a thin meter |
+| `bars` | title \| Label: value \| Label: value … | 2–6 values to compare as a bar chart. A unit every value shares (`lakh`, `crore`, `km`) is shown once at the top of the chart |
+| `compare` | title \| Label: value \| Label: value | Before/after, this vs that (exactly two). The **second** item is the subject (the after, the new thing, the claim) and takes the accent. Two numbers draw bars (with tiles, the difference between them, like `2.4×` or `+38%`, becomes the headline, with the two values as rows below); two short phrases draw two panels |
 | `list` | title \| item \| item … | 2–5 short points, steps, or reasons |
 | `quote` | quote \| source | A real quote from a source in the notes |
 | `timeline` | title \| date: label \| date: label … | 2–5 dated events in order |

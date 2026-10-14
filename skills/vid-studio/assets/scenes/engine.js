@@ -491,6 +491,28 @@
       modifiers: { v: function (v) { node.textContent = formatValue(parseFloat(v), p); return v; } }
     }, Math.max(0, at));
   }
+  // Rolling digits: each digit is a column of 0-9 that rolls to its value, left to right, like an odometer.
+  // The final width is set from the start (tabular figures), so nothing reflows while it rolls.
+  function rollDigits(node, p) {
+    if (!node || !p || p.year) return null;
+    var txt = formatValue(p.value, p), cols = [];
+    node.innerHTML = '';
+    Array.from(txt).forEach(function (ch) {
+      var code = ch.charCodeAt(0), base = code >= 0x966 && code <= 0x96F ? 0x966 : 48, dgt = code - base;
+      if (dgt < 0 || dgt > 9) { node.appendChild(el('span', 'od-sep', esc(ch))); return; }
+      // the column is as wide as its final digit (a hidden copy holds the width); the reel rolls over it
+      var col = el('span', 'od', '<span class="od-w">' + esc(ch) + '</span>'), reel = el('span', 'od-r');
+      for (var k = 0; k <= 9; k++) reel.appendChild(el('span', 'od-d', String.fromCharCode(base + k)));
+      col.appendChild(reel); node.appendChild(col);
+      cols.push({ reel: reel, d: dgt });
+    });
+    return cols;
+  }
+  function roll(tl, cols, at, dur) {
+    (cols || []).forEach(function (c, i) {
+      tw(tl, c.reel, { yPercent: 0 }, { yPercent: -10 * c.d, duration: dur + i * 0.06, ease: 'expo.out' }, at + i * 0.05);
+    });
+  }
   function revealWords(tl, scope, at, a, opts) {
     opts = opts || {};
     var ws = qa(scope, '.w');
@@ -558,26 +580,50 @@
     };
   };
 
-  BUILD.stat = function (sc) {
-    var d = sc.data, st = el('div', 'stack'), box = el('div', 'card stat-card');
+  BUILD.stat = function (sc, ctx0) {
+    // with cards, the number is the hero: no tile, set as large as the frame allows, its digits rolling in
+    var cards = ctx0.design.cards.style !== 'flat';
+    var d = sc.data, st = el('div', 'stack'), box = el('div', 'stat-card');
     st.appendChild(box);
-    var label = null, ctx = null, line = null;
+    var label = null, ctx = null, line = null, meter = null, cols = null;
     if (plain(d.label)) { label = el('div', 'stat-label fit', rich(d.label)); tagLang(label, d.label); box.appendChild(label); }
     var p = parseValue(d.value);
     var val = el('div', 'value disp fit', valueHTML(d.value || '', p));
     tagLang(val, d.value); box.appendChild(val);
+    if (cards) cols = rollDigits(q(val, '.num'), p);
+    // a share (a percentage up to 100) also draws as a meter
+    var pct = p && /^\s*%/.test(p.suffix) && !p.negative && p.value > 0 && p.value <= 100 ? p.value : 0;
+    if (pct && cards) {
+      meter = el('div', 'meter', '<i></i>');
+      q(meter, 'i').style.width = pct + '%';
+      box.appendChild(meter);
+    }
     if (plain(d.context)) {
       line = el('div', 'stat-line'); box.appendChild(line);
       ctx = el('div', 'context fit', rich(d.context)); tagLang(ctx, d.context); box.appendChild(ctx);
     }
     return {
       stack: st,
+      // splitting the number into columns loses the font's kerning around "." and ",": measure the kerned
+      // number and take the difference back out of the separators
+      post: function () {
+        var num = cols && q(val, '.num'), seps = num ? qa(num, '.od-sep') : [];
+        if (!seps.length) return;
+        var probe = el('span', 'num', esc(formatValue(p.value, p)));
+        probe.style.cssText = 'position:absolute;visibility:hidden;white-space:nowrap';
+        num.parentNode.appendChild(probe);
+        var extra = num.getBoundingClientRect().width - probe.getBoundingClientRect().width;
+        var scale = num.offsetWidth / (num.getBoundingClientRect().width || 1);
+        probe.parentNode.removeChild(probe);
+        if (extra > 0.5) seps.forEach(function (sp) { sp.style.marginLeft = (-extra * scale / seps.length).toFixed(2) + 'px'; });
+      },
       anim: function (tl, a) {
         var at = a.t0;
-        cardIn(tl, a, box, at);
         if (label) { fadeUp(tl, a, label, at, 18); at += a.st(0.15); }
         tw(tl, val, { yPercent: 8, opacity: 0 }, { yPercent: 0, opacity: 1, duration: a.dur(0.8), ease: a.E.out }, at);
-        countUp(tl, q(val, '.num'), p, at, a.dur(1.3), a.E.num);
+        if (cols) roll(tl, cols, at, a.dur(1.4));
+        else countUp(tl, q(val, '.num'), p, at, a.dur(1.3), a.E.num);
+        if (meter) tw(tl, q(meter, 'i'), { scaleX: 0 }, { scaleX: 1, duration: a.dur(1.4), ease: 'expo.out' }, at + 0.1);
         if (line) drawLine(tl, a, line, at + a.st(0.35));
         if (ctx) fadeUp(tl, a, ctx, at + a.st(0.5), 16);
       }
@@ -586,10 +632,16 @@
 
   // Short labels draw columns that fill the frame (a series: years, steps); long labels or negative values
   // draw horizontal rows (a ranking). The largest value takes the accent.
-  BUILD.bars = function (sc) {
+  BUILD.bars = function (sc, ctx) {
     var d = sc.data, st = el('div', 'stack fill');
     var head = headingEl(d.title);
     var items = pairs(d.items, 8, ['label', 'value']).map(function (it) { it.p = parseValue(it.value); return it; });
+    // a unit every value shares ("lakh", "crore", "km") is said once, at the top of the chart, not under each bar
+    var sufs = items.map(function (it) { return it.p ? it.p.suffix.trim() : ''; });
+    var unit = ctx && ctx.design.cards.style !== 'flat' && items.length > 1 && sufs[0] && !/^%/.test(sufs[0]) &&
+      sufs.every(function (x) { return x === sufs[0]; }) ? sufs[0] : '';
+    if (unit) items.forEach(function (it) { it.p = Object.assign({}, it.p, { suffix: '' }); });
+    function unitNote(card) { if (unit) { var n = el('div', 'unit-note', rich(unit)); tagLang(n, unit); card.insertBefore(n, card.firstChild); } }
     var mags = items.map(function (it) { return it.p ? Math.abs(it.p.magnitude) : 0; });
     var max = Math.max.apply(null, mags.concat([0])) || 1;
     var maxI = mags.indexOf(Math.max.apply(null, mags.concat([0])));
@@ -611,7 +663,7 @@
         return { bar: bar, value: v, label: lab, zone: zone, h: h, val: q(v, '.num'), p: it.p };
       });
       var base = el('div', 'cc-base'); chart.appendChild(base);
-      var colCard = el('div', 'card chart-card'); colCard.appendChild(chart);
+      var colCard = el('div', 'card chart-card'); colCard.appendChild(chart); unitNote(colCard);
       st.appendChild(colCard);
       return {
         head: head, stack: st,
@@ -652,7 +704,7 @@
       row.appendChild(hd); row.appendChild(track); bars.appendChild(row);
       return { head: hd, fill: fill, val: q(v, '.num'), p: it.p };
     });
-    var rowCard = el('div', 'card chart-card'); rowCard.appendChild(bars);
+    var rowCard = el('div', 'card chart-card'); rowCard.appendChild(bars); unitNote(rowCard);
     st.appendChild(rowCard);
     return {
       head: head, stack: st,
@@ -674,7 +726,7 @@
   // Two values side by side. The second item is the subject (the "after", the "new", the thing the
   // story is about), so it takes the accent whichever is larger. A dashed line carries the first value
   // across, so the gap between them is something you can see.
-  BUILD.compare = function (sc) {
+  BUILD.compare = function (sc, ctx) {
     var d = sc.data, st = el('div', 'stack fill');
     var head = headingEl(d.title);
     var items = pairs(d.items, 2, ['label', 'value']).map(function (it) { it.p = parseValue(it.value); return it; });
@@ -692,6 +744,7 @@
         else if (ratio > 1) delta = '+' + Math.round((ratio - 1) * 100) + '%';
         else delta = '−' + Math.round((1 - ratio) * 100) + '%';
       }
+      if (ctx && ctx.design.cards.style !== 'flat') return compareRows(head, st, items, [mA / mx, mB / mx], delta);
       parts = items.map(function (it, i) {
         var col = el('div', 'col' + (i === 1 ? ' subject' : ''));
         var area = el('div', 'col-bar-area');
@@ -756,6 +809,41 @@
     };
   };
 
+  // Two numbers on a tile: the difference between them is the headline (2.4×, +38%), and the two values sit
+  // below it as rows with bars to the same scale. The second is the subject and takes the accent.
+  function compareRows(head, st, items, shares, delta) {
+    var tile = el('div', 'card chart-card cmp');
+    var hero = null;
+    if (delta) { hero = el('div', 'cmp-delta disp tnum', esc(delta)); tile.appendChild(hero); }
+    var rows = items.map(function (it, i) {
+      var row = el('div', 'cmp-row' + (i === 1 ? ' subject' : ''));
+      var hd = el('div', 'cmp-head');
+      var lab = el('span', 'cmp-label', rich(it.label)); tagLang(lab, it.label);
+      var v = el('span', 'cmp-value disp', valueHTML(it.value, it.p)); tagLang(v, it.value);
+      hd.appendChild(lab); hd.appendChild(v);
+      var track = el('div', 'cmp-track'), fill = el('i');
+      fill.style.width = Math.max(2, shares[i] * 100).toFixed(2) + '%';
+      track.appendChild(fill);
+      row.appendChild(hd); row.appendChild(track); tile.appendChild(row);
+      return { row: row, fill: fill, val: q(v, '.num'), p: it.p };
+    });
+    st.appendChild(tile);
+    return {
+      head: head, stack: st,
+      anim: function (tl, a) {
+        var at = revealHead(tl, a, head, a.t0);
+        cardIn(tl, a, tile, at - a.st(0.1));
+        rows.forEach(function (r, i) {
+          var t = at + 0.1 + i * a.st(0.35);
+          tw(tl, r.row, { opacity: 0, y: a.dist(16) }, { opacity: 1, y: 0, duration: a.dur(0.6), ease: a.E.out }, t);
+          tw(tl, r.fill, { scaleX: 0 }, { scaleX: 1, duration: a.dur(1.2), ease: 'expo.out' }, t + 0.05);
+          countUp(tl, r.val, r.p, t + 0.05, a.dur(1.2), a.E.num);
+        });
+        if (hero) tw(tl, hero, { opacity: 0, y: a.dist(20) }, { opacity: 1, y: 0, duration: a.dur(0.8), ease: 'expo.out' }, at + 0.1 + a.st(0.35) + a.dur(0.6));
+      }
+    };
+  }
+
   BUILD.list = function (sc) {
     var d = sc.data, st = el('div', 'stack fill');
     var head = headingEl(d.title);
@@ -792,7 +880,7 @@
 
   BUILD.quote = function (sc, ctx) {
     var d = sc.data, st = el('div', 'stack'), cards = ctx.design.cards.style !== 'flat';
-    var wrap = el('div', 'quote card');
+    var wrap = el('div', 'quote');
     var bar = el('span', 'quote-bar'); wrap.appendChild(bar);
     // on a card the opening mark is set large above the words, so the words carry no marks of their own
     var mark = cards ? el('span', 'qmark disp', '\u201C') : null;
@@ -995,11 +1083,11 @@
     var frame = q(x.el, '.frame'), head = q(x.el, '.head'), st = q(x.el, '.stack');
     var W = L.width, H = L.height, c = L.content, bottom = c.top + c.height, gap = L.landscape ? 72 : 64;
     var wide = c.width > c.height * 0.9;
-    x.el.classList.add(wide ? 'photo-left' : 'photo-above');
+    x.el.classList.add(wide && !(cards && x.sc.type === 'image') ? 'photo-left' : 'photo-above');
     if (cards) {
       // a rounded photo card inside the safe area, on the same edges as the cards below it
       gap = L.landscape ? 64 : 48;
-      if (wide) {
+      if (wide && x.sc.type !== 'image') {
         var cw = Math.round((c.width - gap) * 0.46), tl0 = c.left + cw + gap;
         x.photo.el.style.cssText += ';left:' + c.left + 'px;top:' + c.top + 'px;width:' + cw + 'px;height:' + c.height + 'px';
         frame.style.left = tl0 + 'px'; frame.style.width = (c.left + c.width - tl0) + 'px';
@@ -1027,7 +1115,7 @@
       x.el.style.setProperty('--k', '1');
       fitWidths(x.el);
       var need0 = (head ? head.offsetHeight : 0) + (x.sc.type === 'image' ? 0 : st.scrollHeight);
-      var ch0 = Math.round(clamp(c.height - need0 - gap, H * 0.2, H * (x.sc.type === 'image' ? 0.62 : 0.4)));
+      var ch0 = Math.round(clamp(c.height - need0 - gap, H * (x.sc.type === 'title' ? 0.28 : 0.2), H * (x.sc.type === 'image' ? 0.62 : 0.4)));
       x.photo.el.style.cssText += ';left:' + c.left + 'px;top:' + c.top + 'px;width:' + c.width + 'px;height:' + ch0 + 'px';
       frame.style.top = (c.top + ch0 + gap) + 'px'; frame.style.height = Math.max(120, bottom - c.top - ch0 - gap) + 'px';
       return;
@@ -1580,14 +1668,14 @@
           var first = true;
           if (i > 0 && trans !== 'cut' && trans !== 'wipe') {
             var dur = 2 * o, at = x.clipStart;
-            if (trans === 'fade') tw(tl, x.inner, { opacity: 0 }, { opacity: 1, duration: dur * 0.7, ease: 'power2.out' }, at + dur * 0.3);
+            if (trans === 'fade') tw(tl, x.inner, { opacity: 0, y: 28 * M.dist }, { opacity: 1, y: 0, duration: dur * 0.85, ease: 'power3.out' }, at + dur * 0.3);
             else if (trans === 'slide') tw(tl, x.inner, { xPercent: 8 * M.dist, opacity: 0 }, { xPercent: 0, opacity: 1, duration: dur * 0.65, ease: E.out }, at + dur * 0.35);
             else if (trans === 'zoom') tw(tl, x.inner, { scale: 0.97, opacity: 0 }, { scale: 1, opacity: 1, duration: dur * 0.65, ease: E.out }, at + dur * 0.35);
             first = false;
           }
           if (i < built.length - 1 && trans !== 'cut' && trans !== 'wipe') {
             var dur2 = 2 * o, at2 = e - o;
-            if (trans === 'fade') tw(tl, x.inner, { opacity: 1 }, { opacity: 0, duration: dur2 * 0.55, ease: 'power2.in' }, at2, first ? undefined : false);
+            if (trans === 'fade') tw(tl, x.inner, { opacity: 1, y: 0 }, { opacity: 0, y: -14 * M.dist, duration: dur2 * 0.55, ease: 'power2.in' }, at2, first ? undefined : false);
             else if (trans === 'slide') tw(tl, x.inner, { xPercent: 0, opacity: 1 }, { xPercent: -8 * M.dist, opacity: 0, duration: dur2 * 0.6, ease: 'power2.in' }, at2, first ? undefined : false);
             else if (trans === 'zoom') tw(tl, x.inner, { scale: 1, opacity: 1 }, { scale: 1.03, opacity: 0, duration: dur2 * 0.6, ease: 'power2.in' }, at2, first ? undefined : false);
           }

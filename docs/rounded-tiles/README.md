@@ -20,19 +20,22 @@ Graphite, a new look: near-black, soft white, one warm accent, Geist throughout.
 
 **One tile per idea.** Each idea gets one flat, rounded tile, one step lighter (or darker) than the background:
 
-- A stat and its context share one tile.
 - A chart sits on one tile.
 - Each list point and each timeline date gets its own tile.
 - Two phrases in a compare sit on two tiles, with a small arrow from the first to the second.
-- A quote sits under a large opening mark.
+- A quote is big type under a large opening mark, with no tile.
 - A message is a chat thread, with the sender's initial in a round avatar.
 - The end card has a solid call-to-action button.
+
+**Numbers are the hero.** A stat drops its tile, and the number is set as large as the frame allows. Its digits roll in like an odometer, with each column as wide as its final digit, so nothing shifts. A percentage up to 100 also fills a thin meter. A compare of two numbers leads with the difference between them (`2.4×`, `+38%`), with the two values as rows below on the same scale. A bar chart whose values share a unit ("lakh") shows it once, at the top.
+
+![Hero numbers](assets/hero-numbers.jpg)
 
 **Labels are eyebrows.** `Text:` labels and kickers are small accent text in sentence case, not boxes. On a photo card the label sits on the photo's bottom-left corner, so the scene below keeps its full size.
 
 **Photos.** A photo above a scene is a rounded photo card on the plain background. In the image scene the photo takes the whole space. Behind a chart, the photo fills the frame under a flat veil, and the chart's tile frosts the part it covers. That is the only blur in the system, and it is there so the values stay readable.
 
-**Motion.** Tiles rise a short way and settle on a long ease. Nothing bounces, and holds stay still.
+**Motion.** Tiles rise a short way and settle on a long ease, and fades lift slightly as one scene hands over to the next. Nothing bounces, and holds stay still.
 
 **Fixes.** The scene counter ("11 / 11") no longer sits on the progress line. A photo credit with no source beside it is no longer cut off. Text inside tiles is sized for a phone.
 
@@ -40,7 +43,7 @@ Rendering costs about 66 ms a frame, against 61 for the old flat look.
 
 ![Over photos](assets/glass-over-photos.jpg)
 
-![Motion: a scene change and a chart building](assets/motion.gif)
+![Motion: the stat's digits rolling in](assets/motion.gif)
 
 ## It works in every look
 
