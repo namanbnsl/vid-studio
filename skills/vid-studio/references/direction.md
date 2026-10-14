@@ -1,6 +1,6 @@
 # Directing the screen
 
-The scenes are built to look like a product film: type and data on a plain background, one accent, numbers as the hero, photos in frames, calm motion. They only look that way if the script gives them the right material. This guide is how to write `Visual:`, `Text:` and `Image:` lines so every frame reads in one second and nothing looks generated. Read it with [scenes.md](scenes.md) (the syntax) and script-craft.md §7 (what each scene is for).
+The scenes are built to look like a product film: type and data on a plain background, one accent, numbers as the hero, photos in frames, calm motion. They only look that way if the script gives them the right material. This guide is how to write `Visual:`, `Text:` and `Image:` lines so every frame reads in one second and nothing looks generated. Read it with [scenes.md](scenes.md) (the syntax) and script-craft.md §8 (what each scene is for).
 
 ## The one-second test
 
@@ -90,7 +90,7 @@ Run `studio.py scenes --script ID` and fix every warning. Then check each beat a
 
 - Does the frame pass the one-second test?
 - Is every number short, unit-matched, and held for at least 2.5 seconds?
-- Does every scene show a fact, not a mood (script-craft.md §7)?
+- Does every scene show a fact, not a mood (script-craft.md §8)?
 - Is there at most one emphasis per scene, and are `Text:` labels rare?
 - Does the scene type change every one or two beats?
 - Do the photos have one subject and a quiet corner?

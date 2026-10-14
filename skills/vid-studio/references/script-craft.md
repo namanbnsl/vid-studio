@@ -1,6 +1,8 @@
 # Script craft
 
-The bar: someone who never planned to watch stays to the end, learns one thing they repeat to a friend, and every claim survives a fact-check. It sounds like a person who knows the subject talking to one other person, not like a model, and even a viewer who suspects otherwise feels the minute was worth it. Generic is the failure mode. **If a line could appear in a video about a different topic, cut it.** And if the viewer can't say who the video was about, it's a lecture, not a story (§3).
+The bar: someone who never planned to watch stays to the end, learns one thing they repeat to a friend, and every claim survives a fact-check. It sounds like a person who knows the subject talking to one other person, not like a model, and even a viewer who suspects otherwise feels the minute was worth it. Generic is the failure mode. **If a line could appear in a video about a different topic, cut it.** And if the viewer can't say who the video was about, it's a lecture, not a story (§4).
+
+The other failure mode is worse, because the writer can't see it: a script that only makes sense to someone who already read the research. You've spent an hour in the notes, so "the circular", "NPCI", "the benchmark" and "that 50%" feel obvious to you. The viewer heard none of it. If a sentence leans on a name, a term or a fact the video hasn't given them, they're lost, and a lost viewer swipes. §3 is how to write for someone who wasn't there.
 
 The finished examples in `assets/examples/` show that bar: `english-60s.md`, `hinglish-60s.md`, `hindi-45s.md`. Read the one closest to the channel's language before your first draft.
 
@@ -9,23 +11,25 @@ The finished examples in `assets/examples/` show that bar: `english-60s.md`, `hi
 Do these in order, for every script. Don't skip steps because the topic seems simple; simple topics are where generic scripts come from.
 
 1. **Find the angle.** Write down why this matters to *this* channel's audience *now*, and the single takeaway in 15 words or fewer (§2).
-2. **Find the person and the moment.** From the notes' "The people" and "The moment", choose who this video is about and the scene where the viewer meets it, and decide what you, as the persona, think about it (§3).
-3. **Write 3–5 hooks.** Use different styles from the channel's `hook_styles` and give each one a different angle, not the same angle reworded (§4).
-4. **Pick the strongest and save them all.** Say why it wins (the most specific, the most surprising, the best fit for this audience). Save it with `studio.py angles --script ID --file -`:
+2. **List what the viewer needs to know.** Write down every name, term and idea the story depends on, and mark each one: does a 15-year-old in this audience already know it? For each one they don't, take the plain one-line explanation from the notes ("What the viewer needs first"), or drop the thing from the script. Then cut the list to what the takeaway really needs. Usually that's two or three new ideas for a minute, never six (§3).
+3. **Find the person and the moment.** From the notes' "The people" and "The moment", choose who this video is about and the scene where the viewer meets it, and decide what you, as the persona, think about it (§4).
+4. **Write 3–5 hooks.** Use different styles from the channel's `hook_styles` and give each one a different angle, not the same angle reworded (§5). A hook a cold viewer can't understand is not a hook.
+5. **Pick the strongest and save them all.** Say why it wins (the most specific, the most surprising, the best fit for this audience). Save it with `studio.py angles --script ID --file -`:
    ```json
    {"angles": [
      {"hook": "UPI PIN डालने से पैसे आते नहीं. सिर्फ़ जाते हैं.", "angle": "Myth-bust: the PIN only ever sends money, which is the trick refund scams rely on.", "why": "Six words, instantly useful, flips a half-held belief. The mechanism is the payoff.", "chosen": true},
      {"hook": "PhonePe में आपका पैसा रखा कहाँ है? कहीं नहीं.", "angle": "Question: apps don't hold money; banks do, and NPCI connects them.", "why": "Good curiosity, but the stakes for the viewer come late.", "chosen": false}
    ]}
    ```
-5. **Talk it through.** Write the story as 4–6 plain, connected sentences, the way you'd explain it to a friend, with the person in them (§6). This is the spine of the script, and it's where the value is decided (the value test, §6).
-6. **Outline.** Map the spine onto the channel's `format`. Budget the words: `length_seconds × words_per_minute ÷ 60` (60 s at 160 wpm = 160 words). The hook gets ≤ 12 words, each beat one idea and one visual, and no beat runs over ~15 s.
-7. **Draft** in the scenes.md format (§6–§7).
-8. **Add pictures and sources.** Give the beats about real things (a product, a place, a document, a person's role, the moment itself) a photo, following [images.md](images.md), and add a `Source:` line to beats that state a fact from the notes (§7).
-9. **Time it** with `studio.py scenes --script ID`. Get within ±10% of `length_seconds` and fix every warning, including the on-screen ones (§7). To cut, remove whole ideas, not articles and connectives.
-10. **Read it aloud and remove the machine.** Go line by line through the table in §6 and §10 and rewrite every match.
-11. **Score it** against the rubric (§11). Fix the lowest score first, re-time, and score again. Keep going until every score is ≥ 8. If one can't get there (for example, the notes have no number that would make the stakes concrete), say why and what would fix it.
-12. **Save the review** with `studio.py review --script ID --file -`.
+6. **Talk it through.** Write the story as 4–6 plain, connected sentences, the way you'd explain it to a friend who has never heard of any of it, with the person in them (§7). This is the spine of the script, and it's where the value is decided (the value test, §7).
+7. **Outline.** Map the spine onto the channel's `format`. Budget the words: `length_seconds × words_per_minute ÷ 60` (60 s at 160 wpm = 160 words). The hook gets ≤ 12 words, each beat one idea and one visual, and no beat runs over ~15 s. Budget the explaining too: the words that say what a thing is come out of the same 160, so plan fewer ideas, not shorter explanations.
+8. **Draft** in the scenes.md format (§7–§8).
+9. **Add pictures and sources.** Give the beats about real things (a product, a place, a document, a person's role, the moment itself) a photo, following [images.md](images.md), and add a `Source:` line to beats that state a fact from the notes (§8).
+10. **Time it** with `studio.py scenes --script ID`. Get within ±10% of `length_seconds` and fix every warning, including the on-screen ones (§8). To cut, remove whole ideas, not articles, connectives or the explanations a cold viewer needs.
+11. **Do the cold read.** Read the script as someone who has never heard of this story, its people or its field, and mark every word they'd stumble on: a name with no "who", a term with no "what", "the" or "this" pointing at something never set up, a number with nothing to compare it to, a step the script skipped. Fix every mark with a few plain words, or cut the line (§3).
+12. **Read it aloud and remove the machine.** Go line by line through the table in §7 and §11 and rewrite every match.
+13. **Score it** against the rubric (§12). Fix the lowest score first, re-time, and score again. Keep going until every score is ≥ 8. If one can't get there (for example, the notes have no number that would make the stakes concrete), say why and what would fix it.
+14. **Save the review** with `studio.py review --script ID --file -`.
 
 ## 2. The angle
 
@@ -42,7 +46,39 @@ To find it, ask: what does this audience believe that's wrong? Which number woul
 
 **Test:** "After watching, the viewer knows/will ___." If you can't fill that in with 15 words or fewer, you have a topic, not an angle. A news story can have different angles on different channels: the Hindi Shorts channel might want "what to do", while the English one wants "why it happened".
 
-## 3. The person and the moment
+## 3. Write for someone who wasn't there
+
+The viewer is smart, but they arrive cold. They didn't read the article, don't know the company, have never heard the acronym, and are watching with half their attention while the video plays once at full speed. They can't scroll back or look anything up. Your job is to get them from "I know nothing about this" to the takeaway without losing them for a single sentence.
+
+**Introduce every name the first time you say it.** A person, a company, a regulator, a product, a law: say who or what it is in a few words, by what it does for the viewer, then use the name. "NPCI, the body that runs UPI behind every payment app" is enough; "NPCI" alone is a sound. Expanding an acronym ("National Payments Corporation of India") doesn't count, because the long name is just as unknown. If a name doesn't matter to the takeaway, leave it out and say the role: "the company that makes it", "India's central bank".
+
+**Explain every term, or don't use it.** The first time a term appears, say what it means in everyday words, in the same sentence or the next: "a collect request, which is a message asking *you* to send money". If explaining it would cost more than it buys, find a way to say the thing without the term. Jargon in the screen text counts too: a scene titled "Intelligence Index" means nothing until the VO has said what it measures.
+
+**Give the context, right after the hook.** "Payload first" decides the order, not whether context appears. The hook grabs. The next one or two sentences say plainly what happened, or what the thing is, so everything after has something to stand on: "Last week, the RBI, which makes the rules for banks, raised the limit on PIN-free UPI payments." A script that skips this is a list of reactions to news the viewer never heard.
+
+**Never point at something you haven't shown.** "This rule", "the update", "that number", "the catch with the benchmark", "the same trick": each one assumes the viewer already has the thing in mind. Before you write "the X", check that an earlier line set X up. Same for callbacks to news ("after last month's outage…"): say what happened, or drop it.
+
+**One new idea at a time, built on the last.** Each beat should rest on things the viewer already knows, either from daily life or from an earlier beat. Never ask them to hold two new ideas at once. If beat four needs an idea from beat two, say it again in a few words. Repeating a key idea is how spoken explanation works; it isn't padding.
+
+**Explain the mechanism with something they've touched.** A process they can't see becomes clear when it's mapped onto one they can: a UPI PIN is the signature on a cheque, and the person paying signs, not the one being paid. Pick one comparison and stay with it, and only use it where it's accurate. Say where it breaks if that matters. Two comparisons for one idea confuse more than none.
+
+**Give every number something to stand next to.** "₹6,500" means little alone. "₹6,500, about what a good mixer grinder costs" or "₹6,500, against about ₹1,500 for a regular tap" gives it a size. Percentages need their base ("50% of what?"). Use one new number per beat at most. A beat with three numbers, heard once, leaves the viewer with none.
+
+**Cover less, so you can explain it.** Sixty seconds holds two or three new ideas explained well. Five ideas squeezed in are five things the viewer half-heard. When the notes have more than fits, pick the ideas the takeaway needs and leave the rest for another video, even if they're interesting. A clear video about one thing beats a dense video about everything.
+
+**Don't skip steps.** Experts jump from A to D because B and C are obvious to them. Write B and C. If you catch yourself writing "which means" or "so", check that the viewer can see why it follows.
+
+**Test (the cold read):** Hand the script to someone who has never heard of this story or this field. Read each line as them. Would they know who every name is, what every term means, what every "this" or "that" points to, and how each sentence follows from the one before? Could they explain the takeaway to someone else afterwards? Every "huh?" is a fix: a few plain words, or a cut.
+
+Before (written by someone who read the notes):
+"NPCI's new circular caps P2P collect requests. So the refund trick dies, but UPI Lite stays PIN-free under ₹1,000."
+
+After (written for someone who didn't):
+"There's a scam where someone sends you a request that looks like a refund, but approving it actually sends them your money. NPCI, the body that runs UPI behind every payment app, is now limiting those requests between people. [1]"
+
+The after uses more words for less news. That's the trade, and it's the right one: the before has four ideas the viewer can't follow, and the after has one they'll remember.
+
+## 4. The person and the moment
 
 Facts explain; people make viewers care. Every explainer worth finishing is about someone: the viewer in a situation they recognise, a real person the story happened to, or the person who decided how things work. Find that person in the story's notes ("The people", "The moment") before you write a hook. If the notes have none, research it ([story.md](story.md)); don't make one up.
 
@@ -71,11 +107,12 @@ Before (a topic):
 After (a person, a moment, a view):
 "Say you put one lakh away at twenty-five and then genuinely forget about it. By forty-five it has earned about eight and a half lakh. The ten years after that add twenty more. The annoying part is that the first few years feel like nothing's happening."
 
-## 4. Hooks
+## 5. Hooks
 
 The hook is the first 1–2 seconds: roughly the first **five spoken words plus the first visual**. Viewers decide before your second sentence ends.
 
 - **Put the payload first.** Your most surprising true thing goes in the first sentence, not after a setup.
+- **A cold viewer must understand it.** The hook can't lean on a name, term or event they haven't heard of. "NPCI kills P2P collect" is a headline for insiders; "There's a UPI request that looks like a refund and empties your account" works on anyone. Context comes in the next sentence (§3), so the hook doesn't have to carry it, but it can't need it either.
 - **Specific beats clever.** A number, a name, or a concrete object beats a pun.
 - **Voice and screen land together, doing different jobs.** The VO makes the claim and the screen shows the proof (`compare`, `stat`, or `text`). Never open on a `title` card or a logo.
 - **It must be true and paid off.** A hook the script doesn't pay off costs you the ending and the viewer's trust.
@@ -94,7 +131,7 @@ The hook is the first 1–2 seconds: roughly the first **five spoken words plus 
 | `stakes` | "This could affect your finances!" | "If rent eats half your salary, the famous budget rule breaks. Here's the fix." | "किराया आधी salary खा जाता है? तो 50-30-20 आपके लिए नहीं बना. पर…" |
 | `contrast` | "Saving vs investing: what's the difference?" | "Your money's last ten years can out-earn its first twenty." | "Cheque देने पर signature लगता है, लेने पर नहीं. UPI PIN भी वैसा ही है." |
 
-A `story` hook needs a real person or case from the notes, or it must be openly hypothetical ("Say you…", "मान लो…"). Never invent a "Ramesh from Pune". A `moment` hook drops the viewer into a scene they've lived, in the present tense, and the script explains it (§3).
+A `story` hook needs a real person or case from the notes, or it must be openly hypothetical ("Say you…", "मान लो…"). Never invent a "Ramesh from Pune". A `moment` hook drops the viewer into a scene they've lived, in the present tense, and the script explains it (§4).
 
 ### Before → after
 
@@ -102,9 +139,9 @@ A `story` hook needs a real person or case from the notes, or it must be openly 
 - "दोस्तों, आज हम बात करेंगे UPI fraud के बारे में, जो आजकल बहुत बढ़ गया है." → "UPI PIN डालने से पैसे आते नहीं. सिर्फ़ जाते हैं."
 - "The 50-30-20 rule is a popular budgeting framework." → "बजट बनाने के लिए स्प्रेडशीट नहीं चाहिए. बस तीन नंबर: पचास, तीस, बीस."
 
-**Hook check:** Does it contain a concrete noun or number? Is its question answered later in this script? Would you say it out loud to a friend? Could a rival channel paste it onto a different topic? If so, it's generic.
+**Hook check:** Would someone who's never heard of this story understand every word? Does it contain a concrete noun or number? Is its question answered later in this script? Would you say it out loud to a friend? Could a rival channel paste it onto a different topic? If so, it's generic.
 
-## 5. Retention
+## 6. Retention
 
 Viewers leave when they stop wanting the next sentence. Structure the script so there is always something they're waiting for.
 
@@ -125,7 +162,7 @@ Viewers leave when they stop wanting the next sentence. Structure the script so 
 - **Make Shorts and Reels loop.** Write the last spoken line so it runs back into the first: "So if you're five years into an SIP and bored, you're still in the slow part." → "One lakh at twelve percent earns more in its last ten years than in its first twenty." Add a `Note:` so the editor knows.
 - **Use one CTA, specific and short, after the payoff.** "ये Reel उसे भेजो जो हर refund approve कर देता है" beats "like, share and subscribe".
 
-## 6. Sound like a person
+## 7. Sound like a person
 
 The voiceover is heard once, at speed, often with half the viewer's attention. It has to sound like one person explaining something they understand to one friend. Most AI scripts fail here, not on facts: they're written as a string of slogans, and viewers hear it within two lines.
 
@@ -161,7 +198,7 @@ These patterns are the giveaway, even when every word is true. Find them in your
 | Soft hype | "Could quietly turn into lakhs." "A small habit, a big difference." | Give the number and its assumption: "about twenty-nine lakh in twenty years, at an assumed eight percent." |
 | Teaser twists | "Haiku beats Mistral. Until it doesn't." "Let's check what those scores actually mean." | State the finding: "Haiku wins on the combined score, and Mistral wins on business workflows." |
 | Generic sign-off | "Follow to keep up with AI news." "Follow for more." | Say what the next video gives them: "Follow for one model comparison a week." |
-| Invented characters | "Meet Rahul, a 28-year-old from Pune." | A sourced case, the viewer ("you"), or an openly hypothetical relation: "Say your cousin…" (§3). |
+| Invented characters | "Meet Rahul, a 28-year-old from Pune." | A sourced case, the viewer ("you"), or an openly hypothetical relation: "Say your cousin…" (§4). |
 | Fake anecdotes | "My friend lost fifty thousand last month." "I tried this for 30 days." | Only true experience of the real persona. Otherwise a sourced case or "say you…". |
 | Lecture voice | "It is essential to understand that…" "One must consider…" | Say it to one person: "The thing to know is…" or just the fact. |
 | Talking to a crowd | "Hey guys!" "Everyone needs to know this." | Talk to "you". |
@@ -183,7 +220,7 @@ A viewer who suspects a video is AI keeps watching only if it's worth their time
 - **A decision rule or a check** they can use ("put it on the tap that runs the most"; "if you have to enter your PIN, you're paying").
 - **What to do next**, with the real name, number, date, or link ("call 1930", "from 1 November").
 
-Then ask: if someone watched with the sound off, reading only the captions and the screen, would they still get it? And would a person who knows this field nod along, or wince?
+Then ask: could a viewer who knew nothing about this before explain the takeaway to a friend afterwards, in their own words? If someone watched with the sound off, reading only the captions and the screen, would they still get it? And would a person who knows this field nod along, or wince?
 
 ### Numbers, said the way people say them
 
@@ -230,7 +267,7 @@ Write everyday loanwords in Devanagari (सैलरी, बजट, फ़ोन
 Before: "उपरोक्त नियम के अनुसार आपकी आय का पचास प्रतिशत आवश्यक व्ययों हेतु निर्धारित किया जाना चाहिए."
 After: "पचास परसेंट ज़रूरतों के लिए. किराया, राशन, बिजली, EMI."
 
-## 7. Visual thinking
+## 8. Visual thinking
 
 This section is what each scene is for. [direction.md](direction.md) is how to write its lines so the frame looks finished: short numbers the odometer can roll, unit-matched compares, one emphasis per scene, photos that suit a card, and pacing.
 
@@ -283,17 +320,17 @@ Year thirty, the same twelve percent lands on almost twenty-seven lakh. That's o
 Visual: compare | What 12% adds in one year | Year 1: ₹12,000 | Year 30: ₹3,21,000
 ```
 
-## 8. Specificity and accuracy
+## 9. Specificity and accuracy
 
 - **Use only facts from the story's notes**, and cite `[n]` on the line that uses them. If you need a fact the notes lack, verify it from a source you open, add it to the notes with that source, and then use it. Never use a fact from memory.
-- **Choose the concrete detail over the abstraction:** "a regulator" → "RBI"; "recently" → "on 1 October"; "a lot of people" → the number in the notes, or drop the claim; "a popular app" → "PhonePe or Google Pay".
+- **Choose the concrete detail over the abstraction:** "a regulator" → "RBI" (with what it is, the first time: "RBI, India's central bank"); "recently" → "on 1 October"; "a lot of people" → the number in the notes, or drop the claim; "a popular app" → "PhonePe or Google Pay".
 - **Label illustrative numbers.** A worked example ("₹1 lakh at 12%") is fine if the math is in the notes and the script says it's an example: "twelve percent is an example, not a promise."
 - **Frame uncertain claims honestly:** "RBI expects", "estimates range from X to Y", "the company says". If a point is contested, give both sides in one line. Don't say "because" unless the notes show the cause.
 - **Use absolute words only when they're true.** "Never", "always", and "guaranteed" need a source that says so. "PIN is never needed to receive money" is fine because NPCI says it.
 - **Don't fake urgency.** "Act now before it's too late!" is out. A real deadline with its date is fine: "1 November से".
 - **Don't write numbers the notes can't support.** If you aren't sure of a figure, write the line so it doesn't need one.
 
-## 9. Applying voice settings
+## 10. Applying voice settings
 
 `studio.py voice --channel C` gives you the channel's voice. These settings come from the user, and they override this guide's defaults on style. They never override accuracy.
 
@@ -322,7 +359,7 @@ The same line at different settings:
 - **`cta`:** the `end` scene's call to action, and the spoken CTA if there is one. If it's empty, write one specific CTA.
 - **`examples`:** the user's real voice, and the best guide you have. Study them for sentence length, vocabulary, the Hindi/English balance, how they open and close, and their humour level. The `why` field tells you what the user values. Match their rhythm; **never copy their facts, lines, or structure wholesale.** Where an example and a slider seem to disagree, the example shows what the user means by the slider.
 
-## 10. Banned: AI-isms and clichés
+## 11. Banned: AI-isms and clichés
 
 These phrases mark a script as machine-made or lazy. Don't use them, even "ironically".
 
@@ -338,7 +375,7 @@ These phrases mark a script as machine-made or lazy. Don't use them, even "ironi
 | "It's not just X, it's Y" | Say Y. |
 | "Whether you're a student or a professional…" | Pick the viewer and talk to them. |
 | "The answer might surprise you" / "Here's everything you need to know" | Give the surprising answer. |
-| "But wait, there's more" / "Stay tuned" / "Buckle up" | Use a real re-hook (§5). |
+| "But wait, there's more" / "Stay tuned" / "Buckle up" | Use a real re-hook (§6). |
 | "In conclusion" / "To sum up" / "So that's it" | Land the payoff. |
 | "Like, share and subscribe" / "Smash that like button" | One specific CTA. |
 | "नमस्कार दोस्तों" / "हेलो दोस्तों" / "दोस्तों आज हम बात करेंगे…" | Start with the hook. |
@@ -349,25 +386,27 @@ These phrases mark a script as machine-made or lazy. Don't use them, even "ironi
 | "बहुत ही ज़्यादा important है" | Show why with a number or a consequence. |
 | "उम्मीद है आपको ये जानकारी पसंद आई होगी" / "चैनल को subscribe करना न भूलें" | End on the payoff and one CTA. |
 
-Also see the table of machine-made patterns in §6. Watch for these too: three-adjective lists ("fast, secure, and convenient"), every sentence opening with "So" or "And", a run of rhetorical questions each answered by "The answer? …", em-dash pile-ups, and "Imagine…" openers.
+Also see the table of machine-made patterns in §7. Watch for these too: three-adjective lists ("fast, secure, and convenient"), every sentence opening with "So" or "And", a run of rhetorical questions each answered by "The answer? …", em-dash pile-ups, and "Imagine…" openers.
 
-## 11. The rubric
+## 12. The rubric
 
 Score each dimension as an integer from 1 to 10. The anchors below define 3, 6, 8, and 10; the scores in between are in between.
 
 | | 3 | 6 | 8 | 10 |
 |---|---|---|---|---|
 | **hook** | A greeting, context, a definition, or a generic question. | A relevant fact, but vague, or the payload arrives after 3 s. | A concrete, true payload in the first ~5 words, with a visual that lands it. It opens a question the script pays off. | A line the audience would repeat. Hard to scroll past, and VO + screen land it in one second. |
-| **clarity** | The viewer couldn't state the takeaway. Jargon goes unexplained. | The takeaway is stateable, but beats wander or carry two ideas. | One idea per beat, every term explained in passing. A 15-year-old in the audience could retell it. | A complex mechanism feels obvious. Nothing to cut. |
+| **clarity** | The viewer couldn't state the takeaway. Names, terms or events appear that the video never explains. | The takeaway is stateable to someone who knew the topic, but a cold viewer hits an unexplained name or term, a "this" with nothing behind it, a skipped step, or a beat with two new ideas. | Passes the cold read (§3): every name introduced, every term explained in plain words, the context given right after the hook, one new idea per beat, built in order. A 15-year-old in the audience who'd never heard of this could retell it. | A complex mechanism feels obvious to a total newcomer. Nothing to cut, nothing missing. |
 | **retention** | Front-loaded. A flat middle, and it ends on a summary. | Some turns, but a stretch of 15 s or more with no new question or visual change, and a weak ending. | A re-hook every ~8–12 s, the open loop paid off at the end, a new visual each beat, a payoff ending. | Every beat raises the next question. It loops, and no beat could be dropped. |
-| **specificity** | Abstractions: "significant", "experts say", "many people". | Some numbers, but generic examples and abstract stakes. | Every beat has a concrete number, name, date, place, or image from the notes. The stakes are in the viewer's terms. | So specific it could only be about this story. |
+| **specificity** | Abstractions: "significant", "experts say", "many people". | Some numbers, but generic examples and abstract stakes. Or the opposite: so many numbers and names per beat that none of them land. | Every beat has a concrete number, name, date, place, or image from the notes, one new one at a time, each with something to compare it to. The stakes are in the viewer's terms. | So specific it could only be about this story. |
 | **voice** | Generic AI voice, banned phrases, wrong language or script rules. | The right language and roughly the right tone, but lines that read as written, not said. Stiff Hindi, or a missed `do`/`dont`. | Sounds like the persona saying it aloud. Sliders, `do`/`dont`, and `open`/`close`/`cta` applied. Reads aloud without a stumble. | Indistinguishable from the channel's best `examples`. |
 | **human** | An abstract topic. No person, no moment, no point of view; facts recited in order. | A "you" or a case appears in the hook, then disappears into a lecture. Or a person is invented (a named stranger, a fake anecdote). | The video is about someone: a sourced case, the viewer in a moment they recognise, or an openly hypothetical relation, carried through to the payoff. At least one lived detail from the notes. The persona's view is stated once and earned. | The viewer feels it's about them or someone they know, and would forward it to that person. The ending returns to the person, changed by what they learned. |
-| **natural** | Reads like a model: fragment chains, "Here's why", a slogan per beat, labels like "Honest catch:". | Mostly connected speech, but a few §6 patterns remain, or every line has the same shape. | No §6 or §10 patterns. Sentences connect, the rhythm varies, and it sounds like one person talking to one friend. | You couldn't tell it from the channel's best human-made video. |
-| **value** | The viewer learns nothing they couldn't guess from the title. | One useful fact, but no mechanism, decision rule, or next step. | Passes the value test (§6): a non-obvious number, a mechanism, or a rule or action the viewer can use, stated plainly. | Something the viewer will act on or repeat, and they'd feel the minute was well spent even if they suspected AI. |
+| **natural** | Reads like a model: fragment chains, "Here's why", a slogan per beat, labels like "Honest catch:". | Mostly connected speech, but a few §7 patterns remain, or every line has the same shape. | No §7 or §11 patterns. Sentences connect, the rhythm varies, and it sounds like one person talking to one friend. | You couldn't tell it from the channel's best human-made video. |
+| **value** | The viewer learns nothing they couldn't guess from the title. | One useful fact, but no mechanism, decision rule, or next step. | Passes the value test (§7): a non-obvious number, a mechanism, or a rule or action the viewer can use, stated plainly. | Something the viewer will act on or repeat, and they'd feel the minute was well spent even if they suspected AI. |
 | **accuracy** | Claims not in the notes, or wrong. | Everything is in the notes, but some lines are uncited or overstated (certainty, causation). | Every factual line cited, numbers match the notes, uncertainty framed honestly, illustrative numbers labelled. | All of 8, plus caveats that make the video more trustworthy without slowing it down. |
 
 **The bar is ≥ 8 on every dimension before you save.** Accuracy below 8 is never acceptable: fix it, don't explain it. If another score can't reach 8, say exactly why in `notes` and the summary, and what would fix it (for example, "the notes have no figure for how many users this affects; research NPCI monthly data").
+
+**Clarity is scored cold.** Score it as someone who has never heard of the story, not as the writer who just read the notes. Any name, term or reference a newcomer can't follow caps clarity at 6, however good the rest is.
 
 **Score honestly.** The review is for the user: it tells them whether to trust the draft and where to look. Score as a skeptical editor who didn't write it. First drafts usually land at 5–7. A 9 or 10 needs a reason in `notes`. Inflated scores are a failure, worse than a low score, because they hide the problems. Each note names a beat and a problem; "could be punchier" is not a note.
 
@@ -383,11 +422,11 @@ Score each dimension as an integer from 1 to 10. The anchors below define 3, 6, 
            "Value: the rule 'if you have to do something to receive money, stop' is usable on the spot; 9."]}
 ```
 
-## 12. Text posts (`kind: post`)
+## 13. Text posts (`kind: post`)
 
 The same principles apply, compressed. You still do the angle, 2–3 hooks saved with `studio.py angles`, and a review. In a post, `retention` means "does each paragraph earn the next one?"
 
-- **It's still about someone.** The person or moment from §3 gets a sentence of its own, usually the second paragraph: the call, the counter, the salary day.
+- **It's still about someone.** The person or moment from §4 gets a sentence of its own, usually the second paragraph: the call, the counter, the salary day.
 - **The first line is the hook,** in `*bold*`. WhatsApp previews show only the first line or so, so it must carry the surprising fact or the stake, not a label. "*UPI PIN never receives money. Only sends it.*" beats "*UPI Safety Tips*".
 - **Make it scannable:** 2–3 paragraphs of 1–2 sentences each, one idea per paragraph. Numbers and names, not adjectives.
 - **Add a one-line takeaway** in `_italic_`: what to do or remember.

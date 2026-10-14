@@ -36,7 +36,7 @@ Visual: stat | 20% | बचत | या कर्ज़ चुकाना
 Visual: bars | ₹40,000 हाथ में | ज़रूरतें: ₹20,000 | शौक: ₹12,000 | बचत: ₹8,000
 
 ## Who made it
-ये नियम एक माँ और बेटी ने लिखा था, Elizabeth Warren और Amelia Warren Tyagi ने, 2005 की एक किताब में. [1]
+ये नियम एक माँ और बेटी ने लिखा था, Elizabeth Warren और Amelia Warren Tyagi ने, 2005 की एक अमेरिकी किताब में. [1]
 Visual: stat | 2005 | माँ-बेटी की किताब | All Your Worth, Elizabeth Warren और Amelia Warren Tyagi
 Source: All Your Worth (2005)
 
