@@ -1,84 +1,86 @@
 # Vid Studio
 
-A skill for running research for explainer videos with any AI agent that supports [skills](https://skills.sh/), such as Claude, ChatGPT, or Codex. All data stays in a local folder, and you work in a small web UI (light or dark).
+Research, write, voice and publish short explainer videos with your AI agent. Everything lives in a folder on your computer, you work in a small local studio, and videos render on your own machine.
+
+<picture>
+  <source media="(prefers-color-scheme: dark)" srcset="docs/readme/script-dark.jpg">
+  <img alt="A script in Vid Studio: the beats on the left, the live preview in the channel's look on the right" src="docs/readme/script.jpg">
+</picture>
 
 ```sh
 npx skills add namanbnsl/vid-studio
 ```
 
+Then ask your agent: *"Use vid-studio to set up my project."* It works with any agent that supports [skills](https://skills.sh/), such as Claude, ChatGPT or Codex.
+
+## Research
+
+A project follows a subject: say, plumbing products or Indian tech news. You give it **topics** and the **sources** it must check. On each run, your agent checks every source and searches the web, and brings back short **findings**, each linked to the pages it came from. Pick the findings worth a video and turn them into a **story**; your agent researches it once, in depth, for every script that follows. Research can run on a schedule.
+
+![Findings in a research project](docs/readme/research.jpg)
+
+## Write
+
+A story becomes one **script** per channel, written in that channel's language (English, Hindi or Hinglish) and voice. Scripts are written as beats: what's said, and what's shown on screen (a number, a chart, a comparison, a quote, a photo). Your agent finds openly licensed photos for the beats about real things (credited on screen), drafts several hooks, and scores its own draft; you comment on any passage for it to fix. Production keeps every script on one board, from draft to published.
+
+![The production board](docs/readme/production.jpg)
+
+## Produce
+
+Each **channel** has a look (twelve styles to start from, then colours, fonts with Hindi support, motion and captions), a writing voice, and a **narrator**. The narrator can be a voice on your computer, ElevenLabs, Sarvam AI, OpenAI or Google Cloud, or you: record each beat in the studio's teleprompter, or clone your voice. Every beat then lasts as long as its voice, captions follow the words, and the MP4 renders on your machine with Chrome and ffmpeg.
+
+![A channel's look, with a live preview](docs/readme/look.jpg)
+
+![Recording a beat in your own voice](docs/readme/recorder.jpg)
+
+## Publish
+
+Connect a channel to its YouTube channel, Instagram professional account or TikTok account, and publish from the script page. You set the title, caption, visibility and release time; the studio uploads the MP4 with each platform's official API and adds the sources and photo credits. Nothing goes out until you click Publish and confirm.
+
+![A channel's publishing settings](docs/readme/publishing.jpg)
+
 ## How it works
 
-The studio has three global tabs: **Research**, **Production**, and **Channels**. They stay available wherever you are in the app.
+<picture>
+  <source media="(prefers-color-scheme: dark)" srcset="docs/readme/flow-dark.svg">
+  <img alt="Research, then Production, then Channels" src="docs/readme/flow-light.svg" width="976">
+</picture>
 
-**Research** happens in **projects** (each one a subject area, such as plumbing products or Indian tech news), and you switch between them in the UI. Each project has:
+Research stays reusable: one story can become an English Short, a Hinglish Reel and a Hindi WhatsApp post. Your agent does the thinking work (research, stories, scripts, revisions), and the studio shows you the results as soon as they land. Where a step needs your agent, the studio has a button that copies the prompt.
 
-- **Topics:** what the project makes videos about. Each one is a name plus a description of what matters.
-- **Sources:** websites every research run must check. Research also suggests new ones for you to approve.
-- **Findings:** short items on new developments, each linked to its topics and to the pages it came from. Dismiss what you don't need.
-- **Stories:** an angle for a video, built from findings, topics, or both, with research notes.
+The workspace is plain JSON and Markdown in `~/vid-studio` (or `$VID_STUDIO_HOME`), one folder per project, so it's easy to read, back up or edit by hand. API keys and account tokens are kept in `.secrets.json` in that folder, readable only by you.
 
-**Production** shows scripts from every research project on one board, with optional project and channel filters. A story becomes one script per channel you send it to. Scripts move through stages (script, ready, published), and you can comment on any passage for your agent to address. Each script links back to its source story and to its channel.
+## Requirements
 
-**Channels** manages publishing destinations (each YouTube channel, Instagram account, TikTok account, or WhatsApp channel), shared across the studio, and connects video channels to their real accounts. They set each script's language, format, look, and voice. One research story can become an English Short, a Hinglish Reel, and a Hindi WhatsApp post. You can set up channels before adding a research project.
-
-The information flow is **Research story → Production scripts → Channels**. Research stays reusable; each script adapts that evidence for its destination. Projects organize Research and appear as source labels or optional filters in Production.
-
-Each channel has a **Voice** (length, pace, persona, tone, hook styles, rules, and scripts you love) and, for video channels, a **Look** (one of twelve styles to start from, then colors, fonts with Hindi support, motion, captions with a highlight or underline that follows the voice, photo treatment and placement, source tags, a progress line with a folio, background, logo). You set both up when you add a channel, with a live preview of animated sample scenes in that look.
-
-**Human, start to finish.** Research looks for the people a story lands on, the everyday moment they meet it, and the questions they actually ask. Story notes record them; scripts are about someone (a real case, the viewer, or an openly hypothetical relative, never an invented "Rahul from Pune"), carry a point of view the evidence earns, and are scored on whether they feel human as well as whether they sound it. The linter catches invented characters, fake anecdotes, reframes, fragment chains and flat rhythm.
-
-Video scripts are written as beats: what's said, plus a `Visual:` line naming a scene (a stat, bar chart, comparison, list, quote, timeline, photo, punchline, or the message or call the story turns on). A beat can also have a photo behind it (`Image:`), a small on-screen source tag (`Source:`), and a fixed length (`Duration:`). The script editor plays them as an animated preview in the channel's look as you type, shows the timing against the target, the hooks your agent considered (swap one in with a click), and its self-review scores, including whether it tells a human story, whether it sounds human, and whether it's worth the viewer's minute.
-
-**Images.** Photos run edge to edge across the top of the frame, like the picture on a magazine page, with the scene set below (beside it in wide formats), or faint behind charts. Your agent picks photos for the beats about real things and people: openly licensed photos from Wikimedia Commons and Openverse (no API key; it looks at previews before choosing), or images it generates with its own image tool, if it has one. Generated images are never used for real people, products, logos, or documents. Every photo is saved with the script and credited on screen. You can also add your own photo to any beat from the script page.
-
-**Your own voice.** Record any beat yourself on the script page: a teleprompter shows each line, you record, listen and keep, or upload a take. Takes always win over the narrator, and a channel can use **Your voice** as its narrator so you read every beat. With ElevenLabs you can also clone your voice from a minute or two of recordings.
-
-**Voiceover.** Give a video channel a narrator on its **Narration** tab: a voice on your computer (the system voice, or free offline [Piper](https://github.com/OHF-Voice/piper1-gpl) voices), or ElevenLabs, Sarvam AI, OpenAI or Google Cloud with your own API key. Hear samples, set the speed, the pause between beats, and how words are pronounced. Each beat is voiced on its own and reused until its line changes; beats then last as long as the voice takes, captions follow it (word by word with ElevenLabs), and a `Say:` line lets the voice read "twelve thousand rupees" while the screen shows ₹12,000. The MP4 gets the voiceover, mixed to a loudness phones expect, plus an `.srt` captions file.
-
-**Publish.** Connect a video channel to its YouTube channel, Instagram professional account, or TikTok account on its **Publishing** tab. On a script's **Post** tab, check the title, description or caption, hashtags, visibility and (on YouTube) a release time, then click **Publish**: the MP4 uploads from your computer with each platform's official API, with the poster as the thumbnail, the voiceover's captions, and the sources and photo credits appended. The script moves to Published with its link, and its views show on the board. You bring your own Google Cloud or TikTok app (or an Instagram token), so nobody else holds your access; tokens stay in the studio's `.secrets.json`.
-
-**Download.** Click **Render MP4** on a script, then **Download MP4**: the video renders on your computer (1080p, 30 fps) with Chrome and ffmpeg, which you need installed. Your agent can do the same with `studio.py render --script ID --out ~/Desktop`. `studio.py export` writes the same video as a [HyperFrames](https://github.com/heygen-com/hyperframes) project instead.
-
-The steps that need an AI each have a button that copies a prompt. Paste it into Claude or ChatGPT, and the results show up in the UI:
-
-- **Research now:** your agent researches every topic and adds findings.
-- **Research story:** your agent researches a story's findings and topics in depth and writes its notes.
-- **Send to production**, then **Write draft:** your agent writes each channel's script from the story's notes, following a craft guide: several hooks, a plain-spoken first pass, a beat outline, photos and sources, timing, a pass to remove anything that sounds machine-made, and an honest self-review against a rubric. With open comments, the button becomes **Revise**, and your agent works through them in order.
-- **Ask your agent** (on a channel's Look and Voice): describe a change in words, and your agent makes it.
-
-To research on a schedule, click the schedule link under **Research now**, pick the days and times, and paste the copied prompt into your agent. It creates the scheduled task.
-
-## Start
-
-> Use vid-studio to set up my project.
-
-Your agent creates the studio (`~/vid-studio` by default, one folder per project in `projects/`), proposes topics and sources, and opens the studio at `http://localhost:8765`. Later, "Use vid-studio, open the studio" brings it back.
+- Python 3.10 or newer. The studio uses only the standard library.
+- Google Chrome (or Chromium) and ffmpeg, to render MP4s and convert recordings.
+- Optional: an API key for a cloud voice (ElevenLabs, Sarvam AI, OpenAI, Google Cloud); `espeak-ng` or [Piper](https://github.com/OHF-Voice/piper1-gpl) for free voices on your computer; your own Google Cloud or TikTok app, or an Instagram token, to publish.
 
 ## Files
 
 ```
 skills/vid-studio/
-  SKILL.md            entry point
-  references/         setup, research, story, write, script craft, scenes, images, look, narration, publish, schedule
-  scripts/studio.py   helper and local web server (Python 3 standard library)
-  scripts/narration.py text-to-speech providers: system, Piper, ElevenLabs, Sarvam, OpenAI, Google (standard library)
-  scripts/publish.py  YouTube, Instagram Reels and TikTok publishing with their official APIs (standard library)
-  scripts/render.py   MP4 renderer: drives a local Chrome and ffmpeg (standard library)
-  assets/             workspace templates, the UI, the scene engine (assets/scenes), and example scripts
+  SKILL.md               entry point for your agent
+  references/            setup, research, stories, writing, script craft, scenes, images,
+                         look, narration, publishing, schedules
+  scripts/studio.py      command line and local web server
+  scripts/narration.py   text-to-speech providers and your own recordings
+  scripts/publish.py     YouTube, Instagram and TikTok publishing
+  scripts/render.py      MP4 renderer (drives Chrome and ffmpeg)
+  assets/                workspace templates, the studio UI, the scene engine, example scripts
 ```
 
-The workspace is plain JSON and Markdown, so it is easy to back up, read, or edit by hand.
+`studio.py --help` lists every command. Your agent uses the same commands the studio does, so anything you can do in the UI, it can do too.
 
 ## Develop
 
 ```sh
-python3 dev.py demo              # throwaway studio full of sample data, opened in your browser
-python3 dev.py sandbox --seed    # test project at ../vid-studio-sandbox, with the skill linked (not copied)
-python3 dev.py try setup         # run Claude Code headlessly in the sandbox (setup, research, story, draft, status, or any prompt)
-python3 dev.py try research --agent codex
+python3 dev.py demo              # a throwaway studio with sample data, opened in your browser
+python3 dev.py sandbox --seed    # a test project at ../vid-studio-sandbox, with the skill linked
+python3 dev.py try setup         # run Claude Code headlessly in the sandbox (setup, research, story, draft, status)
 python3 dev.py reset --yes       # wipe the sandbox's studio data
 python3 -m unittest discover tests
 node --test tests/test_ui.js tests/test_engine.js
 ```
 
-The sandbox links the skill into `.claude/skills` and `.agents/skills`, so edits to this repo apply on the next prompt with no reinstall. Its studio data lives in the sandbox, so your real `~/vid-studio` is never touched. For interactive testing: `cd ../vid-studio-sandbox && claude`.
+The sandbox links the skill instead of copying it, so edits apply on the next prompt. Its data stays in the sandbox, so your real `~/vid-studio` is never touched. Design notes for larger changes are in [`docs/`](docs).

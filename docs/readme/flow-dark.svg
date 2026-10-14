@@ -1,0 +1,19 @@
+<svg xmlns="http://www.w3.org/2000/svg" width="976" height="168" viewBox="0 0 976 168" font-family="-apple-system, BlinkMacSystemFont, 'Segoe UI', Helvetica, Arial, sans-serif">
+<rect x="16" y="16" width="272" height="136" rx="12" fill="#18181b" stroke="#2e2e33"/>
+<text x="40" y="50" font-size="12" fill="#74747e" font-family="ui-monospace, SFMono-Regular, Menlo, monospace">01</text>
+<text x="40" y="80" font-size="19" font-weight="600" fill="#ececef" letter-spacing="-0.3">Research</text>
+<text x="40" y="110" font-size="13.5" fill="#a3a3ad">Topics, sources and findings,</text>
+<text x="40" y="130" font-size="13.5" fill="#a3a3ad">researched by your agent</text>
+<path d="M302 84 H338 M332 79 L338 84 L332 89" stroke="#74747e" stroke-width="1.5" fill="none" stroke-linecap="round" stroke-linejoin="round"/>
+<rect x="352" y="16" width="272" height="136" rx="12" fill="#18181b" stroke="#2e2e33"/>
+<text x="376" y="50" font-size="12" fill="#74747e" font-family="ui-monospace, SFMono-Regular, Menlo, monospace">02</text>
+<text x="376" y="80" font-size="19" font-weight="600" fill="#ececef" letter-spacing="-0.3">Production</text>
+<text x="376" y="110" font-size="13.5" fill="#a3a3ad">One script per channel, previewed</text>
+<text x="376" y="130" font-size="13.5" fill="#a3a3ad">as scenes, voiced and rendered</text>
+<path d="M638 84 H674 M668 79 L674 84 L668 89" stroke="#74747e" stroke-width="1.5" fill="none" stroke-linecap="round" stroke-linejoin="round"/>
+<rect x="688" y="16" width="272" height="136" rx="12" fill="#18181b" stroke="#2e2e33"/>
+<text x="712" y="50" font-size="12" fill="#74747e" font-family="ui-monospace, SFMono-Regular, Menlo, monospace">03</text>
+<text x="712" y="80" font-size="19" font-weight="600" fill="#ececef" letter-spacing="-0.3">Channels</text>
+<text x="712" y="110" font-size="13.5" fill="#a3a3ad">Look, voice and narrator,</text>
+<text x="712" y="130" font-size="13.5" fill="#a3a3ad">published to YouTube and more</text>
+</svg>

@@ -12,6 +12,12 @@ Every image is the real studio, captured in Chromium. "Before" is this branch's 
 - **One system of tokens.** Every colour is a variable: a neutral scale, one indigo accent for focus and selection, and success/warning/danger tints. Buttons, inputs, selects and segmented controls share one height, radius and focus ring. Dialogs get a footer bar for their actions.
 - **Dark mode** follows the system, or is set from the sidebar and remembered in this browser.
 - **Production board.** Each column has a status dot (grey script, amber ready, green published), and the cards sit on a quiet well.
+- **A simpler script sidebar.**
+  - One primary action, then the stage.
+  - One status card with a row each for voice, video and post. Each row has a single next action (Make or Update the voiceover, Render, download the MP4), and the rest sits in a "⋯" menu.
+  - Four tabs: Preview, Review (score and hooks together), Comments, Post.
+  - Beat actions appear on hover, and the channel's look and Delete script move to a quiet footer.
+- **Project settings** sit in the sidebar footer, next to voice providers, while you're in Research.
 
 ### Research
 

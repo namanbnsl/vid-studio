@@ -334,6 +334,39 @@ textarea.doc.short { height: 260px; }
 .side-tabs button.on { color: var(--ink); box-shadow: inset 0 -2px 0 var(--ink); }
 .side-tabs .n { font: 500 10.5px var(--mono); color: var(--ink-3); }
 #side-panel { display: grid; gap: 10px; }
+.side .stage-seg { margin-bottom: 4px; }
+.published, .published-link { display: flex; gap: 6px; align-items: center; margin-top: 8px; }
+.published-link a { display: inline-flex; gap: 5px; align-items: center; font-size: 12.5px; color: var(--ink-2); min-width: 0; overflow: hidden; text-overflow: ellipsis; white-space: nowrap; }
+.published-link a svg { width: 12px; height: 12px; flex: none; }
+.published-link .text-btn { padding: 2px 4px; margin-left: auto; }
+.side section.status { margin-top: 18px; border: 1px solid var(--line); border-radius: var(--radius-lg); background: var(--raised); padding: 2px 4px 2px 12px; box-shadow: var(--shadow-xs); }
+.status-row { display: grid; grid-template-columns: 52px minmax(0, 1fr) auto; align-items: center; gap: 10px; min-height: 44px; font-size: 13px; }
+.status-row + .status-row { border-top: 1px solid var(--line); }
+.status-label { color: var(--ink-3); font-size: 12px; }
+.status-value svg { width: 13px; height: 13px; color: var(--accent); flex: none; }
+.status-value { display: flex; align-items: center; gap: 6px; min-width: 0; white-space: nowrap; overflow: hidden; text-overflow: ellipsis; }
+.status-value .bar { flex: 1; height: 3px; border-radius: 2px; background: var(--surface-2); overflow: hidden; min-width: 40px; }
+.status-value .bar i { display: block; height: 100%; background: var(--accent); }
+.status-thumb { width: 18px; height: 28px; object-fit: cover; border-radius: 3px; flex: none; border: 1px solid var(--line); }
+.status-act { display: flex; align-items: center; gap: 2px; }
+.status-act .icon-btn { width: 28px; height: 28px; }
+.status .beat-warn { margin: 0 4px 10px 0; }
+.ok-dot { width: 7px; height: 7px; border-radius: 50%; background: var(--success); margin: 0 10px; }
+.warn-text { color: var(--warn); }
+details.more { position: relative; }
+details.more > summary { list-style: none; width: 28px; height: 28px; }
+details.more > summary::-webkit-details-marker { display: none; }
+.more-pop { position: absolute; right: 0; top: 32px; z-index: 20; min-width: 220px; padding: 4px; background: var(--raised); border: 1px solid var(--line); border-radius: 10px; box-shadow: var(--shadow); display: grid; }
+.more-item { display: flex; align-items: center; gap: 8px; height: 32px; padding: 0 10px; border: 0; border-radius: 6px; background: transparent; font-size: 13px; color: var(--ink); text-decoration: none; cursor: pointer; text-align: left; white-space: nowrap; }
+.more-item:hover { background: var(--surface); }
+.more-item svg { width: 15px; height: 15px; color: var(--ink-3); }
+.more-note { font-size: 11.5px; color: var(--ink-3); padding: 6px 10px 4px; border-top: 1px solid var(--line); margin-top: 4px; }
+.side-foot { display: flex; align-items: center; justify-content: space-between; gap: 8px; margin-top: 24px; padding-top: 12px; border-top: 1px solid var(--line); font-size: 12.5px; }
+.side-foot a { display: inline-flex; align-items: center; gap: 6px; color: var(--ink-3); text-decoration: none; }
+.side-foot a:hover { color: var(--ink); }
+.side-foot svg { width: 14px; height: 14px; }
+.side-foot .text-btn { padding: 4px 0; }
+.angles { display: grid; gap: 8px; }
 #side-panel .field { margin-bottom: 10px; }
 #side-panel .side-actions { margin-top: 12px; display: grid; gap: 8px; }
 #side-panel .player-bar { max-width: 280px; }
@@ -383,7 +416,8 @@ a.ref-link:hover { border-color: var(--line-3); }
 .beat-row:hover { background: var(--surface); }
 .beat-row.on { background: var(--surface-2); }
 .beat-row .beat:hover { background: none; }
-.beat-row .icon-btn { flex: none; width: 26px; height: 26px; opacity: .55; }
+.beat-row .icon-btn { flex: none; width: 26px; height: 26px; opacity: 0; }
+@media (hover: none) { .beat-row .icon-btn { opacity: .6; } }
 .beat-row:hover .icon-btn, .beat-row .icon-btn.needs, .beat-row .icon-btn.on { opacity: 1; }
 .beat-row .icon-btn.needs { color: var(--danger); }
 .beat-row .icon-btn.on { color: var(--accent); }
@@ -614,9 +648,9 @@ dialog .sub { margin: 0 0 18px; color: var(--ink-2); font-size: 13px; }
     <div class="research-context" id="research-context" hidden>
       <p class="side-label">Projects</p>
       <div class="switcher" id="switcher"></div>
-      <button class="side-link" data-action="settings" id="settings-btn"><span>Project settings</span></button>
     </div>
     <div class="sidebar-foot">
+      <button class="side-link" data-action="settings" id="settings-btn" title="Project settings"><span>Project settings</span></button>
       <button class="side-link" data-action="voice-keys" title="Voice provider keys" data-icon="key"><span>Voice providers</span></button>
       <div class="theme-seg" role="group" aria-label="Theme" id="theme-seg"></div>
     </div>
@@ -656,6 +690,7 @@ const ICONS = {
   image: '<rect x="3" y="4" width="18" height="16" rx="2"/><circle cx="9" cy="10" r="2"/><path d="m21 17-5-5-9 8"/>',
   copy: '<rect x="9" y="9" width="12" height="12" rx="2"/><path d="M5 15V5a2 2 0 0 1 2-2h10"/>',
   layers: '<path d="m12 3 9 5-9 5-9-5 9-5Z"/><path d="m3 13 9 5 9-5"/>',
+  more: '<circle cx="5" cy="12" r="1.3" fill="currentColor"/><circle cx="12" cy="12" r="1.3" fill="currentColor"/><circle cx="19" cy="12" r="1.3" fill="currentColor"/>',
   sun: '<circle cx="12" cy="12" r="4"/><path d="M12 2v2M12 20v2M4.9 4.9l1.4 1.4M17.7 17.7l1.4 1.4M2 12h2M20 12h2M4.9 19.1l1.4-1.4M17.7 6.3l1.4-1.4"/>',
   moon: '<path d="M20 14.5A8 8 0 0 1 9.5 4a8 8 0 1 0 10.5 10.5Z"/>',
   monitor: '<rect x="3" y="4" width="18" height="12" rx="2"/><path d="M8 20h8M12 16v4"/>',
@@ -1598,7 +1633,7 @@ function publishingPanel(c) {
         <p class="muted small">${chosen.id === "youtube" ? "New uploads start private unless you change it here or on the post. Until Google audits your API project, YouTube keeps its uploads private; make them public in YouTube Studio. YouTube asks you to label realistic altered or synthetic content; a narrated explainer usually isn't." : chosen.id === "tiktok" ? "TikTok only lets apps it hasn't audited post privately; drafts always work." : "Instagram posts go live straight away; there is no private or scheduled post through its API."}</p></section>` : ""}
     </div>
     <div class="preview-col"><p class="save-note" id="save-note"></p>
-      <div class="ask"><h4>${icon("upload")}How publishing works</h4><p class="muted small">Render a script, check its post details on the script's Publish tab, and click Publish. The studio uploads the MP4 from this computer straight to ${esc(chosen?.name || "the platform")}, then marks the script published with its link. Nothing posts without you clicking Publish and confirming.</p></div></div>
+      <div class="ask"><h4>${icon("upload")}How publishing works</h4><p class="muted small">Render a script, check its post details on the script's Post tab, and click Publish. The studio uploads the MP4 from this computer straight to ${esc(chosen?.name || "the platform")}, then marks the script published with its link. Nothing posts without you clicking Publish and confirming.</p></div></div>
   </div>`;
 }
 async function savePublishing(view, changes) {
@@ -1689,7 +1724,7 @@ async function renderEditor(kind, id) {
         if (!current() || editor !== view) return;
         Object.assign(view, { design, voice });
         if (!VOICE_PROVIDERS) loadVoiceProviders().then(() => { if (editor === view) updateVideoBox(); }).catch(() => {});
-        editor.sideTab = docText().trim() ? "preview" : "hooks";
+        editor.sideTab = docText().trim() ? "preview" : "review";
       }
     }
     catch (e) { if (!current()) return; app.innerHTML = `<a class="back" href="${kind === "script" ? "#/production" : base() + "/stories"}">${icon("back")}${E.backLabel}</a><div class="empty"><h3>Not found</h3><p>${esc(e.message)}</p></div>`; return; }
@@ -1804,66 +1839,73 @@ function scriptTextChanged() {
 const SCORE_LABELS = [["hook", "Hook"], ["clarity", "Clarity"], ["retention", "Retention"], ["specificity", "Specificity"], ["voice", "Voice"], ["human", "Human story"], ["natural", "Sounds human"], ["value", "Value"], ["accuracy", "Accuracy"]];
 function scriptSide() {
   const d = editor.data, open = openComments(d);
-  const tabs = isPost() ? [] : [["preview", "Preview"], ["hooks", "Hooks"], ["quality", "Quality"], ["comments", "Comments"], ["publish", "Post"]];
-  const badge = { hooks: (d.angles || []).length, comments: open.length, quality: d.review ? avgScore(d.review).toFixed(1) : "" };
-  const tab = isPost() ? "comments" : editor.sideTab || "preview";
-  return `<div class="side-actions"><button class="btn primary" data-action="write-draft">${icon("spark")}${open.length ? `Revise with ${plural(open.length, "comment")}` : "Write draft"}</button></div>
-    <section><h4>Stage</h4>
-      <div class="seg stage-seg">${STAGES.map(([key, label]) => `<button type="button" class="${d.stage === key ? "on" : ""}" data-action="set-stage" data-id="${key}">${label}</button>`).join("")}</div>
-      ${d.stage === "published" ? `<div class="published"><input class="url-input" id="published-url" value="${esc(d.published_url)}" placeholder="Paste the published link" inputmode="url">
-        <button class="btn small" data-action="save-url">Save</button></div>
-        ${d.published_url ? `<a class="small-link" href="${safeUrl(d.published_url)}" target="_blank" rel="noopener noreferrer">${esc(shortUrl(d.published_url))}${icon("external")}</a>` : ""}` : ""}</section>
-    ${isPost() ? "" : `<section id="video-box">${videoBox()}</section>`}
+  const tabs = isPost() ? [] : [["preview", "Preview"], ["review", "Review"], ["comments", "Comments"], ["publish", "Post"]];
+  const badge = { review: d.review ? avgScore(d.review).toFixed(1) : (d.angles || []).length || "", comments: open.length };
+  const tab = isPost() ? "comments" : tabs.some(t => t[0] === editor.sideTab) ? editor.sideTab : "preview";
+  const editingUrl = editor.editUrl || !d.published_url;
+  return `<div class="side-actions"><button class="btn primary" data-action="write-draft">${icon("spark")}${open.length ? `Revise with ${plural(open.length, "comment")}` : d.text?.trim() ? "Rewrite with your agent" : "Write draft"}</button></div>
+    <div class="seg stage-seg" role="group" aria-label="Stage">${STAGES.map(([key, label]) => `<button type="button" class="${d.stage === key ? "on" : ""}" data-action="set-stage" data-id="${key}">${label}</button>`).join("")}</div>
+    ${d.stage === "published" ? (editingUrl ? `<div class="published"><input class="url-input" id="published-url" value="${esc(d.published_url)}" placeholder="Paste the published link" inputmode="url"><button class="btn small" data-action="save-url">Save</button></div>`
+      : `<div class="published-link"><a href="${safeUrl(d.published_url)}" target="_blank" rel="noopener noreferrer">${icon("external")}${esc(shortUrl(d.published_url))}</a><button class="text-btn" data-action="edit-url">Edit</button></div>`) : ""}
+    ${isPost() ? "" : `<section class="status" id="video-box">${videoBox()}</section>`}
     ${tabs.length ? `<div class="side-tabs" role="tablist">${tabs.map(([key, label]) => `<button type="button" role="tab" aria-selected="${tab === key}" class="${tab === key ? "on" : ""}" data-action="side-tab" data-id="${key}">${label}${badge[key] ? `<span class="n">${badge[key]}</span>` : ""}</button>`).join("")}</div>` : ""}
-    <div id="side-panel">${({ preview: previewTab, hooks: hooksTab, quality: qualityTab, comments: commentsTab, publish: publishTab })[tab]()}</div>
-    <section><button class="text-btn danger-text" data-action="delete-script" data-id="${esc(d.id)}">Delete script</button></section>`;
+    <div id="side-panel">${({ preview: previewTab, review: reviewTab, comments: commentsTab, publish: publishTab })[tab]()}</div>
+    <div class="side-foot">${isPost() ? "<span></span>" : lookLink()}
+      <button class="text-btn danger-text" data-action="delete-script" data-id="${esc(d.id)}">Delete script</button></div>`;
+}
+const lookLink = () => `<a href="${channelHref(editor.data.channel, "look")}">${icon("palette")}${esc(channelLabel(editor.data.channel))}'s look</a>`;
+// A "⋯" menu for the less common actions of a status row.
+const moreMenu = items => items.filter(Boolean).length ? `<details class="more"><summary class="icon-btn" aria-label="More">${icon("more")}</summary><div class="more-pop">${items.filter(Boolean).join("")}</div></details>` : "";
+const statusRow = (label, value, action = "", menu = "") => `<div class="status-row"><span class="status-label">${label}</span><span class="status-value">${value}</span><span class="status-act">${action}${menu}</span></div>`;
+function reviewTab() {
+  return `<section><h4>Score</h4>${qualityTab()}</section><section><h4>Hooks</h4><div class="angles">${hooksTab()}</div></section>`;
 }
 
-function voiceoverBox() {
+function voiceoverRow() {
   const n = editor.data.narration, c = channelById(editor.data.channel) || {};
   if (!n) return "";
   const lines = scriptScenes().filter(x => x.say || x.vo), beats = lines.length, mine = lines.filter(x => x.audio?.recorded).length;
-  const record = beats ? `<button class="btn small ${n.provider === "recorded" && mine < beats ? "primary" : ""}" data-action="record-voice">${icon("mic")}${mine ? (mine < beats && n.provider === "recorded" ? `Record ${plural(beats - mine, "beat")}` : "Your takes") : "Record it yourself"}</button>` : "";
-  if (!n.provider) return `<div class="vo-box"><p class="small">${icon(mine ? "mic" : "mute")}<b>Voiceover</b> · ${mine ? `${mine} of ${plural(beats, "beat")} in your voice` : "none, the video renders silent"}</p>
-    <div class="inline">${record}<a class="text-btn" href="${channelHref(editor.data.channel, "narration")}">Choose a voice for ${esc(c.name || "this channel")}</a></div></div>`;
-  const missing = voiceoverMissing(), done = beats - missing;
-  const who = n.provider === "recorded" ? "Your voice" : esc([voiceProvider(n.provider)?.name || n.provider, n.voice].filter(Boolean).join(" · "));
-  if (n.status === "narrating") return `<div class="vo-box"><div class="render-bar"><i style="width:${Math.round((n.progress || 0) * 100)}%"></i></div><p class="muted small">Recording the voiceover with ${who}… ${Math.round((n.progress || 0) * 100)}%</p></div>`;
-  const synth = n.provider !== "recorded";
-  return `<div class="vo-box">${n.status === "failed" && n.error ? `<p class="beat-warn">Voiceover failed: ${esc(n.error)}</p>` : ""}
-    <p class="small">${icon(synth ? "volume" : "mic")}<b>Voiceover</b> · ${who} · ${beats ? `${done} of ${plural(beats, "beat")}` : "no lines yet"}${synth && mine ? ` · ${mine} in your voice` : ""}</p>
-    ${beats ? `<div class="inline">${synth ? (missing ? `<button class="btn small" data-action="narrate">${done ? `Update ${plural(missing, "beat")}` : "Make voiceover"}</button>` : `<span class="pill ok">Up to date</span>`) : (missing ? "" : `<span class="pill ok">All recorded</span>`)}
-      ${record}${synth && done > mine ? `<button class="text-btn" data-action="narrate" data-id="force">Redo all</button>` : ""}${done ? `<a class="text-btn" href="${scriptApi()}/captions.srt" download>Captions (.srt)</a>` : ""}</div>` : ""}
-    ${missing && done ? `<p class="muted small">${synth ? "Changed lines are timed by the speaking pace until they're voiced." : "Beats you haven't recorded are timed by the speaking pace and stay silent."}</p>` : ""}</div>`;
+  const synth = n.provider && n.provider !== "recorded", missing = voiceoverMissing(), done = beats - missing;
+  const who = !n.provider ? "None" : n.provider === "recorded" ? "Your voice" : esc(voiceProvider(n.provider)?.name || n.provider);
+  if (n.status === "narrating") return statusRow("Voice", `<span class="muted">Recording… ${Math.round((n.progress || 0) * 100)}%</span><span class="bar"><i style="width:${Math.round((n.progress || 0) * 100)}%"></i></span>`);
+  const count = !beats ? "" : `<span class="muted" title="${esc(`${done} of ${plural(beats, "beat")} voiced${mine ? `, ${mine} in your voice` : ""}`)}"> · ${!n.provider ? mine : done}/${beats}</span>`;
+  const record = beats ? `<button class="more-item" data-action="record-voice">${icon("mic")}${mine ? "Your takes" : "Record it yourself"}</button>` : "";
+  const action = !beats ? "" : synth && missing ? `<button class="btn small" data-action="narrate">${done ? `Update ${missing}` : "Make"}</button>`
+    : n.provider === "recorded" && missing ? `<button class="btn small" data-action="record-voice">${icon("mic")}Record ${missing}</button>`
+    : n.provider ? `<span class="ok-dot" title="Up to date"></span>` : "";
+  return statusRow("Voice", `${mine ? icon("mic") : ""}${who}${count}`, action, moreMenu([record,
+    synth && done > mine ? `<button class="more-item" data-action="narrate" data-id="force">${icon("refresh")}Redo all beats</button>` : "",
+    done ? `<a class="more-item" href="${scriptApi()}/captions.srt" download>${icon("file")}Captions (.srt)</a>` : "",
+    `<a class="more-item" href="${channelHref(editor.data.channel, "narration")}">${icon("volume")}Change ${esc(c.name || "channel")}'s voice</a>`]))
+    + (n.status === "failed" && n.error ? `<p class="beat-warn">Voiceover failed: ${esc(n.error)}</p>` : "");
 }
 function videoBox() {
   const v = editor.data.video;
   if (!v) return "";
-  const url = scriptApi();
-  const pct = Math.round((v.progress || 0) * 100);
-  const placeholders = v.placeholders?.length ? `<p class="beat-warn">${esc(plural(v.placeholders.length, "beat"))} still ${v.placeholders.length === 1 ? "needs an image" : "need images"}: ${esc(v.placeholders.join(", "))}.</p>` : "";
-  let body;
-  if (v.status === "rendering") body = `<div class="render-bar"><i style="width:${pct}%"></i></div><p class="muted small">Rendering on this computer… ${pct}%. You can keep working.</p>`;
-  else if (v.ready) body = `<div class="video-ready"><img class="video-poster" src="${url}/poster.jpg?v=${esc(v.finished || "")}" alt="">
-      <div><a class="btn primary" href="${url}/video" download>${icon("download")}Download MP4</a>
-        <p class="muted small">${v.size ? `${(v.size / 1e6).toFixed(1)} MB · ` : ""}rendered ${esc(when(v.finished))}</p>
-        <button class="text-btn" data-action="render-video">${v.stale ? "Re-render with your changes" : "Render again"}</button></div></div>
-      ${v.stale ? `<p class="beat-warn">The script, images, or look changed since this render.</p>` : ""}`;
-  else body = `<button class="btn" data-action="render-video">${icon("film")}Render MP4</button><p class="muted small">Renders on this computer (Chrome + ffmpeg). It can take a few minutes${editor.data.narration?.provider && voiceoverMissing() ? ", and records the voiceover first" : ""}.</p>`;
+  const url = scriptApi(), pct = Math.round((v.progress || 0) * 100);
+  let row;
+  if (v.status === "rendering") row = statusRow("Video", `<span class="muted">Rendering… ${pct}%</span><span class="bar"><i style="width:${pct}%"></i></span>`);
+  else if (v.ready) row = statusRow("Video", `<img class="status-thumb" src="${url}/poster.jpg?v=${esc(v.finished || "")}" alt="">${v.stale ? `<span class="warn-text">Outdated</span>` : "Ready"}<span class="muted"> · ${fmtTime(editor.data.duration)}${v.size ? ` · ${(v.size / 1e6).toFixed(1)} MB` : ""}</span>`,
+    v.stale ? `<button class="btn small" data-action="render-video">Render</button>` : `<a class="btn small" href="${url}/video" download>${icon("download")}MP4</a>`,
+    moreMenu([v.stale ? `<a class="more-item" href="${url}/video" download>${icon("download")}Download the last render</a>` : `<button class="more-item" data-action="render-video">${icon("film")}Render again</button>`,
+      `<span class="more-note">Rendered ${esc(when(v.finished))}</span>`]));
+  else row = statusRow("Video", `<span class="muted">Not rendered</span>`, `<button class="btn small" data-action="render-video">${icon("film")}Render</button>`);
   const pub = editor.data.publish, done = pub && PUBLISH_DONE[pub.status];
-  const posted = done ? `<p class="small">${icon("upload")}${done} on ${esc(platformById(pub.platform)?.name || pub.platform)}${pub.url ? ` · <a href="${safeUrl(pub.url)}" target="_blank" rel="noopener noreferrer">open</a>` : ""}${pub.stats?.views != null ? ` · ${compact(pub.stats.views)} views` : ""}</p>`
-    : pub?.status === "uploading" ? `<p class="small muted">${icon("upload")}Uploading… ${Math.round((pub.progress || 0) * 100)}%</p>` : "";
-  return `<h4>Video</h4>${posted}${voiceoverBox()}${v.status === "failed" && v.error ? `<p class="beat-warn">Last render failed: ${esc(v.error)}</p>` : ""}${body}${placeholders}`;
+  const posted = done ? statusRow("Posted", `${esc(platformById(pub.platform)?.name || pub.platform)}${pub.stats?.views != null ? `<span class="muted"> · ${compact(pub.stats.views)} views</span>` : ""}`,
+      pub.url ? `<a class="icon-btn" href="${safeUrl(pub.url)}" target="_blank" rel="noopener noreferrer" aria-label="Open the post" title="Open the post">${icon("external")}</a>` : "")
+    : pub?.status === "uploading" ? statusRow("Posted", `<span class="muted">Uploading… ${Math.round((pub.progress || 0) * 100)}%</span>`) : "";
+  const notes = [v.status === "failed" && v.error ? `Last render failed: ${v.error}` : "",
+    v.placeholders?.length ? `${plural(v.placeholders.length, "beat")} still ${v.placeholders.length === 1 ? "needs an image" : "need images"}: ${v.placeholders.join(", ")}` : ""].filter(Boolean);
+  return voiceoverRow() + row + posted + notes.map(n => `<p class="beat-warn">${esc(n)}</p>`).join("");
 }
 const updateVideoBox = () => { const box = document.getElementById("video-box"); if (box && editor) box.innerHTML = videoBox(); };
 
 function previewTab() {
   if (!editor.design) return `<p class="muted small">Couldn't load this channel's look.</p>`;
   return `<div class="device aspect-${esc((editor.design.aspect || "9:16").replace(":", "x"))}" id="script-player"></div>${playerBar(Boolean(editor.data.narration?.provider))}
-    <h4 class="beats-head">Beats <span class="muted small">click to jump · add a photo to any beat</span></h4>
+    <h4 class="beats-head">Beats</h4>
     <div class="beats" id="beat-list">${beatList()}</div>
-    ${mediaLibrary()}
-    <a class="small-link" href="${channelHref(editor.data.channel, "look")}">${icon("palette")}Edit ${esc(channelLabel(editor.data.channel))}'s look</a>`;
+    ${mediaLibrary()}`;
 }
 
 function beatList() {
@@ -2593,7 +2635,8 @@ const actions = {
         : "The story has no research notes yet, so your agent researches it first, then writes the script. Paste this into Claude or ChatGPT."));
   },
   async "set-stage"(stage) { if (stage !== editor.data.stage) await updateMeta({ stage }); },
-  async "save-url"() { await updateMeta({ published_url: document.getElementById("published-url").value }); toast("Link saved"); },
+  async "save-url"() { editor.editUrl = false; await updateMeta({ published_url: document.getElementById("published-url").value }); toast("Link saved"); },
+  "edit-url"() { editor.editUrl = true; rerender(); document.getElementById("published-url")?.focus(); },
   async "add-comment"() {
     const picked = selectedQuote();
     if (editor.dirty && !(await saveDoc())) return;
@@ -2948,6 +2991,7 @@ function cardAction(event) {
   Promise.resolve(actions[card.dataset.card](card.dataset.id, card)).catch(e => toast(e.message, "error"));
 }
 document.addEventListener("click", cardAction);
+document.addEventListener("click", event => { document.querySelectorAll("details.more[open]").forEach(d => { if (!d.contains(event.target) || event.target.closest(".more-item")) d.open = false; }); });
 document.addEventListener("keydown", cardAction);
 document.addEventListener("change", event => {
   const el = event.target.closest('select[data-action]');
