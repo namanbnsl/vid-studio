@@ -410,6 +410,150 @@ class StudioVoiceoverTest(unittest.TestCase):
             server.server_close()
 
 
+class YourVoiceTest(unittest.TestCase):
+    """Takes you record or upload, the "Your voice" narrator, and ElevenLabs voice cloning."""
+
+    def setUp(self):
+        self.tmp = tempfile.TemporaryDirectory()
+        self.home = Path(self.tmp.name)
+        self.fake = FakeProvider()
+        self.registry = mock.patch.dict(tts.PROVIDERS, {"fake": self.fake})
+        self.registry.start()
+        with contextlib.redirect_stdout(io.StringIO()):
+            studio.main(["--workspace", str(self.home), "new-project", "--name", "Voice"])
+        studio.add_channel(self.home, {"name": "Shorts", "language": "English"})
+        self.project = studio.Studio(self.home / "projects" / "voice", self.home)
+        self.script = self.project.create_script(self.project.create_story("S")["id"], "shorts")["id"]
+        self.project.update_script(self.script, {"text": "## Hook\nYour bill went up.\nVisual: text | Up\n## Why\nThe tariff changed.\nSay: The tariff changed in October.\nVisual: text | Why\n## End\nVisual: end | Bye | Go"})
+
+    def tearDown(self):
+        self.registry.stop()
+        self.tmp.cleanup()
+
+    def test_a_take_wins_over_the_narrator_and_works_without_one(self):
+        # no narrator: the take still times and voices its beat, and nothing counts as missing
+        narration = self.project.add_take(self.script, "Your bill went up.", tone(1.2, 48000, lead=0.5, tail=0.5), "hook.wav", "uploaded")
+        take = next(iter(narration["takes"].values()))
+        self.assertEqual((take["source"], narration["recorded"], narration["missing"]), ("uploaded", 1, 0))
+        self.assertAlmostEqual(take["duration"], 1.2 + 0.08 + 0.15, delta=0.03)  # silence trimmed, a breath kept
+        hook = self.project.script(self.script)["scenes"][0]
+        self.assertTrue(hook["audio"]["recorded"])
+        self.assertEqual(hook["duration"], studio.beat_seconds(take["duration"], 0.3))
+        # a narrator voices only the beats without a take
+        studio.save_narration(self.home, "shorts", {"provider": "fake"})
+        self.assertEqual(self.project.narrate_script(self.script)["made"], 1)
+        self.assertEqual([c[0] for c in self.fake.calls], ["The tariff changed in October."])
+        scenes = self.project.script(self.script)["scenes"]
+        self.assertTrue(scenes[0]["audio"]["src"].startswith("narration/rec-"))
+        self.assertNotIn("recorded", scenes[1]["audio"])
+        # a take for a Say: line belongs to what's said
+        self.project.add_take(self.script, "The tariff changed in October.", tone(0.8), "why.wav")
+        self.assertEqual(self.project.script(self.script)["narration"]["recorded"], 2)
+        self.assertEqual(self.project.narrate_script(self.script, force=True)["made"], 0)
+        with self.assertRaisesRegex(ValueError, "isn't in the script"):
+            self.project.add_take(self.script, "Something else.", tone(0.5))
+        with self.assertRaisesRegex(tts.TTSError, "silent"):
+            self.project.add_take(self.script, "Your bill went up.", tone(0.0, lead=1.0))
+        key = tts.recording_key("Your bill went up.")
+        self.project.delete_take(self.script, key)
+        self.assertFalse(self.project.path("scripts", self.script, "narration", f"rec-{key}.wav").exists())
+        with self.assertRaises(KeyError):
+            self.project.delete_take(self.script, key)
+
+    def test_your_voice_narrator_never_synthesises(self):
+        studio.save_narration(self.home, "shorts", {"provider": "recorded"})
+        narration = self.project.script(self.script)["narration"]
+        self.assertEqual((narration["missing"], narration["done"]), (2, 0))
+        with self.assertRaisesRegex(ValueError, "record or upload a take for: Hook, Why"):
+            self.project.narrate_script(self.script)
+        with self.assertRaisesRegex(tts.TTSError, "own voice"):
+            studio.speak_sample(self.home, "shorts", "Hello")
+        self.project.add_take(self.script, "Your bill went up.", tone(1.0))
+        self.project.add_take(self.script, "The tariff changed in October.", tone(1.0))
+        self.assertEqual(self.project.narrate_script(self.script), {"made": 0, "beats": 2, "provider": "recorded"})
+        self.assertEqual(self.fake.calls, [])
+
+    @unittest.skipUnless(shutil.which("ffmpeg"), "needs ffmpeg")
+    def test_browser_recordings_are_converted(self):
+        source = self.home / "in.wav"
+        source.write_bytes(tone(1.0, 44100, lead=0.3, channels=2))
+        webm = self.home / "take.webm"
+        subprocess.run(["ffmpeg", "-y", "-loglevel", "error", "-i", str(source), "-c:a", "libopus", str(webm)], check=True)
+        narration = self.project.add_take(self.script, "Your bill went up.", webm.read_bytes(), "take.webm")
+        wav = self.project.path("scripts", self.script, "narration", next(iter(narration["takes"].values()))["file"])
+        audio = tts.read_wav(wav.read_bytes())
+        self.assertEqual(audio.rate, 48000)
+        self.assertTrue(0.95 <= audio.duration <= 1.3, audio.duration)  # the tone, a breath either side, Opus padding
+        with self.assertRaisesRegex(tts.TTSError, "Couldn't read that audio"):
+            tts.to_wav(b"definitely not audio", "x.mp3")
+
+    def test_cli_take(self):
+        path = self.home / "mine.wav"
+        path.write_bytes(tone(0.9))
+        out = io.StringIO()
+        with contextlib.redirect_stdout(out):
+            studio.main(["--workspace", str(self.home), "take", "--script", self.script, "--beat", "2", "--file", str(path)])
+            studio.main(["--workspace", str(self.home), "take", "--script", self.script, "--beat", "2", "--remove"])
+        self.assertIn("Saved your take of Why", out.getvalue())
+        self.assertIn("Removed your take of Why", out.getvalue())
+        with self.assertRaises(SystemExit):
+            studio.main(["--workspace", str(self.home), "take", "--script", self.script, "--beat", "3", "--file", str(path)])
+
+    def test_clone_your_voice_with_elevenlabs(self):
+        tts.set_secret(self.home, "ELEVENLABS_API_KEY", "xi-test")
+        sent = []
+
+        def http(method, url, headers=None, body=None, timeout=120):
+            sent.append((method, url, headers, body))
+            return json.dumps({"voice_id": "VoIcE123", "requires_verification": False}).encode(), "application/json"
+        samples = [("one.wav", tone(15)), ("two.wav", tone(20, 22050))]
+        with mock.patch.dict(os.environ, {"ELEVENLABS_API_KEY": ""}), mock.patch.object(tts, "http", http):
+            with self.assertRaisesRegex(ValueError, "Confirm"):
+                studio.clone_channel_voice(self.home, "shorts", "Me", samples, consent=False)
+            with self.assertRaisesRegex(tts.TTSError, "at least 30 seconds"):
+                studio.clone_channel_voice(self.home, "shorts", "Me", [("short.wav", tone(5))], consent=True)
+            made = studio.clone_channel_voice(self.home, "shorts", "My narrator", samples, consent=True)
+        method, url, headers, body = sent[-1]
+        self.assertEqual((method, url, headers["xi-api-key"]), ("POST", "https://api.elevenlabs.io/v1/voices/add", "xi-test"))
+        self.assertTrue(headers["Content-Type"].startswith("multipart/form-data; boundary="))
+        self.assertEqual(body.count(b'name="files"'), 2)
+        self.assertIn(b'name="name"\r\n\r\nMy narrator', body)
+        self.assertIn(b'name="remove_background_noise"\r\n\r\ntrue', body)
+        self.assertEqual((made["voice_id"], made["seconds"]), ("VoIcE123", 35.0))
+        self.assertEqual((made["narration"]["provider"], made["narration"]["voice"]), ("elevenlabs", "VoIcE123"))
+        self.assertEqual(len(list((self.home / "channels" / "shorts" / "voice-samples").iterdir())), 2)
+
+    def test_http_takes_and_clone(self):
+        server = studio.ThreadingHTTPServer(("127.0.0.1", 0), studio.make_handler(self.home))
+        threading.Thread(target=server.serve_forever, daemon=True).start()
+
+        def call(method, path, body=None):
+            connection = http.client.HTTPConnection("127.0.0.1", server.server_port)
+            try:
+                connection.request(method, path, json.dumps(body) if body is not None else None,
+                                   {"Host": "localhost", "X-Vid-Studio": "1", "Content-Type": "application/json"})
+                response = connection.getresponse()
+                data = response.read()
+                return response.status, (json.loads(data) if response.getheader("Content-Type", "").startswith("application/json") else data)
+            finally:
+                connection.close()
+        try:
+            data = "data:audio/wav;base64," + base64.b64encode(tone(1.0)).decode()
+            code, narration = call("POST", f"/api/p/voice/scripts/{self.script}/takes", {"text": "Your bill went up.", "data": data, "name": "t.wav"})
+            self.assertEqual((code, narration["recorded"]), (200, 1))
+            take = next(iter(narration["takes"].values()))
+            code, wav = call("GET", f"/api/p/voice/scripts/{self.script}/narration/{take['file']}")
+            self.assertEqual((code, wav[:4]), (200, b"RIFF"))
+            self.assertEqual(call("POST", f"/api/p/voice/scripts/{self.script}/takes", {"text": "Your bill went up.", "data": "%%%"})[0], 400)
+            key = take["file"][4:16]
+            self.assertEqual(call("DELETE", f"/api/p/voice/scripts/{self.script}/takes/{key}")[1]["recorded"], 0)
+            code, reply = call("POST", "/api/channels/shorts/voice-clone", {"name": "Me", "samples": [], "consent": True})
+            self.assertEqual((code, reply["error"]), (409, "Add your ElevenLabs API key"))
+        finally:
+            server.shutdown()
+            server.server_close()
+
+
 @unittest.skipUnless(shutil.which("node"), "Node is needed to check the browser's narration timing")
 class NarrationParityTest(unittest.TestCase):
     def test_preview_times_voiced_beats_like_the_server(self):
@@ -422,11 +566,12 @@ class NarrationParityTest(unittest.TestCase):
                  "Four, said slowly.": {"file": "b.wav", "duration": 0.05, "words": None, "caption": "Four."},
                  "Five six.": {"file": "c.wav", "duration": 2.5, "words": None, "caption": "Five six."}}
         narration = {"provider": "fake", "pause": 0.35, "clips": clips}
+        clips["Unvoiced line here."] = {"file": "rec-d.wav", "duration": 2.0, "words": None, "caption": "Unvoiced line here.", "recorded": True}
         expected = json.loads(json.dumps(scenes))
         for scene in expected:
             clip = clips.get(scene.get("say") or scene["vo"])
             if clip:
-                scene["audio"] = {"src": "narration/" + clip["file"], "duration": clip["duration"]}
+                scene["audio"] = {"src": "narration/" + clip["file"], "duration": clip["duration"]} | ({"recorded": True} if clip.get("recorded") else {})
                 if clip["words"] and clip["caption"] == scene["vo"]:
                     scene["audio"]["words"] = clip["words"]
                 if not scene.get("fixed"):
@@ -434,7 +579,11 @@ class NarrationParityTest(unittest.TestCase):
         program = parser + helper + f"\nprocess.stdout.write(JSON.stringify(withNarration(parseScenes({json.dumps(text)}, 160), {json.dumps(narration)})));"
         preview = json.loads(subprocess.run(["node", "-e", program], capture_output=True, text=True, check=True).stdout)
         self.assertEqual(preview, expected)
-        self.assertEqual([s["duration"] for s in preview], [1.6, 1.5, 2.0, studio.parse_scenes(text, 160)[3]["duration"]])
+        self.assertEqual([s["duration"] for s in preview], [1.6, 1.5, 2.0, 2.4])
+        # takes apply even when the channel has no narrator
+        alone = subprocess.run(["node", "-e", parser + helper + f"\nprocess.stdout.write(JSON.stringify(withNarration(parseScenes({json.dumps(text)}, 160), {json.dumps({'provider': '', 'pause': 0.3, 'clips': {'Unvoiced line here.': clips['Unvoiced line here.']}})})));"],
+                               capture_output=True, text=True, check=True)
+        self.assertTrue(json.loads(alone.stdout)[3]["audio"]["recorded"])
 
 
 if __name__ == "__main__":

@@ -40,7 +40,7 @@ Start with `studio.py status`.
 | "Tune the voice of the channel …" | Read `studio.py voice --channel C`, change what was asked (see the voice section of [script-craft.md](references/script-craft.md) for what each setting does), and save with `studio.py voice --channel C --file -`. If they share example scripts, add them to `examples` with a line on what to learn from each. |
 | Images for a script ("add photos", "find a picture of …") | [images.md](references/images.md) |
 | Publish to YouTube, Instagram or TikTok, connect a channel's account, write a post's title/description/caption, or get views | [publish.md](references/publish.md). Never publish unless the user asks for that script now |
-| Voiceover: pick a voice or provider (ElevenLabs, Sarvam, local…), add an API key, "make the voiceover", fix a pronunciation | [narration.md](references/narration.md) |
+| Voiceover: pick a voice or provider (ElevenLabs, Sarvam, local…), add an API key, "make the voiceover", fix a pronunciation, use the user's own recordings, or clone their voice | [narration.md](references/narration.md) |
 | Preview, render, or download a script's video | `studio.py scenes --script S` checks beats and timing ([scenes.md](references/scenes.md)); `studio.py render --script S` renders the MP4 on this machine (`--out ~/Desktop` to copy it there) |
 | Set up, change, or turn off a research schedule (never runs research) | [schedule.md](references/schedule.md) |
 | Open, show, or see the studio | Run `studio.py serve --background` and share the printed link (one server serves every project) |

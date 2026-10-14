@@ -1,6 +1,6 @@
 # Vid Studio
 
-A skill for running research for explainer videos with any AI agent that supports [skills](https://skills.sh/), such as Claude, ChatGPT, or Codex. All data stays in a local folder, and you work in a small web UI.
+A skill for running research for explainer videos with any AI agent that supports [skills](https://skills.sh/), such as Claude, ChatGPT, or Codex. All data stays in a local folder, and you work in a small web UI (light or dark).
 
 ```sh
 npx skills add namanbnsl/vid-studio
@@ -30,6 +30,8 @@ Each channel has a **Voice** (length, pace, persona, tone, hook styles, rules, a
 Video scripts are written as beats: what's said, plus a `Visual:` line naming a scene (a stat, bar chart, comparison, list, quote, timeline, photo, punchline, or the message or call the story turns on). A beat can also have a photo behind it (`Image:`), a small on-screen source tag (`Source:`), and a fixed length (`Duration:`). The script editor plays them as an animated preview in the channel's look as you type, shows the timing against the target, the hooks your agent considered (swap one in with a click), and its self-review scores, including whether it tells a human story, whether it sounds human, and whether it's worth the viewer's minute.
 
 **Images.** Photos run edge to edge across the top of the frame, like the picture on a magazine page, with the scene set below (beside it in wide formats), or faint behind charts. Your agent picks photos for the beats about real things and people: openly licensed photos from Wikimedia Commons and Openverse (no API key; it looks at previews before choosing), or images it generates with its own image tool, if it has one. Generated images are never used for real people, products, logos, or documents. Every photo is saved with the script and credited on screen. You can also add your own photo to any beat from the script page.
+
+**Your own voice.** Record any beat yourself on the script page: a teleprompter shows each line, you record, listen and keep, or upload a take. Takes always win over the narrator, and a channel can use **Your voice** as its narrator so you read every beat. With ElevenLabs you can also clone your voice from a minute or two of recordings.
 
 **Voiceover.** Give a video channel a narrator on its **Narration** tab: a voice on your computer (the system voice, or free offline [Piper](https://github.com/OHF-Voice/piper1-gpl) voices), or ElevenLabs, Sarvam AI, OpenAI or Google Cloud with your own API key. Hear samples, set the speed, the pause between beats, and how words are pronounced. Each beat is voiced on its own and reused until its line changes; beats then last as long as the voice takes, captions follow it (word by word with ElevenLabs), and a `Say:` line lets the voice read "twelve thousand rupees" while the screen shows ₹12,000. The MP4 gets the voiceover, mixed to a loudness phones expect, plus an `.srt` captions file.
 
