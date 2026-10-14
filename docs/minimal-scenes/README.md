@@ -59,6 +59,36 @@ Wide (Graphite at 16:9):
 
 ![Graphite, 16:9](assets/after-wide.jpg)
 
+## Teaching the agent
+
+The scenes only look like this if the script gives them the right material, so the skill now has a directing guide, [direction.md](../../skills/vid-studio/references/direction.md). It covers:
+
+- which scene suits each beat's job;
+- how to write numbers the odometer and the difference headline can use: short values, matching units, the subject second;
+- words the screen can carry: one emphasis per scene, parallel list items, rare `Text:` labels;
+- photos that suit a frame;
+- pacing;
+- which look suits which channel.
+
+`write.md`, `script-craft.md` §7, `look.md` and `SKILL.md` point to it. `studio.py scenes` now warns when a script breaks it:
+
+- a stat value too long to read at a glance;
+- a compare of a percentage against a non-percentage;
+- more than one emphasis in a scene;
+- lists over 5 items, or items over 6 words;
+- three scenes of one type in a row (a deliberate series with a shared title is fine);
+- `Text:` labels on more than half the beats.
+
+The bundled example scripts pass these checks, and render like this.
+
+English, in Graphite:
+
+![English example](assets/example-english.jpg)
+
+Hinglish, in Monsoon:
+
+![Hinglish example](assets/example-hinglish.jpg)
+
 ## Settings
 
 - `cards.style` takes `glass` (the default), `solid` or `flat`. `glass` gives tiles one step off the background, frosted over photos. `solid` fills the tiles with `surface`. `flat` is the old editorial look, with no tiles. In the studio it's under Channels → a channel → Look → Background & shape → Cards.

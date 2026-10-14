@@ -1776,6 +1776,26 @@ def scene_warnings(scenes: list[dict]) -> list[str]:
             elif numeric and all(re.fullmatch(r"[\d.,\s]+", v) for v in values) and not UNIT_HINT.search(data.get("title", "")):
                 warnings.append(f"{scene['beat']}: the values have no unit; say what is measured (₹, %, litres, a named index) "
                                 "in the values or the title. Never chart a claim as invented numbers")
+        # direction.md: numbers the scenes can animate, words the screen can carry
+        if kind == "stat":
+            digits = len(re.findall(r"[\d\u0966-\u096F]", str(data.get("value", ""))))
+            if digits > 5:
+                warnings.append(f"{scene['beat']}: the stat value \"{data.get('value', '')}\" is too long to read at a glance; "
+                                "write lakh or crore and round (₹29.6 lakh, 42%)")
+        if kind == "compare":
+            values = [str(item.get("value", "")) for item in data.get("items", []) if isinstance(item, dict)]
+            if len(values) == 2 and all(re.search(r"\d", v) for v in values) and ("%" in values[0]) != ("%" in values[1]):
+                warnings.append(f"{scene['beat']}: one value is a percentage and the other isn't, so the difference means nothing; "
+                                "compare like with like")
+        if kind == "text" and len(re.findall(r"\*[^*]+\*", data.get("text", ""))) > 1:
+            warnings.append(f"{scene['beat']}: more than one *emphasis*; keep one, so it stands out")
+        if kind == "list":
+            items = [str(x) for x in data.get("items", [])]
+            if len(items) > 5:
+                warnings.append(f"{scene['beat']}: {len(items)} list items; keep 3 to 5")
+            long = [x for x in items if word_count(x) > 6]
+            if long:
+                warnings.append(f"{scene['beat']}: list items over 6 words (\"{clean_text(long[0], 40)}\"); keep each to 2–5 words")
         if kind == "message" and not scene["text"].strip() and not scene.get("source"):
             warnings.append(f"{scene['beat']}: label the message: \"Text: Example\" for a reconstruction, or a Source: line for a real one")
     sentences = [x for scene in scenes for x in re.split(r"(?<=[.!?।])\s+", spoken_text(scene["vo"])) if word_count(x)]
@@ -1788,6 +1808,17 @@ def scene_warnings(scenes: list[dict]) -> list[str]:
     if total_duration(scenes) >= 30 and not any(s.get("image") or s["type"] == "image" for s in scenes):
         warnings.append("no photos: give the 2–4 beats about real things, places or people an Image: line (images.md); "
                         "a video with none looks templated")
+    labelled = [s for s in scenes if s["text"].strip()]
+    if len(scenes) >= 4 and len(labelled) > len(scenes) / 2:
+        warnings.append(f"{len(labelled)} of {len(scenes)} beats have a Text: label; keep them for naming what's on screen "
+                        "or flagging an example (direction.md)")
+    for i in range(2, len(scenes)):
+        run = {scenes[j]["type"] for j in (i - 2, i - 1, i)}
+        titles = [str(scenes[j]["data"].get("title", "")).strip().casefold() for j in (i - 2, i - 1, i)]
+        series = len({t for t in titles if t}) < len([t for t in titles if t])   # a deliberate series shares a title
+        if len(run) == 1 and scenes[i]["type"] != "stat" and not series:
+            warnings.append(f"{scenes[i - 2]['beat']} to {scenes[i]['beat']}: three {scenes[i]['type']} scenes in a row; "
+                            "change the scene type every one or two beats")
     texts = [s["beat"] for s in scenes if s["type"] == "text"]
     if len(texts) > 2:
         warnings.append(f"{len(texts)} text scenes ({', '.join(texts)}): slogans on screen read as generated; "

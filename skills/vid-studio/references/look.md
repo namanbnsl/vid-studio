@@ -10,7 +10,7 @@ Each video channel has a **look**: colors, fonts, motion, captions, and backgrou
 4. If the channel language is Hindi or Hinglish, the display and body fonts must support Devanagari (`devanagari: true` in `studio.py fonts`).
 5. Reply with what changed and the studio link to the channel's Look tab.
 
-To start from a preset, `studio.py presets` lists them; set `"preset"` and drop the keys you want the preset to decide.
+To start from a preset, `studio.py presets` lists them ([direction.md](direction.md) says which suits which channel); set `"preset"` and drop the keys you want the preset to decide.
 
 ## design.json
 

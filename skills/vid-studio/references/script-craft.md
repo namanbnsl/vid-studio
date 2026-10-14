@@ -232,6 +232,8 @@ After: "पचास परसेंट ज़रूरतों के लि�
 
 ## 7. Visual thinking
 
+This section is what each scene is for. [direction.md](direction.md) is how to write its lines so the frame looks finished: short numbers the odometer can roll, unit-matched compares, one emphasis per scene, photos that suit a card, and pacing.
+
 **The VO explains; the screen shows the one thing to remember.** The screen is never a transcript. Test it twice. With the sound off, do the visuals alone tell the skeleton of the story? With your eyes closed, does the VO make sense?
 
 | Scene | Job | Notes |

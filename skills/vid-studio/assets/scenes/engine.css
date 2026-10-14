@@ -339,6 +339,13 @@
 .vid-stage.cards-glass .scene:not(.has-photo) .card { background: none; padding-left: 0; padding-right: 0; }
 .vid-stage.cards-glass .scene:not(.has-photo) .chart-card { padding-top: 0; padding-bottom: 0; }
 .vid-stage.cards .folio { display: none; }
+/* two phrases on the background: stacked tight, the arrow on their left edge, labels readable */
+.vid-stage.cards-glass .scene:not(.has-photo) .scene-compare .cols-text, .vid-stage.cards-glass .scene-compare:not(.has-photo) .cols-text { justify-content: center; gap: calc(var(--k) * 36px); }
+.vid-stage.cards-glass .scene-compare:not(.has-photo) .panel { flex: none; padding-top: 0; padding-bottom: 0; }
+.vid-stage.cards-glass .scene-compare:not(.has-photo) .vs-row { justify-content: flex-start; height: auto; margin: 0; }
+.vid-stage.cards-glass .scene-compare:not(.has-photo) .vs { width: calc(var(--k) * 64px); height: calc(var(--k) * 64px); box-shadow: none; }
+.vid-stage.cards-glass .scene-compare:not(.has-photo) .panel .col-label { font-size: calc(var(--k) * var(--ts) * 38px); }
+.vid-stage.cards-glass .scene-compare:not(.has-photo) .panel-value { font-size: calc(var(--k) * var(--kw, 1) * var(--ts) * 112px); }
 .vid-stage.cards .scene.has-photo .card { text-shadow: none; background: var(--card-fill-photo); }
 .vid-stage.cards-glass .scene.has-photo .card { -webkit-backdrop-filter: blur(40px) saturate(1.2); backdrop-filter: blur(40px) saturate(1.2); }
 

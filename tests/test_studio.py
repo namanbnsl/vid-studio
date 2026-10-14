@@ -385,6 +385,41 @@ Visual: end | Test the task you have | Follow
             example = (Path(studio.__file__).resolve().parents[1] / "assets" / "examples" / f"{name}.md").read_text(encoding="utf-8")
             self.assertEqual(studio.scene_warnings(studio.parse_scenes(example)), [], name)
 
+    def test_direction_lint_keeps_frames_readable(self):
+        joined = "\n".join(studio.scene_warnings(studio.parse_scenes("""## Hook
+Line.
+Visual: stat | ₹29,60,000 | After 20 years
+Text: Worked example
+## Rates
+Line.
+Visual: compare | Returns | Fund: 12% | FD: ₹7,000
+Text: Example
+## Rule
+Line.
+Visual: text | *Start early*, and *stay long*
+Text: Rule
+## Steps
+Line.
+Visual: list | Steps | Open the app and find the SIP section | Pick a fund | Set the date | Confirm | Check | Wait
+## More
+Line.
+Visual: list | More | One | Two
+## Again
+Line.
+Visual: list | Again | One | Two
+## End
+Visual: end | Start the SIP on salary day | Follow
+""")))
+        self.assertIn('Hook: the stat value "₹29,60,000" is too long', joined)
+        self.assertIn("Rates: one value is a percentage and the other isn't", joined)
+        self.assertIn("Rule: more than one *emphasis*", joined)
+        self.assertIn("Steps: 6 list items", joined)
+        self.assertIn("Steps: list items over 6 words", joined)
+        self.assertIn("Steps to Again: three list scenes in a row", joined)
+        self.assertNotIn("Text: label", joined)  # 3 of 7 is under half
+        labels = studio.scene_warnings(studio.parse_scenes("".join(f"## B{i}\nLine.\nVisual: stat | {i}% | Share\nText: Label {i}\n" for i in range(4)) + "## End\nVisual: end | A | B"))
+        self.assertTrue(any("4 of 5 beats have a Text: label" in w for w in labels))
+
     def test_voice_lint_catches_invented_people_and_written_rhythm(self):
         warnings = studio.scene_warnings(studio.parse_scenes("""## Hook
 Meet Rahul, a twenty-eight year old from Pune. Hey guys, this matters.
