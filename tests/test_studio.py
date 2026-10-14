@@ -326,6 +326,23 @@ Visual: end | Follow | Subscribe
             with self.assertRaises(ValueError):
                 studio.parse_scenes(text, bad)
 
+    def test_scene_warnings_catch_unexplained_names_and_fake_sources(self):
+        warnings = studio.scene_warnings(studio.parse_scenes("""## Hook
+That test has models build scenes.
+Visual: list | How AA-3D is scored | Same brief | Blind votes
+Source: Editorial method, informed by smevals
+## Rule
+UPI is run by NPCI, the body behind every payment app. [1]
+Visual: compare | Who runs it | Apps: PhonePe | Behind them: NPCI
+Source: NPCI, UPI FAQs
+## End
+Visual: end | Check before you approve | Follow
+"""))
+        joined = "\n".join(warnings)
+        self.assertIn('Hook shows "AA-3D" but the voiceover never says it', joined)
+        self.assertIn("is your own reasoning, not a source", joined)
+        self.assertNotIn("NPCI", joined)
+
     def test_scene_warnings_catch_generated_looking_screens(self):
         warnings = studio.scene_warnings(studio.parse_scenes("""## Hook
 Line.

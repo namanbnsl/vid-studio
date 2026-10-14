@@ -41,7 +41,8 @@ The `stat` scene sets its number as large as the frame allows and rolls the digi
 - **One emphasis per scene.** Wrap the phrase that matters in `*asterisks*` in a `text` scene ("8% is an assumption, *not a promise*"). It takes the accent. Two emphasised phrases cancel each other out.
 - **List items are parallel and short:** same grammatical shape, 2 to 5 words, no full stops. "Debit on salary day / Keep going in bad years / Raise it with your pay". Three is the best number. The points arrive one at a time and the earlier ones step back, so each item must make sense alone.
 - **Timeline dates are short** ("Age 25", "Oct 2026", "2019") and the labels are under 5 words. The last date takes the accent, so end on the date the story is about.
-- **`Text:` labels are rare.** They show as a small accent line above the scene, or on a photo's corner. Use one only to name what the viewer is looking at ("Worked example", "Example message", "Jaquar's claim") or to flag that something is illustrative. Most beats need none; a label on every beat is noise.
+- **`Text:` labels are rare.** They show as a small accent line above the scene, or on a photo's corner. Use one only to name what the viewer is looking at ("Worked example", "Example message", "Jaquar's claim") or to flag that something is illustrative. Most beats need none; a label on every beat is noise. Write them in the viewer's words: "Example", not "Hypothetical app-switching decision" or "Illustration, no models run".
+- **Every name on screen is one the voiceover has explained.** A heading like "How AA-3D is scored" means nothing if the VO only ever said "that test". `studio.py scenes` warns about acronyms the VO never says.
 - **End titles are 3 to 6 words, and the call to action is one plain sentence** ("Follow for one money calculation a week"). With the default look it shows as an accent text link, so it should read as an invitation, not a slogan.
 
 ## Choose photos that suit a frame

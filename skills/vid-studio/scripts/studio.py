@@ -1808,6 +1808,17 @@ def voice_warnings(scene: dict) -> list[str]:
     return warnings
 
 
+def _strings(value) -> list[str]:
+    """Every string inside a scene's data, however deeply nested."""
+    if isinstance(value, str):
+        return [value]
+    if isinstance(value, dict):
+        return [s for v in value.values() for s in _strings(v)]
+    if isinstance(value, list):
+        return [s for v in value for s in _strings(v)]
+    return []
+
+
 def scene_warnings(scenes: list[dict]) -> list[str]:
     """On-screen problems that make a video look generated: repeated lines, slogan runs, charts without meaning."""
     warnings, seen = [], {}
@@ -1859,8 +1870,21 @@ def scene_warnings(scenes: list[dict]) -> list[str]:
             long = [x for x in items if word_count(x) > 6]
             if long:
                 warnings.append(f"{scene['beat']}: list items over 6 words (\"{clean_text(long[0], 40)}\"); keep each to 2–5 words")
+        if re.search(r"\beditorial\b|\bour (own )?(analysis|method|view)\b|\bimplication", scene.get("source") or "", re.I):
+            warnings.append(f"{scene['beat']}: \"Source: {clean_text(scene['source'], 40)}\" is your own reasoning, not a source; "
+                            "name the page it comes from, or drop the Source: line")
         if kind == "message" and not scene["text"].strip() and not scene.get("source"):
             warnings.append(f"{scene['beat']}: label the message: \"Text: Example\" for a reconstruction, or a Source: line for a real one")
+    # script-craft.md §3: a name or acronym on screen that the voiceover never says is one the viewer can't place
+    spoken_all = " ".join(f"{s['vo']} {s.get('say') or ''}" for s in scenes)
+    flagged = set()
+    for scene in scenes:
+        shown = " ".join([scene["text"]] + [str(v) for v in _strings(scene["data"])])
+        for name in re.findall(r"(?<![\w-])[A-Z][A-Z0-9]*(?:-[A-Z0-9]+)*[A-Z0-9](?![\w-])", shown):
+            if sum(c.isupper() for c in name) >= 2 and name not in flagged and not re.search(rf"(?<![\w-]){re.escape(name)}(?![\w-])", spoken_all):
+                flagged.add(name)
+                warnings.append(f"{scene['beat']} shows \"{name}\" but the voiceover never says it; say it, and what it is, "
+                                "the first time, or keep it off screen")
     sentences = [x for scene in scenes for x in re.split(r"(?<=[.!?।])\s+", spoken_text(scene["vo"])) if word_count(x)]
     if len(sentences) >= 8:
         lengths = [word_count(x) for x in sentences]

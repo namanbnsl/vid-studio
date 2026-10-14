@@ -44,7 +44,7 @@ The topic is what the video is about. The angle is why anyone should care.
 
 To find it, ask: what does this audience believe that's wrong? Which number would make them say "wait, what"? What changes for their money, time, safety, or plans? Why now: is there a news peg, a deadline, salary day, or tax season?
 
-**Test:** "After watching, the viewer knows/will ___." If you can't fill that in with 15 words or fewer, you have a topic, not an angle. A news story can have different angles on different channels: the Hindi Shorts channel might want "what to do", while the English one wants "why it happened".
+**Test:** "After watching, the viewer knows/will ___." If you can't fill that in with 15 words or fewer, you have a topic, not an angle. Then check it against the channel's `audience`: can *this* viewer act on it with what they already have? An angle that needs a developer's tools is wrong for a general channel, however well researched. A news story can have different angles on different channels: the Hindi Shorts channel might want "what to do", while the English one wants "why it happened".
 
 ## 3. Write for someone who wasn't there
 
@@ -66,6 +66,10 @@ The viewer is smart, but they arrive cold. They didn't read the article, don't k
 
 **Cover less, so you can explain it.** Sixty seconds holds two or three new ideas explained well. Five ideas squeezed in are five things the viewer half-heard. When the notes have more than fits, pick the ideas the takeaway needs and leave the rest for another video, even if they're interesting. A clear video about one thing beats a dense video about everything.
 
+**Don't assume their situation.** Write for the audience the channel has, not the one the notes imply. If the channel is "AI you can understand", the viewer doesn't have an app, a test suite or an API bill. Advice that needs those ("give both models the same bug, tests and comparable tools") is advice for someone else. Give them a version they can do with what they have, like the chats they already have with their AI app, or pick a different angle.
+
+**Say uncertainty the way a person would.** Accuracy doesn't need report language. "Its results don't establish a clear winner" and "the ranking tells you about preferred scenes under those conditions" are true and nobody talks like that. Say "it's basically a four-way tie" and "it's a contest about 3D scenes, not about your work". Same caveat, and a viewer can hear it.
+
 **Don't skip steps.** Experts jump from A to D because B and C are obvious to them. Write B and C. If you catch yourself writing "which means" or "so", check that the viewer can see why it follows.
 
 **Test (the cold read):** Hand the script to someone who has never heard of this story or this field. Read each line as them. Would they know who every name is, what every term means, what every "this" or "that" points to, and how each sentence follows from the one before? Could they explain the takeaway to someone else afterwards? Every "huh?" is a fix: a few plain words, or a cut.
@@ -77,6 +81,14 @@ After (written for someone who didn't):
 "There's a scam where someone sends you a request that looks like a refund, but approving it actually sends them your money. NPCI, the body that runs UPI behind every payment app, is now limiting those requests between people. [1]"
 
 The after uses more words for less news. That's the trade, and it's the right one: the before has four ideas the viewer can't follow, and the after has one they'll remember.
+
+A real failure, from a video this studio made about an AI leaderboard. It opened:
+"This leaderboard's top four models are statistically tied, and a launch post makes you wonder whether to switch models. Artificial Analysis lists Sonnet five point five first in its October twelfth launch table."
+A newcomer hits "this leaderboard" (which one?), "statistically tied" (meaning?), "a launch post" (whose?), "Artificial Analysis" (who?) and "Sonnet five point five" (what's that?) in two sentences, while the screen shows "AA-3D". The rest of the video then explained blind pairwise votes, reasoning settings, tools, test suites and a developer's evaluation workflow in 88 seconds, to an audience that came for "AI you can understand".
+
+Written for someone who wasn't there:
+"A new AI ranking puts Anthropic's Sonnet 5.5 in first place. Look closer and it's a four-way tie. The ranking is from Artificial Analysis, a company that tests AI models and publishes scores. In this test, each model built small 3D scenes from 55 written instructions, and judges picked the scene they liked better without knowing which model made it. The top four were so close the order could be luck. And it's a contest about 3D scenes, so it tells you little about whether a model writes your emails or fixes your spreadsheet better. If you're tempted to switch, give the new one three things you asked your current AI this week, including one it got wrong, and see which answers you'd actually use."
+One idea (a ranking is one contest, so test it on your own work), every name introduced, and advice a viewer can follow tonight.
 
 ## 4. The person and the moment
 
@@ -200,6 +212,7 @@ These patterns are the giveaway, even when every word is true. Find them in your
 | Generic sign-off | "Follow to keep up with AI news." "Follow for more." | Say what the next video gives them: "Follow for one model comparison a week." |
 | Invented characters | "Meet Rahul, a 28-year-old from Pune." | A sourced case, the viewer ("you"), or an openly hypothetical relation: "Say your cousin…" (§4). |
 | Fake anecdotes | "My friend lost fifty thousand last month." "I tried this for 30 days." | Only true experience of the real persona. Otherwise a sourced case or "say you…". |
+| Report voice | "Its results don't establish a clear winner." "Under those conditions." "This doesn't establish a universal ranking." | Say it plainly: "It's basically a tie." "That's a test of 3D scenes, not of your work." |
 | Lecture voice | "It is essential to understand that…" "One must consider…" | Say it to one person: "The thing to know is…" or just the fact. |
 | Talking to a crowd | "Hey guys!" "Everyone needs to know this." | Talk to "you". |
 | "Imagine…" openers | "Imagine a world where…" "Picture this:" | Put them in the moment directly: "You're at the counter…" |
@@ -304,7 +317,10 @@ The screen is where a generated video gives itself away first: a slogan on every
 - **At most two `text` scenes per script,** and each one holds a number, a name, or the rule itself. If the beat is a number, use `stat`; if it's a mechanism, `list`; if it's a contrast, `compare`.
 - **Never repeat a headline.** The `end` title is the takeaway in new words, not the hook again and not an earlier `text` scene. A loop lives in the voiceover, not in a duplicated screen.
 - **Chart only measured or calculated numbers, with their unit.** A maker's claim ("50% less water") is a `stat` with the claim labelled in its context ("Jaquar's claim, untested"), never a bar chart of invented values like "100 vs 50". Put the unit in each value (`₹2 lakh`, `35%`) or name the measure in the title ("Intelligence Index"); no bare numbers, no parenthesised units.
-- **Write titles as plain statements in sentence case:** "What ₹1 lakh earns at 12%", not "₹1 LAKH AT 12% (₹ LAKH)" or a label like "The catch". Labels are for the team (`## Beat`), not the viewer.
+- **Labels are in the viewer's words.** "Example" or "Made-up example", never "Hypothetical app-switching decision" or "Illustration, no models run". Those are notes to yourself, and on screen they read like a legal disclaimer.
+- **`Source:` names a page someone published.** "Artificial Analysis, 12 Oct 2026" is a source. "Editorial method", "Editorial limitation" or "our analysis" is your own reasoning; leave the `Source:` line off that beat instead.
+- **Compare things the viewer can picture.** "Working app vs Launch ranking", "Preferred scene vs Passing bug fix" and "Universal ranking vs Your task choice" set two abstractions against each other, and nobody can tell what's being compared. A `compare` with phrases needs two concrete, opposite claims: "They say: money comes in | Really: money goes out".
+- **Write titles as plain statements in sentence case:** "What ₹1 lakh earns at 12%", not "₹1 LAKH AT 12% (₹ LAKH)" or a label like "The catch". Section names such as "Record the setup", "Interpret your own test" or "Different questions" are labels too: say the fact instead ("The top four are a tie", "It tested 3D scenes, not code"). Labels are for the team (`## Beat`), not the viewer.
 - **Order a `compare` so the second item is the subject.** It's drawn in the accent: the after, the new product, the true version ("वो कहते हैं: पैसे आएँगे | असल में: पैसे जाएँगे").
 - **Run `studio.py scenes`** and fix every warning it prints; they catch the repeats, slogan runs, and unitless charts.
 
