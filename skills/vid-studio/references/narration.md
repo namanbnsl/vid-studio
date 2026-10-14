@@ -8,10 +8,12 @@ A video channel can have a **narrator**: a text-to-speech voice that reads every
 
 | Provider | Runs | Needs | Good for |
 |---|---|---|---|
+| `recorded` | the user | a microphone (the studio records in the browser) or audio files | The user's own voice, read beat by beat |
 | `system` | on this computer | macOS `say` or Linux `espeak-ng` | Checking timing for free; robotic |
 | `piper` | on this computer | `pip install piper-tts`; each voice downloads once (~60 MB) | Free, offline, natural English and Hindi |
 | `elevenlabs` | cloud | `ELEVENLABS_API_KEY` | The most natural voices, cloned voices; word-timed captions |
 | `sarvam` | cloud | `SARVAM_API_KEY` | Indian voices for Hindi, Hinglish and Indian English |
+| `gemini` | cloud | `GEMINI_API_KEY` (from Google AI Studio) | Gemini 3.8 Flash TTS (or Flash-Lite): 30 expressive voices that act on directions; Hindi, Hinglish and English |
 | `openai` | cloud | `OPENAI_API_KEY` | Voices that follow speaking instructions (the channel's persona) |
 | `google` | cloud | `GOOGLE_TTS_API_KEY` (Text-to-Speech enabled) | Chirp 3 HD and Neural2 voices in Hindi and Indian English |
 
@@ -31,17 +33,23 @@ The user normally does this in the UI (Channels → the channel → Narration), 
    - `provider`: one of the ids above, or `""` for no voiceover.
    - `voice`, `model`: empty means the provider's default (`studio.py voices` shows it). ElevenLabs takes any voice id on the account, including cloned voices.
    - `speed` (0.7–1.3) and `pause` (seconds of air after each beat, 0–1.5).
-   - `style`: how to speak, for providers that take instructions (OpenAI). Empty uses the channel's persona.
+   - `style`: how to speak, for providers that take directions (Gemini, OpenAI). Empty uses the channel's persona.
    - `lexicon`: whole words and how to say them, for every script on the channel: acronyms, brand names, words the voice gets wrong.
 3. `studio.py say --channel C --text "…" --out sample.wav` speaks a line so the user can listen.
 
-Pick the provider and voice the user asked for. If they haven't chosen, suggest one (Sarvam or ElevenLabs for Hindi and Hinglish; ElevenLabs or OpenAI for English; `system` only to check timing) and let them choose; never sign them up for a paid service on your own.
+Pick the provider and voice the user asked for. If they haven't chosen, suggest one (Sarvam, ElevenLabs or Gemini for Hindi and Hinglish; ElevenLabs, Gemini or OpenAI for English; `system` only to check timing) and let them choose; never sign them up for a paid service on your own.
 
 ## Make the voiceover
 
 `studio.py narrate --script S` records every beat that has no current clip: a clip is reused until the beat's words or the channel's voice settings change, so a revision only re-records the beats you touched. `--force` redoes all of them. Rendering does this on its own first. The UI's script page shows how many beats are voiced and has the same buttons.
 
 After narrating, run `studio.py scenes --script S`: the timings are now the real ones. A beat with a `Duration:` line keeps its fixed length; if the voice runs longer, it gets cut off and `scenes` warns, so remove the `Duration:` or shorten the line.
+
+## The user's own voice
+
+- **Takes.** Any beat can have a take: the user's own recording of its line, made in the script page's recorder (a teleprompter, one beat at a time) or uploaded. A take always wins over the narrator for that beat, even when the channel has no narrator, and it belongs to the words it reads (the `Say:` line if there is one): rewriting the line means recording it again. If the user gives you audio files, add them with `studio.py take --script S --beat N --file PATH` (N counts the beats that have words, from 1; `--remove` deletes a take). Takes need ffmpeg unless they're 16-bit WAV.
+- **"Your voice" narrator** (`"provider": "recorded"`): the user reads every beat. `narrate` never synthesises; it lists the beats still waiting for a take, and rendering leaves them silent. Don't write `Say:` lines for a channel the user reads themselves unless they ask.
+- **A cloned voice.** With ElevenLabs, the Narration tab's **Clone my voice…** records or uploads a minute or two of the user reading, and creates an instant voice clone (only with their consent; never clone anyone else's voice). The clone becomes the channel's voice. If the user already has a cloned voice in their ElevenLabs account, just set its id as the `voice`.
 
 ## Write for the ear
 

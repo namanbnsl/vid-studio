@@ -4,11 +4,13 @@ Standard library only. Every provider returns 16-bit PCM WAV, so timing, trimmin
 extra tools; ffmpeg only mixes the final track at render time.
 
 Providers:
+  recorded    your own voice: you record or upload a take for each beat in the studio
   system      the computer's own voice (macOS `say`, Linux `espeak-ng`), offline and free; for drafts
   piper       Piper neural voices, offline and free (`pip install piper-tts`); downloads a voice once
   elevenlabs  ElevenLabs (API key); returns word timings, so captions land on the exact word
   sarvam      Sarvam AI Bulbul (API key); Indian voices for Hindi, Hinglish and Indian English
   openai      OpenAI speech (API key); takes speaking instructions from the channel's persona
+  gemini      Gemini 3.8 Flash TTS (API key from Google AI Studio); expressive, directed by the channel's persona
   google      Google Cloud Text-to-Speech (API key); Hindi and Indian English neural voices
 
 Keys come from the environment (ELEVENLABS_API_KEY, …) or from <studio>/.secrets.json, which the UI writes
@@ -587,8 +589,76 @@ class GoogleProvider(Provider):
         return join(parts)
 
 
-PROVIDERS: dict[str, Provider] = {p.id: p for p in (SystemProvider(), PiperProvider(), ElevenLabsProvider(), SarvamProvider(),
-                                                    OpenAIProvider(), GoogleProvider())}
+class RecordedProvider(Provider):
+    id, name, kind = "recorded", "Your voice", "local"
+    note = "You read every beat: record it in the studio, or upload a take. Beats last as long as you speak."
+
+    def synthesize(self, root: Path, text: str, settings: dict, language: str) -> Audio:
+        raise TTSError("This channel uses your own voice: record this beat on the script page, or upload a take")
+
+
+# Gemini's 30 prebuilt voices, with Google's one-word character for each.
+GEMINI_VOICES = [("Zephyr", "bright"), ("Puck", "upbeat"), ("Charon", "informative"), ("Kore", "firm"), ("Fenrir", "excitable"),
+                 ("Leda", "youthful"), ("Orus", "firm"), ("Aoede", "breezy"), ("Callirrhoe", "easy-going"), ("Autonoe", "bright"),
+                 ("Enceladus", "breathy"), ("Iapetus", "clear"), ("Umbriel", "easy-going"), ("Algieba", "smooth"), ("Despina", "smooth"),
+                 ("Erinome", "clear"), ("Algenib", "gravelly"), ("Rasalgethi", "informative"), ("Laomedeia", "upbeat"), ("Achernar", "soft"),
+                 ("Alnilam", "firm"), ("Schedar", "even"), ("Gacrux", "mature"), ("Pulcherrima", "forward"), ("Achird", "friendly"),
+                 ("Zubenelgenubi", "casual"), ("Vindemiatrix", "gentle"), ("Sadachbara", "lively"), ("Sadaltager", "knowledgeable"), ("Sulafat", "warm")]
+
+
+class GeminiProvider(Provider):
+    id, name, key = "gemini", "Gemini", "GEMINI_API_KEY"
+    key_url = "https://aistudio.google.com/apikey"
+    models = [("gemini-3.8-flash-tts", "Gemini 3.8 Flash TTS (most expressive)"), ("gemini-3.8-flash-lite-tts", "Gemini 3.8 Flash-Lite TTS (faster, cheaper)")]
+    note = "Gemini 3.8 Flash TTS: expressive voices in Hindi, Hinglish and English that act on directions, taken from the channel's persona."
+    BASE = "https://generativelanguage.googleapis.com/v1beta/models"
+    LIMIT = 3000  # characters per request, well under the model's 8,192 input tokens with room for the directions
+
+    def voices(self, root: Path, language: str) -> list[dict]:
+        return [{"id": name, "name": name, "gender": "", "language": character} for name, character in GEMINI_VOICES]
+
+    def default_voice(self, language: str) -> str:
+        return "Kore"
+
+    def prompt(self, text: str, settings: dict, language: str) -> str:
+        """Gemini speech is directed in words: who's speaking and how, then the exact line to say."""
+        notes = [settings.get("style") or "Speak naturally, to one listener, like a person explaining something, not an announcer."]
+        speed = settings.get("speed", 1.0)
+        if speed >= 1.08:
+            notes.append("Keep a brisk pace.")
+        elif speed <= 0.92:
+            notes.append("Take it slowly.")
+        if (language or "").casefold() == "hinglish":
+            notes.append("The line mixes Hindi and English the way people in India talk; pronounce each word in its own language.")
+        elif lang_family(language) == "hi":
+            notes.append("The line is in Hindi; keep English names and terms in their English pronunciation.")
+        return f"{' '.join(notes)}\nSay exactly this, and nothing else:\n{text}"
+
+    def synthesize(self, root: Path, text: str, settings: dict, language: str) -> Audio:
+        model, parts = settings.get("model") or self.models[0][0], []
+        voice = settings.get("voice") or self.default_voice(language)
+        for piece in split_text(text, self.LIMIT):
+            body = {"contents": [{"parts": [{"text": self.prompt(piece, settings, language)}]}],
+                    "generationConfig": {"responseModalities": ["AUDIO"],
+                                         "speechConfig": {"voiceConfig": {"prebuiltVoiceConfig": {"voiceName": voice}}}}}
+            data = http_json("POST", f"{self.BASE}/{urllib.parse.quote(model)}:generateContent", {"x-goog-api-key": secret(root, self.key)}, body)
+            found = [part["inlineData"] for candidate in data.get("candidates") or []
+                     for part in (candidate.get("content") or {}).get("parts") or [] if (part.get("inlineData") or {}).get("data")]
+            if not found:
+                reason = ((data.get("candidates") or [{}])[0].get("finishReason") or (data.get("promptFeedback") or {}).get("blockReason") or "no audio")
+                raise TTSError(f"Gemini returned no audio ({reason})")
+            for inline in found:
+                audio = base64.b64decode(inline["data"])
+                if audio[:4] == b"RIFF":
+                    parts.append(read_wav(audio))
+                else:  # raw 16-bit PCM, e.g. "audio/L16;codec=pcm;rate=24000"
+                    rate = re.search(r"rate=(\d+)", inline.get("mimeType") or "")
+                    parts.append(pcm_audio(audio, int(rate[1]) if rate else 24000))
+        return join(parts)
+
+
+PROVIDERS: dict[str, Provider] = {p.id: p for p in (RecordedProvider(), SystemProvider(), PiperProvider(), ElevenLabsProvider(), SarvamProvider(),
+                                                    GeminiProvider(), OpenAIProvider(), GoogleProvider())}
 
 
 def provider(provider_id: str) -> Provider:
@@ -672,6 +742,101 @@ def word_times(audio: Audio, text: str) -> list | None:
     if len(shown) != len(audio.words):
         return None
     return [[round(s, 3), round(max(e, s + 0.01), 3)] for _, s, e in audio.words]
+
+
+# ---------------------------------------------------------------- your own voice: takes and cloning
+
+MAX_TAKE_BYTES = 40_000_000
+MAX_TAKE_SECONDS = 180
+
+
+def recording_key(text: str) -> str:
+    """A take belongs to the words it reads, whatever voice settings the channel has."""
+    return hashlib.sha1(f"take\n{text}".encode()).hexdigest()[:12]
+
+
+def to_wav(data: bytes, name: str = "") -> Audio:
+    """Any audio the browser or the user gives us (WebM/Opus, MP3, M4A, WAV…) as mono 16-bit PCM.
+
+    16-bit WAV needs nothing; everything else goes through ffmpeg, which also cuts low rumble.
+    """
+    if not data:
+        raise TTSError("The recording is empty")
+    if len(data) > MAX_TAKE_BYTES:
+        raise TTSError(f"Takes must be under {MAX_TAKE_BYTES // 1_000_000} MB")
+    if data[:4] == b"RIFF" and data[8:12] == b"WAVE":
+        try:
+            return read_wav(data)
+        except TTSError:
+            pass  # a float or 24-bit WAV: let ffmpeg convert it
+    ffmpeg = os.environ.get("VID_STUDIO_FFMPEG") or shutil.which("ffmpeg")
+    if not ffmpeg:
+        raise TTSError("Converting this recording needs ffmpeg (macOS: `brew install ffmpeg`; Ubuntu: `sudo apt install ffmpeg`), or upload a 16-bit WAV")
+    suffix = re.sub(r"[^a-z0-9.]", "", Path(name or "take.webm").suffix.lower())[:8] or ".webm"
+    with tempfile.TemporaryDirectory(prefix="vid-take-") as tmp:
+        source, out = Path(tmp) / f"in{suffix}", Path(tmp) / "out.wav"
+        source.write_bytes(data)
+        done = subprocess.run([ffmpeg, "-y", "-loglevel", "error", "-i", str(source), "-vn", "-ac", "1", "-ar", "48000",
+                               "-af", "highpass=f=70", "-t", str(MAX_TAKE_SECONDS + 1), "-c:a", "pcm_s16le", str(out)],
+                              capture_output=True, text=True, timeout=120)
+        if done.returncode or not out.is_file():
+            raise TTSError(f"Couldn't read that audio: {done.stderr.strip()[-200:] or 'unknown format'}")
+        return read_wav(out.read_bytes())
+
+
+def prepare_take(data: bytes, name: str = "") -> Audio:
+    audio = to_wav(data, name)
+    if audio.duration > MAX_TAKE_SECONDS:
+        raise TTSError(f"Takes can be at most {MAX_TAKE_SECONDS // 60} minutes; record one beat at a time")
+    trimmed = trim(audio, threshold=400, keep_head=0.08, keep_tail=0.15)
+    if trimmed is audio and max(map(abs, audio.samples), default=0) <= 400:
+        raise TTSError("The take is silent; check that the right microphone is selected")
+    return trimmed
+
+
+def multipart(fields: dict, files: list[tuple[str, str, bytes, str]]) -> tuple[dict, bytes]:
+    """A multipart/form-data body: fields, then (field name, file name, bytes, content type) files."""
+    boundary = "vidstudio" + hashlib.sha1(os.urandom(16)).hexdigest()[:16]
+    out = io.BytesIO()
+    for key, value in fields.items():
+        out.write(f"--{boundary}\r\nContent-Disposition: form-data; name=\"{key}\"\r\n\r\n{value}\r\n".encode())
+    for field, filename, data, kind in files:
+        safe = re.sub(r'["\r\n]', "", filename)
+        out.write(f"--{boundary}\r\nContent-Disposition: form-data; name=\"{field}\"; filename=\"{safe}\"\r\nContent-Type: {kind}\r\n\r\n".encode())
+        out.write(data)
+        out.write(b"\r\n")
+    out.write(f"--{boundary}--\r\n".encode())
+    return {"Content-Type": f"multipart/form-data; boundary={boundary}"}, out.getvalue()
+
+
+def clone_voice(root: Path, name: str, samples: list[tuple[str, bytes]], description: str = "", remove_noise: bool = True) -> dict:
+    """Create an ElevenLabs instant voice clone from recordings of the user's own voice; returns {voice_id, …}."""
+    chosen = PROVIDERS["elevenlabs"]
+    problem = chosen.problem(root)
+    if problem:
+        raise TTSError(problem)
+    name = (name or "").strip()[:100]
+    if not name:
+        raise TTSError("Give the voice a name")
+    if not samples:
+        raise TTSError("Add at least one recording of your voice")
+    files, total = [], 0.0
+    for i, (filename, data) in enumerate(samples[:25], 1):
+        audio = to_wav(data, filename)
+        total += audio.duration
+        files.append(("files", f"sample-{i}.wav", audio.wav(), "audio/wav"))
+    if total < 20:
+        raise TTSError(f"The samples add up to {total:.0f} seconds; record at least 30 seconds (one to two minutes works best)")
+    headers, body = multipart({"name": name, "description": description[:500] or "Recorded in Vid Studio",
+                               "remove_background_noise": "true" if remove_noise else "false"}, files)
+    data, _ = http("POST", f"{ElevenLabsProvider.BASE}/voices/add", headers | {"xi-api-key": secret(root, chosen.key)}, body, timeout=300)
+    try:
+        reply = json.loads(data)
+    except json.JSONDecodeError:
+        raise TTSError("ElevenLabs returned something that isn't JSON")
+    if not reply.get("voice_id"):
+        raise TTSError("ElevenLabs didn't return a voice")
+    return {"voice_id": reply["voice_id"], "requires_verification": bool(reply.get("requires_verification")), "seconds": round(total, 1)}
 
 
 def srt(cues: list[tuple[float, float, str]]) -> str:

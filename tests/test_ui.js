@@ -212,7 +212,7 @@ test('source-story, channel-look, and story-to-script links cross the independen
   h.run('S = projectState; editor = {kind:"script",data:{id:"draft",story:"source",channel:"a"},design:{aspect:"9:16"},voice:{},sideTab:"preview"};');
   assert.match(h.run('scriptHeader()'), /href="#\/research\/p\/stories\/source"/);
   assert.match(h.run('scriptHeader()'), /href="#\/channels\/a"/);
-  assert.match(h.run('previewTab()'), /href="#\/channels\/a\/look"/);
+  assert.match(h.run('lookLink()'), /href="#\/channels\/a\/look"/);
   h.run('editor = {kind:"story",data:{id:"source",topics:[],findings:[]}};');
   assert.match(h.run('storySide()'), /href="#\/production\/p\/draft"/);
 });

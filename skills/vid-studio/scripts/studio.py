@@ -848,23 +848,28 @@ class Studio:
         state = manifest.get("status") or "none"
         if state == "narrating" and manifest.get("pid") not in (None, os.getpid()) and not pid_alive(manifest.get("pid")):
             state, manifest["error"] = "failed", "The voiceover stopped before it finished"
+        takes = manifest.get("recordings", {})
+        synthetic = settings["provider"] not in ("", "recorded")
         result = {"provider": settings["provider"], "voice": settings["voice"], "pause": settings["pause"],
-                  "settings": tts.settings_key(settings, language) if settings["provider"] else "", "status": state,
+                  "settings": tts.settings_key(settings, language) if synthetic else "", "status": state,
                   "progress": manifest.get("progress", 0), "error": manifest.get("error", ""), "finished": manifest.get("finished", ""),
-                  "done": 0, "missing": 0, "clips": {}}
-        if not settings["provider"]:
-            return result
+                  "done": 0, "missing": 0, "recorded": 0, "clips": {},
+                  "takes": {key: {k: take.get(k) for k in ("file", "text", "duration", "source", "created")} for key, take in takes.items()
+                            if (folder / take.get("file", "")).is_file()}}
         for scene in scenes:
             text = scene.get("say") or scene["vo"]
             if not text:
                 continue
-            clip = clips.get(tts.clip_key(settings, language, text))
+            # Your own take always wins; then the narrator's clip for these words and settings.
+            take = result["takes"].get(tts.recording_key(text))
+            clip = take or (clips.get(tts.clip_key(settings, language, text)) if synthetic else None)
             if not clip or not (folder / clip.get("file", "")).is_file():
-                result["missing"] += 1
+                result["missing"] += 1 if settings["provider"] else 0
                 continue
             result["done"] += 1
-            result["clips"][text] = {k: clip.get(k) for k in ("file", "duration", "words", "caption")}
-            scene["audio"] = {"src": "narration/" + clip["file"], "duration": clip["duration"]}
+            result["recorded"] += 1 if take else 0
+            result["clips"][text] = {k: clip.get(k) for k in ("file", "duration", "words", "caption")} | ({"recorded": True} if take else {})
+            scene["audio"] = {"src": "narration/" + clip["file"], "duration": clip["duration"]} | ({"recorded": True} if take else {})
             if clip.get("words") and clip.get("caption") == scene["vo"]:
                 scene["audio"]["words"] = clip["words"]
             if not scene.get("fixed"):
@@ -880,6 +885,11 @@ class Studio:
         settings = self.narration_settings(channel)
         if not settings["provider"]:
             raise ValueError(f"Choose a voice for {channel['name']} first (Channels → {channel['name']} → Narration, or `studio.py narration --channel`)")
+        if settings["provider"] == "recorded":
+            waiting = [s["beat"] for s in script["scenes"] if (s.get("say") or s["vo"]) and not s.get("audio")]
+            if waiting:
+                raise ValueError(f"{channel['name']} uses your own voice; record or upload a take for: {', '.join(waiting)}")
+            return {"made": 0, "beats": sum(1 for s in script["scenes"] if s.get("say") or s["vo"]), "provider": "recorded"}
         problem = tts.provider(settings["provider"]).problem(self.root)
         if problem:
             raise RuntimeError(problem)
@@ -887,15 +897,15 @@ class Studio:
         folder.mkdir(parents=True, exist_ok=True)
         path, language = folder / "narration.json", channel["language"]
         manifest = load(path, {})
-        clips = manifest.get("clips", {})
+        clips, takes = manifest.get("clips", {}), manifest.get("recordings", {})
         wanted = {}
         for scene in script["scenes"]:
             text = scene.get("say") or scene["vo"]
-            if text:
+            if text and tts.recording_key(text) not in takes:
                 wanted.setdefault(tts.clip_key(settings, language, text), (text, scene["vo"]))
         todo = [key for key in wanted if force or key not in clips or not (folder / clips[key].get("file", "")).is_file()]
         status = {"pid": os.getpid(), "started": now(), "provider": settings["provider"], "voice": settings["voice"]}
-        save(path, {"clips": clips, "status": "narrating", "progress": 0} | status)
+        save(path, {"clips": clips, "recordings": takes, "status": "narrating", "progress": 0} | status)
         try:
             for n, key in enumerate(todo, 1):
                 text, caption = wanted[key]
@@ -904,16 +914,50 @@ class Studio:
                 clips[key] = {"file": f"{key}.wav", "text": text, "caption": caption, "duration": round(audio.duration, 3),
                               "words": tts.word_times(audio, caption) if text == caption else None,
                               "settings": tts.settings_key(settings, language), "created": now()}
-                save(path, {"clips": clips, "status": "narrating", "progress": round(n / len(todo), 3)} | status)
+                save(path, {"clips": clips, "recordings": takes, "status": "narrating", "progress": round(n / len(todo), 3)} | status)
                 if progress:
                     progress(n, len(todo))
         except BaseException as error:
-            save(path, {"clips": clips, "status": "failed", "error": str(error) or type(error).__name__, "finished": now()} | status)
+            save(path, {"clips": clips, "recordings": takes, "status": "failed", "error": str(error) or type(error).__name__, "finished": now()} | status)
             raise
         for key in [k for k in clips if k not in wanted]:
             (folder / clips.pop(key).get("file", "")).unlink(missing_ok=True)
-        save(path, {"clips": clips, "status": "done", "progress": 1, "finished": now(), "made": len(todo)} | status)
-        return {"made": len(todo), "beats": len(wanted), "provider": settings["provider"]}
+        save(path, {"clips": clips, "recordings": takes, "status": "done", "progress": 1, "finished": now(), "made": len(todo)} | status)
+        return {"made": len(todo), "beats": len(wanted) + sum(1 for s in script["scenes"] if (s.get("say") or s["vo"]) and tts.recording_key(s.get("say") or s["vo"]) in takes),
+                "provider": settings["provider"]}
+
+    def add_take(self, script_id: str, text: str, data: bytes, name: str = "", source: str = "recorded") -> dict:
+        """Your own recording of a beat's words (recorded in the studio, or an uploaded file)."""
+        script = self.script(script_id)
+        if find_channel(self.root, script["channel"])["kind"] != "video":
+            raise ValueError("Only video scripts have a voiceover")
+        lines = {scene.get("say") or scene["vo"]: scene["beat"] for scene in script["scenes"] if scene.get("say") or scene["vo"]}
+        if text not in lines:
+            raise ValueError("That line isn't in the script any more; reload and record the current one")
+        audio = tts.prepare_take(data, name)
+        folder = self.path("scripts", script_id, "narration")
+        folder.mkdir(parents=True, exist_ok=True)
+        key = tts.recording_key(text)
+        (folder / f"rec-{key}.wav").write_bytes(audio.wav())
+        path = folder / "narration.json"
+        manifest = load(path, {})
+        manifest.setdefault("recordings", {})[key] = {"file": f"rec-{key}.wav", "text": text, "beat": lines[text], "duration": round(audio.duration, 3),
+                                                      "source": "uploaded" if source == "uploaded" else "recorded", "name": clean_text(name, 120), "created": now()}
+        save(path, manifest)
+        return self.script(script_id)["narration"]
+
+    def delete_take(self, script_id: str, key: str) -> dict:
+        self.script(script_id)
+        if not re.fullmatch(r"[0-9a-f]{12}", key or ""):
+            raise KeyError(f"Unknown take: {key}")
+        path = self.path("scripts", script_id, "narration", "narration.json")
+        manifest = load(path, {})
+        take = manifest.get("recordings", {}).pop(key, None)
+        if not take:
+            raise KeyError(f"Unknown take: {key}")
+        self.path("scripts", script_id, "narration", take["file"]).unlink(missing_ok=True)
+        save(path, manifest)
+        return self.script(script_id)["narration"]
 
     def captions_srt(self, script_id: str) -> str:
         """The voiceover as SubRip captions: word-timed where the provider gave timings, else by beat."""
@@ -1105,7 +1149,7 @@ class Studio:
 
         try:
             narration = script["narration"] or {}
-            if narration.get("provider") and narration.get("missing"):
+            if narration.get("provider") not in (None, "", "recorded") and narration.get("missing"):
                 save(status_path, status | {"phase": "voiceover"})
                 self.narrate_script(script_id)
                 script = self.script(script_id)
@@ -1496,6 +1540,25 @@ def narration_style(root: Path, channel_id: str, settings: dict) -> dict:
         return settings
     persona = channel_voice(root, channel_id).get("persona", "").strip()
     return settings | ({"style": f"Speak as this person, to one listener, naturally and not like an announcer: {persona}"} if persona else {})
+
+
+def clone_channel_voice(root: Path, channel_id: str, name: str, samples: list[tuple[str, bytes]], consent: bool, remove_noise: bool = True) -> dict:
+    """Make an ElevenLabs voice from the user's own recordings, keep the samples, and make it the channel's narrator."""
+    channel = find_channel(root, channel_id)
+    folder = channel_folder(root, channel["id"])
+    if channel["kind"] != "video":
+        raise ValueError("Only video channels have a voiceover")
+    if consent is not True:
+        raise ValueError("Confirm that the recordings are your own voice, or that you have the speaker's permission")
+    made = tts.clone_voice(root, name, samples, f"{channel['name']} narrator, recorded in Vid Studio", remove_noise)
+    kept = folder / "voice-samples"
+    kept.mkdir(parents=True, exist_ok=True)
+    for i, (filename, data) in enumerate(samples, 1):
+        suffix = re.sub(r"[^a-z0-9.]", "", Path(filename or "sample.webm").suffix.lower())[:8] or ".webm"
+        (kept / f"{dt.date.today().isoformat()}-{made['voice_id'][:8]}-{i}{suffix}").write_bytes(data)
+    settings = save_narration(root, channel["id"], {"provider": "elevenlabs", "voice": made["voice_id"],
+                                                     "model": channel_narration(root, channel["id"]).get("model") if channel_narration(root, channel["id"])["provider"] == "elevenlabs" else ""})
+    return made | {"narration": settings, "name": name}
 
 
 def speak_sample(root: Path, channel_id: str, text: str = "", changes: dict | None = None) -> bytes:
@@ -2492,6 +2555,26 @@ def cmd_narrate(ws: Path, args) -> None:
             print(f"Warning: {warning}")
 
 
+def cmd_take(ws: Path, args) -> None:
+    studio = Studio(ws)
+    script = studio.script(args.script)
+    lines = [scene for scene in script["scenes"] if scene.get("say") or scene["vo"]]
+    if not 1 <= args.beat <= len(lines):
+        raise ValueError(f"--beat is the number of a beat with words, 1 to {len(lines)}: " + ", ".join(f"{i} {s['beat']}" for i, s in enumerate(lines, 1)))
+    scene = lines[args.beat - 1]
+    text = scene.get("say") or scene["vo"]
+    if args.remove:
+        studio.delete_take(args.script, tts.recording_key(text))
+        print(f"Removed your take of {scene['beat']}")
+        return
+    path = Path(args.file or "").expanduser()
+    if not path.is_file():
+        raise ValueError("Pass the recording with --file PATH (WAV, MP3, M4A, WebM…)")
+    narration = studio.add_take(args.script, text, path.read_bytes(), path.name, "uploaded")
+    take = narration["takes"][tts.recording_key(text)]
+    print(f"Saved your take of {scene['beat']} ({take['duration']:.1f}s); {narration['recorded']} of {narration['done'] + narration['missing']} beats are in your voice")
+
+
 def cmd_captions(ws: Path, args) -> None:
     text = Studio(ws).captions_srt(args.script)
     if args.out:
@@ -2911,6 +2994,14 @@ def make_handler(ws: Path):
                         result = channel_publishing(ws, parts[2])
                     elif parts[:2] == ["api", "channels"] and len(parts) == 4 and parts[3] == "narration" and method in ("GET", "PUT"):
                         result = channel_narration(ws, parts[2]) if method == "GET" else save_narration(ws, parts[2], body)
+                    elif parts[:2] == ["api", "channels"] and parts[3:] == ["voice-clone"] and method == "POST":
+                        samples = []
+                        for i, sample in enumerate(body.get("samples") or [], 1):
+                            try:
+                                samples.append((str(sample.get("name") or f"sample-{i}.webm"), base64.b64decode(str(sample.get("data", "")).split(",")[-1], validate=True)))
+                            except (ValueError, AttributeError):
+                                raise ValueError(f"Sample {i} was not valid base64")
+                        result = clone_channel_voice(ws, parts[2], str(body.get("name") or ""), samples, body.get("consent") is True, body.get("remove_noise") is not False)
                     elif parts[:2] == ["api", "channels"] and parts[3:] == ["narration", "sample"] and method == "POST":
                         audio = speak_sample(ws, parts[2], str(body.get("text") or ""), body.get("settings") or {})
                         result = {"audio": "data:audio/wav;base64," + base64.b64encode(audio).decode()}
@@ -2977,12 +3068,21 @@ def make_handler(ws: Path):
                     return start_publish(studio, item)
                 if parts[2] == "stats" and method == "POST":
                     return studio.refresh_stats(item)
+            if resource == "scripts" and item and len(parts) >= 3 and parts[2] == "takes":
+                if method == "POST" and len(parts) == 3:
+                    try:
+                        data = base64.b64decode(str(body.get("data", "")).split(",")[-1], validate=True)
+                    except ValueError:
+                        raise ValueError("The recording was not valid base64")
+                    return studio.add_take(item, str(body.get("text") or ""), data, str(body.get("name") or ""), str(body.get("source") or "recorded"))
+                if method == "DELETE" and len(parts) == 4:
+                    return studio.delete_take(item, parts[3])
             if resource == "scripts" and item and len(parts) >= 3 and parts[2] in ("narrate", "narration", "captions.srt"):
                 studio.script(item)
                 if parts[2] == "narrate" and method == "POST":
                     return start_narration(studio, item, bool(body.get("force")))
                 if parts[2] == "narration" and method == "GET" and len(parts) == 4:
-                    if not re.fullmatch(r"[0-9a-f]{12}\.wav", parts[3]):
+                    if not re.fullmatch(r"(rec-)?[0-9a-f]{12}\.wav", parts[3]):
                         raise KeyError("Unknown voiceover clip")
                     return Raw(studio.path("scripts", item, "narration", parts[3]), "audio/wav")
                 if parts[2] == "captions.srt" and method == "GET":
@@ -3246,6 +3346,11 @@ def main(argv=None) -> None:
     sub = command("narrate", cmd_narrate, "Make the voiceover for a video script (beats without a current clip)")
     sub.add_argument("--script", required=True)
     sub.add_argument("--force", action="store_true", help="Redo every beat")
+    sub = command("take", cmd_take, "Use your own recording for a beat's voiceover (or remove it)")
+    sub.add_argument("--script", required=True)
+    sub.add_argument("--beat", type=int, required=True, help="Number of the beat, counting beats with words from 1")
+    sub.add_argument("--file", help="The audio file: WAV, MP3, M4A, WebM, …")
+    sub.add_argument("--remove", action="store_true")
     sub = command("captions", cmd_captions, "Write the voiceover as SRT captions")
     sub.add_argument("--script", required=True)
     sub.add_argument("--out", help="File to write (default: print)")
