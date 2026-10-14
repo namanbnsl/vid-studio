@@ -12,7 +12,7 @@ After, with glass cards and the aura background:
 
 ![After: glass cards](assets/after-night.jpg)
 
-Frost, the new house look (ink blue, peach and lilac, Geist):
+Frost, the new house look (ink blue, peach and lilac, Geist for headlines and labels alike):
 
 ![Frost](assets/after-frost.jpg)
 
@@ -24,7 +24,7 @@ Frost, the new house look (ink blue, peach and lilac, Geist):
 
 **Aura.** A new background style: three soft fields of light in `accent`, `accent2` and the text colour. They glide to new places at each scene change and hold still while a scene plays, so the glass always has something behind it.
 
-**Photos.** A photo above a scene is now a rounded photo card, in front of the same photo blurred and veiled, so the whole frame takes its colours from the picture. The blur is drawn once into a small canvas, so it costs nothing per frame. Full-screen photos behind charts are veiled from the top and bottom and blurred where the chart's card covers them, with the card tinted from the background colour so muted values stay readable.
+**Photos.** A photo above a scene is now a rounded photo card, with the scene's label set on its bottom-left corner so the content below keeps its full size. The image scene's photo takes the whole space. The card sits in front of the same photo blurred and veiled, so the whole frame takes its colours from the picture. The blur is drawn once into a small canvas, so it costs nothing per frame. Full-screen photos behind charts are veiled from the top and bottom and blurred where the chart's card covers them, with the card tinted from the background colour so muted values stay readable.
 
 ![Glass over photos](assets/glass-over-photos.jpg)
 

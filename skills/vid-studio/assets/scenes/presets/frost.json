@@ -1,7 +1,7 @@
 {
   "id": "frost",
   "name": "Frost",
-  "description": "Ink-blue night, frosted glass cards and soft peach light with a touch of lilac. Geist headlines, calm fades and an underline that follows the voice. The house look.",
+  "description": "Ink-blue night, frosted glass cards and soft peach light with a touch of lilac. Geist throughout, calm fades and an underline that follows the voice.",
   "design": {
     "aspect": "9:16",
     "colors": {
@@ -15,7 +15,7 @@
     },
     "fonts": {
       "display": "Geist",
-      "body": "Mukta",
+      "body": "Geist",
       "mono": "JetBrains Mono"
     },
     "type": {

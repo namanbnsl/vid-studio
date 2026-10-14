@@ -1007,6 +1007,23 @@
         x.column = { left: tl0, width: c.left + c.width - tl0 };
         return;
       }
+      if (x.sc.type === 'image') {
+        // the photo is the scene: it takes the whole space, and the label sits on it, bottom left
+        x.photo.el.style.cssText += ';left:' + c.left + 'px;top:' + c.top + 'px;width:' + c.width + 'px;height:' + c.height + 'px';
+        x.el.classList.add('label-on-photo');
+        var hd = head ? head.offsetHeight : 0, inset = 32;
+        frame.style.left = (c.left + inset) + 'px'; frame.style.width = (c.width - 2 * inset) + 'px';
+        frame.style.top = (c.top + c.height - hd - inset) + 'px'; frame.style.height = (hd + 1) + 'px';
+        if (x.meta) { var cr0 = q(x.meta, '.credit'); if (cr0) cr0.parentNode.removeChild(cr0); }
+        return;
+      }
+      // the label moves onto the photo's bottom-left corner, so the scene below keeps its full size
+      var chip0 = head && q(head, '.chip');
+      if (chip0) {
+        chip0.classList.add('photo-label');
+        x.photo.el.appendChild(chip0);
+        if (!head.children.length) { head.parentNode.removeChild(head); head = null; }
+      }
       x.el.style.setProperty('--k', '1');
       fitWidths(x.el);
       var need0 = (head ? head.offsetHeight : 0) + (x.sc.type === 'image' ? 0 : st.scrollHeight);
@@ -1043,7 +1060,7 @@
     try {
       var g = cv.getContext('2d');
       var iw = img.naturalWidth, ih = img.naturalHeight, s = Math.max(cw / iw, ch / ih) * 1.15;
-      g.filter = 'blur(' + Math.round(Math.min(cw, ch) / 14) + 'px) saturate(1.25)';
+      g.filter = 'blur(' + Math.round(Math.min(cw, ch) / 10) + 'px) saturate(1.1)';
       g.drawImage(img, (cw - iw * s) / 2, (ch - ih * s) / 2, iw * s, ih * s);
     } catch (e) { return null; }
     wrap.appendChild(cv);
@@ -1407,7 +1424,7 @@
         '--accent-soft': rgba(C.accent, dark ? 0.16 : 0.14),
         '--accent-line': rgba(C.accent, 0.55),
         '--aura-1': rgba(C.accent, dark ? 0.2 : 0.22), '--aura-2': rgba(C.accent2, dark ? 0.14 : 0.16), '--aura-3': rgba(C.text, dark ? 0.07 : 0.05),
-        '--veil': rgba(C.background, dark ? 0.5 : 0.72),
+        '--veil': rgba(C.background, dark ? 0.62 : 0.74),
         '--scrim-soft': 'linear-gradient(180deg, ' + rgba(C.background, 0.8) + ', ' + rgba(C.background, 0.5) + ' 42%, ' + rgba(C.background, 0.86) + ' 82%)',
         '--cl': L.content.left + 'px', '--ct': L.content.top + 'px', '--cw': L.content.width + 'px', '--ch': L.content.height + 'px'
       };
@@ -1525,7 +1542,7 @@
         // a folio, like a page number: "03 / 08", at the end of the line
         var pad2 = function (n) { return (n < 10 ? '0' : '') + n; };
         var folio = el('div', 'folio tnum');
-        folio.style.cssText = 'top:' + (L.progress.top + L.progress.height / 2) + 'px;right:' + (W - L.progress.left - L.progress.width) + 'px';
+        folio.style.cssText = 'top:' + (L.progress.top + L.progress.height / 2) + 'px;right:' + (W - L.content.left - L.content.width) + 'px';
         var folioNums = scenes.map(function (s, i) {
           var f = el('span', 'folio-n', '<b>' + pad2(i + 1) + '</b> / ' + pad2(scenes.length));
           folio.appendChild(f); return f;
