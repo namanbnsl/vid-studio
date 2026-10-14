@@ -1,17 +1,17 @@
 {
-  "id": "frost",
-  "name": "Frost",
-  "description": "Ink-blue night, frosted glass cards and soft peach light with a touch of lilac. Geist throughout, calm fades and an underline that follows the voice.",
+  "id": "graphite",
+  "name": "Graphite",
+  "description": "Near-black, soft white type and one warm accent. Geist throughout, flat rounded tiles, calm fades and an underline that follows the voice. Quiet, like a product film.",
   "design": {
     "aspect": "9:16",
     "colors": {
-      "background": "#0E1015",
-      "surface": "#191C23",
-      "text": "#F3F1EC",
-      "muted": "#9A9CA6",
-      "accent": "#F4B48C",
-      "accent2": "#A99CF4",
-      "negative": "#F0857A"
+      "background": "#0B0B0C",
+      "surface": "#1C1C1E",
+      "text": "#F5F5F7",
+      "muted": "#8E8E93",
+      "accent": "#F2A97E",
+      "accent2": "#9A9AA2",
+      "negative": "#FF6B5E"
     },
     "fonts": {
       "display": "Geist",
@@ -22,10 +22,10 @@
       "scale": 1.0,
       "display_case": "none",
       "display_weight": 600,
-      "tracking": -0.035
+      "tracking": -0.04
     },
     "motion": {
-      "energy": "medium",
+      "energy": "calm",
       "easing": "smooth",
       "transition": "fade"
     },
@@ -37,7 +37,7 @@
       "size": "medium"
     },
     "background": {
-      "style": "aura",
+      "style": "solid",
       "pattern": "none"
     },
     "cards": {
@@ -53,7 +53,7 @@
     "progress": {
       "show": true
     },
-    "radius": 30,
+    "radius": 32,
     "logo": {
       "text": "",
       "position": "top-left"

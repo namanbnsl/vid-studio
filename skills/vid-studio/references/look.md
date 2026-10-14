@@ -24,7 +24,7 @@ To start from a preset, `studio.py presets` lists them; set `"preset"` and drop 
   "type": {"scale": 1.0, "display_case": "none", "display_weight": 800, "tracking": -0.03},
   "motion": {"energy": "high", "easing": "snappy", "transition": "slide"},
   "captions": {"style": "highlight", "position": "lower", "highlight": "accent", "max_words": 4, "size": "medium"},
-  "background": {"style": "aura", "pattern": "none"},
+  "background": {"style": "grain", "pattern": "none"},
   "cards": {"style": "glass"},
   "images": {"treatment": "dim", "layout": "auto"},
   "sources": {"show": true},
@@ -52,12 +52,12 @@ To start from a preset, `studio.py presets` lists them; set `"preset"` and drop 
 | `captions.highlight` | `accent`, `accent2`, or `text` |
 | `captions.max_words` | Words per caption line, 1–8 |
 | `captions.size` | `small`, `medium`, or `large`. Captions carry the words while videos have no voiceover, so `medium` or `large` |
-| `cards.style` | `glass` (the default): each idea sits on one rounded pane tinted from the text colour, with a hairline edge lit from the top and a long soft shadow; over a full-screen photo the pane blurs the photo behind it. `solid`: the same panes filled with `surface`. `flat`: no panes; type, hairlines and photos edge to edge (Swiss uses it) |
-| `images.layout` | Where beat photos go: `auto` (above a stat, punchline, quote, list, message, title or end card, sized to what the scene leaves, or down the left side in wide formats; full-screen behind charts) or `full` (always full-screen behind the scene). With cards the photo above is a rounded photo card in front of the same photo, blurred, so the whole frame takes its colours; flat looks run it edge to edge. A beat can choose with `Image: path \| credit \| top` or `\| full` |
+| `cards.style` | `glass` (the default): each idea sits on one flat, rounded tile one step lighter (or darker) than the background, with no edge, shadow or gradient; over a full-screen photo the tile frosts the photo behind it. `solid`: the same tiles filled with `surface`. `flat`: no tiles; type, hairlines and photos edge to edge (Swiss uses it) |
+| `images.layout` | Where beat photos go: `auto` (above a stat, punchline, quote, list, message, title or end card, sized to what the scene leaves, or down the left side in wide formats; full-screen behind charts) or `full` (always full-screen behind the scene). With cards the photo above is a rounded photo card, with the beat's `Text:` label set on its bottom-left corner; flat looks run it edge to edge. A beat can choose with `Image: path \| credit \| top` or `\| full` |
 | `images.treatment` | How beat photos (`Image:` lines) look: `natural`, `dim` (darkened for legible text), `mono` (black and white), or `duotone` (tinted from the background color to the accent, so photos from different sources look like one brand) |
 | `sources.show` | `true` shows each beat's `Source:` line as one line of small print at the very bottom of the frame; `false` hides them |
 | `progress.show` | `true` draws a thin progress line at the top, one segment per beat, filling as the voiceover plays |
-| `background.style` | `aura` (three soft fields of light in `accent`, `accent2` and the text colour, which move to new places at each scene change and hold still while a scene plays; the default, and what makes glass read as glass), `solid` (flat colour), `grain` (fine film grain), `paper` (paper texture), or `gradient` (a barely visible tonal step from the top; no look uses it) |
+| `background.style` | `solid` (flat colour), `grain` (fine film grain), `paper` (paper texture), or `gradient` (a barely visible tonal step from the top; no look uses it) |
 | `background.pattern` | `none`, `grid`, `dots`, or `lines` |
 | `radius` | Corner radius of cards and photo cards in px at 1080 wide (0–48); bars, tiles and pills scale from it. 24–34 reads as soft and modern; flat looks use 0–8 and keep photos square |
 | `logo.text` / `logo.position` | A text wordmark shown small on every scene (empty for none); `top-left`, `top-right`, `bottom-left`, `bottom-right` |
@@ -65,14 +65,14 @@ To start from a preset, `studio.py presets` lists them; set `"preset"` and drop 
 
 ## Taste
 
-Clean, minimal, and finished. One pane per idea, one accent, and nothing that does not carry information.
+Make it look like a product film from a company that ships good design, not like a template. Flat colour, big confident type, one accent, real photographs, and motion that eases in and settles.
 
-- **One card per idea.** A stat, a chart, a quote, a message thread, the end card: each sits on one rounded pane. A list gives each point its own row card. Nothing is nested more than one level, and no scene has a second decorative card.
-- **Glass is quiet.** The pane is a faint tint with a hairline edge and one long shadow. It blurs only what is sharp behind it (a full-screen photo); over the aura it is a clean tint. No glows, coloured shadows, neon edges or reflections.
-- **Type does the hierarchy.** The thing that matters in each scene (the number, the subject of a comparison, the tallest bar, the spoken word) takes the accent and full-strength type; everything else is text or muted. The accent's soft gradient appears only on the subject's bar, the reply bubbles and the call to action.
-- **Photos are photography.** A photo above a scene is a rounded photo card at full colour, in front of the same photo blurred, so every photo scene takes its palette from its picture. Don't frame photos twice, tint them by hand or run text across them.
-- **Light moves between scenes, not during them.** The aura glides at each scene change; holds stay still.
+- **One tile per idea.** A stat, a chart, a quote, a message thread, the end card: each sits on one flat, rounded tile. A list gives each point its own tile. Nothing is nested, and no scene has a decorative tile.
+- **No effects.** No gradients, glows, coloured shadows, blurred colour fields, outlines or reflections. The only blur is frosted glass over a sharp full-screen photo, where it keeps a chart readable.
+- **Type does the hierarchy.** The thing that matters in each scene (the number, the subject of a comparison, the tallest bar, the spoken word) takes the solid accent and full-strength type; everything else is text or muted. Labels are small accent eyebrows in sentence case, not boxes.
+- **Photos are photography.** A photo above a scene is a rounded photo card at full colour on the plain background. Don't frame photos twice, tint them by hand or run text across them (the beat's short label on the corner is the one exception).
+- **Motion is calm.** Things rise a short way and settle on a long ease; nothing bounces or spins. Holds stay still.
 
-Translate feelings into these settings. "More premium": a quieter palette with one accent, a serif or a tight grotesque for display, `medium` or `calm` energy, `fade` transitions, `underline` captions (Frost, Night Edition). "Like a newspaper": Clean Newsroom (solid cards). "Information design": Swiss (flat, square corners, hard cuts). "Louder": `highlight` or `pop` captions, `high` energy. "Softer" or "more rounded": a larger `radius`. "Glass" or "frosted": `cards.style: glass` with the `aura` background.
+Translate feelings into these settings. "More premium" or "like Apple": near-black or white, one accent, Geist or another tight grotesque, `calm` energy, `fade` transitions, `underline` captions (Graphite, Night Edition). "Like a newspaper": Clean Newsroom (solid tiles). "Information design": Swiss (flat, square corners, hard cuts). "Louder": `highlight` or `pop` captions, `high` energy. "Softer" or "more rounded": a larger `radius`.
 
 Headlines read better in sentence case (`display_case: none`); keep `upper` for condensed display faces. Check that `accent` reads on `background` (contrast 3:1 or more for big numbers) and that `text` reads at 4.5:1.

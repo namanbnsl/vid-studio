@@ -26,7 +26,7 @@
     type: { scale: 1.0, display_case: 'none', display_weight: 800, tracking: -0.03 },
     motion: { energy: 'high', easing: 'snappy', transition: 'slide' },
     captions: { style: 'highlight', position: 'lower', highlight: 'accent', max_words: 4, size: 'medium' },
-    background: { style: 'aura', pattern: 'none' },
+    background: { style: 'grain', pattern: 'none' },
     cards: { style: 'glass' },
     images: { treatment: 'dim', layout: 'auto' },
     sources: { show: true },
@@ -51,7 +51,7 @@
     transition: ['cut', 'fade', 'slide', 'zoom', 'wipe'],
     capStyle: ['none', 'plain', 'boxed', 'karaoke', 'highlight', 'underline', 'pop'],
     capPos: ['lower', 'middle', 'upper'],
-    bgStyle: ['solid', 'gradient', 'grain', 'paper', 'aura'],
+    bgStyle: ['solid', 'gradient', 'grain', 'paper'],
     cardStyle: ['glass', 'solid', 'flat'],
     pattern: ['none', 'grid', 'dots', 'lines'],
     imgLayout: ['auto', 'full'],
@@ -532,7 +532,7 @@
   // a card settles into place: a short rise and fade, no bounce
   function cardIn(tl, a, card, at) {
     if (!a.cards) return;
-    tw(tl, card, { y: a.dist(28), opacity: 0 }, { y: 0, opacity: 1, duration: a.dur(0.8), ease: a.E.out }, at - 0.05);
+    tw(tl, card, { y: a.dist(40), opacity: 0 }, { y: 0, opacity: 1, duration: a.dur(1.0), ease: 'expo.out' }, at - 0.05);
   }
   function drawLine(tl, a, line, at) {
     tw(tl, line, { scaleX: 0 }, { scaleX: 1, duration: a.dur(0.8), ease: a.E.inOut }, at);
@@ -980,7 +980,7 @@
       anim: function (tl, a) {
         if (a.cards) {
           // a photo card settles in like the other cards, then a slow push-in for the rest of the beat
-          tw(tl, wrap, { y: a.dist(36), opacity: 0 }, { y: 0, opacity: 1, duration: a.dur(0.9), ease: a.E.out }, a.clipStart + 0.02);
+          tw(tl, wrap, { y: a.dist(40), opacity: 0 }, { y: 0, opacity: 1, duration: a.dur(1.0), ease: 'expo.out' }, a.clipStart + 0.02);
           tw(tl, img, { scale: 1.06 }, { scale: 1, duration: Math.max(0.1, a.clipEnd - a.clipStart), ease: 'none' }, a.clipStart);
           return;
         }
@@ -1048,23 +1048,6 @@
     var ph = Math.round(clamp(bottom - need - gap, minH, maxH));
     x.photo.el.style.cssText += ';left:0;top:0;width:' + W + 'px;height:' + ph + 'px';
     frame.style.top = (ph + gap) + 'px'; frame.style.height = Math.max(120, bottom - ph - gap) + 'px';
-  }
-
-  // The photo, blurred and veiled, as the light behind its own card: drawn once into a small canvas, so a
-  // frame costs no more to paint than a flat colour. Every photo scene takes its colours from its photo.
-  function buildAmbient(img, W, H) {
-    var wrap = el('div', 'ambient');
-    var cv = el('canvas');
-    var cw = Math.max(16, Math.round(W / 10)), ch = Math.max(16, Math.round(H / 10));
-    cv.width = cw; cv.height = ch;
-    try {
-      var g = cv.getContext('2d');
-      var iw = img.naturalWidth, ih = img.naturalHeight, s = Math.max(cw / iw, ch / ih) * 1.15;
-      g.filter = 'blur(' + Math.round(Math.min(cw, ch) / 10) + 'px) saturate(1.1)';
-      g.drawImage(img, (cw - iw * s) / 2, (ch - ih * s) / 2, iw * s, ih * s);
-    } catch (e) { return null; }
-    wrap.appendChild(cv);
-    return wrap;
   }
 
   // Full-bleed photo behind a scene: decoded before fitting, slow Ken Burns across the clip.
@@ -1331,23 +1314,15 @@
       patEl.style.cssText = cs;
       bg.appendChild(patEl);
     }
-    // aura: three soft fields of light in the look's colours, which glide to new places at each scene change
-    var blobs = [];
-    if (style === 'aura') {
-      var aura = el('div', 'bg-aura');
-      for (var b = 1; b <= 3; b++) { var blob = el('i', 'blob b' + b); aura.appendChild(blob); blobs.push(blob); }
-      bg.appendChild(aura);
-    }
     var noise = null;
-    if (style === 'grain' || style === 'paper' || style === 'aura') {
+    if (style === 'grain' || style === 'paper') {
       noise = el('div', 'bg-noise');
-      noise.style.backgroundImage = noiseURI(style === 'aura' ? 'grain' : style, colors.dark);
-      noise.style.opacity = style === 'paper' ? '1' : style === 'aura' ? (colors.dark ? '0.05' : '0.04') : (colors.dark ? '0.07' : '0.06');
+      noise.style.backgroundImage = noiseURI(style, colors.dark);
+      noise.style.opacity = style === 'grain' ? (colors.dark ? '0.07' : '0.06') : '1';
       if (style === 'paper') noise.style.mixBlendMode = 'multiply';
       bg.appendChild(noise);
     }
     stage.appendChild(bg);
-    return { blobs: blobs };
   }
 
   // ---------------------------------------------------------------- build
@@ -1407,25 +1382,14 @@
         '--scrim': rgba(C.background, 0.86), '--scrim-hero': rgba(C.background, 0.2),
         '--bubble': rgba(C.text, dark ? 0.11 : 0.075),
         '--photo-shadow': dark ? '0 2px 28px rgba(0,0,0,.55)' : 'none',
-        // cards: a pane tinted from the text colour (glass) or the surface colour (solid), a hairline edge lit
-        // from the top, and one long, soft shadow
-        '--card-fill': design.cards.style === 'solid' ? C.surface : dark
-          ? 'linear-gradient(165deg, ' + rgba(C.text, 0.1) + ', ' + rgba(C.text, 0.04) + ' 70%)'
-          : 'linear-gradient(165deg, rgba(255,255,255,.78), rgba(255,255,255,.5) 70%)',
-        // over a full-screen photo the pane takes the background colour, so muted text stays readable
-        '--card-fill-photo': design.cards.style === 'solid' ? C.surface
-          : 'linear-gradient(165deg, ' + rgba(C.background, dark ? 0.5 : 0.62) + ', ' + rgba(C.background, dark ? 0.62 : 0.74) + ')',
-        '--card-border': dark ? rgba(C.text, 0.11) : rgba(C.text, 0.08),
-        '--card-hi': dark ? rgba(C.text, 0.14) : 'rgba(255,255,255,.95)',
-        '--card-shadow': dark ? '0 40px 80px -40px rgba(0,0,0,.7)' : '0 32px 64px -36px ' + rgba(C.text, 0.3),
-        '--chip-fill': dark ? rgba(C.text, 0.08) : 'rgba(255,255,255,.62)',
-        '--knob': mix(C.background, C.text, dark ? 0.12 : 0.04),
-        '--grad': 'linear-gradient(135deg, ' + C.accent + ', ' + mix(C.accent, C.accent2, 0.3) + ')',
-        '--accent-soft': rgba(C.accent, dark ? 0.16 : 0.14),
-        '--accent-line': rgba(C.accent, 0.55),
-        '--aura-1': rgba(C.accent, dark ? 0.2 : 0.22), '--aura-2': rgba(C.accent2, dark ? 0.14 : 0.16), '--aura-3': rgba(C.text, dark ? 0.07 : 0.05),
-        '--veil': rgba(C.background, dark ? 0.62 : 0.74),
-        '--scrim-soft': 'linear-gradient(180deg, ' + rgba(C.background, 0.8) + ', ' + rgba(C.background, 0.5) + ' 42%, ' + rgba(C.background, 0.86) + ' 82%)',
+        // cards: flat tiles one step off the background (glass, solid uses the surface colour); no edges, no
+        // shadows, no gradients. Over a full-screen photo, a glass tile frosts the photo behind it.
+        '--card-fill': design.cards.style === 'solid' ? C.surface : mix(C.background, C.text, dark ? 0.075 : 0.045),
+        '--card-fill-photo': design.cards.style === 'solid' ? C.surface : rgba(C.background, dark ? 0.62 : 0.7),
+        '--knob': mix(C.background, C.text, dark ? 0.16 : 0.1),
+        '--accent-soft': rgba(C.accent, dark ? 0.16 : 0.12),
+        '--accent-line': rgba(C.accent, 0.6),
+        '--scrim-flat': rgba(C.background, dark ? 0.74 : 0.8),
         '--cl': L.content.left + 'px', '--ct': L.content.top + 'px', '--cw': L.content.width + 'px', '--ch': L.content.height + 'px'
       };
       if (L.captions) {
@@ -1470,7 +1434,7 @@
       gsap.config({ force3D: false });   // 2D transforms only: identical rasterization whichever way a frame is reached
       var tl = gsap.timeline({ paused: true });
 
-      var bgLayer = buildBackground(stage, design, colors);
+      buildBackground(stage, design, colors);
 
       // ---- scenes
       var waits = [];
@@ -1515,7 +1479,7 @@
         var band = null;
         if (mode === 'hero' && L.captions) {
           band = el('div', 'cap-band');
-          band.style.top = (L.captions.top - (L.landscape ? 28 : 40) - (design.cards.style !== 'flat' ? (L.landscape ? 160 : 260) : 0)) + 'px';
+          band.style.top = (L.captions.top - (L.landscape ? 28 : 40)) + 'px';
           inner.appendChild(band);
         }
         drift.appendChild(frame); if (meta) drift.appendChild(meta); inner.appendChild(drift); sEl.appendChild(inner);
@@ -1571,7 +1535,6 @@
             if (Math.max(W / (im.naturalWidth || W), H / (im.naturalHeight || H)) >= 1.6) {
               x.backdrop.el.style.display = 'none'; x.backdrop.el.setAttribute('data-moved', '1');
               x.photo = buildTopPhoto({ url: im.src, credit: x.credit }, x.sc, { design: design, waits: [] });
-              x.photo.decoded = im;   // the new <img> may not be decoded yet; the ambient draws from this one
               x.inner.insertBefore(x.photo.el, x.drift);
               x.el.classList.remove('has-hero'); x.el.classList.add('has-top-photo');
               var cb = q(x.el, '.cap-band'); if (cb) cb.parentNode.removeChild(cb);
@@ -1591,11 +1554,6 @@
         var cardsOn = design.cards.style !== 'flat';
         built.forEach(function (x) {
           if (x.photo) placeTopPhoto(x, L, cardsOn);
-          // a photo card stands in front of its own photo, blurred: the scene takes its colours from it
-          if (x.photo && cardsOn) {
-            var amb = buildAmbient(x.photo.decoded || x.photo.img, W, H);
-            if (amb) x.inner.insertBefore(amb, x.inner.firstChild);
-          }
           fitScene(x.el);
           if (x.b.post) x.b.post(L.landscape);
         });
@@ -1642,25 +1600,6 @@
           if (x.meta) tw(tl, x.meta, { opacity: 0, y: 12 }, { opacity: 1, y: 0, duration: 0.5, ease: 'power2.out' }, a.t0 + Math.min(0.7, d * 0.2));
           x.b.anim(tl, a);
         });
-
-        // the aura's light moves once per scene, during the change, and holds still while the scene plays
-        if (bgLayer.blobs.length && scenes.length) {
-          var arand = mulberry32(4049 + scenes.length * 13);
-          var spots = scenes.map(function () {
-            return bgLayer.blobs.map(function (b, j) {
-              var zx = j === 0 ? [0.05, 0.6] : j === 1 ? [0.45, 1.0] : [0.1, 0.9];
-              var zy = j === 0 ? [0.0, 0.45] : j === 1 ? [0.45, 1.0] : [0.2, 0.8];
-              return { x: W * (zx[0] + arand() * (zx[1] - zx[0])), y: H * (zy[0] + arand() * (zy[1] - zy[0])), scale: 0.85 + arand() * 0.4 };
-            });
-          });
-          bgLayer.blobs.forEach(function (b, j) {
-            gsap.set(b, spots[0][j]);
-            for (var si = 1; si < scenes.length; si++) {
-              var mv = Math.min(1.6, timing[si - 1].duration * 0.8);
-              tl.fromTo(b, spots[si - 1][j], Object.assign({ duration: mv, ease: 'power2.inOut', immediateRender: false }, spots[si][j]), Math.max(0, timing[si].start - mv * 0.5));
-            }
-          });
-        }
 
         // the progress line fills one segment per beat, at the pace of the voiceover
         progFills.forEach(function (f, i) {
