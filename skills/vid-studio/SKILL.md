@@ -1,6 +1,6 @@
 ---
 name: vid-studio
-description: Research and production studio for explainer videos, kept in local files with a web UI. Use for anything about it — setting up a project or channel, adding or changing topics and sources, "research now" or scheduled research runs, finding news for the project's topics, researching a story, writing or revising a script for a channel (including addressing comments), finding or adding images for a video, voiceover and text-to-speech voices, rendering or downloading a video, opening the studio UI, or "what's new".
+description: Research and production studio for explainer videos, kept in local files with a web UI. Use for anything about it — setting up a project or channel, adding or changing topics and sources, "research now" or scheduled research runs, finding news for the project's topics, researching a story, writing or revising a script for a channel (including addressing comments), finding or adding images for a video, voiceover and text-to-speech voices, rendering or downloading a video, publishing it to YouTube, Instagram or TikTok, opening the studio UI, or "what's new".
 ---
 
 # Vid Studio
@@ -14,7 +14,8 @@ The studio holds one or more **projects**: each is a subject area the user resea
 That's the research half. In the production half, a story becomes **scripts**: one per **channel** the user sends it to. Channels (a YouTube channel, Instagram account, WhatsApp channel, and so on) are shared by every project and live in `channels.json` at the studio root, with per-channel settings in `channels/<id>/`:
 - **Voice** (`voice.json`): length, pace, persona, tone, hook styles, rules, and example scripts the user loves. Together with the channel's language, kind (`video` script or text `post`), and format (beat structure), it shapes every script.
 - **Narration** (`narration.json`, video channels): the text-to-speech voice that reads its scripts, if any: a provider (on this computer, or ElevenLabs, Sarvam, OpenAI, Google), a voice, speed, and pronunciations.
-- **Look** (`design.json`, video channels): colors, fonts, motion, captions, photo treatment. Video scripts are written as beats with `Visual:` lines that become animated scenes in this look, with real photos behind the beats that need them; the studio previews them live and renders them to MP4.
+- **Look** (`design.json`, video channels): colors, fonts, motion, captions, photo treatment.
+- **Publishing** (`publish.json`, video channels): the YouTube, Instagram or TikTok account it posts to (the token stays in `.secrets.json`), and post defaults. Video scripts are written as beats with `Visual:` lines that become animated scenes in this look, with real photos behind the beats that need them; the studio previews them live and renders them to MP4.
 
 The user moves scripts through stages (script → ready → published) and comments on passages for you to address.
 
@@ -38,6 +39,7 @@ Start with `studio.py status`.
 | "Change the look of the channel …" | [look.md](references/look.md) |
 | "Tune the voice of the channel …" | Read `studio.py voice --channel C`, change what was asked (see the voice section of [script-craft.md](references/script-craft.md) for what each setting does), and save with `studio.py voice --channel C --file -`. If they share example scripts, add them to `examples` with a line on what to learn from each. |
 | Images for a script ("add photos", "find a picture of …") | [images.md](references/images.md) |
+| Publish to YouTube, Instagram or TikTok, connect a channel's account, write a post's title/description/caption, or get views | [publish.md](references/publish.md). Never publish unless the user asks for that script now |
 | Voiceover: pick a voice or provider (ElevenLabs, Sarvam, local…), add an API key, "make the voiceover", fix a pronunciation | [narration.md](references/narration.md) |
 | Preview, render, or download a script's video | `studio.py scenes --script S` checks beats and timing ([scenes.md](references/scenes.md)); `studio.py render --script S` renders the MP4 on this machine (`--out ~/Desktop` to copy it there) |
 | Set up, change, or turn off a research schedule (never runs research) | [schedule.md](references/schedule.md) |
@@ -56,5 +58,6 @@ Start with `studio.py status`.
   - `Hindi`: Hindi in Devanagari, never romanized. Common English technical terms and brand names may stay in English.
   - `Hinglish`: natural Hindi + English mixing, the way the audience talks. Hindi words in Devanagari; English words, brands, units, and numbers in Latin script. For example: "HDPE pipe-grade resin के rates 8–10 October को बढ़े". Not every sentence needs Hindi in it; keep technical terms in English where that's what people say.
   - Never write Hindi in Latin letters ("ke rates badhe").
-- **Scheduled or unattended runs:** don't ask questions; do the work and report.
+- **Publishing is outward-facing.** Only upload a video when the user asks to publish that script, after saying where and how (references/publish.md). Never as a side effect of writing or rendering.
+- **Scheduled or unattended runs:** don't ask questions; do the work and report. They never publish.
 - **End with the studio link** whenever you changed something, so the user can review it.

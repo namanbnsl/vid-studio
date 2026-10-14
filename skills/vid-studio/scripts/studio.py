@@ -31,6 +31,7 @@ from pathlib import Path
 
 sys.path.insert(0, str(Path(__file__).resolve().parent))
 import narration as tts  # noqa: E402
+import publish as pub  # noqa: E402
 
 SKILL_DIR = Path(__file__).resolve().parents[1]
 ASSETS = SKILL_DIR / "assets"
@@ -648,6 +649,7 @@ class Studio:
                 "scenes": scenes, "duration": total_duration(scenes), "media": self.media(script_id), "narration": voiceover,
                 "video": self.video_status(script_id, scenes, channel) if channel["kind"] == "video" else None,
                 "angles": load(folder / "angles.json", {"angles": []})["angles"],
+                "publish": self.publish_status(script_id) if channel["kind"] == "video" else None,
                 "review": load(folder / "review.json") if (folder / "review.json").is_file() else None}
 
     def scripts(self) -> list[dict]:
@@ -657,7 +659,8 @@ class Studio:
             listed.append({key: item[key] for key in ("id", "title", "story", "channel", "stage", "published_url", "created", "updated", "version", "duration")}
                           | {"drafted": bool(item["text"].strip()), "open_comments": sum(1 for c in item["comments"] if not c.get("resolved_at")),
                              "video": item["video"] and {k: item["video"][k] for k in ("status", "ready", "stale")},
-                             "narration": item["narration"] and {k: item["narration"][k] for k in ("provider", "status", "done", "missing")}})
+                             "narration": item["narration"] and {k: item["narration"][k] for k in ("provider", "status", "done", "missing")},
+                             "publish": item["publish"] and {k: item["publish"][k] for k in ("platform", "status", "url", "stats")}})
         return sorted(listed, key=lambda s: s.get("updated", ""), reverse=True)
 
     def create_script(self, story_id: str, channel_id: str, title: str = "") -> dict:
@@ -932,6 +935,125 @@ class Studio:
             start += scene["duration"]
         return tts.srt(cues)
 
+    # publishing: scripts/<id>/publish.json holds the post's details; publish/state.json the upload and its result
+
+    def publish_details(self, script_id: str) -> dict:
+        script = self.script(script_id)
+        channel = find_channel(self.root, script["channel"])
+        saved = load(self.path("scripts", script_id, "publish.json"), {})
+        defaults = channel_publishing(self.root, channel["id"])["defaults"] if channel["kind"] == "video" else {}
+        details = pub.clean_meta({**{k: v for k, v in defaults.items() if k in pub.DEFAULT_META}, **saved})
+        details["title"] = details["title"] or script["title"][:100]
+        return details | {"sources": self.story_sources(script["story"]), "credits": self.used_credits(script)}
+
+    def save_publish_details(self, script_id: str, details: dict) -> dict:
+        self.script(script_id)
+        details = {k: v for k, v in details.items() if k not in ("sources", "credits")}
+        saved = load(self.path("scripts", script_id, "publish.json"), {})
+        cleaned = pub.clean_meta(saved | details)
+        save(self.path("scripts", script_id, "publish.json"), {k: cleaned[k] for k in saved | details})
+        return self.publish_details(script_id)
+
+    def story_sources(self, story_id: str) -> list[str]:
+        """Source URLs from the story notes' Sources section, for the description."""
+        try:
+            notes = self.story(story_id)["notes"]
+        except KeyError:
+            return []
+        section = re.split(r"(?im)^#+\s*sources\s*$", notes)
+        urls = re.findall(r"https?://[^\s)>\]]+", section[-1] if len(section) > 1 else "")
+        return list(dict.fromkeys(u.rstrip(".,;") for u in urls))[:10]
+
+    def used_credits(self, script: dict) -> list[str]:
+        credits = []
+        for scene in script["scenes"]:
+            credit = (scene.get("image") or {}).get("credit") or (scene["data"].get("credit") if scene["type"] == "image" else "")
+            if credit:
+                credits.append(credit)
+        return list(dict.fromkeys(credits))
+
+    def publish_status(self, script_id: str) -> dict:
+        state = load(self.path("scripts", script_id, "publish", "state.json"), {})
+        status = state.get("status") or "none"
+        if status == "uploading" and state.get("pid") not in (None, os.getpid()) and not pid_alive(state.get("pid")):
+            status, state["error"] = "failed", "The upload stopped before it finished; publish again to resume"
+        return {key: state.get(key) for key in ("platform", "progress", "url", "id", "started", "finished", "notes", "account", "stats", "privacy",
+                                               "publish_at")} | {"status": status, "error": state.get("error", "") if status == "failed" else ""}
+
+    def publish_script(self, script_id: str, progress=None) -> dict:
+        """Upload the rendered MP4 to the channel's account with the post's details; mark the script published."""
+        script = self.script(script_id)
+        channel = find_channel(self.root, script["channel"])
+        if channel["kind"] != "video":
+            raise ValueError("Text posts are shared by hand: copy the post, then paste its link under Published")
+        video = script["video"] or {}
+        if not video.get("ready"):
+            raise RuntimeError("Render the video first (studio.py render --script, or Render MP4)")
+        if video.get("stale"):
+            raise RuntimeError("The script, images, voice or look changed since the last render; render again before publishing")
+        chosen, tokens, account = channel_tokens(self.root, channel["id"])
+        details = self.publish_details(script_id)
+        if chosen.id == "instagram" and details["publish_at"]:
+            raise ValueError("Instagram can't schedule posts through its API; clear the time to publish now")
+        if chosen.id == "tiktok" and details["publish_at"]:
+            raise ValueError("TikTok can't schedule posts through its API; clear the time to publish now")
+        limit = chosen.caption_limit
+        description = pub.with_credits(details["description"] or details["caption"] or script["title"], details["credits"], details["sources"],
+                                       details["hashtags"], 5000)
+        caption = pub.with_credits(details["caption"] or (details["title"] + "\n\n" + details["description"]).strip(), details["credits"], [],
+                                   details["hashtags"], limit)
+        language = {"english": "en", "hindi": "hi", "hinglish": "hi"}.get(channel["language"].casefold(), "")
+        meta = details | {"description": description, "caption": caption, "language": language}
+        folder = self.path("scripts", script_id, "render")
+        design = channel_design(self.root, channel["id"])
+        extras = {"thumbnail": str(folder / "poster.jpg") if details["thumbnail"] else "", "vertical": design["aspect"] in ("9:16", "4:5"),
+                  "duration": script["duration"], "cover_ms": 1600,
+                  "captions": self.captions_srt(script_id) if details["captions"] and any(s["vo"] for s in script["scenes"]) else ""}
+        path = self.path("scripts", script_id, "publish", "state.json")
+        state = load(path, {})
+        if state.get("platform") not in (None, chosen.id) or state.get("status") in ("published", "scheduled", "draft"):
+            state = {}  # a new post: never resume another platform's (or a finished) upload
+        state |= {"platform": chosen.id, "status": "uploading", "progress": 0, "pid": os.getpid(), "started": now(), "error": "",
+                  "account": account, "privacy": meta["privacy"] or chosen.default_privacy, "publish_at": meta["publish_at"]}
+        live = {k: v for k, v in state.items()}
+        live["save"] = lambda: save(path, {k: v for k, v in live.items() if k != "save"})
+        live["save"]()
+        last = [0.0]
+
+        def report(done, total):
+            live["progress"] = round(done / total, 3) if total else 1
+            if progress:
+                progress(done, total)
+            if time.monotonic() - last[0] > 0.5 or done == total:
+                last[0] = time.monotonic()
+                live["save"]()
+
+        try:
+            result = chosen.publish(self.root, tokens, account, folder / "video.mp4", meta, extras, live, report)
+        except BaseException as error:
+            live.update(status="failed", error=str(error) or type(error).__name__, finished=now())
+            live["save"]()
+            raise
+        for key in ("session", "session_size", "session_file", "session_started", "container", "uploaded"):
+            live.pop(key, None)
+        live.update(status=result["status"], progress=1, url=result["url"], id=result["id"], notes=result.get("notes", []), finished=now())
+        live["save"]()
+        self.update_script(script_id, {"stage": "published", "published_url": result["url"]} if result["url"] else {"stage": "published"})
+        return result
+
+    def refresh_stats(self, script_id: str) -> dict:
+        state_path = self.path("scripts", script_id, "publish", "state.json")
+        state = load(state_path, {})
+        if state.get("status") not in ("published", "scheduled") or not state.get("id"):
+            raise ValueError("This script hasn't been published from the studio yet")
+        script = self.script(script_id)
+        chosen, tokens, _ = channel_tokens(self.root, script["channel"])
+        if chosen.id != state.get("platform"):
+            raise RuntimeError("The channel is now connected to a different platform than this post")
+        stats = chosen.stats(self.root, tokens, state["id"]) | {"at": now()}
+        save(state_path, load(state_path, {}) | {"stats": stats})
+        return stats
+
     # rendering: scripts/<id>/render holds the exported composition, video.mp4, poster.jpg and render.json
 
     def video_status(self, script_id: str, scenes: list, channel: dict) -> dict:
@@ -1176,6 +1298,7 @@ def delete_channel(root: Path, channel_id: str) -> None:
             for s in Studio(folder, root).scripts() if s["channel"] == channel_id]
     if used:
         raise ValueError("Scripts still use this channel (" + "; ".join(used[:3]) + ("…" if len(used) > 3 else "") + "). Delete them first.")
+    disconnect_channel(root, channel_id)
     data = load(root / "channels.json", {"channels": []})
     data["channels"] = [c for c in data["channels"] if c["id"] != channel_id]
     save(root / "channels.json", data)
@@ -1380,6 +1503,133 @@ def speak_sample(root: Path, channel_id: str, text: str = "", changes: dict | No
     settings = tts.clean_settings(deep_merge(channel_narration(root, channel["id"]), changes or {}))
     text = (text or "").strip()[:600] or tts.SAMPLE_TEXT.get(channel["language"], tts.SAMPLE_TEXT["English"])
     return tts.speak(root, text, narration_style(root, channel["id"], settings), channel["language"]).wav()
+
+
+# ---------------------------------------------------------------- publishing: channels/<id>/publish.json, tokens in .secrets.json
+
+PUBLISH_DEFAULT_KEYS = {"privacy", "category", "made_for_kids", "synthetic", "hashtags", "captions", "thumbnail"}
+OAUTH_PENDING: dict[str, dict] = {}  # state → the sign-in it belongs to, for ten minutes
+
+
+def channel_publishing(root: Path, channel_id: str) -> dict:
+    """Where the channel publishes: its platform, the connected account, and defaults for new posts."""
+    channel = find_channel(root, channel_id)
+    data = load(channel_folder(root, channel["id"]) / "publish.json", {})
+    chosen = data.get("platform") or pub.guess_platform(channel.get("platform", ""))
+    connected = bool(data.get("account")) and bool(pub.read_tokens(root, channel["id"]))
+    info = pub.platform(chosen).describe(root) if chosen in pub.PLATFORMS else None
+    defaults = {"privacy": info["default_privacy"] if info else "", "category": "27", "made_for_kids": False, "synthetic": False,
+                "hashtags": [], "captions": True, "thumbnail": True} | data.get("defaults", {})
+    problem = ("" if connected else f"Connect {channel['name']} to its {info['name']} account" if info
+               else "Posts are shared by hand" if channel["kind"] == "post" else "Choose where this channel publishes")
+    return {"platform": chosen if info else "", "account": data.get("account") if connected else None, "connected": connected,
+            "connected_at": data.get("connected_at", "") if connected else "", "defaults": defaults, "problem": problem, "info": info,
+            "kind": channel["kind"]}
+
+
+def save_publishing(root: Path, channel_id: str, changes: dict) -> dict:
+    folder = channel_folder(root, channel_id)
+    channel = find_channel(root, channel_id)
+    check_keys(changes, {"platform", "defaults"}, "publishing")
+    data = load(folder / "publish.json", {})
+    if "platform" in changes:
+        if changes["platform"] not in ("", *pub.PLATFORMS):
+            raise ValueError(f"publishing.platform must be one of: {', '.join(pub.PLATFORMS)}")
+        if channel["kind"] != "video" and changes["platform"]:
+            raise ValueError("Text-post channels are shared by hand; only video channels publish to a platform")
+        if changes["platform"] != data.get("platform"):
+            disconnect_channel(root, channel_id)
+            data = load(folder / "publish.json", {})
+        data["platform"] = changes["platform"]
+    if "defaults" in changes:
+        check_keys(changes["defaults"], PUBLISH_DEFAULT_KEYS, "publishing.defaults")
+        merged = data.get("defaults", {}) | changes["defaults"]
+        cleaned = pub.clean_meta({k: v for k, v in merged.items()})
+        chosen = data.get("platform") or pub.guess_platform(channel.get("platform", ""))
+        allowed = {v for v, _ in pub.platform(chosen).privacy_options} if chosen in pub.PLATFORMS else set()
+        if cleaned["privacy"] and allowed and cleaned["privacy"] not in allowed:
+            raise ValueError(f"publishing.defaults.privacy must be one of: {', '.join(sorted(allowed))}")
+        data["defaults"] = {k: cleaned[k] for k in merged}
+    save(folder / "publish.json", data)
+    return channel_publishing(root, channel_id)
+
+
+def connect_token(root: Path, channel_id: str, platform_id: str, token: str) -> dict:
+    """Connect with an access token the user pasted (Instagram; TikTok without an app of their own)."""
+    channel = find_channel(root, channel_id)
+    chosen = pub.platform(platform_id)
+    tokens = chosen.from_token(root, token)
+    account = chosen.account(root, tokens)
+    return finish_connect(root, channel["id"], chosen.id, tokens, account)
+
+
+def finish_connect(root: Path, channel_id: str, platform_id: str, tokens: dict, account: dict) -> dict:
+    folder = channel_folder(root, channel_id)
+    if find_channel(root, channel_id)["kind"] != "video":
+        raise ValueError("Only video channels publish to a platform")
+    pub.save_tokens(root, channel_id, tokens)
+    data = load(folder / "publish.json", {})
+    folder.mkdir(parents=True, exist_ok=True)
+    save(folder / "publish.json", data | {"platform": platform_id, "account": account, "connected_at": now()})
+    return channel_publishing(root, channel_id)
+
+
+def start_oauth(root: Path, channel_id: str, platform_id: str, redirect: str, captions: bool = False) -> str:
+    """The provider's sign-in URL; its callback (finish_oauth) connects the channel."""
+    channel = find_channel(root, channel_id)
+    if channel["kind"] != "video":
+        raise ValueError("Only video channels publish to a platform")
+    chosen = pub.platform(platform_id)
+    if not chosen.oauth:
+        raise ValueError(f"{chosen.name} connects with a pasted access token")
+    problem = chosen.app_problem(root)
+    if problem:
+        raise RuntimeError(problem)
+    for state in [k for k, v in OAUTH_PENDING.items() if v["created"] < time.time() - 600]:
+        OAUTH_PENDING.pop(state, None)
+    state = pub.random.token_urlsafe(24)
+    verifier, b64, hexed = pub.pkce()
+    OAUTH_PENDING[state] = {"root": str(root), "channel": channel["id"], "platform": chosen.id, "verifier": verifier,
+                            "redirect": redirect, "created": time.time()}
+    return chosen.auth_url(root, redirect, state, (b64, hexed), captions=captions)
+
+
+def finish_oauth(root: Path, state: str, code: str) -> dict:
+    pending = OAUTH_PENDING.pop(state or "", None)
+    if not pending or pending["root"] != str(root) or pending["created"] < time.time() - 600:
+        raise ValueError("This sign-in link expired or was already used; start again from the channel page")
+    chosen = pub.platform(pending["platform"])
+    tokens = chosen.exchange(root, code, pending["redirect"], pending["verifier"])
+    return finish_connect(root, pending["channel"], chosen.id, tokens, chosen.account(root, tokens)) | {"channel": pending["channel"]}
+
+
+def disconnect_channel(root: Path, channel_id: str) -> None:
+    folder = channel_folder(root, channel_id)
+    data = load(folder / "publish.json", {})
+    tokens = pub.read_tokens(root, channel_id)
+    if tokens and data.get("platform") in pub.PLATFORMS:
+        try:
+            pub.platform(data["platform"]).revoke(root, tokens)
+        except pub.PublishError:
+            pass  # offline: forgetting the token locally still disconnects the studio
+    pub.save_tokens(root, channel_id, None)
+    if data:
+        data.pop("account", None)
+        data.pop("connected_at", None)
+        save(folder / "publish.json", data)
+
+
+def channel_tokens(root: Path, channel_id: str) -> tuple:
+    """(platform, fresh tokens, account) for a connected channel, refreshing and saving tokens as needed."""
+    info = channel_publishing(root, channel_id)
+    if not info["connected"]:
+        raise RuntimeError(info["problem"])
+    chosen = pub.platform(info["platform"])
+    tokens = pub.read_tokens(root, channel_id)
+    fresh = chosen.refresh(root, tokens)
+    if fresh != tokens:
+        pub.save_tokens(root, channel_id, fresh)
+    return chosen, fresh, info["account"]
 
 
 # ---------------------------------------------------------------- media and rendering
@@ -2219,6 +2469,90 @@ def cmd_captions(ws: Path, args) -> None:
         print(text, end="")
 
 
+def cmd_platforms(root: Path, args) -> None:
+    for chosen in pub.PLATFORMS.values():
+        info = chosen.describe(root)
+        how = "connects in the browser" if chosen.oauth else "connects with a pasted token"
+        print(f"{chosen.id} · {chosen.name} · {how}" + (f" · {info['app_problem']}" if chosen.oauth and info["app_problem"] else " · app ready" if chosen.oauth else ""))
+    for channel in channels(root):
+        if channel["kind"] == "video":
+            info = channel_publishing(root, channel["id"])
+            where = f"{info['info']['name']}: {info['account']['name']}" if info["connected"] else info["problem"]
+            print(f"  {channel['id']} → {where}")
+
+
+def cmd_platform_app(root: Path, args) -> None:
+    chosen = pub.platform(args.platform)
+    if not chosen.app_keys:
+        raise ValueError(f"{chosen.name} needs no app keys; connect with a token: studio.py connect --channel C --platform {chosen.id} --token -")
+    values = [sys.stdin.readline() if v == "-" else v for v in (args.id, args.secret)]
+    for (name, label), value in zip(chosen.app_keys, values):
+        if value is not None:
+            tts.set_secret(root, name, value)
+            print(f"{'Saved' if value.strip() else 'Removed'} the {chosen.name} app's {label}")
+
+
+def cmd_connect(root: Path, args) -> None:
+    channel = find_channel(root, args.channel)
+    chosen = pub.platform(args.platform or channel_publishing(root, channel["id"])["platform"] or "youtube")
+    if args.token:
+        token = sys.stdin.readline() if args.token == "-" else args.token
+        info = connect_token(root, channel["id"], chosen.id, token)
+        print(f"Connected {channel['name']} to {info['account']['name']} on {chosen.name}")
+        return
+    if not chosen.oauth:
+        raise ValueError(f"{chosen.name} connects with a token: {chosen.token_help}\nThen: studio.py connect --channel C --platform {chosen.id} --token -")
+    problem = chosen.app_problem(root)
+    if problem:
+        raise RuntimeError(f"{problem}: studio.py platform-app --platform {chosen.id} --id … --secret -")
+    server = running_server(root)
+    if not server:
+        raise RuntimeError("Signing in goes through the studio: run `studio.py serve --background` first")
+    query = urllib.parse.urlencode({"channel": channel["id"], "platform": chosen.id} | ({"captions": "1"} if args.captions else {}))
+    print(f"Open this link in the browser and sign in; the channel connects when you're done:\n{server['url']}oauth/start?{query}")
+
+
+def cmd_disconnect(root: Path, args) -> None:
+    channel = find_channel(root, args.channel)
+    disconnect_channel(root, channel["id"])
+    print(f"Disconnected {channel['name']}")
+
+
+def cmd_publishing(root: Path, args) -> None:
+    channel = find_channel(root, args.channel)
+    info = channel_publishing(root, channel["id"]) if args.file is None else save_publishing(root, channel["id"], read_json_file(args.file))
+    print(json.dumps({k: v for k, v in info.items() if k != "info"}, indent=2, ensure_ascii=False))
+
+
+def cmd_publish_details(ws: Path, args) -> None:
+    studio = Studio(ws)
+    details = studio.publish_details(args.script) if args.file is None else studio.save_publish_details(args.script, read_json_file(args.file))
+    print(json.dumps(details, indent=2, ensure_ascii=False))
+
+
+def cmd_publish(ws: Path, args) -> None:
+    studio = Studio(ws)
+    script = studio.script(args.script)
+    channel = find_channel(studio.root, script["channel"])
+    info = channel_publishing(studio.root, channel["id"])
+    details = studio.publish_details(args.script)
+    where = f"{info['info']['name']} · {info['account']['name']}" if info["connected"] else info["problem"]
+    print(f"Publishing \"{details['title']}\" to {where} · {details['privacy'] or 'default privacy'}"
+          + (f" · scheduled {details['publish_at']}" if details["publish_at"] else ""))
+    if not args.yes:
+        raise ValueError("This posts to a real account. Re-run with --yes once the user has confirmed")
+    result = studio.publish_script(args.script, lambda done, total: print(f"\rUploading {done * 100 // max(1, total)}%", end="", flush=True))
+    print()
+    print(f"{result['status'].title()}: {result['url']}")
+    for note in result.get("notes", []):
+        print(f"Note: {note}")
+
+
+def cmd_stats(ws: Path, args) -> None:
+    stats = Studio(ws).refresh_stats(args.script)
+    print(", ".join(f"{k} {v:,}" if isinstance(v, int) else f"{k} {v}" for k, v in stats.items() if k != "at"))
+
+
 def cmd_comments(ws: Path, args) -> None:
     studio = Studio(ws)
     script = studio.script(args.script)
@@ -2286,6 +2620,45 @@ def start_render(studio: "Studio", script_id: str, quality: str = "high") -> dic
 
 
 NARRATIONS: dict[str, threading.Thread] = {}
+PUBLISHES: dict[str, threading.Thread] = {}
+
+
+def start_publish(studio: "Studio", script_id: str) -> dict:
+    """Publish in the background; the script's publish status reports progress and the result."""
+    key = f"{studio.ws}:{script_id}"
+    running = PUBLISHES.get(key)
+    if not (running and running.is_alive()):
+        script = studio.script(script_id)
+        channel = find_channel(studio.root, script["channel"])
+        if channel["kind"] != "video":
+            raise ValueError("Text posts are shared by hand")
+        if not (script["video"] or {}).get("ready") or (script["video"] or {}).get("stale"):
+            raise RuntimeError("Render the latest version of the video before publishing")
+        channel_tokens(studio.root, channel["id"])  # fails fast when the channel isn't connected
+        path = studio.path("scripts", script_id, "publish", "state.json")
+        save(path, load(path, {}) | {"status": "uploading", "progress": 0, "pid": os.getpid(), "error": ""})
+
+        def run():
+            try:
+                Studio(studio.ws, studio.root).publish_script(script_id)
+            except BaseException as error:
+                save(path, load(path, {}) | {"status": "failed", "error": str(error) or type(error).__name__, "finished": now()})
+
+        PUBLISHES[key] = threading.Thread(target=run, daemon=True)
+        PUBLISHES[key].start()
+    return studio.publish_status(script_id)
+
+
+def oauth_page(title: str, message: str, ok: bool) -> bytes:
+    """The small page the browser lands on after signing in to a platform."""
+    return f"""<!doctype html><meta charset="utf-8"><meta name="viewport" content="width=device-width,initial-scale=1">
+<title>{html.escape(title)} · Vid Studio</title>
+<style>body{{font:15px/1.5 system-ui,sans-serif;background:#fafaf8;color:#111110;display:grid;place-items:center;min-height:100vh;margin:0}}
+main{{max-width:440px;padding:32px;border:1px solid #e6e5e1;border-radius:14px;background:#fff}}h1{{font-size:20px;margin:0 0 8px}}p{{margin:0;color:#5a5853}}
+b{{color:{'#17663a' if ok else '#b42318'}}}</style>
+<main><h1><b>{'✓' if ok else '✕'}</b> {html.escape(title)}</h1><p>{html.escape(message)}</p></main>
+<script>try {{ window.opener && window.opener.postMessage({{type: "vid-connected", ok: {str(ok).lower()}}}, location.origin.replace("127.0.0.1", "localhost")); }} catch (e) {{}}
+{"setTimeout(function(){ window.close(); }, 1500);" if ok else ""}</script>""".encode()
 
 
 def start_narration(studio: "Studio", script_id: str, force: bool = False) -> dict:
@@ -2425,6 +2798,33 @@ def make_handler(ws: Path):
                         return self.reply(200, font.read_bytes(), "font/woff2")
                 if parts == ["api", "health"]:
                     return self.reply(200, str(ws).encode(), "text/plain; charset=utf-8")
+                if method == "GET" and parts == ["oauth", "start"]:
+                    # Opened in a new tab by the UI or the CLI: remember who's signing in, then go to the platform.
+                    redirect = f"http://localhost:{self.server.server_port}/oauth/callback"
+                    try:
+                        with lock:
+                            target = start_oauth(ws, query.get("channel", ""), query.get("platform", ""), redirect, query.get("captions") == "1")
+                    except (KeyError, ValueError, RuntimeError) as error:
+                        return self.reply(400, oauth_page("Couldn't start connecting", str(error.args[0] if error.args else error), False), "text/html; charset=utf-8")
+                    self.send_response(302)
+                    self.send_header("Location", target)
+                    self.send_header("Cache-Control", "no-store")
+                    self.send_header("Content-Length", "0")
+                    self.end_headers()
+                    return
+                if method == "GET" and parts == ["oauth", "callback"]:
+                    if query.get("error"):
+                        message = query.get("error_description") or query["error"]
+                        OAUTH_PENDING.pop(query.get("state", ""), None)
+                        return self.reply(400, oauth_page("Not connected", f"The platform said: {message}", False), "text/html; charset=utf-8")
+                    try:
+                        with lock:
+                            done = finish_oauth(ws, query.get("state", ""), query.get("code", ""))
+                    except (KeyError, ValueError, RuntimeError) as error:
+                        return self.reply(400, oauth_page("Not connected", str(error.args[0] if error.args else error), False), "text/html; charset=utf-8")
+                    who = (done.get("account") or {}).get("name") or "the account"
+                    return self.reply(200, oauth_page("Connected", f"{find_channel(ws, done['channel'])['name']} now publishes to {who} on "
+                                                      f"{done['info']['name']}. You can close this tab.", True), "text/html; charset=utf-8")
                 with lock:
                     if parts == ["api", "projects"] and method == "GET":
                         result = {"workspace": str(ws), "default_workspace": ws == workspace_path(None) and not os.environ.get("VID_STUDIO_HOME"),
@@ -2460,6 +2860,23 @@ def make_handler(ws: Path):
                             raise RuntimeError(problem)
                         language = query.get("language") or "English"
                         result = {"voices": chosen.voices(ws, language), "default": chosen.default_voice(language)}
+                    elif parts == ["api", "platforms"] and method == "GET":
+                        result = [p.describe(ws) for p in pub.PLATFORMS.values()]
+                    elif parts[:2] == ["api", "platforms"] and parts[3:] == ["app"] and method == "PUT":
+                        chosen = pub.platform(parts[2])
+                        allowed = {name for name, _ in chosen.app_keys}
+                        if not allowed or set(body) - allowed:
+                            raise ValueError(f"{chosen.name} app keys are: {', '.join(sorted(allowed)) or 'none'}")
+                        for name, value in body.items():
+                            tts.set_secret(ws, name, str(value or ""))
+                        result = [p.describe(ws) for p in pub.PLATFORMS.values()]
+                    elif parts[:2] == ["api", "channels"] and len(parts) == 4 and parts[3] == "publishing" and method in ("GET", "PUT"):
+                        result = channel_publishing(ws, parts[2]) if method == "GET" else save_publishing(ws, parts[2], body)
+                    elif parts[:2] == ["api", "channels"] and len(parts) == 4 and parts[3] == "connection" and method == "PUT":
+                        result = connect_token(ws, parts[2], str(body.get("platform") or ""), str(body.get("token") or ""))
+                    elif parts[:2] == ["api", "channels"] and len(parts) == 4 and parts[3] == "connection" and method == "DELETE":
+                        disconnect_channel(ws, parts[2])
+                        result = channel_publishing(ws, parts[2])
                     elif parts[:2] == ["api", "channels"] and len(parts) == 4 and parts[3] == "narration" and method in ("GET", "PUT"):
                         result = channel_narration(ws, parts[2]) if method == "GET" else save_narration(ws, parts[2], body)
                     elif parts[:2] == ["api", "channels"] and parts[3:] == ["narration", "sample"] and method == "POST":
@@ -2517,6 +2934,17 @@ def make_handler(ws: Path):
                     return studio.update_story(item, body, version)
                 if method == "DELETE" and item:
                     return studio.delete_story(item) or {"ok": True}
+            if resource == "scripts" and item and len(parts) == 3 and parts[2] in ("publish", "publish-details", "stats"):
+                if parts[2] == "publish-details" and method == "GET":
+                    return studio.publish_details(item)
+                if parts[2] == "publish-details" and method == "PUT":
+                    return studio.save_publish_details(item, body)
+                if parts[2] == "publish" and method == "POST":
+                    if body.get("confirm") is not True:
+                        raise ValueError("Publishing needs {\"confirm\": true}")
+                    return start_publish(studio, item)
+                if parts[2] == "stats" and method == "POST":
+                    return studio.refresh_stats(item)
             if resource == "scripts" and item and len(parts) >= 3 and parts[2] in ("narrate", "narration", "captions.srt"):
                 studio.script(item)
                 if parts[2] == "narrate" and method == "POST":
@@ -2790,6 +3218,30 @@ def main(argv=None) -> None:
     sub.add_argument("--script", required=True)
     sub.add_argument("--out", help="File to write (default: print)")
 
+    command("platforms", cmd_platforms, "List publishing platforms and where each channel publishes")
+    sub = command("platform-app", cmd_platform_app, "Save your own YouTube or TikTok app's credentials (for connecting accounts)")
+    sub.add_argument("--platform", required=True, choices=[p for p, x in pub.PLATFORMS.items() if x.app_keys])
+    sub.add_argument("--id", help="Client ID (YouTube) or client key (TikTok); - reads stdin")
+    sub.add_argument("--secret", help="Client secret; - reads stdin")
+    sub = command("connect", cmd_connect, "Connect a video channel to its YouTube, Instagram or TikTok account")
+    sub.add_argument("--channel", required=True)
+    sub.add_argument("--platform", choices=list(pub.PLATFORMS))
+    sub.add_argument("--token", help="An access token to connect with (Instagram, or TikTok); - reads stdin")
+    sub.add_argument("--captions", action="store_true", help="YouTube: also allow uploading captions (asks for broader access)")
+    sub = command("disconnect", cmd_disconnect, "Disconnect a channel's account and forget its token")
+    sub.add_argument("--channel", required=True)
+    sub = command("publishing", cmd_publishing, "Read or save where a channel publishes and its post defaults")
+    sub.add_argument("--channel", required=True)
+    sub.add_argument("--file", help="JSON file, or - for stdin; omitted to read")
+    sub = command("publish-details", cmd_publish_details, "Read or save a script's post: title, description, caption, tags, privacy, time")
+    sub.add_argument("--script", required=True)
+    sub.add_argument("--file", help="JSON file, or - for stdin; omitted to read")
+    sub = command("publish", cmd_publish, "Upload a rendered video to its channel's account (only when the user asks)")
+    sub.add_argument("--script", required=True)
+    sub.add_argument("--yes", action="store_true", help="Confirm: this posts to a real account")
+    sub = command("stats", cmd_stats, "Fetch a published video's views, likes and comments")
+    sub.add_argument("--script", required=True)
+
     sub = command("comments", cmd_comments, "List a script's open comments in the order they appear")
     sub.add_argument("--script", required=True)
 
@@ -2802,7 +3254,8 @@ def main(argv=None) -> None:
     root = workspace_path(args.workspace)
     try:
         if args.command in ("init", "projects", "new-project", "status", "serve", "channels", "add-channel", "design", "voice", "presets", "fonts", "images",
-                            "voice-providers", "voices", "voice-key", "narration", "say"):
+                            "voice-providers", "voices", "voice-key", "narration", "say",
+                            "platforms", "platform-app", "connect", "disconnect", "publishing"):
             args.handler(root, args)
         else:
             args.handler(find_project(root, args.project), args)

@@ -379,6 +379,12 @@ details.ctl[open] summary h4 { margin-bottom: 12px; }
 .vo-box .text-btn { padding: 4px; }
 .vo-box .pill.ok { background: #e7f6ec; color: #17663a; }
 .voice-card .btn { margin-top: 10px; }
+.stats { display: flex; flex-wrap: wrap; gap: 4px 12px; }
+.stats span { display: inline-flex; gap: 4px; align-items: center; }
+.stats svg { width: 13px; height: 13px; }
+#side-panel .field { margin-bottom: 12px; }
+.side p.small svg, .vo-box p svg { width: 13px; height: 13px; vertical-align: -2px; margin-right: 4px; }
+#side-panel .side-actions { margin-top: 14px; display: grid; gap: 8px; }
 .swatches { display: flex; gap: 4px; align-items: center; height: 38px; padding: 0 10px; border-radius: 6px; border: 1px solid rgba(0,0,0,.06); }
 .swatches i { width: 16px; height: 16px; border-radius: 50%; box-shadow: 0 0 0 1px rgba(255,255,255,.15), 0 0 0 2px rgba(0,0,0,.05); }
 .colors { display: grid; grid-template-columns: repeat(auto-fill, minmax(140px, 1fr)); gap: 8px; }
@@ -435,8 +441,9 @@ details.ctl[open] summary h4 { margin-bottom: 12px; }
 .facts dd { margin: 0; }
 /* script preview, hooks, quality */
 .timing { font: 500 11.5px var(--mono); color: var(--ink-3); background: var(--surface-2); border-radius: 5px; padding: 2px 6px; margin-left: 6px; }
-.side-tabs { display: flex; gap: 2px; border-bottom: 1px solid var(--line); margin: 22px 0 14px; }
-.side-tabs button { flex: 1 1 auto; border: 0; background: none; padding: 8px 6px; white-space: nowrap; font-size: 12.5px; font-weight: 600; color: var(--ink-3); cursor: pointer; display: inline-flex; justify-content: center; gap: 4px; }
+.side-tabs { display: flex; gap: 0; border-bottom: 1px solid var(--line); margin: 22px 0 14px; overflow-x: auto; scrollbar-width: none; }
+.side-tabs::-webkit-scrollbar { display: none; }
+.side-tabs button { flex: 1 1 auto; border: 0; background: none; padding: 8px 5px; white-space: nowrap; font-size: 12.5px; font-weight: 600; color: var(--ink-3); cursor: pointer; display: inline-flex; justify-content: center; gap: 4px; }
 .side-tabs button.on { color: var(--ink); box-shadow: inset 0 -1.5px 0 var(--ink); }
 .side-tabs .n { font: 500 10.5px var(--mono); color: var(--ink-3); }
 #side-panel { display: grid; gap: 10px; }
@@ -564,6 +571,9 @@ const ICONS = {
   volume: '<path d="M11 5 6 9H3v6h3l5 4Z"/><path d="M15.5 8.5a5 5 0 0 1 0 7M18.5 5.5a9 9 0 0 1 0 13"/>',
   mute: '<path d="M11 5 6 9H3v6h3l5 4Z"/><path d="m16 9 6 6M22 9l-6 6"/>',
   key: '<circle cx="7.5" cy="15.5" r="4.5"/><path d="m10.7 12.3 9.3-9.3M17 6l3 3M14 9l2 2"/>',
+  upload: '<path d="M12 20V9"/><path d="m7 14 5-5 5 5"/><path d="M5 4h14"/>',
+  link: '<path d="M10 13a5 5 0 0 0 7.5.5l3-3a5 5 0 0 0-7-7l-1.7 1.7"/><path d="M14 11a5 5 0 0 0-7.5-.5l-3 3a5 5 0 0 0 7 7l1.7-1.7"/>',
+  eye: '<path d="M2 12s3.5-7 10-7 10 7 10 7-3.5 7-10 7S2 12 2 12Z"/><circle cx="12" cy="12" r="3"/>',
 };
 const icon = name => `<svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.8" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true">${ICONS[name]}</svg>`;
 const esc = v => String(v ?? "").replace(/[&<>"']/g, c => ({ "&": "&amp;", "<": "&lt;", ">": "&gt;", '"': "&quot;", "'": "&#39;" }[c]));
@@ -702,6 +712,7 @@ const PROMPTS = {
   rewriteAngle: (s, a) => `Use the vid-studio skill to rewrite the script "${s.title}" (${s.id}) in the project "${projectName()}" with the chosen angle: "${a.hook}".${workspaceSuffix()}`,
   researchStory: s => `Use the vid-studio skill to research the story "${s.title}" (${s.id}) in the project "${projectName()}".${workspaceSuffix()}`,
   draftScripts: (story, ids, name = projectName(), suffix = workspaceSuffix()) => `Use the vid-studio skill to write the scripts for the story "${story.title}" (${story.id}) in the project "${name}": ${ids.join(", ")}.${suffix}`,
+  publishDetails: s => `Use the vid-studio skill to write the post details (title, description, caption, hashtags) for the script "${s.title}" (${s.id}) in the project "${projectName()}". Don't publish it.${workspaceSuffix()}`,
   draft: s => {
     const n = openComments(s).length;
     return n ? `Use the vid-studio skill to revise the script "${s.title}" (${s.id}) in the project "${projectName()}": address its ${plural(n, "open comment")}.${workspaceSuffix()}`
@@ -914,7 +925,10 @@ function scriptsPanel() {
     const c = channelById(s.channel) || {}, owner = s.project || PROJECT;
     const story = data.stories.find(x => x.project === owner && x.id === s.story);
     const poster = s.video?.ready ? `<img class="card-poster" src="/api/p/${enc(owner)}/scripts/${enc(s.id)}/poster.jpg?v=${esc(s.updated || "")}" alt="" loading="lazy">` : "";
-    const status = s.video?.status === "rendering" ? `<span class="pill">Rendering…</span>` : s.video?.ready ? `<span class="pill ok">${s.video.stale ? "Video outdated" : "Video ready"}</span>` : "";
+    const views = s.publish?.stats?.views;
+    const status = s.publish?.status === "uploading" ? `<span class="pill">Uploading…</span>`
+      : s.publish && PUBLISH_DONE[s.publish.status] ? `<span class="pill ok">${views != null ? `${compact(views)} views` : PUBLISH_DONE[s.publish.status]}</span>`
+      : s.video?.status === "rendering" ? `<span class="pill">Rendering…</span>` : s.video?.ready ? `<span class="pill ok">${s.video.stale ? "Video outdated" : "Video ready"}</span>` : "";
     const projectLabel = s.project_name || data.projects.find(p => p.id === owner)?.name || owner;
     return `<article class="item card ${poster ? "has-poster" : ""}" data-card="open-script" data-id="${esc(s.id)}" data-project="${esc(owner)}" tabindex="0">
       ${poster}<div class="body"><h3><a href="${scriptHref(s.id, owner)}">${esc(s.title)}</a></h3>
@@ -1154,9 +1168,14 @@ async function renderChannel(id, tab) {
       channelViews.set(id, CV);
     }
   } catch (e) { if (!current()) return; app.innerHTML = `<div class="empty"><h3>Couldn't open this channel</h3><p>${esc(e.message)}</p></div>`; return; }
-  const tabs = c.kind === "video" ? [["look", "Look"], ["voice", "Voice"], ["narration", "Narration"]] : [["voice", "Voice"]];
+  const tabs = c.kind === "video" ? [["look", "Look"], ["voice", "Voice"], ["narration", "Narration"], ["publishing", "Publishing"]] : [["voice", "Voice"]];
   if (!tabs.some(t => t[0] === tab)) tab = tabs[0][0];
   if (tab === "narration" && !VOICE_PROVIDERS) { try { await loadVoiceProviders(); } catch (e) { toast(e.message, "error"); } if (!current()) return; }
+  if (tab === "publishing") {
+    try { [PUBLISH_PLATFORMS, CV.publishing] = await Promise.all([api("GET", "platforms"), api("GET", `channels/${enc(id)}/publishing`)]); }
+    catch (e) { toast(e.message, "error"); }
+    if (!current()) return;
+  }
   CV.tab = tab;
   document.title = `${c.name} · Vid Studio`;
   const steps = [["basics", "Basics"], ...tabs];
@@ -1167,8 +1186,8 @@ async function renderChannel(id, tab) {
     ${CV.setup ? `<ol class="stepper">${steps.map(([key, label], i) => {
       const at = steps.findIndex(x => x[0] === tab), state = i < at ? "done" : i === at ? "on" : "";
       return `<li class="${state}"><span class="step-n">${state === "done" ? icon("check") : i + 1}</span>${label}</li>`; }).join("")}</ol>`
-      : `<nav class="tabs" aria-label="Channel">${tabs.map(([key, label]) => `<a href="${channelHref(c.id, key)}" class="${tab === key ? "on" : ""}">${icon(key === "look" ? "palette" : key === "narration" ? "volume" : "mic")}${label}</a>`).join("")}</nav>`}
-    <section id="channel-panel">${tab === "look" ? lookPanel(c) : tab === "narration" ? narrationPanel(c) : voicePanel(c)}</section>
+      : `<nav class="tabs" aria-label="Channel">${tabs.map(([key, label]) => `<a href="${channelHref(c.id, key)}" class="${tab === key ? "on" : ""}">${icon(({ look: "palette", narration: "volume", publishing: "upload" })[key] || "mic")}${label}</a>`).join("")}</nav>`}
+    <section id="channel-panel">${({ look: lookPanel, narration: narrationPanel, publishing: publishingPanel })[tab]?.(c) ?? voicePanel(c)}</section>
     ${CV.setup ? `<div class="setup-next"><span class="muted small">Everything saves as you go, and you can change it any time.</span>${(() => {
       const next = tabs[tabs.findIndex(t => t[0] === tab) + 1];
       return next ? `<a class="btn primary" href="${channelHref(c.id, next[0])}">Next: ${next[1]}</a>` : `<button class="btn primary" data-action="finish-setup">Finish setup</button>`; })()}</div>` : ""}`;
@@ -1425,6 +1444,73 @@ function voiceKeysDialog(only) {
   });
 }
 
+// Publishing ------------------------------------------------------------
+let PUBLISH_PLATFORMS = null;   // [{id, name, oauth, app_problem, app_keys, token_help, privacy, default_privacy, caption_limit}]
+const platformById = id => (PUBLISH_PLATFORMS || []).find(p => p.id === id);
+const YT_CATEGORIES = [["27", "Education"], ["25", "News & Politics"], ["28", "Science & Technology"], ["22", "People & Blogs"], ["26", "Howto & Style"], ["24", "Entertainment"], ["17", "Sports"], ["2", "Autos & Vehicles"], ["19", "Travel & Events"]];
+const PLATFORM_NOTES = {
+  youtube: "Uploads with YouTube's API to your channel, sets the poster as the thumbnail, and can add the voiceover's captions and schedule the release.",
+  instagram: "Posts the video as a Reel on a professional (Business or Creator) account, shared to the feed, with the caption and credits.",
+  tiktok: "Sends the video to your TikTok inbox as a draft to finish in the app, or posts it directly once TikTok has approved your app.",
+};
+function publishingPanel(c) {
+  const pb = CV.publishing || {}, chosen = platformById(pb.platform), d = pb.defaults || {};
+  const card = p => `<button type="button" class="provider ${pb.platform === p.id ? "on" : ""}" data-action="pick-platform" data-id="${esc(p.id)}">
+      <span class="provider-top"><b>${esc(p.name)}</b>${pb.platform === p.id && pb.connected ? `<span class="pill ok">Connected</span>` : ""}</span>
+      <span class="muted">${esc(PLATFORM_NOTES[p.id] || "")}</span></button>`;
+  let connect = "";
+  if (chosen && pb.connected) {
+    const a = pb.account || {};
+    connect = `<div class="vo-box"><p class="small">${icon("link")}<b>${esc(a.name || a.handle || "Connected")}</b>${a.url ? ` · <a href="${safeUrl(a.url)}" target="_blank" rel="noopener noreferrer">${esc(shortUrl(a.url))}</a>` : ""}</p>
+      <p class="muted small">Connected ${esc(when(pb.connected_at))}. The token is kept in this studio's <code>.secrets.json</code>.</p>
+      <div class="inline"><button class="btn small" data-action="connect-platform">Reconnect</button><button class="text-btn danger-text" data-action="disconnect-platform">Disconnect</button></div></div>`;
+  } else if (chosen && chosen.oauth) {
+    const missing = chosen.app_keys.filter(k => !k.set);
+    connect = `${missing.length ? `<div class="vo-box"><p class="small"><b>First, your ${esc(chosen.name)} app</b></p>
+        <p class="muted small">The studio signs in with an app you own, so uploads count against your quota and nobody else holds your access. <a href="${safeUrl(chosen.app_url)}" target="_blank" rel="noopener noreferrer">Create one</a>${chosen.id === "youtube" ? " (OAuth client, type Desktop app, with the YouTube Data API v3 enabled)" : " (Login Kit for Desktop and the Content Posting API, redirect URI below)"}.</p>
+        ${chosen.app_keys.map(k => `<div class="row"><span>${esc(k.label[0].toUpperCase() + k.label.slice(1))}</span><input class="text-input" type="${/secret/.test(k.name) ? "password" : "text"}" data-app-key="${esc(k.name)}" autocomplete="off" placeholder="${k.set ? "Saved" : "Paste it"}"></div>`).join("")}
+        <p class="muted small">Redirect URI: <code>${esc(location.origin)}/oauth/callback</code></p>
+        <button class="btn small" data-action="save-platform-app">Save</button></div>` : ""}
+      <div class="inline"><button class="btn primary" data-action="connect-platform" ${missing.length ? "disabled" : ""}>${icon("link")}Connect ${esc(chosen.name)}</button>
+        ${chosen.id === "youtube" ? `<label class="check-label"><input type="checkbox" id="yt-captions" ${CV.ytCaptions ? "checked" : ""}> Also upload captions <span class="muted">(asks to manage your videos)</span></label>` : ""}</div>
+      ${chosen.token_help ? `<details class="ctl"><summary><h4>Connect with an access token instead</h4></summary><p class="muted small">${esc(chosen.token_help)}</p>
+        <textarea class="text-area mono" id="platform-token" rows="2" placeholder="Paste the token"></textarea><button class="btn small" data-action="connect-token">Connect</button></details>` : ""}`;
+  } else if (chosen) {
+    connect = `<p class="muted small">${esc(chosen.token_help)}</p><textarea class="text-area mono" id="platform-token" rows="3" placeholder="Paste the access token"></textarea>
+      <button class="btn primary" data-action="connect-token">${icon("link")}Connect ${esc(chosen.name)}</button>`;
+  }
+  const privacy = chosen ? chosen.privacy.map(o => [o.id, o.label.replace(/ \(.*\)$/, "")]) : [];
+  return `<div class="studio-split">
+    <div class="controls">
+      <section class="ctl"><h4>Where it publishes</h4>
+        <div class="providers"><button type="button" class="provider ${!pb.platform ? "on" : ""}" data-action="pick-platform" data-id=""><span class="provider-top"><b>By hand</b></span>
+          <span class="muted">Download the MP4 and post it yourself, then paste its link on the script.</span></button>${(PUBLISH_PLATFORMS || []).map(card).join("")}</div></section>
+      ${chosen ? `<section class="ctl"><h4>Account</h4>${connect}</section>
+      <section class="ctl"><h4>Defaults for new posts</h4>
+        ${privacy.length > 1 ? `<div class="row"><span>${chosen.id === "tiktok" ? "Post as" : "Visibility"}</span>${seg("privacy", privacy, d.privacy || chosen.default_privacy).replaceAll('data-action="set-design"', 'data-action="set-publish-default"')}</div>` : ""}
+        ${chosen.id === "youtube" ? `<div class="row"><span>Category</span><select class="font-select" data-publish-default="category">${YT_CATEGORIES.map(([v, label]) => `<option value="${v}" ${String(d.category) === v ? "selected" : ""}>${label}</option>`).join("")}</select></div>
+          <div class="row"><span>Made for kids</span>${seg("made_for_kids", [[false, "No"], [true, "Yes"]], Boolean(d.made_for_kids)).replaceAll('data-action="set-design"', 'data-action="set-publish-default"')}</div>
+          <div class="row"><span>Thumbnail</span>${seg("thumbnail", [[true, "Use the poster frame"], [false, "YouTube's pick"]], d.thumbnail !== false).replaceAll('data-action="set-design"', 'data-action="set-publish-default"')}</div>
+          <div class="row"><span>Captions</span>${seg("captions", [[true, "Upload"], [false, "Don't"]], d.captions !== false).replaceAll('data-action="set-design"', 'data-action="set-publish-default"')}</div>` : ""}
+        <div class="row"><span>AI disclosure</span>${seg("synthetic", [[false, "Off"], [true, "Label as AI-made"]], Boolean(d.synthetic)).replaceAll('data-action="set-design"', 'data-action="set-publish-default"')}</div>
+        <div class="row"><span>Hashtags</span><input class="text-input" data-publish-default="hashtags" value="${esc((d.hashtags || []).map(h => "#" + h).join(" "))}" placeholder="#money #explained (added to every post)"></div>
+        <p class="muted small">${chosen.id === "youtube" ? "New uploads start private unless you change it here or on the post. Until Google audits your API project, YouTube keeps its uploads private; make them public in YouTube Studio. YouTube asks you to label realistic altered or synthetic content; a narrated explainer usually isn't." : chosen.id === "tiktok" ? "TikTok only lets apps it hasn't audited post privately; drafts always work." : "Instagram posts go live straight away; there is no private or scheduled post through its API."}</p></section>` : ""}
+    </div>
+    <div class="preview-col"><p class="save-note" id="save-note"></p>
+      <div class="ask"><h4>${icon("upload")}How publishing works</h4><p class="muted small">Render a script, check its post details on the script's Publish tab, and click Publish. The studio uploads the MP4 from this computer straight to ${esc(chosen?.name || "the platform")}, then marks the script published with its link. Nothing posts without you clicking Publish and confirming.</p></div></div>
+  </div>`;
+}
+async function savePublishing(view, changes) {
+  const note = document.getElementById("save-note"); if (note) note.textContent = "Saving…";
+  try { view.publishing = await api("PUT", `channels/${enc(view.id)}/publishing`, changes); if (note) note.textContent = "Saved"; }
+  catch (e) { if (note) note.textContent = "Couldn't save"; toast(e.message, "error"); }
+}
+window.addEventListener("message", event => {
+  if (event.origin !== location.origin || event.data?.type !== "vid-connected") return;
+  if (CV && channelRoute(CV.id) && CV.tab === "publishing") renderChannel(CV.id, "publishing");
+  if (editor?.kind === "script") reloadComments();
+});
+
 // Controls write straight into the open channel's look or voice, then save on their own.
 document.addEventListener("input", event => {
   if (!CV) return;
@@ -1450,6 +1536,9 @@ document.addEventListener("input", event => {
   } else if (el.dataset.narrationLexicon !== undefined) {
     CV.narration.lexicon = parseLexicon(el.value);
     narrationChanged();
+  } else if (el.dataset.publishDefault === "hashtags") {
+    const view = CV, tags = el.value.split(/[\s,]+/).map(x => x.replace(/^#/, "")).filter(Boolean);
+    debounce(channelKey(view, "publishing"), 700, () => savePublishing(view, { defaults: { hashtags: tags } }));
   } else if (el.id === "sample-text") {
     CV.sampleText = el.value;
   } else if (el.dataset.channelField) {
@@ -1461,6 +1550,7 @@ document.addEventListener("input", event => {
   }
 });
 document.addEventListener("change", event => {
+  if (CV && event.target.matches("select[data-publish-default]")) savePublishing(CV, { defaults: { [event.target.dataset.publishDefault]: event.target.value } });
   if (CV && event.target.matches("select[data-design]")) { setPath(CV.design, event.target.dataset.design, event.target.value); designChanged(event.target.dataset.design); }
 
 });
@@ -1612,7 +1702,7 @@ function scriptTextChanged() {
 const SCORE_LABELS = [["hook", "Hook"], ["clarity", "Clarity"], ["retention", "Retention"], ["specificity", "Specificity"], ["voice", "Voice"], ["human", "Human story"], ["natural", "Sounds human"], ["value", "Value"], ["accuracy", "Accuracy"]];
 function scriptSide() {
   const d = editor.data, open = openComments(d);
-  const tabs = isPost() ? [] : [["preview", "Preview"], ["hooks", "Hooks"], ["quality", "Quality"], ["comments", "Comments"]];
+  const tabs = isPost() ? [] : [["preview", "Preview"], ["hooks", "Hooks"], ["quality", "Quality"], ["comments", "Comments"], ["publish", "Post"]];
   const badge = { hooks: (d.angles || []).length, comments: open.length, quality: d.review ? avgScore(d.review).toFixed(1) : "" };
   const tab = isPost() ? "comments" : editor.sideTab || "preview";
   return `<div class="side-actions"><button class="btn primary" data-action="write-draft">${icon("spark")}${open.length ? `Revise with ${plural(open.length, "comment")}` : "Write draft"}</button></div>
@@ -1623,7 +1713,7 @@ function scriptSide() {
         ${d.published_url ? `<a class="small-link" href="${safeUrl(d.published_url)}" target="_blank" rel="noopener noreferrer">${esc(shortUrl(d.published_url))}${icon("external")}</a>` : ""}` : ""}</section>
     ${isPost() ? "" : `<section id="video-box">${videoBox()}</section>`}
     ${tabs.length ? `<div class="side-tabs" role="tablist">${tabs.map(([key, label]) => `<button type="button" role="tab" aria-selected="${tab === key}" class="${tab === key ? "on" : ""}" data-action="side-tab" data-id="${key}">${label}${badge[key] ? `<span class="n">${badge[key]}</span>` : ""}</button>`).join("")}</div>` : ""}
-    <div id="side-panel">${({ preview: previewTab, hooks: hooksTab, quality: qualityTab, comments: commentsTab })[tab]()}</div>
+    <div id="side-panel">${({ preview: previewTab, hooks: hooksTab, quality: qualityTab, comments: commentsTab, publish: publishTab })[tab]()}</div>
     <section><button class="text-btn danger-text" data-action="delete-script" data-id="${esc(d.id)}">Delete script</button></section>`;
 }
 
@@ -1654,7 +1744,10 @@ function videoBox() {
         <button class="text-btn" data-action="render-video">${v.stale ? "Re-render with your changes" : "Render again"}</button></div></div>
       ${v.stale ? `<p class="beat-warn">The script, images, or look changed since this render.</p>` : ""}`;
   else body = `<button class="btn" data-action="render-video">${icon("film")}Render MP4</button><p class="muted small">Renders on this computer (Chrome + ffmpeg). It can take a few minutes${editor.data.narration?.provider && voiceoverMissing() ? ", and records the voiceover first" : ""}.</p>`;
-  return `<h4>Video</h4>${voiceoverBox()}${v.status === "failed" && v.error ? `<p class="beat-warn">Last render failed: ${esc(v.error)}</p>` : ""}${body}${placeholders}`;
+  const pub = editor.data.publish, done = pub && PUBLISH_DONE[pub.status];
+  const posted = done ? `<p class="small">${icon("upload")}${done} on ${esc(platformById(pub.platform)?.name || pub.platform)}${pub.url ? ` · <a href="${safeUrl(pub.url)}" target="_blank" rel="noopener noreferrer">open</a>` : ""}${pub.stats?.views != null ? ` · ${compact(pub.stats.views)} views` : ""}</p>`
+    : pub?.status === "uploading" ? `<p class="small muted">${icon("upload")}Uploading… ${Math.round((pub.progress || 0) * 100)}%</p>` : "";
+  return `<h4>Video</h4>${posted}${voiceoverBox()}${v.status === "failed" && v.error ? `<p class="beat-warn">Last render failed: ${esc(v.error)}</p>` : ""}${body}${placeholders}`;
 }
 const updateVideoBox = () => { const box = document.getElementById("video-box"); if (box && editor) box.innerHTML = videoBox(); };
 
@@ -1732,6 +1825,82 @@ function pickImage() {
     input.click();
   });
 }
+
+// Publish -------------------------------------------------------------
+const compact = n => n >= 1e7 ? `${Math.round(n / 1e6)}M` : n >= 1e6 ? `${(n / 1e6).toFixed(1)}M` : n >= 1e4 ? `${Math.round(n / 1e3)}k` : n >= 1e3 ? `${(n / 1e3).toFixed(1)}k` : String(n);
+const PUBLISH_DONE = { published: "Published", scheduled: "Scheduled", draft: "Sent as a draft" };
+function publishStatus() {
+  const st = editor.data.publish || {}, pf = platformById(st.platform)?.name || st.platform || "";
+  if (st.status === "uploading") return `<div class="render-bar"><i style="width:${Math.round((st.progress || 0) * 100)}%"></i></div><p class="muted small">Uploading to ${esc(pf)}… ${Math.round((st.progress || 0) * 100)}%. You can keep working.</p>`;
+  if (PUBLISH_DONE[st.status]) {
+    const k = st.stats || {};
+    return `<div class="vo-box"><p class="small">${icon("check")}<b>${PUBLISH_DONE[st.status]} on ${esc(pf)}</b>${st.publish_at && st.status === "scheduled" ? ` · goes public ${esc(new Date(st.publish_at).toLocaleString())}` : ""}${st.privacy ? ` · ${esc(st.privacy)}` : ""}</p>
+      ${st.url ? `<a class="small-link" href="${safeUrl(st.url)}" target="_blank" rel="noopener noreferrer">${esc(shortUrl(st.url))}${icon("external")}</a>` : ""}
+      ${k.at ? `<p class="small stats">${k.views != null ? `<span>${icon("eye")}${compact(k.views)} views</span>` : ""}${k.likes != null ? `<span>${compact(k.likes)} likes</span>` : ""}${k.comments != null ? `<span>${compact(k.comments)} comments</span>` : ""}<span class="muted">${esc(when(k.at))}</span></p>` : ""}
+      ${(st.notes || []).map(n => `<p class="muted small">${esc(n)}</p>`).join("")}
+      <div class="inline"><button class="btn small" data-action="refresh-stats">${icon("refresh")}${k.at ? "Refresh" : "Get"} stats</button></div></div>`;
+  }
+  return st.status === "failed" && st.error ? `<p class="beat-warn">Publishing failed: ${esc(st.error)}</p>` : "";
+}
+function publishTab() {
+  const pd = editor.publishDetails, pb = editor.publishing;
+  if (!pd || !pb) { loadPublishing(editor); return `<p class="muted small">Loading…</p>`; }
+  const chosen = platformById(pb.platform), c = channelById(editor.data.channel) || {};
+  if (!chosen) return `<section id="publish-status">${publishStatus()}</section><p class="muted small">${esc(c.name || "This channel")} is published by hand: download the MP4, post it, and paste the link under Stage → Published. <a href="${channelHref(editor.data.channel, "publishing")}">Connect YouTube, Instagram or TikTok</a> to publish from here.</p>`;
+  const yt = chosen.id === "youtube", v = editor.data.video || {};
+  const blocked = !pb.connected ? `Connect ${c.name} to ${chosen.name} first` : !v.ready ? "Render the video first" : v.stale ? "Render again: the script changed since the last render" : "";
+  const body = yt ? pd.description : pd.caption, limit = yt ? 5000 : chosen.caption_limit;
+  const extra = [pd.sources.length && yt ? plural(pd.sources.length, "source link") : "", pd.credits.length ? plural(pd.credits.length, "photo credit") : "", pd.hashtags.length ? plural(pd.hashtags.length, "hashtag") : ""].filter(Boolean);
+  const privacy = chosen.privacy.map(o => [o.id, o.label.replace(/ \(.*\)$/, "")]);
+  return `<section id="publish-status">${publishStatus()}</section>
+    ${pb.connected ? `<p class="muted small">${icon("link")}${esc(chosen.name)} · ${esc(pb.account?.name || "")}</p>` : `<p class="beat-warn">${esc(pb.problem)} · <a href="${channelHref(editor.data.channel, "publishing")}">Connect</a></p>`}
+    ${yt ? field("Title", `<input data-pub="title" maxlength="100" value="${esc(pd.title)}">`) : ""}
+    ${field(yt ? "Description" : "Caption", `<textarea data-pub="${yt ? "description" : "caption"}" rows="6" maxlength="${limit}" placeholder="${yt ? "What the video is about, in two or three lines" : "The hook, a line of context, and a question"}">${esc(body)}</textarea>`,
+      extra.length ? `Added when it posts: ${esc(extra.join(", "))}.` : "")}
+    ${field("Hashtags", `<input data-pub="hashtags" value="${esc(pd.hashtags.map(h => "#" + h).join(" "))}" placeholder="#upi #money">`)}
+    ${privacy.length > 1 ? `<div class="field"><span>${chosen.id === "tiktok" ? "Post as" : "Visibility"}</span>${seg("privacy", privacy, pd.privacy || chosen.default_privacy).replaceAll('data-action="set-design"', 'data-action="set-pub-privacy"')}</div>` : ""}
+    ${yt ? field("Schedule", `<input type="datetime-local" data-pub="publish_at" value="${esc(localInput(pd.publish_at))}">`, "Leave empty to publish now. A scheduled video uploads private and goes public at this time.") : ""}
+    <label class="check-label"><input type="checkbox" data-pub="synthetic" ${pd.synthetic ? "checked" : ""}> Label as AI-made content</label>
+    <p class="save-note" id="pub-note"></p>
+    <div class="side-actions"><button class="btn primary" data-action="publish-video" ${blocked || editor.data.publish?.status === "uploading" ? "disabled" : ""} title="${esc(blocked)}">${icon("upload")}Publish to ${esc(chosen.name)}…</button>
+      <button class="btn" data-action="write-publish-details">${icon("spark")}Write details with your agent</button></div>
+    ${blocked ? `<p class="muted small">${esc(blocked)}.</p>` : ""}`;
+}
+const localInput = iso => { if (!iso) return ""; const d = new Date(iso); return isNaN(d) ? "" : new Date(d - d.getTimezoneOffset() * 6e4).toISOString().slice(0, 16); };
+async function loadPublishing(view) {
+  if (view.publishLoading) return;
+  view.publishLoading = true;
+  try {
+    const base = `p/${enc(PROJECT)}/scripts/${enc(view.data.id)}`;
+    const [details, publishing, platforms] = await Promise.all([api("GET", base + "/publish-details"), api("GET", `channels/${enc(view.data.channel)}/publishing`),
+      PUBLISH_PLATFORMS ? Promise.resolve(PUBLISH_PLATFORMS) : api("GET", "platforms")]);
+    Object.assign(view, { publishDetails: details, publishing });
+    PUBLISH_PLATFORMS = platforms;
+  } catch (e) { toast(e.message, "error"); view.publishDetails = view.publishDetails || null; }
+  finally { view.publishLoading = false; }
+  if (editor === view && view.sideTab === "publish" && view.publishDetails) rerender();
+}
+function savePublishDetails(view, changes) {
+  Object.assign(view.publishDetails, changes);
+  const note = document.getElementById("pub-note"); if (note) note.textContent = "Saving…";
+  view.pendingPublish = { ...(view.pendingPublish || {}), ...changes };
+  debounce(`publish:${view.data.id}`, 600, async () => {
+    const body = view.pendingPublish; view.pendingPublish = null;
+    try {
+      const saved = await api("PUT", `p/${enc(PROJECT)}/scripts/${enc(view.data.id)}/publish-details`, body);
+      view.publishDetails = { ...saved, ...(view.pendingPublish || {}) };
+      const n = document.getElementById("pub-note"); if (n && editor === view) n.textContent = "Saved";
+    } catch (e) { const n = document.getElementById("pub-note"); if (n) n.textContent = "Couldn't save"; toast(e.message, "error"); }
+  });
+}
+document.addEventListener("input", event => {
+  const el = event.target;
+  if (!editor || el.dataset.pub === undefined || !editor.publishDetails) return;
+  const key = el.dataset.pub;
+  const value = key === "hashtags" ? el.value.split(/[\s,]+/).map(x => x.replace(/^#/, "")).filter(Boolean)
+    : key === "synthetic" ? el.checked : key === "publish_at" ? (el.value ? new Date(el.value).toISOString() : "") : el.value;
+  savePublishDetails(editor, { [key]: value });
+});
 
 function hooksTab() {
   const angles = editor.data.angles || [];
@@ -2238,6 +2407,44 @@ const actions = {
     const p = voiceProvider(id);
     if (p && !p.ready && p.needs_key) voiceKeysDialog(id);
   },
+  async "pick-platform"(id) {
+    const view = CV;
+    if ((view.publishing?.platform || "") === id) return;
+    if (view.publishing?.connected && !confirm(`Switching disconnects ${view.publishing.account?.name || "the connected account"}. Continue?`)) return;
+    await savePublishing(view, { platform: id });
+    if (CV === view) renderChannel(view.id, "publishing");
+  },
+  async "set-publish-default"(value, el) {
+    const view = CV, key = el.dataset.path;
+    const parsed = value === "true" ? true : value === "false" ? false : value;
+    el.parentElement.querySelectorAll("button").forEach(b => b.classList.toggle("on", b === el));
+    await savePublishing(view, { defaults: { [key]: parsed } });
+  },
+  async "save-platform-app"() {
+    const view = CV, platform = view.publishing.platform, keys = {};
+    document.querySelectorAll("[data-app-key]").forEach(el => { if (el.value.trim()) keys[el.dataset.appKey] = el.value.trim(); });
+    if (!Object.keys(keys).length) return toast("Paste the app's credentials first");
+    PUBLISH_PLATFORMS = await api("PUT", `platforms/${enc(platform)}/app`, keys);
+    toast("Saved"); if (CV === view) renderChannel(view.id, "publishing");
+  },
+  "connect-platform"() {
+    const view = CV, captions = document.getElementById("yt-captions")?.checked;
+    view.ytCaptions = Boolean(captions);
+    const url = `/oauth/start?channel=${enc(view.id)}&platform=${enc(view.publishing.platform)}${captions ? "&captions=1" : ""}`;
+    if (!window.open(url, "_blank", "popup,width=560,height=720")) location.href = url;
+  },
+  async "connect-token"() {
+    const view = CV, token = document.getElementById("platform-token")?.value.trim();
+    if (!token) return toast("Paste the access token first");
+    view.publishing = await api("PUT", `channels/${enc(view.id)}/connection`, { platform: view.publishing.platform, token });
+    toast(`Connected to ${view.publishing.account?.name || view.publishing.info?.name}`);
+    if (CV === view) renderChannel(view.id, "publishing");
+  },
+  "disconnect-platform"() {
+    const view = CV, name = view.publishing.account?.name || "this account";
+    openDialog({ title: "Disconnect the account?", sub: `The studio forgets its token for ${esc(name)} and asks the platform to revoke it. Published videos stay up.`, submit: "Disconnect", danger: true,
+      onSubmit: async () => { view.publishing = await api("DELETE", `channels/${enc(view.id)}/connection`); if (CV === view) renderChannel(view.id, "publishing"); } });
+  },
   "voice-keys"(id) { (VOICE_PROVIDERS ? Promise.resolve() : loadVoiceProviders()).then(() => voiceKeysDialog(id)); },
   async "play-sample"(_, el) {
     const view = CV, label = el.innerHTML;
@@ -2298,6 +2505,32 @@ const actions = {
       view.data.narration = await api("POST", `p/${enc(project)}/scripts/${enc(view.data.id)}/narrate`, { force: mode === "force" });
       if (editor === view && PROJECT === project) updateVideoBox();
     } catch (e) { toast(e.message, "error"); }
+  },
+  "set-pub-privacy"(value, el) { el.parentElement.querySelectorAll("button").forEach(b => b.classList.toggle("on", b === el)); savePublishDetails(editor, { privacy: value }); },
+  "write-publish-details"() {
+    showPrompt("Write the post details", PROMPTS.publishDetails(editor.data),
+      "Paste this into Claude or ChatGPT. Your agent writes the title, description, caption and hashtags from the script and its story. It doesn't publish anything; the details show up here.");
+  },
+  "publish-video"() {
+    const view = editor, pd = view.publishDetails, pb = view.publishing, chosen = platformById(pb.platform);
+    const privacy = chosen.privacy.find(o => o.id === (pd.privacy || chosen.default_privacy))?.label || pd.privacy;
+    const goesPublic = /^(public|PUBLIC_TO_EVERYONE)$/.test(pd.privacy || chosen.default_privacy) || chosen.id === "instagram";
+    openDialog({
+      title: `Publish to ${chosen.name}?`, submit: pd.publish_at ? "Upload and schedule" : "Publish",
+      sub: `This uploads the rendered MP4 to <b>${esc(pb.account?.name || "the connected account")}</b>.${goesPublic && !pd.publish_at ? " Anyone will be able to see it." : ""}`,
+      body: `<dl class="facts"><dt>Title</dt><dd>${esc(pd.title || view.data.title)}</dd><dt>${chosen.id === "tiktok" ? "Post as" : "Visibility"}</dt><dd>${esc(privacy)}</dd>
+        ${pd.publish_at ? `<dt>Goes public</dt><dd>${esc(new Date(pd.publish_at).toLocaleString())}</dd>` : ""}
+        <dt>Video</dt><dd>${fmtTime(view.data.duration)} · rendered ${esc(when(view.data.video?.finished))}</dd></dl>`,
+      onSubmit: async () => {
+        view.data.publish = await api("POST", `p/${enc(PROJECT)}/scripts/${enc(view.data.id)}/publish`, { confirm: true });
+        if (editor === view) rerender();
+      },
+    });
+  },
+  async "refresh-stats"() {
+    const view = editor;
+    try { const stats = await api("POST", `p/${enc(PROJECT)}/scripts/${enc(view.data.id)}/stats`, {}); view.data.publish = { ...view.data.publish, stats }; if (editor === view) rerender(); }
+    catch (e) { toast(e.message, "error"); }
   },
   "player-mute"(_, el) { PLAYER.muted = !PLAYER.muted; playerSend({ type: "mute", muted: PLAYER.muted }); el.innerHTML = icon(PLAYER.muted ? "mute" : "volume"); el.setAttribute("aria-label", PLAYER.muted ? "Unmute" : "Mute"); },
   "side-tab"(key) { editor.sideTab = key; rerender(); },
@@ -2540,6 +2773,11 @@ async function poll() {
             changed = true;
           }
           if (JSON.stringify(remote.video) !== JSON.stringify(view.data.video)) { view.data.video = remote.video; if (!changed) updateVideoBox(); }
+          if (JSON.stringify(remote.publish) !== JSON.stringify(view.data.publish)) {
+            const finished = remote.publish?.status !== view.data.publish?.status;
+            view.data.publish = remote.publish;
+            if (!changed) { updateVideoBox(); const box = document.getElementById("publish-status"); if (box) box.innerHTML = publishStatus(); if (finished && view.sideTab === "publish") changed = true; }
+          }
           if (JSON.stringify(remote.narration) !== JSON.stringify(view.data.narration)) {
             const clipsChanged = JSON.stringify(remote.narration?.clips) !== JSON.stringify(view.data.narration?.clips);
             view.data.narration = remote.narration;
