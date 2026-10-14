@@ -915,7 +915,7 @@
       var dot = el('div', 'tl-dot');
       var date = el('div', 'tl-date', rich(it.date)); tagLang(date, it.date);
       var lab = el('div', 'tl-label fit', rich(it.label)); tagLang(lab, it.label);
-      var txt = el('div', 'tl-text card'); txt.appendChild(date); txt.appendChild(lab);
+      var txt = el('div', 'tl-text'); txt.appendChild(date); txt.appendChild(lab);
       node.appendChild(dot); node.appendChild(txt); wrap.appendChild(node);
       return { node: node, dot: dot, date: date, label: lab, txt: txt };
     });
@@ -1004,7 +1004,7 @@
   // dots. Every bubble has its final size from the start, so nothing reflows while it plays.
   BUILD.message = function (sc) {
     var d = sc.data, st = el('div', 'stack');
-    var wrap = el('div', 'msg card');
+    var wrap = el('div', 'msg');
     var who = plain(d.title), head = null;
     if (who) {
       // the sender's initial in a round avatar, like the top of a chat (cards only)
@@ -1115,7 +1115,7 @@
       x.el.style.setProperty('--k', '1');
       fitWidths(x.el);
       var need0 = (head ? head.offsetHeight : 0) + (x.sc.type === 'image' ? 0 : st.scrollHeight);
-      var ch0 = Math.round(clamp(c.height - need0 - gap, H * (x.sc.type === 'title' ? 0.28 : 0.2), H * (x.sc.type === 'image' ? 0.62 : 0.4)));
+      var ch0 = Math.round(clamp(c.height - need0 - gap, H * (x.sc.type === 'title' ? 0.3 : 0.2), H * (x.sc.type === 'image' ? 0.62 : 0.4)));
       x.photo.el.style.cssText += ';left:' + c.left + 'px;top:' + c.top + 'px;width:' + c.width + 'px;height:' + ch0 + 'px';
       frame.style.top = (c.top + ch0 + gap) + 'px'; frame.style.height = Math.max(120, bottom - c.top - ch0 - gap) + 'px';
       return;
@@ -1179,7 +1179,7 @@
   }
 
   BUILD.end = function (sc, ctx) {
-    var d = sc.data, st = el('div', 'stack'), box = el('div', 'card end-card');
+    var d = sc.data, st = el('div', 'stack'), box = el('div', 'end-card');
     st.appendChild(box);
     var logoText = ctx.design.logo.text.trim();
     var lg = null;

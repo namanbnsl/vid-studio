@@ -18,18 +18,19 @@ Graphite, a new look: near-black, soft white, one warm accent, Geist throughout.
 
 ## What changed
 
-**One tile per idea.** Each idea gets one flat, rounded tile, one step lighter (or darker) than the background:
+**One tile per idea, and only where it helps.** Charts, list points and compare phrases sit on flat, rounded tiles, one step lighter (or darker) than the background. Scenes that read better as type on the background drop the tile: the stat, the quote, the timeline (dates as display type on a rail that draws through them), the message (a chat screen with the sender centred above the bubbles) and the end card (a centred finale).
+
+The tiles:
 
 - A chart sits on one tile.
-- Each list point and each timeline date gets its own tile.
+- Each list point gets its own tile.
 - Two phrases in a compare sit on two tiles, with a small arrow from the first to the second.
-- A quote is big type under a large opening mark, with no tile.
-- A message is a chat thread, with the sender's initial in a round avatar.
-- The end card has a solid call-to-action button.
 
 **Numbers are the hero.** A stat drops its tile, and the number is set as large as the frame allows. Its digits roll in like an odometer, with each column as wide as its final digit, so nothing shifts. A percentage up to 100 also fills a thin meter. A compare of two numbers leads with the difference between them (`2.4×`, `+38%`), with the two values as rows below on the same scale. A bar chart whose values share a unit ("lakh") shows it once, at the top.
 
 ![Hero numbers](assets/hero-numbers.jpg)
+
+![Message, timeline and end card](assets/type-scenes.jpg)
 
 **Labels are eyebrows.** `Text:` labels and kickers are small accent text in sentence case, not boxes. On a photo card the label sits on the photo's bottom-left corner, so the scene below keeps its full size.
 
