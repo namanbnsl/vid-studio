@@ -1,0 +1,63 @@
+{
+  "id": "graphite",
+  "name": "Graphite",
+  "description": "Near-black, soft white type and one warm accent. Geist throughout, type on the background, calm fades and plain captions. Quiet, like a product film.",
+  "design": {
+    "aspect": "9:16",
+    "colors": {
+      "background": "#0B0B0C",
+      "surface": "#1C1C1E",
+      "text": "#F5F5F7",
+      "muted": "#8E8E93",
+      "accent": "#F2A97E",
+      "accent2": "#9A9AA2",
+      "negative": "#FF6B5E"
+    },
+    "fonts": {
+      "display": "Geist",
+      "body": "Geist",
+      "mono": "JetBrains Mono"
+    },
+    "type": {
+      "scale": 1.0,
+      "display_case": "none",
+      "display_weight": 600,
+      "tracking": -0.04
+    },
+    "motion": {
+      "energy": "calm",
+      "easing": "smooth",
+      "transition": "fade"
+    },
+    "captions": {
+      "style": "plain",
+      "position": "lower",
+      "highlight": "accent",
+      "max_words": 4,
+      "size": "medium"
+    },
+    "background": {
+      "style": "solid",
+      "pattern": "none"
+    },
+    "cards": {
+      "style": "glass"
+    },
+    "images": {
+      "treatment": "natural",
+      "layout": "auto"
+    },
+    "sources": {
+      "show": true
+    },
+    "progress": {
+      "show": true
+    },
+    "radius": 32,
+    "logo": {
+      "text": "",
+      "position": "top-left"
+    },
+    "custom_css": ""
+  }
+}

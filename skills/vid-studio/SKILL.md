@@ -34,7 +34,7 @@ Start with `studio.py status`.
 | No project yet, a new project, or no topics | [setup.md](references/setup.md) |
 | "Research now", "run the scheduled research", or "what's new" | [research.md](references/research.md) |
 | "Research the story …" | [story.md](references/story.md) |
-| "Write the script(s) …", "revise the script …" (its comments), or edit a script | [write.md](references/write.md) |
+| "Write the script(s) …", "revise the script …" (its comments), or edit a script | [write.md](references/write.md) (video scripts also follow [direction.md](references/direction.md)) |
 | Add or change channels | `studio.py add-channel` (`--kind video\|post`, `--language`, `--platform`, `--format`), or edit `channels.json` |
 | "Change the look of the channel …" | [look.md](references/look.md) |
 | "Tune the voice of the channel …" | Read `studio.py voice --channel C`, change what was asked (see the voice section of [script-craft.md](references/script-craft.md) for what each setting does), and save with `studio.py voice --channel C --file -`. If they share example scripts, add them to `examples` with a line on what to learn from each. |

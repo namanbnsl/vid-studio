@@ -385,6 +385,41 @@ Visual: end | Test the task you have | Follow
             example = (Path(studio.__file__).resolve().parents[1] / "assets" / "examples" / f"{name}.md").read_text(encoding="utf-8")
             self.assertEqual(studio.scene_warnings(studio.parse_scenes(example)), [], name)
 
+    def test_direction_lint_keeps_frames_readable(self):
+        joined = "\n".join(studio.scene_warnings(studio.parse_scenes("""## Hook
+Line.
+Visual: stat | ₹29,60,000 | After 20 years
+Text: Worked example
+## Rates
+Line.
+Visual: compare | Returns | Fund: 12% | FD: ₹7,000
+Text: Example
+## Rule
+Line.
+Visual: text | *Start early*, and *stay long*
+Text: Rule
+## Steps
+Line.
+Visual: list | Steps | Open the app and find the SIP section | Pick a fund | Set the date | Confirm | Check | Wait
+## More
+Line.
+Visual: list | More | One | Two
+## Again
+Line.
+Visual: list | Again | One | Two
+## End
+Visual: end | Start the SIP on salary day | Follow
+""")))
+        self.assertIn('Hook: the stat value "₹29,60,000" is too long', joined)
+        self.assertIn("Rates: one value is a percentage and the other isn't", joined)
+        self.assertIn("Rule: more than one *emphasis*", joined)
+        self.assertIn("Steps: 6 list items", joined)
+        self.assertIn("Steps: list items over 6 words", joined)
+        self.assertIn("Steps to Again: three list scenes in a row", joined)
+        self.assertNotIn("Text: label", joined)  # 3 of 7 is under half
+        labels = studio.scene_warnings(studio.parse_scenes("".join(f"## B{i}\nLine.\nVisual: stat | {i}% | Share\nText: Label {i}\n" for i in range(4)) + "## End\nVisual: end | A | B"))
+        self.assertTrue(any("4 of 5 beats have a Text: label" in w for w in labels))
+
     def test_voice_lint_catches_invented_people_and_written_rhythm(self):
         warnings = studio.scene_warnings(studio.parse_scenes("""## Hook
 Meet Rahul, a twenty-eight year old from Pune. Hey guys, this matters.
@@ -438,6 +473,8 @@ Image: media/c.jpg | Photo: C | extra
             design = studio.merged_design({"preset": preset["id"]})
             self.assertEqual(set(design), set(studio.DEFAULT_DESIGN), preset["id"])
             self.assertNotEqual(design["background"]["style"], "gradient", preset["id"])
+            studio.check_keys(design["cards"], studio.DEFAULT_DESIGN["cards"], "design.cards")
+            self.assertIn(design["cards"]["style"], ("glass", "solid", "flat"), preset["id"])
             for role, family in design["fonts"].items():
                 self.assertIn(family, catalog, f"{preset['id']}: {role}")
 
@@ -602,7 +639,9 @@ Image: media/c.jpg | Photo: C | extra
                  ({"unknown": 1}, "Unknown design key"), ({"fonts": {"typo": "Anton"}}, "fonts key"),
                  ({"background": []}, "JSON object"), ({"preset": "missing"}, "preset id"),
                  ({"custom_css": "</STYLE><script>alert(1)"}, "CSS only"), ({"custom_css": "x" * 20001}, "20000"),
-                 ({"custom_css": 2}, "must be text"), ({"radius": float("nan")}, "radius")]
+                 ({"custom_css": 2}, "must be text"), ({"radius": float("nan")}, "radius"),
+                 ({"cards": {"style": "neon"}}, "cards.style"), ({"cards": {"shine": True}}, "cards key"),
+                 ({"background": {"style": "glow"}}, "background.style")]
         before = (self.home / "channels" / "shorts" / "design.json").read_bytes()
         for design, error in cases:
             with self.subTest(design=design), self.assertRaisesRegex(ValueError, error):

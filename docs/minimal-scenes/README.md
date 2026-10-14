@@ -1,0 +1,97 @@
+# Minimal scenes
+
+The flat editorial scenes read as slides: a heading, a few lines of type and a lot of empty frame. Photos ran as hard-edged strips, or sat behind charts under a scrim that turned them to mud. This change gives every scene a component and every photo a frame, and keeps the flat look's restraint. It has no gradients, glows, shadows or blurred colour fields. It looks like a product film, not a template.
+
+## Before and after
+
+Night Edition, the same sample script, frame for frame. Before:
+
+![Before: flat scenes](assets/before-night.jpg)
+
+After:
+
+![After: minimal scenes](assets/after-night.jpg)
+
+Graphite, a new look: near-black, soft white, one warm accent, Geist throughout.
+
+![Graphite](assets/after-graphite.jpg)
+
+## What changed
+
+**Type on the background.** With the default `glass`, nothing sits in a box unless a photo is behind it. Charts, list points, numbers, quotes and the end card are type and data on the plain background, on the heading's left edge. Where a full-screen photo sits behind a chart, a frosted pane appears to keep it readable. `solid` looks (Clean Newsroom, Paper Notebook) put charts, list points and compare phrases on flat tiles.
+
+- The timeline sets its dates as display type on a rail that draws through them, and the last date takes the accent.
+- The message is a chat screen, with the sender centred above the bubbles.
+- The end card is a centred finale, and its call to action is an accent text link with an arrow.
+- The top of the frame is one thin progress line, with no scene counter.
+
+**Numbers are the hero.** A stat drops its tile, and the number is set as large as the frame allows. Its digits roll in like an odometer, with each column as wide as its final digit, so nothing shifts. A percentage up to 100 also fills a thin meter. A compare of two numbers leads with the difference between them (`2.4×`, `+38%`), with the two values as rows below on the same scale. A bar chart whose values share a unit ("lakh") shows it once, at the top.
+
+![Hero numbers](assets/hero-numbers.jpg)
+
+![Message, timeline and end card](assets/type-scenes.jpg)
+
+**Labels are eyebrows.** `Text:` labels and kickers are small accent text in sentence case, not boxes. On a photo card the label sits on the photo's bottom-left corner, so the scene below keeps its full size.
+
+**Photos.** A title's photo fills the frame under a light veil, with the title set large near the bottom, like the opening of a film. A photo above any other scene is a rounded photo card on the plain background. In the image scene the photo takes the whole space. Behind a chart, the photo fills the frame under a flat veil, and the chart's tile frosts the part it covers. That is the only blur in the system, and it is there so the values stay readable.
+
+**Motion.** Tiles rise a short way and settle on a long ease, and fades lift slightly as one scene hands over to the next. List points arrive across the whole beat, and the earlier ones step back as each new one lands, so the eye is always on the point being spoken. The progress line is quieter: the beats still to come are barely there. Nothing bounces, and holds stay still.
+
+**Fixes.** The scene counter ("11 / 11") no longer sits on the progress line. A photo credit with no source beside it is no longer cut off. Text inside tiles is sized for a phone.
+
+Rendering costs about 66 ms a frame, against 61 for the old flat look.
+
+![Over photos](assets/glass-over-photos.jpg)
+
+![Motion: the stat's digits rolling in](assets/motion.gif)
+
+## It works in every look
+
+Light (Studio White):
+
+![Studio White](assets/after-white.jpg)
+
+Hindi (Monsoon):
+
+![Monsoon, Hindi](assets/after-monsoon.jpg)
+
+Wide (Graphite at 16:9):
+
+![Graphite, 16:9](assets/after-wide.jpg)
+
+## Teaching the agent
+
+The scenes only look like this if the script gives them the right material, so the skill now has a directing guide, [direction.md](../../skills/vid-studio/references/direction.md). It covers:
+
+- which scene suits each beat's job;
+- how to write numbers the odometer and the difference headline can use: short values, matching units, the subject second;
+- words the screen can carry: one emphasis per scene, parallel list items, rare `Text:` labels;
+- photos that suit a frame;
+- pacing;
+- which look suits which channel.
+
+`write.md`, `script-craft.md` §7, `look.md` and `SKILL.md` point to it. `studio.py scenes` now warns when a script breaks it:
+
+- a stat value too long to read at a glance;
+- a compare of a percentage against a non-percentage;
+- more than one emphasis in a scene;
+- lists over 5 items, or items over 6 words;
+- three scenes of one type in a row (a deliberate series with a shared title is fine);
+- `Text:` labels on more than half the beats.
+
+The bundled example scripts pass these checks, and render like this.
+
+English, in Graphite:
+
+![English example](assets/example-english.jpg)
+
+Hinglish, in Monsoon:
+
+![Hinglish example](assets/example-hinglish.jpg)
+
+## Settings
+
+- `cards.style` takes `glass` (the default), `solid` or `flat`. `glass` gives tiles one step off the background, frosted over photos. `solid` fills the tiles with `surface`. `flat` is the old editorial look, with no tiles. In the studio it's under Channels → a channel → Look → Background & shape → Cards.
+- `radius` is now the tile radius, and bars and buttons scale from it. The default is 28.
+
+Presets: Graphite is new. Most presets use tiles with a radius of 22 to 34, and keep their original backgrounds. Clean Newsroom and Paper Notebook use solid tiles. Swiss stays flat, so the editorial look is one click away.

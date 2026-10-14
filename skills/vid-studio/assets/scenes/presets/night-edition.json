@@ -1,7 +1,7 @@
 {
   "id": "night-edition",
   "name": "Night Edition",
-  "description": "A magazine at night: soft black, warm paper-white type, serif headlines and one brass accent. Photos run edge to edge; the spoken word is underlined, not boxed.",
+  "description": "A magazine at night: soft black, warm paper-white type, serif headlines and one brass accent. Photos sit on rounded cards; the spoken word is underlined, not boxed.",
   "design": {
     "aspect": "9:16",
     "colors": {
@@ -40,6 +40,9 @@
       "style": "grain",
       "pattern": "none"
     },
+    "cards": {
+      "style": "glass"
+    },
     "images": {
       "treatment": "natural"
     },
@@ -49,7 +52,7 @@
     "progress": {
       "show": true
     },
-    "radius": 4,
+    "radius": 28,
     "logo": {
       "text": "",
       "position": "top-left"

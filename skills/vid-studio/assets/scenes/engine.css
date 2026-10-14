@@ -5,7 +5,8 @@
    The frame, top to bottom: a progress line (one segment per beat), the header row (the Text: label and a
    chart's title, same place in every scene), the visual (charts, lists and timelines fill the space; single
    statements are centred in it), the captions band, and one line of small print for the source and photo
-   credit on the bottom edge of the safe area. Flat colour, no glows: the type and the data carry the look. */
+   credit on the bottom edge of the safe area. The type and the data carry the look; with cards (the default) each
+   idea sits on one rounded pane of glass or solid colour, styled in the Cards section at the end. */
 
 .vid-stage {
   position: relative;
@@ -323,5 +324,175 @@
   font: 500 calc(var(--ts) * 26px)/1.3 var(--font-body); color: var(--muted); white-space: nowrap; }
 .vid-stage .src-tag .src-k { flex: none; font-weight: 700; font-size: .8em; letter-spacing: .1em; text-transform: uppercase; color: var(--text); opacity: .8; }
 .vid-stage .src-tag .src-v { min-width: 0; overflow: hidden; text-overflow: ellipsis; }
-.vid-stage .credit { margin-left: auto; font: 500 calc(var(--ts) * 22px)/1.3 var(--font-body); color: var(--muted); text-align: right; max-width: 46%; white-space: nowrap; overflow: hidden; text-overflow: ellipsis; }
+.vid-stage .credit { margin-left: auto; font: 500 calc(var(--ts) * 22px)/1.3 var(--font-body); color: var(--muted); text-align: right; max-width: 46%; flex: none; white-space: nowrap; overflow: hidden; text-overflow: ellipsis; }
+.vid-stage .meta-row > span:first-child + .credit { max-width: 100%; }
 .vid-stage .scene.has-photo .src-tag, .vid-stage .scene.has-photo .credit { color: var(--text); text-shadow: 0 1px 8px rgba(0,0,0,.6); }
+
+/* ======================================================================================================
+   Cards (cards.style "glass" or "solid"; "flat" skips this whole section).
+   One flat, rounded tile per idea, one step off the background: no edges, no shadows, no gradients. The type
+   and the motion do the work. Over a full-screen photo a glass tile frosts the photo behind it.
+   ====================================================================================================== */
+.vid-stage.cards .card { position: relative; border-radius: var(--radius); background: var(--card-fill); }
+/* glass is invisible on the plain background: content sits on the background, on the heading's left edge.
+   The pane only appears (frosted) where a photo is behind it. Solid keeps visible tiles. */
+.vid-stage.cards-glass .scene:not(.has-photo) .card { background: none; padding-left: 0; padding-right: 0; }
+.vid-stage.cards-glass .scene:not(.has-photo) .chart-card { padding-top: 0; padding-bottom: 0; }
+.vid-stage.cards .folio { display: none; }
+/* two phrases on the background: stacked tight, the arrow on their left edge, labels readable */
+.vid-stage.cards-glass .scene:not(.has-photo) .scene-compare .cols-text, .vid-stage.cards-glass .scene-compare:not(.has-photo) .cols-text { justify-content: center; gap: calc(var(--k) * 36px); }
+.vid-stage.cards-glass .scene-compare:not(.has-photo) .panel { flex: none; padding-top: 0; padding-bottom: 0; }
+.vid-stage.cards-glass .scene-compare:not(.has-photo) .vs-row { justify-content: flex-start; height: auto; margin: 0; }
+.vid-stage.cards-glass .scene-compare:not(.has-photo) .vs { width: calc(var(--k) * 64px); height: calc(var(--k) * 64px); box-shadow: none; }
+.vid-stage.cards-glass .scene-compare:not(.has-photo) .panel .col-label { font-size: calc(var(--k) * var(--ts) * 38px); }
+.vid-stage.cards-glass .scene-compare:not(.has-photo) .panel-value { font-size: calc(var(--k) * var(--kw, 1) * var(--ts) * 112px); }
+.vid-stage.cards .scene.has-photo .card { text-shadow: none; background: var(--card-fill-photo); }
+.vid-stage.cards-glass .scene.has-photo .card { -webkit-backdrop-filter: blur(40px) saturate(1.2); backdrop-filter: blur(40px) saturate(1.2); }
+
+/* labels: an eyebrow in the accent, sentence case, no box */
+.vid-stage.cards .chip, .vid-stage.cards .kicker {
+  font-size: calc(var(--kw, 1) * var(--ts) * 38px); font-weight: 600; letter-spacing: -.005em; text-transform: none; color: var(--accent); gap: 0;
+}
+.vid-stage.cards .chip::before, .vid-stage.cards .kicker::before { display: none; }
+.vid-stage.cards .scene.has-hero .chip { padding: 0; background: none; color: #fff; text-shadow: 0 1px 16px rgba(0,0,0,.5); }
+.vid-stage.cards .scene.label-on-photo .chip { color: #fff; text-shadow: 0 1px 16px rgba(0,0,0,.5); }
+.vid-stage.cards .scene.label-on-photo .head { padding-bottom: 0; }
+.vid-stage.cards .photo-top .photo-label { position: absolute; left: 40px; bottom: 34px; max-width: calc(100% - 80px); color: #fff; text-shadow: 0 1px 16px rgba(0,0,0,.55); }
+.vid-stage.cards .photo-top:has(.photo-label) .pt-credit { top: 24px; bottom: auto; }
+.vid-stage.cards .rule { width: calc(var(--ts) * 72px); height: calc(var(--ts) * 5px); border-radius: 99px; }
+.vid-stage.cards .kicker { margin-bottom: calc(var(--k) * 28px); }
+
+/* progress, logo: a quiet line; the beats ahead are barely there */
+.vid-stage.cards .progress { gap: 6px; }
+.vid-stage.cards .progress .seg { background: var(--track); }
+.vid-stage.cards .progress .seg i { opacity: .85; }
+.vid-stage.cards .progress .seg, .vid-stage.cards .progress .seg i { border-radius: 99px; }
+.vid-stage.cards .logo .logo-mark, .vid-stage.cards .scene-end .end-logo .logo-mark { border-radius: 50%; }
+
+/* title over its photo: the photo fills the frame under a light veil, the title sits near the bottom */
+.vid-stage.cards .scene-title.has-photo .backdrop .scrim { background: var(--title-veil); }
+.vid-stage.cards .scene-title.has-photo .body { justify-content: flex-end; }
+.vid-stage.cards .scene-title.has-photo .title { font-size: calc(var(--k) * var(--kw, 1) * var(--ts) * 160px); }
+.vid-stage.cards .scene-title.has-photo .subtitle { color: var(--text); opacity: .85; margin-top: calc(var(--k) * 32px); }
+.vid-stage.cards .scene-title.has-photo .rule { display: none; }
+.vid-stage.cards .scene-title.has-photo .kicker { margin-bottom: calc(var(--k) * 24px); }
+
+/* stat: the number is the hero, no tile; its digits roll in like an odometer */
+.vid-stage.cards .scene-stat .stat-label { font-size: calc(var(--k) * var(--ts) * 50px); font-weight: 600; color: var(--muted); margin-bottom: calc(var(--k) * 4px); }
+.vid-stage.cards .scene-stat .value { font-size: calc(var(--k) * var(--kw, 1) * var(--ts) * 320px); letter-spacing: calc(var(--tracking) * 1.2); padding: .02em 0 .06em; }
+.vid-stage.cards .scene-stat .value .suf { font-size: .3em; margin-left: .1em; letter-spacing: 0; }
+.vid-stage.cards .scene-stat .value .suf.pct { font-size: .55em; margin-left: .02em; }
+.vid-stage.cards .scene-stat .value .pre { font-size: .42em; vertical-align: .62em; margin-right: .04em; }
+.vid-stage.cards .scene-stat .stat-line { height: 2px; margin: calc(var(--k) * 44px) 0 calc(var(--k) * 32px); }
+.vid-stage.cards .scene-stat .context { font-size: calc(var(--k) * var(--ts) * 44px); max-width: 92%; }
+.vid-stage .od { position: relative; display: inline-block; height: 1.3em; margin: -.15em 0; overflow: hidden; vertical-align: top; line-height: 1.3;
+  -webkit-mask-image: linear-gradient(transparent, #000 9%, #000 91%, transparent); mask-image: linear-gradient(transparent, #000 9%, #000 91%, transparent); }
+.vid-stage .od-w { visibility: hidden; }
+.vid-stage .od-r { position: absolute; left: -.2em; right: -.2em; top: 0; text-align: center; }
+.vid-stage .od-d { display: block; height: 1.3em; line-height: 1.3; }
+.vid-stage .od-sep { display: inline-block; line-height: 1; vertical-align: top; font-variant-numeric: proportional-nums lining-nums; }
+.vid-stage .meter { height: calc(var(--k) * 14px); margin-top: calc(var(--k) * 36px); border-radius: 99px; background: var(--card-fill); overflow: hidden; }
+.vid-stage .meter i { display: block; height: 100%; border-radius: 99px; background: var(--accent); transform-origin: 0 50%; }
+
+/* charts */
+.vid-stage .chart-card { flex: 1; min-height: 0; display: flex; flex-direction: column; }
+.vid-stage.cards .chart-card { padding: calc(var(--k) * 56px) calc(var(--k) * 48px) calc(var(--k) * 44px); }
+.vid-stage.cards .cc-bar { border-radius: calc(var(--radius) * .4); }
+.vid-stage.cards .cc-base { height: 2px; margin-top: -1px; background: var(--line); }
+.vid-stage.cards .scene-bars .bars { justify-content: space-evenly; }
+.vid-stage.cards .scene-bars .bar-track { height: calc(var(--k) * 36px); border-radius: 999px; }
+.vid-stage.cards .scene-bars .bar-fill { border-radius: 999px; }
+
+/* compare, two numbers: the difference is the headline; the two values below, as rows to the same scale */
+.vid-stage.cards .cmp { justify-content: center; gap: calc(var(--k) * 44px); padding: calc(var(--k) * 64px) calc(var(--k) * 56px); }
+.vid-stage .cmp-delta { font-size: calc(var(--k) * var(--ts) * 200px); line-height: .95; color: var(--accent); margin-bottom: calc(var(--k) * 8px); }
+.vid-stage .cmp-row { display: flex; flex-direction: column; gap: calc(var(--k) * 18px); }
+.vid-stage .cmp-head { display: flex; justify-content: space-between; align-items: baseline; gap: 24px; }
+.vid-stage .cmp-label { font: 600 calc(var(--k) * var(--ts) * 42px)/1.2 var(--font-body); color: var(--muted); min-width: 0; }
+.vid-stage .cmp-value { font-size: calc(var(--k) * var(--ts) * 68px); line-height: 1; color: var(--muted); white-space: nowrap; }
+.vid-stage .cmp-value .pre, .vid-stage .cmp-value .suf { font-size: .55em; }
+.vid-stage .cmp-track { height: calc(var(--k) * 40px); border-radius: 99px; background: var(--knob); overflow: hidden; }
+.vid-stage .cmp-track i { display: block; height: 100%; border-radius: 99px; background: var(--bar-dim); transform-origin: 0 50%; }
+.vid-stage .cmp-row.subject .cmp-label { color: var(--text); }
+.vid-stage .cmp-row.subject .cmp-value { color: var(--text); }
+.vid-stage .cmp-row.subject .cmp-track i { background: var(--accent); }
+.vid-stage .unit-note { flex: none; margin-bottom: calc(var(--k) * 12px); font: 600 calc(var(--k) * var(--ts) * 32px)/1.2 var(--font-body); color: var(--muted); }
+
+/* compare */
+.vid-stage.cards .scene-compare .col-bar { border-radius: calc(var(--radius) * .45); }
+.vid-stage.cards .scene-compare .delta { padding: .3em .6em; border-radius: 999px; background: var(--accent-soft); color: var(--accent); font-size: calc(var(--k) * var(--ts) * 40px); }
+.vid-stage.cards .scene-compare .cols-text { gap: calc(var(--k) * 20px); max-height: calc(var(--k) * 900px); }
+.vid-stage.cards .scene-compare .panel { border: 0; padding: calc(var(--k) * 52px) calc(var(--k) * 56px); gap: calc(var(--k) * 14px); }
+.vid-stage.cards .scene-compare .panel:last-child { border: 0; }
+.vid-stage.cards .scene-compare .panel.subject::before { display: none; }
+.vid-stage.cards .scene-compare .panel .col-label { font-size: calc(var(--k) * var(--ts) * 34px); font-weight: 600; letter-spacing: 0; text-transform: none; }
+.vid-stage .vs-row { display: none; }
+.vid-stage.cards .vs-row { position: relative; z-index: 2; height: 0; display: flex; align-items: center; justify-content: center; margin: calc(var(--k) * -10px) 0; }
+.vid-stage.cards .vs { display: grid; place-items: center; width: calc(var(--k) * 72px); height: calc(var(--k) * 72px); border-radius: 50%;
+  background: var(--knob); color: var(--text); box-shadow: 0 0 0 calc(var(--k) * 10px) var(--bg); }
+.vid-stage.cards .scene.has-photo .vs { box-shadow: none; }
+.vid-stage.cards .vs svg { width: 44%; height: 44%; }
+
+/* list: one tile per point */
+.vid-stage.cards .scene-list .items { gap: calc(var(--k) * 16px); max-height: calc(var(--n) * var(--k) * 236px); }
+.vid-stage.cards .scene-list .item { padding: calc(var(--k) * 24px) calc(var(--k) * 48px) calc(var(--k) * 24px) calc(var(--k) * 40px); gap: calc(var(--k) * 36px); }
+.vid-stage.cards .scene-list .item-line { display: none; }
+.vid-stage.cards .scene-list .idx { width: 1.2em; font-size: calc(var(--k) * var(--ts) * 64px); color: var(--muted); }
+.vid-stage.cards .scene-list .item-text { font-size: calc(var(--k) * var(--kw, 1) * var(--ts) * 58px); }
+
+/* quote */
+.vid-stage.cards .scene-quote .quote { padding: 0; }
+.vid-stage.cards .scene-quote .quote-bar { display: none; }
+.vid-stage.cards .scene-quote .qmark { display: block; height: .4em; margin-bottom: calc(var(--k) * 28px); font-size: calc(var(--k) * var(--ts) * 150px); line-height: .9; color: var(--accent); letter-spacing: 0; }
+.vid-stage.cards .scene-quote .quote-text { font-size: calc(var(--k) * var(--kw, 1) * var(--ts) * 78px); line-height: 1.12; }
+.vid-stage.cards .scene-quote .source { padding: 0; margin-top: calc(var(--k) * 44px); font-size: calc(var(--k) * var(--ts) * 34px); }
+
+/* timeline: dates set as display type on a rail that draws through them */
+.vid-stage.cards .scene-timeline .tl { max-height: calc(var(--n) * var(--k) * 260px); }
+.vid-stage.cards .scene-timeline .tl-item { gap: calc(var(--k) * 44px); }
+.vid-stage.cards .scene-timeline .tl-dot { width: 24px; height: 24px; background: var(--bg); box-shadow: inset 0 0 0 5px var(--accent); }
+.vid-stage.cards .scene-timeline .tl-item:last-child .tl-dot { background: var(--accent); }
+.vid-stage.cards .scene-timeline .tl-line { left: 10.5px; width: 3px; }
+.vid-stage.cards .scene-timeline .tl-date { font-size: calc(var(--k) * var(--ts) * 76px); color: var(--text); margin-bottom: calc(var(--k) * 6px); }
+.vid-stage.cards .scene-timeline .tl-item:last-child .tl-date { color: var(--accent); }
+.vid-stage.cards .scene-timeline .tl-label { font-size: calc(var(--k) * var(--kw, 1) * var(--ts) * 46px); font-weight: 500; color: var(--muted); }
+.vid-stage.cards.ar-landscape .scene-timeline .tl-line { top: 10.5px; }
+
+/* image placeholder */
+.vid-stage.cards .scene-image .img-card { border: 3px dashed var(--line-strong); background: none; }
+
+/* message: a thread straight on the background, like a phone's chat screen: the sender centred at the top */
+.vid-stage.cards .msg { gap: calc(var(--k) * 16px); }
+.vid-stage.cards .msg-who { display: flex; flex-direction: column; align-items: center; gap: calc(var(--k) * 18px); font-size: calc(var(--k) * var(--ts) * 38px); font-weight: 600;
+  letter-spacing: 0; text-transform: none; color: var(--text); padding: 0; margin: 0 0 calc(var(--k) * 36px); border: 0; }
+.vid-stage .msg-who .avatar { display: none; }
+.vid-stage.cards .msg-who .avatar { display: grid; place-items: center; width: 2.9em; height: 2.9em; border-radius: 50%; background: var(--knob); color: var(--text); font-size: 1em; font-weight: 600; }
+.vid-stage.cards .msg-who .avatar { font-size: calc(var(--k) * var(--ts) * 52px); width: 2.1em; height: 2.1em; }
+.vid-stage.cards .bubble { font-size: calc(var(--k) * var(--ts) * 52px); max-width: 82%; padding: .5em .8em .56em; border-radius: 1.1em 1.1em 1.1em .3em; background: var(--knob); font-weight: 500; }
+.vid-stage.cards .bubble.out { border-radius: 1.1em 1.1em .3em 1.1em; background: var(--accent); }
+.vid-stage.cards .bubble + .bubble.in, .vid-stage.cards .bubble.out + .bubble.out { margin-top: calc(var(--k) * -6px); }
+.vid-stage .bubble-text { text-wrap: pretty; }
+
+/* end: a centred finale, no tile */
+.vid-stage .cta .cta-ic { display: inline-flex; }
+.vid-stage.cards .end-card { display: flex; flex-direction: column; align-items: center; text-align: center; }
+.vid-stage.cards .scene-end .end-logo { justify-content: center; }
+.vid-stage.cards .scene-end .end-title { font-size: calc(var(--k) * var(--kw, 1) * var(--ts) * 136px); margin-bottom: calc(var(--k) * 60px); }
+.vid-stage.cards .scene-end .cta { align-self: center; border-radius: 999px; padding: .62em .62em .62em 1.15em; gap: .9em; font-size: calc(var(--k) * var(--kw, 1) * var(--ts) * 42px); text-align: left; }
+.vid-stage.cards .scene-end .cta > span:first-child { white-space: nowrap; }
+.vid-stage.cards .scene-end .cta .cta-ic { flex: none; width: 1.6em; height: 1.6em; border-radius: 50%; align-items: center; justify-content: center; background: rgba(0,0,0,.1); }
+
+/* with glass the call to action is a text link in the accent, with its arrow; solid keeps the button */
+.vid-stage.cards-glass .scene-end .cta { background: none; color: var(--accent); padding: 0; gap: .45em; font-size: calc(var(--k) * var(--kw, 1) * var(--ts) * 46px); font-weight: 600; }
+.vid-stage.cards-glass .scene-end .cta .cta-ic { width: auto; height: auto; background: none; }
+.vid-stage.cards-glass .scene-end .cta svg { width: .8em; height: .8em; }
+
+/* captions: semibold, a touch tighter */
+.vid-stage.cards .cap-inner { font-weight: 600; letter-spacing: -.01em; }
+.vid-stage.cards .cap-hl { border-radius: calc(var(--radius) * .4); }
+
+/* photos: a rounded photo card on the plain background */
+.vid-stage.cards .photo-top { border-radius: var(--radius); }
+.vid-stage.cards .pt-credit { right: 28px; bottom: 22px; font-size: 19px; }
+.vid-stage.cards .scene.photo-left .pt-credit { left: 28px; }
+.vid-stage.cards .backdrop .scrim { background: var(--scrim-flat); }

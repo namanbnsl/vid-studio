@@ -40,6 +40,9 @@
       "style": "grain",
       "pattern": "none"
     },
+    "cards": {
+      "style": "glass"
+    },
     "images": {
       "treatment": "dim"
     },
@@ -49,7 +52,7 @@
     "progress": {
       "show": true
     },
-    "radius": 14,
+    "radius": 30,
     "logo": {
       "text": "",
       "position": "top-left"

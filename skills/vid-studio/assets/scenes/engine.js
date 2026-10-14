@@ -27,10 +27,11 @@
     motion: { energy: 'high', easing: 'snappy', transition: 'slide' },
     captions: { style: 'highlight', position: 'lower', highlight: 'accent', max_words: 4, size: 'medium' },
     background: { style: 'grain', pattern: 'none' },
+    cards: { style: 'glass' },
     images: { treatment: 'dim', layout: 'auto' },
     sources: { show: true },
     progress: { show: true },
-    radius: 12,
+    radius: 28,
     logo: { text: '', position: 'top-left' },
     custom_css: ''
   };
@@ -51,6 +52,7 @@
     capStyle: ['none', 'plain', 'boxed', 'karaoke', 'highlight', 'underline', 'pop'],
     capPos: ['lower', 'middle', 'upper'],
     bgStyle: ['solid', 'gradient', 'grain', 'paper'],
+    cardStyle: ['glass', 'solid', 'flat'],
     pattern: ['none', 'grid', 'dots', 'lines'],
     imgLayout: ['auto', 'full'],
     logoPos: ['top-left', 'top-right', 'bottom-left', 'bottom-right'],
@@ -101,6 +103,10 @@
   function lum(hex) {
     var c = rgb(hex).map(function (v) { v /= 255; return v <= 0.03928 ? v / 12.92 : Math.pow((v + 0.055) / 1.055, 2.4); });
     return 0.2126 * c[0] + 0.7152 * c[1] + 0.0722 * c[2];
+  }
+  function mix(a, b, t) {
+    var x = rgb(a), y = rgb(b);
+    return '#' + x.map(function (v, i) { return ('0' + Math.round(v + (y[i] - v) * t).toString(16)).slice(-2); }).join('');
   }
   function contrast(a, b) { var x = lum(a), y = lum(b); return (Math.max(x, y) + 0.05) / (Math.min(x, y) + 0.05); }
   function mulberry32(seed) {
@@ -249,6 +255,7 @@
     d.progress.show = d.progress.show !== false;
     d.background.style = pick(d.background.style, ENUM.bgStyle, 'solid');
     d.background.pattern = pick(d.background.pattern, ENUM.pattern, 'none');
+    d.cards.style = pick(d.cards.style, ENUM.cardStyle, 'glass');
     d.radius = clamp(num(d.radius, 18), 0, 64);
     if (!isObj(d.logo)) d.logo = clone(DEFAULT_DESIGN.logo);
     d.logo.text = typeof d.logo.text === 'string' ? d.logo.text : '';
@@ -421,7 +428,9 @@
     var progress = null;
     if (design.progress.show) {
       // the folio ("03 / 08") sits at the right end of the line
-      progress = { top: top, height: 4, left: left, width: right - left - (landscape ? 150 : 132) };
+      // with tiles the line runs the full width and there is no folio; flat looks keep the folio at its end
+      var folio = design.cards.style === 'flat';
+      progress = { top: top, height: folio ? 4 : 3, left: left, width: right - left - (folio ? (landscape ? 168 : 156) : 0), folio: folio };
       top += 6 + (landscape ? 36 : 52);
     }
     // the small print sits below the safe area, on the frame's bottom edge, so it costs the content no height
@@ -484,6 +493,28 @@
       modifiers: { v: function (v) { node.textContent = formatValue(parseFloat(v), p); return v; } }
     }, Math.max(0, at));
   }
+  // Rolling digits: each digit is a column of 0-9 that rolls to its value, left to right, like an odometer.
+  // The final width is set from the start (tabular figures), so nothing reflows while it rolls.
+  function rollDigits(node, p) {
+    if (!node || !p || p.year) return null;
+    var txt = formatValue(p.value, p), cols = [];
+    node.innerHTML = '';
+    Array.from(txt).forEach(function (ch) {
+      var code = ch.charCodeAt(0), base = code >= 0x966 && code <= 0x96F ? 0x966 : 48, dgt = code - base;
+      if (dgt < 0 || dgt > 9) { node.appendChild(el('span', 'od-sep', esc(ch))); return; }
+      // the column is as wide as its final digit (a hidden copy holds the width); the reel rolls over it
+      var col = el('span', 'od', '<span class="od-w">' + esc(ch) + '</span>'), reel = el('span', 'od-r');
+      for (var k = 0; k <= 9; k++) reel.appendChild(el('span', 'od-d', String.fromCharCode(base + k)));
+      col.appendChild(reel); node.appendChild(col);
+      cols.push({ reel: reel, d: dgt });
+    });
+    return cols;
+  }
+  function roll(tl, cols, at, dur) {
+    (cols || []).forEach(function (c, i) {
+      tw(tl, c.reel, { yPercent: 0 }, { yPercent: -10 * c.d, duration: dur + i * 0.06, ease: 'expo.out' }, at + i * 0.05);
+    });
+  }
   function revealWords(tl, scope, at, a, opts) {
     opts = opts || {};
     var ws = qa(scope, '.w');
@@ -522,6 +553,11 @@
       return o;
     });
   }
+  // a card settles into place: a short rise and fade, no bounce
+  function cardIn(tl, a, card, at) {
+    if (!a.cards) return;
+    tw(tl, card, { y: a.dist(40), opacity: 0 }, { y: 0, opacity: 1, duration: a.dur(1.0), ease: 'expo.out' }, at - 0.05);
+  }
   function drawLine(tl, a, line, at) {
     tw(tl, line, { scaleX: 0 }, { scaleX: 1, duration: a.dur(0.8), ease: a.E.inOut }, at);
   }
@@ -546,24 +582,50 @@
     };
   };
 
-  BUILD.stat = function (sc) {
-    var d = sc.data, st = el('div', 'stack');
-    var label = null, ctx = null, line = null;
-    if (plain(d.label)) { label = el('div', 'stat-label fit', rich(d.label)); tagLang(label, d.label); st.appendChild(label); }
+  BUILD.stat = function (sc, ctx0) {
+    // with cards, the number is the hero: no tile, set as large as the frame allows, its digits rolling in
+    var cards = ctx0.design.cards.style !== 'flat';
+    var d = sc.data, st = el('div', 'stack'), box = el('div', 'stat-card');
+    st.appendChild(box);
+    var label = null, ctx = null, line = null, meter = null, cols = null;
+    if (plain(d.label)) { label = el('div', 'stat-label fit', rich(d.label)); tagLang(label, d.label); box.appendChild(label); }
     var p = parseValue(d.value);
     var val = el('div', 'value disp fit', valueHTML(d.value || '', p));
-    tagLang(val, d.value); st.appendChild(val);
+    tagLang(val, d.value); box.appendChild(val);
+    if (cards) cols = rollDigits(q(val, '.num'), p);
+    // a share (a percentage up to 100) also draws as a meter
+    var pct = p && /^\s*%/.test(p.suffix) && !p.negative && p.value > 0 && p.value <= 100 ? p.value : 0;
+    if (pct && cards) {
+      meter = el('div', 'meter', '<i></i>');
+      q(meter, 'i').style.width = pct + '%';
+      box.appendChild(meter);
+    }
     if (plain(d.context)) {
-      line = el('div', 'stat-line'); st.appendChild(line);
-      ctx = el('div', 'context fit', rich(d.context)); tagLang(ctx, d.context); st.appendChild(ctx);
+      line = el('div', 'stat-line'); box.appendChild(line);
+      ctx = el('div', 'context fit', rich(d.context)); tagLang(ctx, d.context); box.appendChild(ctx);
     }
     return {
       stack: st,
+      // splitting the number into columns loses the font's kerning around "." and ",": measure the kerned
+      // number and take the difference back out of the separators
+      post: function () {
+        var num = cols && q(val, '.num'), seps = num ? qa(num, '.od-sep') : [];
+        if (!seps.length) return;
+        var probe = el('span', 'num', esc(formatValue(p.value, p)));
+        probe.style.cssText = 'position:absolute;visibility:hidden;white-space:nowrap';
+        num.parentNode.appendChild(probe);
+        var extra = num.getBoundingClientRect().width - probe.getBoundingClientRect().width;
+        var scale = num.offsetWidth / (num.getBoundingClientRect().width || 1);
+        probe.parentNode.removeChild(probe);
+        if (extra > 0.5) seps.forEach(function (sp) { sp.style.marginLeft = (-extra * scale / seps.length).toFixed(2) + 'px'; });
+      },
       anim: function (tl, a) {
         var at = a.t0;
         if (label) { fadeUp(tl, a, label, at, 18); at += a.st(0.15); }
         tw(tl, val, { yPercent: 8, opacity: 0 }, { yPercent: 0, opacity: 1, duration: a.dur(0.8), ease: a.E.out }, at);
-        countUp(tl, q(val, '.num'), p, at, a.dur(1.3), a.E.num);
+        if (cols) roll(tl, cols, at, a.dur(1.4));
+        else countUp(tl, q(val, '.num'), p, at, a.dur(1.3), a.E.num);
+        if (meter) tw(tl, q(meter, 'i'), { scaleX: 0 }, { scaleX: 1, duration: a.dur(1.4), ease: 'expo.out' }, at + 0.1);
         if (line) drawLine(tl, a, line, at + a.st(0.35));
         if (ctx) fadeUp(tl, a, ctx, at + a.st(0.5), 16);
       }
@@ -572,10 +634,16 @@
 
   // Short labels draw columns that fill the frame (a series: years, steps); long labels or negative values
   // draw horizontal rows (a ranking). The largest value takes the accent.
-  BUILD.bars = function (sc) {
+  BUILD.bars = function (sc, ctx) {
     var d = sc.data, st = el('div', 'stack fill');
     var head = headingEl(d.title);
     var items = pairs(d.items, 8, ['label', 'value']).map(function (it) { it.p = parseValue(it.value); return it; });
+    // a unit every value shares ("lakh", "crore", "km") is said once, at the top of the chart, not under each bar
+    var sufs = items.map(function (it) { return it.p ? it.p.suffix.trim() : ''; });
+    var unit = ctx && ctx.design.cards.style !== 'flat' && items.length > 1 && sufs[0] && !/^%/.test(sufs[0]) &&
+      sufs.every(function (x) { return x === sufs[0]; }) ? sufs[0] : '';
+    if (unit) items.forEach(function (it) { it.p = Object.assign({}, it.p, { suffix: '' }); });
+    function unitNote(card) { if (unit) { var n = el('div', 'unit-note', rich(unit)); tagLang(n, unit); card.insertBefore(n, card.firstChild); } }
     var mags = items.map(function (it) { return it.p ? Math.abs(it.p.magnitude) : 0; });
     var max = Math.max.apply(null, mags.concat([0])) || 1;
     var maxI = mags.indexOf(Math.max.apply(null, mags.concat([0])));
@@ -597,7 +665,8 @@
         return { bar: bar, value: v, label: lab, zone: zone, h: h, val: q(v, '.num'), p: it.p };
       });
       var base = el('div', 'cc-base'); chart.appendChild(base);
-      st.appendChild(chart);
+      var colCard = el('div', 'card chart-card'); colCard.appendChild(chart); unitNote(colCard);
+      st.appendChild(colCard);
       return {
         head: head, stack: st,
         post: function () {
@@ -610,6 +679,7 @@
         },
         anim: function (tl, a) {
           var at = revealHead(tl, a, head, a.t0);
+          cardIn(tl, a, colCard, at - a.st(0.1));
           drawLine(tl, a, base, at);
           var gap = a.st(Math.min(0.18, 0.9 / rows.length)), bd = a.dur(1.0);
           rows.forEach(function (r, i) {
@@ -636,11 +706,13 @@
       row.appendChild(hd); row.appendChild(track); bars.appendChild(row);
       return { head: hd, fill: fill, val: q(v, '.num'), p: it.p };
     });
-    st.appendChild(bars);
+    var rowCard = el('div', 'card chart-card'); rowCard.appendChild(bars); unitNote(rowCard);
+    st.appendChild(rowCard);
     return {
       head: head, stack: st,
       anim: function (tl, a) {
         var at = revealHead(tl, a, head, a.t0);
+        cardIn(tl, a, rowCard, at - a.st(0.1));
         var gap = a.st(Math.min(0.2, 1.0 / Math.max(1, rows.length)));
         var bd = a.dur(1.0);
         rows.forEach(function (r, i) {
@@ -656,7 +728,7 @@
   // Two values side by side. The second item is the subject (the "after", the "new", the thing the
   // story is about), so it takes the accent whichever is larger. A dashed line carries the first value
   // across, so the gap between them is something you can see.
-  BUILD.compare = function (sc) {
+  BUILD.compare = function (sc, ctx) {
     var d = sc.data, st = el('div', 'stack fill');
     var head = headingEl(d.title);
     var items = pairs(d.items, 2, ['label', 'value']).map(function (it) { it.p = parseValue(it.value); return it; });
@@ -674,6 +746,7 @@
         else if (ratio > 1) delta = '+' + Math.round((ratio - 1) * 100) + '%';
         else delta = '−' + Math.round((1 - ratio) * 100) + '%';
       }
+      if (ctx && ctx.design.cards.style !== 'flat') return compareRows(head, st, items, [mA / mx, mB / mx], delta);
       parts = items.map(function (it, i) {
         var col = el('div', 'col' + (i === 1 ? ' subject' : ''));
         var area = el('div', 'col-bar-area');
@@ -693,9 +766,10 @@
       if (delta) { ref = el('div', 'ref-line'); cols.appendChild(ref); }
       base = el('div', 'cc-base'); cols.appendChild(base);
     } else {
-      // words, not numbers: two labelled panels
+      // words, not numbers: two labelled panels, joined by a small arrow from the first to the second
       parts = items.map(function (it, i) {
-        var col = el('div', 'col panel' + (i === 1 ? ' subject' : ''));
+        if (i === 1) cols.appendChild(el('div', 'vs-row', '<span class="vs"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.4" stroke-linecap="round" stroke-linejoin="round"><path d="M12 5v14M6 13l6 6 6-6"/></svg></span>'));
+        var col = el('div', 'col panel card' + (i === 1 ? ' subject' : ''));
         var lab = el('div', 'col-label', rich(it.label)); tagLang(lab, it.label);
         var v = el('div', 'panel-value fit', rich(it.value)); tagLang(v, it.value);
         col.appendChild(lab); col.appendChild(v); cols.appendChild(col);
@@ -703,7 +777,10 @@
       });
       // phrases: two rows that share the height, up to a limit
     }
-    st.appendChild(cols);
+    var cmpCard = null;
+    if (numeric) { cmpCard = el('div', 'card chart-card'); cmpCard.appendChild(cols); st.appendChild(cmpCard); }
+    else st.appendChild(cols);
+    var vs = q(cols, '.vs');
     return {
       head: head, stack: st,
       post: function () {
@@ -716,6 +793,8 @@
       anim: function (tl, a) {
         var at = revealHead(tl, a, head, a.t0);
         var bd = a.dur(1.1);
+        if (cmpCard) cardIn(tl, a, cmpCard, at - a.st(0.1));
+        if (vs) tw(tl, vs, { scale: 0.6, opacity: 0 }, { scale: 1, opacity: 1, duration: a.dur(0.5), ease: a.E.out }, at + 0.1 + a.st(0.4) - 0.05);
         if (base) drawLine(tl, a, base, at);
         parts.forEach(function (pt, i) {
           var t = at + 0.1 + i * a.st(0.4);
@@ -732,18 +811,53 @@
     };
   };
 
+  // Two numbers on a tile: the difference between them is the headline (2.4×, +38%), and the two values sit
+  // below it as rows with bars to the same scale. The second is the subject and takes the accent.
+  function compareRows(head, st, items, shares, delta) {
+    var tile = el('div', 'card chart-card cmp');
+    var hero = null;
+    if (delta) { hero = el('div', 'cmp-delta disp tnum', esc(delta)); tile.appendChild(hero); }
+    var rows = items.map(function (it, i) {
+      var row = el('div', 'cmp-row' + (i === 1 ? ' subject' : ''));
+      var hd = el('div', 'cmp-head');
+      var lab = el('span', 'cmp-label', rich(it.label)); tagLang(lab, it.label);
+      var v = el('span', 'cmp-value disp', valueHTML(it.value, it.p)); tagLang(v, it.value);
+      hd.appendChild(lab); hd.appendChild(v);
+      var track = el('div', 'cmp-track'), fill = el('i');
+      fill.style.width = Math.max(2, shares[i] * 100).toFixed(2) + '%';
+      track.appendChild(fill);
+      row.appendChild(hd); row.appendChild(track); tile.appendChild(row);
+      return { row: row, fill: fill, val: q(v, '.num'), p: it.p };
+    });
+    st.appendChild(tile);
+    return {
+      head: head, stack: st,
+      anim: function (tl, a) {
+        var at = revealHead(tl, a, head, a.t0);
+        cardIn(tl, a, tile, at - a.st(0.1));
+        rows.forEach(function (r, i) {
+          var t = at + 0.1 + i * a.st(0.35);
+          tw(tl, r.row, { opacity: 0, y: a.dist(16) }, { opacity: 1, y: 0, duration: a.dur(0.6), ease: a.E.out }, t);
+          tw(tl, r.fill, { scaleX: 0 }, { scaleX: 1, duration: a.dur(1.2), ease: 'expo.out' }, t + 0.05);
+          countUp(tl, r.val, r.p, t + 0.05, a.dur(1.2), a.E.num);
+        });
+        if (hero) tw(tl, hero, { opacity: 0, y: a.dist(20) }, { opacity: 1, y: 0, duration: a.dur(0.8), ease: 'expo.out' }, at + 0.1 + a.st(0.35) + a.dur(0.6));
+      }
+    };
+  }
+
   BUILD.list = function (sc) {
     var d = sc.data, st = el('div', 'stack fill');
     var head = headingEl(d.title);
     var ol = el('ol', 'items');
     var items = (Array.isArray(d.items) ? d.items : []).slice(0, 6).map(function (txt, i) {
       txt = typeof txt === 'string' ? txt : (txt && (txt.label || txt.text)) || '';
-      var li = el('li', 'item');
+      var li = el('li', 'item card');
       var line = el('span', 'item-line');
       var idx = el('span', 'idx tnum', String(i + 1));
       var t = el('span', 'item-text fit', rich(txt)); tagLang(t, txt);
       li.appendChild(line); li.appendChild(idx); li.appendChild(t); ol.appendChild(li);
-      return { line: line, idx: idx, text: t };
+      return { li: li, line: line, idx: idx, text: t };
     });
     ol.style.setProperty('--n', String(Math.max(1, items.length)));
     var end = el('span', 'item-line end'); ol.appendChild(end);
@@ -753,9 +867,13 @@
       anim: function (tl, a) {
         var at = revealHead(tl, a, head, a.t0);
         var n = Math.max(1, items.length);
-        var gap = clamp(Math.max(0.3, (a.e - at) * 0.55) / n, 0.18 * a.f, 1.2);
+        // with tiles, the points arrive across most of the beat, about when each is said, and the earlier
+        // ones step back as the next lands, so the eye is always on the point being spoken
+        var gap = a.cards ? clamp((a.e - at) * 0.72 / n, 0.18 * a.f, 3) : clamp(Math.max(0.3, (a.e - at) * 0.55) / n, 0.18 * a.f, 1.2);
         items.forEach(function (it, i) {
           var t = at + i * gap;
+          cardIn(tl, a, it.li, t);
+          if (a.cards && i < n - 1) tw(tl, it.li, { opacity: 1 }, { opacity: 0.38, duration: a.dur(0.6), ease: 'power2.inOut' }, t + gap, false);
           drawLine(tl, a, it.line, t);
           tw(tl, it.idx, { opacity: 0, y: a.dist(16) }, { opacity: 1, y: 0, duration: a.dur(0.5), ease: a.E.out }, t + 0.05);
           tw(tl, it.text, { x: -a.dist(24), opacity: 0 }, { x: 0, opacity: 1, duration: a.dur(0.6), ease: a.E.out }, t + 0.1);
@@ -765,18 +883,24 @@
     };
   };
 
-  BUILD.quote = function (sc) {
-    var d = sc.data, st = el('div', 'stack');
+  BUILD.quote = function (sc, ctx) {
+    var d = sc.data, st = el('div', 'stack'), cards = ctx.design.cards.style !== 'flat';
     var wrap = el('div', 'quote');
     var bar = el('span', 'quote-bar'); wrap.appendChild(bar);
-    var qt = el('blockquote', 'quote-text fit', wordsHTML('“' + plain(d.quote || d.text || '') + '”', { mask: false }));
+    // on a card the opening mark is set large above the words, so the words carry no marks of their own
+    var mark = cards ? el('span', 'qmark disp', '\u201C') : null;
+    if (mark) wrap.appendChild(mark);
+    var said = plain(d.quote || d.text || '').replace(/^["\u201C\u201D]+|["\u201C\u201D]+$/g, '');
+    var qt = el('blockquote', 'quote-text fit', wordsHTML(cards ? said : '\u201C' + said + '\u201D', { mask: false }));
     tagLang(qt, d.quote); wrap.appendChild(qt); st.appendChild(wrap);
     var src = null;
-    if (plain(d.source)) { src = el('div', 'source', rich(d.source)); tagLang(src, d.source); st.appendChild(src); }
+    if (plain(d.source)) { src = el('div', 'source', rich(d.source)); tagLang(src, d.source); (cards ? wrap : st).appendChild(src); }
     return {
       stack: st,
       anim: function (tl, a) {
         var at = a.t0;
+        cardIn(tl, a, wrap, at);
+        if (mark) fadeUp(tl, a, mark, at + a.st(0.1), 20);
         tw(tl, bar, { scaleY: 0 }, { scaleY: 1, duration: a.dur(0.7), ease: a.E.inOut }, at);
         var ws = qa(qt, '.w');
         var span = Math.min((a.e - at) * 0.45, ws.length * 0.1 * a.f + 0.2);
@@ -798,7 +922,7 @@
       var lab = el('div', 'tl-label fit', rich(it.label)); tagLang(lab, it.label);
       var txt = el('div', 'tl-text'); txt.appendChild(date); txt.appendChild(lab);
       node.appendChild(dot); node.appendChild(txt); wrap.appendChild(node);
-      return { node: node, dot: dot, date: date, label: lab };
+      return { node: node, dot: dot, date: date, label: lab, txt: txt };
     });
     wrap.style.setProperty('--n', String(Math.max(1, items.length)));
     st.appendChild(wrap);
@@ -830,6 +954,7 @@
           else { var z = {}; z[prop] = 0; gsap.set(fill, z); }
           prev = to;
           tw(tl, it.dot, { scale: 0 }, { scale: 1, duration: a.dur(0.4), ease: a.E.out }, t);
+          cardIn(tl, a, it.txt, t);
           fadeUp(tl, a, it.date, t + 0.05, 16);
           fadeUp(tl, a, it.label, t + 0.12, 16);
         });
@@ -863,7 +988,7 @@
       st.className = 'stack photo-only';
       return { stack: st, anim: function () {} };
     }
-    var card = el('div', 'img-card');
+    var card = el('div', 'img-card card');
     var inner = el('div', 'ph');
     inner.innerHTML = '<div class="ph-tag">Image needed</div>';
     var desc = el('div', 'ph-desc fit', rich(d.description || ''));
@@ -886,7 +1011,12 @@
     var d = sc.data, st = el('div', 'stack');
     var wrap = el('div', 'msg');
     var who = plain(d.title), head = null;
-    if (who) { head = el('div', 'msg-who', rich(who)); tagLang(head, who); wrap.appendChild(head); }
+    if (who) {
+      // the sender's initial in a round avatar, like the top of a chat (cards only)
+      var initial = Array.from(who.replace(/[^\p{L}\p{N}]/gu, ''))[0] || '';
+      head = el('div', 'msg-who', (initial ? '<span class="avatar">' + esc(initial.toUpperCase()) + '</span>' : '') + '<span class="who">' + rich(who) + '</span>');
+      tagLang(head, who); wrap.appendChild(head);
+    }
     var bubbles = (Array.isArray(d.items) ? d.items : []).slice(0, 5).map(function (raw) {
       raw = typeof raw === 'string' ? raw : (raw && (raw.text || raw.label)) || '';
       var m = /^\s*(you|me|\u0906\u092A|\u092E\u0948\u0902)\s*:\s*/i.exec(raw);
@@ -904,6 +1034,7 @@
       stack: st,
       anim: function (tl, a) {
         var at = a.t0;
+        cardIn(tl, a, wrap, at);
         if (head) fadeUp(tl, a, head, at, 12);
         var n = Math.max(1, bubbles.length);
         var gap = clamp(Math.max(0.4, (a.e - at) * 0.6) / n, 0.35 * a.f, 1.4);
@@ -940,6 +1071,12 @@
     return {
       el: wrap, img: img,
       anim: function (tl, a) {
+        if (a.cards) {
+          // a photo card settles in like the other cards, then a slow push-in for the rest of the beat
+          tw(tl, wrap, { y: a.dist(40), opacity: 0 }, { y: 0, opacity: 1, duration: a.dur(1.0), ease: 'expo.out' }, a.clipStart + 0.02);
+          tw(tl, img, { scale: 1.06 }, { scale: 1, duration: Math.max(0.1, a.clipEnd - a.clipStart), ease: 'none' }, a.clipStart);
+          return;
+        }
         // revealed by a clean wipe, then a slow push-in for the rest of the beat
         tw(tl, wrap, { clipPath: a.wide ? 'inset(0% 100% 0% 0%)' : 'inset(0% 0% 100% 0%)' }, { clipPath: 'inset(0% 0% 0% 0%)', duration: a.dur(0.9), ease: a.E.inOut }, a.clipStart + 0.02);
         tw(tl, img, { scale: 1.06 }, { scale: 1, duration: Math.max(0.1, a.clipEnd - a.clipStart), ease: 'none' }, a.clipStart);
@@ -947,11 +1084,47 @@
     };
   }
   // Size a top photo to the space the scene leaves: as tall as possible, never squeezing the content.
-  function placeTopPhoto(x, L) {
+  function placeTopPhoto(x, L, cards) {
     var frame = q(x.el, '.frame'), head = q(x.el, '.head'), st = q(x.el, '.stack');
     var W = L.width, H = L.height, c = L.content, bottom = c.top + c.height, gap = L.landscape ? 72 : 64;
     var wide = c.width > c.height * 0.9;
-    x.el.classList.add(wide ? 'photo-left' : 'photo-above');
+    x.el.classList.add(wide && !(cards && x.sc.type === 'image') ? 'photo-left' : 'photo-above');
+    if (cards) {
+      // a rounded photo card inside the safe area, on the same edges as the cards below it
+      gap = L.landscape ? 64 : 48;
+      if (wide && x.sc.type !== 'image') {
+        var cw = Math.round((c.width - gap) * 0.46), tl0 = c.left + cw + gap;
+        x.photo.el.style.cssText += ';left:' + c.left + 'px;top:' + c.top + 'px;width:' + cw + 'px;height:' + c.height + 'px';
+        frame.style.left = tl0 + 'px'; frame.style.width = (c.left + c.width - tl0) + 'px';
+        if (x.meta) { x.meta.style.left = tl0 + 'px'; x.meta.style.width = (c.left + c.width - tl0) + 'px'; }
+        x.column = { left: tl0, width: c.left + c.width - tl0 };
+        return;
+      }
+      if (x.sc.type === 'image') {
+        // the photo is the scene: it takes the whole space, and the label sits on it, bottom left
+        x.photo.el.style.cssText += ';left:' + c.left + 'px;top:' + c.top + 'px;width:' + c.width + 'px;height:' + c.height + 'px';
+        x.el.classList.add('label-on-photo');
+        var hd = head ? head.offsetHeight : 0, inset = 32;
+        frame.style.left = (c.left + inset) + 'px'; frame.style.width = (c.width - 2 * inset) + 'px';
+        frame.style.top = (c.top + c.height - hd - inset) + 'px'; frame.style.height = (hd + 1) + 'px';
+        if (x.meta) { var cr0 = q(x.meta, '.credit'); if (cr0) cr0.parentNode.removeChild(cr0); }
+        return;
+      }
+      // the label moves onto the photo's bottom-left corner, so the scene below keeps its full size
+      var chip0 = head && q(head, '.chip');
+      if (chip0) {
+        chip0.classList.add('photo-label');
+        x.photo.el.appendChild(chip0);
+        if (!head.children.length) { head.parentNode.removeChild(head); head = null; }
+      }
+      x.el.style.setProperty('--k', '1');
+      fitWidths(x.el);
+      var need0 = (head ? head.offsetHeight : 0) + (x.sc.type === 'image' ? 0 : st.scrollHeight);
+      var ch0 = Math.round(clamp(c.height - need0 - gap, H * (x.sc.type === 'title' ? 0.3 : 0.2), H * (x.sc.type === 'image' ? 0.62 : 0.4)));
+      x.photo.el.style.cssText += ';left:' + c.left + 'px;top:' + c.top + 'px;width:' + c.width + 'px;height:' + ch0 + 'px';
+      frame.style.top = (c.top + ch0 + gap) + 'px'; frame.style.height = Math.max(120, bottom - c.top - ch0 - gap) + 'px';
+      return;
+    }
     if (wide) {
       var pw = Math.round(W * 0.46), left = pw + gap, right = c.left + c.width;
       x.photo.el.style.cssText += ';left:0;top:0;width:' + pw + 'px;height:' + H + 'px';
@@ -1011,22 +1184,24 @@
   }
 
   BUILD.end = function (sc, ctx) {
-    var d = sc.data, st = el('div', 'stack');
+    var d = sc.data, st = el('div', 'stack'), box = el('div', 'end-card');
+    st.appendChild(box);
     var logoText = ctx.design.logo.text.trim();
     var lg = null;
-    if (logoText) { lg = el('div', 'end-logo', '<span class="logo-mark"></span><span>' + rich(logoText) + '</span>'); tagLang(lg, logoText); st.appendChild(lg); }
+    if (logoText) { lg = el('div', 'end-logo', '<span class="logo-mark"></span><span>' + rich(logoText) + '</span>'); tagLang(lg, logoText); box.appendChild(lg); }
     var title = el('h1', 'end-title disp fit', wordsHTML(d.title || ''));
-    tagLang(title, d.title); st.appendChild(title);
+    tagLang(title, d.title); box.appendChild(title);
     var cta = null;
     if (plain(d.cta)) {
-      cta = el('div', 'cta fit', '<span>' + rich(d.cta) + '</span><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.6" stroke-linecap="round" stroke-linejoin="round"><path d="M5 12h14M13 6l6 6-6 6"/></svg>');
+      cta = el('div', 'cta fit', '<span>' + rich(d.cta) + '</span><span class="cta-ic"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.6" stroke-linecap="round" stroke-linejoin="round"><path d="M5 12h14M13 6l6 6-6 6"/></svg></span>');
       tagLang(cta, d.cta);
-      st.appendChild(cta);
+      box.appendChild(cta);
     }
     return {
       stack: st,
       anim: function (tl, a) {
         var at = a.t0;
+        cardIn(tl, a, box, at);
         if (lg) { fadeUp(tl, a, lg, at, 14); at += a.st(0.2); }
         var end = revealWords(tl, title, at, a, { stagger: 0.07 });
         if (cta) fadeUp(tl, a, cta, end + 0.05, 20);
@@ -1300,6 +1475,15 @@
         '--scrim': rgba(C.background, 0.86), '--scrim-hero': rgba(C.background, 0.2),
         '--bubble': rgba(C.text, dark ? 0.11 : 0.075),
         '--photo-shadow': dark ? '0 2px 28px rgba(0,0,0,.55)' : 'none',
+        // cards: flat tiles one step off the background (glass, solid uses the surface colour); no edges, no
+        // shadows, no gradients. Over a full-screen photo, a glass tile frosts the photo behind it.
+        '--card-fill': design.cards.style === 'solid' ? C.surface : mix(C.background, C.text, dark ? 0.075 : 0.045),
+        '--card-fill-photo': design.cards.style === 'solid' ? C.surface : rgba(C.background, dark ? 0.62 : 0.7),
+        '--knob': mix(C.background, C.text, dark ? 0.16 : 0.1),
+        '--accent-soft': rgba(C.accent, dark ? 0.16 : 0.12),
+        '--accent-line': rgba(C.accent, 0.6),
+        '--scrim-flat': rgba(C.background, dark ? 0.74 : 0.8),
+        '--title-veil': rgba(C.background, dark ? 0.45 : 0.6),
         '--cl': L.content.left + 'px', '--ct': L.content.top + 'px', '--cw': L.content.width + 'px', '--ch': L.content.height + 'px'
       };
       if (L.captions) {
@@ -1313,7 +1497,7 @@
       if (reuse) stage.innerHTML = '';
       stage.className = 'vid-stage ar-' + (L.landscape ? 'landscape' : 'portrait') + ' aspect-' + design.aspect.replace(':', 'x') +
         ' energy-' + design.motion.energy + ' tx-' + design.motion.transition + ' bg-' + design.background.style + (dark ? ' is-dark' : ' is-light') +
-        ' img-' + design.images.treatment + ' cap-size-' + design.captions.size;
+        ' img-' + design.images.treatment + ' cap-size-' + design.captions.size + ' cards-' + design.cards.style + (design.cards.style !== 'flat' ? ' cards' : '');
       stage.setAttribute('data-composition-id', COMPOSITION_ID);
       stage.setAttribute('data-start', '0');
       stage.setAttribute('data-width', String(W));
@@ -1367,8 +1551,10 @@
         var pic = sc.type === 'image' ? (sc.data.url ? { src: sc.data.url, credit: sc.data.credit || (sc.image && sc.image.credit) || '' } : sc.image) : sc.image;
         var photo = pic ? { url: resolveMedia(pic.src, options.mediaBase), credit: pic.credit || '' } : null;
         if (photo && !photo.url) photo = null;
+        // with tiles, a title's photo fills the frame and the title sits over it, near the bottom
         var mode = !photo ? null : sc.type === 'image' ? 'hero' :
-          (sc.image && sc.image.layout) || (design.images.layout === 'full' ? 'full' : TOP_PHOTO.indexOf(sc.type) >= 0 ? 'top' : 'full');
+          (sc.image && sc.image.layout) || (design.images.layout === 'full' ? 'full' :
+            sc.type === 'title' && design.cards.style !== 'flat' ? 'full' : TOP_PHOTO.indexOf(sc.type) >= 0 ? 'top' : 'full');
         var ctx = { design: design, waits: waits, photo: photo };
         var b = BUILD[sc.type](sc, ctx);
         // the overlay label and a chart's title share a header row pinned to the top of the content area
@@ -1413,10 +1599,10 @@
         prog.style.cssText = 'left:' + L.progress.left + 'px;top:' + L.progress.top + 'px;width:' + L.progress.width + 'px;height:' + L.progress.height + 'px';
         scenes.forEach(function () { var seg = el('span', 'seg', '<i></i>'); prog.appendChild(seg); progFills.push(q(seg, 'i')); });
         stage.appendChild(prog);
-        // a folio, like a page number: "03 / 08", at the end of the line
+        // a folio, like a page number: "03 / 08", at the end of the line (flat looks only)
         var pad2 = function (n) { return (n < 10 ? '0' : '') + n; };
         var folio = el('div', 'folio tnum');
-        folio.style.cssText = 'top:' + (L.progress.top + L.progress.height / 2) + 'px;right:' + (W - L.progress.left - L.progress.width) + 'px';
+        folio.style.cssText = 'top:' + (L.progress.top + L.progress.height / 2) + 'px;right:' + (W - L.content.left - L.content.width) + 'px';
         var folioNums = scenes.map(function (s, i) {
           var f = el('span', 'folio-n', '<b>' + pad2(i + 1) + '</b> / ' + pad2(scenes.length));
           folio.appendChild(f); return f;
@@ -1461,8 +1647,9 @@
           }
         });
         // ---- fit (fonts are loaded or frozen to system fallbacks)
+        var cardsOn = design.cards.style !== 'flat';
         built.forEach(function (x) {
-          if (x.photo) placeTopPhoto(x, L);
+          if (x.photo) placeTopPhoto(x, L, cardsOn);
           fitScene(x.el);
           if (x.b.post) x.b.post(L.landscape);
         });
@@ -1472,7 +1659,7 @@
           var s = x.t.start, d = x.t.duration, e = s + d;
           var enterDelay = i === 0 ? 0.15 : trans === 'cut' ? 0.05 : trans === 'wipe' ? o * 0.6 : o * 0.4;
           var a = {
-            design: design, E: E, M: M, colors: colors, landscape: L.landscape, rand: rand, wide: /\bphoto-left\b/.test(x.el.className),
+            design: design, E: E, M: M, colors: colors, landscape: L.landscape, rand: rand, cards: design.cards.style !== 'flat', wide: /\bphoto-left\b/.test(x.el.className),
             s: s, d: d, e: e, t0: s + enterDelay, clipStart: x.clipStart, clipEnd: x.clipEnd,
             f: clamp(d / 4.5, 0.45, 1)
           };
@@ -1489,14 +1676,14 @@
           var first = true;
           if (i > 0 && trans !== 'cut' && trans !== 'wipe') {
             var dur = 2 * o, at = x.clipStart;
-            if (trans === 'fade') tw(tl, x.inner, { opacity: 0 }, { opacity: 1, duration: dur * 0.7, ease: 'power2.out' }, at + dur * 0.3);
+            if (trans === 'fade') tw(tl, x.inner, { opacity: 0, y: 28 * M.dist }, { opacity: 1, y: 0, duration: dur * 0.85, ease: 'power3.out' }, at + dur * 0.3);
             else if (trans === 'slide') tw(tl, x.inner, { xPercent: 8 * M.dist, opacity: 0 }, { xPercent: 0, opacity: 1, duration: dur * 0.65, ease: E.out }, at + dur * 0.35);
             else if (trans === 'zoom') tw(tl, x.inner, { scale: 0.97, opacity: 0 }, { scale: 1, opacity: 1, duration: dur * 0.65, ease: E.out }, at + dur * 0.35);
             first = false;
           }
           if (i < built.length - 1 && trans !== 'cut' && trans !== 'wipe') {
             var dur2 = 2 * o, at2 = e - o;
-            if (trans === 'fade') tw(tl, x.inner, { opacity: 1 }, { opacity: 0, duration: dur2 * 0.55, ease: 'power2.in' }, at2, first ? undefined : false);
+            if (trans === 'fade') tw(tl, x.inner, { opacity: 1, y: 0 }, { opacity: 0, y: -14 * M.dist, duration: dur2 * 0.55, ease: 'power2.in' }, at2, first ? undefined : false);
             else if (trans === 'slide') tw(tl, x.inner, { xPercent: 0, opacity: 1 }, { xPercent: -8 * M.dist, opacity: 0, duration: dur2 * 0.6, ease: 'power2.in' }, at2, first ? undefined : false);
             else if (trans === 'zoom') tw(tl, x.inner, { scale: 1, opacity: 1 }, { scale: 1.03, opacity: 0, duration: dur2 * 0.6, ease: 'power2.in' }, at2, first ? undefined : false);
           }

@@ -10,7 +10,7 @@ Each video channel has a **look**: colors, fonts, motion, captions, and backgrou
 4. If the channel language is Hindi or Hinglish, the display and body fonts must support Devanagari (`devanagari: true` in `studio.py fonts`).
 5. Reply with what changed and the studio link to the channel's Look tab.
 
-To start from a preset, `studio.py presets` lists them; set `"preset"` and drop the keys you want the preset to decide.
+To start from a preset, `studio.py presets` lists them ([direction.md](direction.md) says which suits which channel); set `"preset"` and drop the keys you want the preset to decide.
 
 ## design.json
 
@@ -25,10 +25,11 @@ To start from a preset, `studio.py presets` lists them; set `"preset"` and drop 
   "motion": {"energy": "high", "easing": "snappy", "transition": "slide"},
   "captions": {"style": "highlight", "position": "lower", "highlight": "accent", "max_words": 4, "size": "medium"},
   "background": {"style": "grain", "pattern": "none"},
+  "cards": {"style": "glass"},
   "images": {"treatment": "dim", "layout": "auto"},
   "sources": {"show": true},
   "progress": {"show": true},
-  "radius": 12,
+  "radius": 28,
   "logo": {"text": "PIPE GYAAN", "position": "top-left"},
   "custom_css": ""
 }
@@ -51,24 +52,27 @@ To start from a preset, `studio.py presets` lists them; set `"preset"` and drop 
 | `captions.highlight` | `accent`, `accent2`, or `text` |
 | `captions.max_words` | Words per caption line, 1–8 |
 | `captions.size` | `small`, `medium`, or `large`. Captions carry the words while videos have no voiceover, so `medium` or `large` |
-| `images.layout` | Where beat photos go: `auto` (edge to edge across the top of the frame above a stat, punchline, quote, list, message, title or end card, sized to what the scene leaves, or down the left side in wide formats; faint and full-screen behind charts) or `full` (always full-screen behind the scene, under the background colour). A beat can choose with `Image: path \| credit \| top` or `\| full` |
+| `cards.style` | `glass` (the default): content sits straight on the background, on the heading's left edge, with no visible tile; where a full-screen photo is behind it, a frosted pane appears to keep it readable. The call to action is an accent text link, and there is no folio. `solid`: each chart, list point and compare phrase sits on a flat, rounded tile filled with `surface`. `flat`: the editorial layout, with hairlines, a folio and photos edge to edge (Swiss uses it) |
+| `images.layout` | Where beat photos go: `auto` (above a stat, punchline, quote, list, message, title or end card, sized to what the scene leaves, or down the left side in wide formats; full-screen behind charts) or `full` (always full-screen behind the scene). With cards the photo above is a rounded photo card, with the beat's `Text:` label set on its bottom-left corner; flat looks run it edge to edge. A beat can choose with `Image: path \| credit \| top` or `\| full` |
 | `images.treatment` | How beat photos (`Image:` lines) look: `natural`, `dim` (darkened for legible text), `mono` (black and white), or `duotone` (tinted from the background color to the accent, so photos from different sources look like one brand) |
 | `sources.show` | `true` shows each beat's `Source:` line as one line of small print at the very bottom of the frame; `false` hides them |
 | `progress.show` | `true` draws a thin progress line at the top, one segment per beat, filling as the voiceover plays |
 | `background.style` | `solid` (flat colour), `grain` (fine film grain), `paper` (paper texture), or `gradient` (a barely visible tonal step from the top; no look uses it) |
 | `background.pattern` | `none`, `grid`, `dots`, or `lines` |
-| `radius` | Corner radius of bars, buttons and message bubbles, in px at 1080 wide (0–48). Photos are always square-cornered |
+| `radius` | Corner radius of cards and photo cards in px at 1080 wide (0–48); bars, tiles and pills scale from it. 24–34 reads as soft and modern; flat looks use 0–8 and keep photos square |
 | `logo.text` / `logo.position` | A text wordmark shown small on every scene (empty for none); `top-left`, `top-right`, `bottom-left`, `bottom-right` |
 | `custom_css` | Extra CSS for the composition, for anything the keys can't express. Scenes use CSS variables like `--accent` and classes like `.scene-stat .value`; keep it small. |
 
 ## Taste
 
-Less is more. The scenes are flat colour, type, hairlines, data and real photographs, and nothing else: no gradients, glows, blurred backgrounds, glass, shadows or decorative shapes. Those effects are what make a video look generated.
+Make it look like a product film from a company that ships good design, not like a template. Flat colour, big confident type, one accent, real photographs, and motion that eases in and settles.
 
-- **Type does the hierarchy.** The thing that matters in each scene (the number, the subject of a comparison, the highlighted bar, the spoken word) takes the accent and full-strength type; everything else is text or muted.
-- **Photos are photography.** They run edge to edge with a hard edge, at full colour, like the picture on a magazine page ([images.md](images.md)). Don't round them, frame them, blur them or run text across them.
-- **Structure comes from the grid:** the progress line and folio at the top, the label and title row, hairlines between rows, captions in their own band.
+- **Type on the background.** With glass, nothing sits in a box unless a photo is behind it. Charts, lists, numbers, quotes and the end card are type and data on the plain background, on one left edge. Solid looks put charts, list points and compare phrases on flat tiles; nothing is nested, and no scene has a decorative tile.
+- **No effects.** No gradients, glows, coloured shadows, blurred colour fields, outlines or reflections. The only blur is frosted glass over a sharp full-screen photo, where it keeps a chart readable.
+- **Type does the hierarchy.** The thing that matters in each scene (the number, the subject of a comparison, the tallest bar, the spoken word) takes the solid accent and full-strength type; everything else is text or muted. Labels are small accent eyebrows in sentence case, not boxes.
+- **Photos are photography.** A photo above a scene is a rounded photo card at full colour on the plain background. Don't frame photos twice, tint them by hand or run text across them (the beat's short label on the corner is the one exception).
+- **Motion is calm.** Things rise a short way and settle on a long ease; nothing bounces or spins. Holds stay still.
 
-Translate feelings into these settings. "More premium": a quieter palette with one accent, a serif or a tight grotesque for display, `medium` or `calm` energy, `fade` transitions, `underline` captions (Night Edition). "Like a newspaper": Broadsheet. "Information design": Swiss (square corners, hard cuts). "Louder": `highlight` or `pop` captions, `high` energy.
+Translate feelings into these settings. "More premium" or "like Apple": near-black or white, one accent, Geist or another tight grotesque, `calm` energy, `fade` transitions, `underline` captions (Graphite, Night Edition). "Like a newspaper": Clean Newsroom (solid tiles). "Information design": Swiss (flat, square corners, hard cuts). "Louder": `highlight` or `pop` captions, `high` energy. "Softer" or "more rounded": a larger `radius`.
 
 Headlines read better in sentence case (`display_case: none`); keep `upper` for condensed display faces. Check that `accent` reads on `background` (contrast 3:1 or more for big numbers) and that `text` reads at 4.5:1.

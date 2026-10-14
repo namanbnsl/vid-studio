@@ -40,6 +40,9 @@
       "style": "paper",
       "pattern": "lines"
     },
+    "cards": {
+      "style": "solid"
+    },
     "images": {
       "treatment": "natural"
     },
@@ -49,7 +52,7 @@
     "progress": {
       "show": true
     },
-    "radius": 6,
+    "radius": 20,
     "logo": {
       "text": "",
       "position": "top-left"
