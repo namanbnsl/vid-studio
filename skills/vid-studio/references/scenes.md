@@ -27,6 +27,7 @@ Source: Example source, 1 Oct 2026
 - `Image: path | credit`: optional photo for this beat. The path is one of the script's images (`media/…`, from `studio.py media`) or an `https://` URL. On a stat, punchline, quote, list, message, title or end card it runs edge to edge across the top of the frame, sized to the space the scene leaves, and the scene sits below it (in wide formats it fills the left side and the text takes the right); on a chart it sits full-screen behind, faint. Add `| top` or `| full` at the end to choose. See [images.md](images.md).
 - `Source: …`: optional short name of where this beat's fact comes from ("RBI circular, 1 Oct 2026"). It shows small on screen, unless the channel's look turns source tags off.
 - `Duration: 4`: optional fixed length in seconds (1–60), instead of the length the voiceover takes. Use it for a beat with little or no voiceover that needs time on screen.
+- `Say: …`: optional; what the voiceover speaks when it should differ from the captions ("₹12,000" said as "twelve thousand rupees"). Captions keep the written line. See [narration.md](narration.md).
 - Anything before the first `##` (like a `# Title`) is ignored.
 
 A beat without a `Visual:` line shows its voiceover as a big caption (`text` scene).
@@ -35,7 +36,7 @@ The parser accepts indented beat headings, optional Markdown emphasis around cue
 
 ## Timing
 
-A beat lasts as long as its voiceover takes to say: spoken words ÷ the channel's words per minute (from its voice settings; 160 if unset), with a minimum of 1.5 seconds. A `Duration:` line overrides it. Count words after removing citations and markdown. `studio.py scenes --script ID` prints each beat with its scene and timing, and the total; use it to hit the channel's target length.
+A beat lasts as long as its voiceover takes to say: spoken words ÷ the channel's words per minute (from its voice settings; 160 if unset), with a minimum of 1.5 seconds. When the channel has a narrator and the beat has been voiced ([narration.md](narration.md)), it lasts as long as the recorded clip plus the channel's pause instead. A `Duration:` line overrides both. Count words after removing citations and markdown. `studio.py scenes --script ID` prints each beat with its scene and timing, and the total; use it to hit the channel's target length.
 
 ## Scene types
 
@@ -83,8 +84,8 @@ The studio parses beats into this shape (the UI, the player, and `studio.py scen
  "data": {"value": "₹5,000", "label": "UPI Lite wallet limit", "context": "was ₹2,000"}}
 ```
 
-`data` keys per type: `title` {title, subtitle, kicker} · `stat` {value, label, context} · `bars` {title, items: [{label, value}]} · `compare` {title, items: [{label, value}] (two)} · `list` {title, items: [string]} · `quote` {quote, source} · `timeline` {title, items: [{date, label}]} · `text` {text} · `image` {description, url, credit} · `message` {title (the sender), items: [string]} · `end` {title, cta}. A beat with an `Image:` line also has `"image": {"src", "credit"}` (plus `"layout": "top"|"full"` when the line chose one), and one with a `Source:` line has `"source"`. In `bars` and `compare`, `value` is the original text (`"₹1,000"`); the player extracts the number. An unknown type becomes `image` with the whole line as its description.
+`data` keys per type: `title` {title, subtitle, kicker} · `stat` {value, label, context} · `bars` {title, items: [{label, value}]} · `compare` {title, items: [{label, value}] (two)} · `list` {title, items: [string]} · `quote` {quote, source} · `timeline` {title, items: [{date, label}]} · `text` {text} · `image` {description, url, credit} · `message` {title (the sender), items: [string]} · `end` {title, cta}. A beat with an `Image:` line also has `"image": {"src", "credit"}` (plus `"layout": "top"|"full"` when the line chose one), and one with a `Source:` line has `"source"`. A `Duration:` line adds `"fixed": true` and a `Say:` line adds `"say"`. A voiced beat has `"audio": {"src": "narration/….wav", "duration", "words"?}`, where `words` (from providers that report them) holds `[start, end]` seconds for each word of `vo`. In `bars` and `compare`, `value` is the original text (`"₹1,000"`); the player extracts the number. An unknown type becomes `image` with the whole line as its description.
 
 ## Render
 
-`studio.py render --script ID` renders the video to `scripts/<id>/render/video.mp4` (1080p, 30 fps, H.264) on this machine, with Chrome and ffmpeg; `--out ~/Desktop` also copies it there, and `--draft` renders a faster 720p check. It prints the image credits for the video description. The user can do the same from the script page (Render MP4, then Download MP4). `studio.py export --script ID` writes the same composition as a [HyperFrames](https://github.com/heygen-com/hyperframes) project instead.
+`studio.py render --script ID` renders the video to `scripts/<id>/render/video.mp4` (1080p, 30 fps, H.264) on this machine, with Chrome and ffmpeg, recording the channel's voiceover first if it has a narrator; `--out ~/Desktop` also copies it there, and `--draft` renders a faster 720p check. It prints the image credits for the video description. The user can do the same from the script page (Render MP4, then Download MP4). `studio.py export --script ID` writes the same composition as a [HyperFrames](https://github.com/heygen-com/hyperframes) project instead.

@@ -1,6 +1,6 @@
 ---
 name: vid-studio
-description: Research and production studio for explainer videos, kept in local files with a web UI. Use for anything about it — setting up a project or channel, adding or changing topics and sources, "research now" or scheduled research runs, finding news for the project's topics, researching a story, writing or revising a script for a channel (including addressing comments), finding or adding images for a video, rendering or downloading a video, opening the studio UI, or "what's new".
+description: Research and production studio for explainer videos, kept in local files with a web UI. Use for anything about it — setting up a project or channel, adding or changing topics and sources, "research now" or scheduled research runs, finding news for the project's topics, researching a story, writing or revising a script for a channel (including addressing comments), finding or adding images for a video, voiceover and text-to-speech voices, rendering or downloading a video, opening the studio UI, or "what's new".
 ---
 
 # Vid Studio
@@ -13,6 +13,7 @@ The studio holds one or more **projects**: each is a subject area the user resea
 
 That's the research half. In the production half, a story becomes **scripts**: one per **channel** the user sends it to. Channels (a YouTube channel, Instagram account, WhatsApp channel, and so on) are shared by every project and live in `channels.json` at the studio root, with per-channel settings in `channels/<id>/`:
 - **Voice** (`voice.json`): length, pace, persona, tone, hook styles, rules, and example scripts the user loves. Together with the channel's language, kind (`video` script or text `post`), and format (beat structure), it shapes every script.
+- **Narration** (`narration.json`, video channels): the text-to-speech voice that reads its scripts, if any: a provider (on this computer, or ElevenLabs, Sarvam, OpenAI, Google), a voice, speed, and pronunciations.
 - **Look** (`design.json`, video channels): colors, fonts, motion, captions, photo treatment. Video scripts are written as beats with `Visual:` lines that become animated scenes in this look, with real photos behind the beats that need them; the studio previews them live and renders them to MP4.
 
 The user moves scripts through stages (script → ready → published) and comments on passages for you to address.
@@ -37,6 +38,7 @@ Start with `studio.py status`.
 | "Change the look of the channel …" | [look.md](references/look.md) |
 | "Tune the voice of the channel …" | Read `studio.py voice --channel C`, change what was asked (see the voice section of [script-craft.md](references/script-craft.md) for what each setting does), and save with `studio.py voice --channel C --file -`. If they share example scripts, add them to `examples` with a line on what to learn from each. |
 | Images for a script ("add photos", "find a picture of …") | [images.md](references/images.md) |
+| Voiceover: pick a voice or provider (ElevenLabs, Sarvam, local…), add an API key, "make the voiceover", fix a pronunciation | [narration.md](references/narration.md) |
 | Preview, render, or download a script's video | `studio.py scenes --script S` checks beats and timing ([scenes.md](references/scenes.md)); `studio.py render --script S` renders the MP4 on this machine (`--out ~/Desktop` to copy it there) |
 | Set up, change, or turn off a research schedule (never runs research) | [schedule.md](references/schedule.md) |
 | Open, show, or see the studio | Run `studio.py serve --background` and share the printed link (one server serves every project) |
