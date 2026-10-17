@@ -21,6 +21,7 @@ sys.path.insert(0, str(Path(__file__).resolve().parents[1] / "skills" / "vid-stu
 import narration as tts  # noqa: E402
 import render  # noqa: E402
 import studio  # noqa: E402
+from support import idea_script  # noqa: E402
 
 
 def tone(seconds: float, rate: int = 24000, lead: float = 0.0, tail: float = 0.0, channels: int = 1) -> bytes:
@@ -272,7 +273,7 @@ class StudioVoiceoverTest(unittest.TestCase):
         studio.add_channel(self.home, {"name": "Shorts", "language": "Hinglish"})
         studio.add_channel(self.home, {"name": "WhatsApp", "kind": "post"})
         self.project = studio.Studio(self.home / "projects" / "voice", self.home)
-        self.script = self.project.create_script(self.project.create_story("S")["id"], "shorts")["id"]
+        self.script = idea_script(self.project, "shorts")["id"]
         self.text = ("## Hook\nYour bill went up this month. [1]\nVisual: stat | 12% | Bill\n"
                      "## Price\nIt costs ₹6,500 now.\nSay: It costs sixty five hundred rupees now.\nVisual: text | Price\n"
                      "## Hold\nShort.\nDuration: 0.2\nVisual: text | Hold\n"
@@ -451,7 +452,7 @@ class YourVoiceTest(unittest.TestCase):
             studio.main(["--workspace", str(self.home), "new-project", "--name", "Voice"])
         studio.add_channel(self.home, {"name": "Shorts", "language": "English"})
         self.project = studio.Studio(self.home / "projects" / "voice", self.home)
-        self.script = self.project.create_script(self.project.create_story("S")["id"], "shorts")["id"]
+        self.script = idea_script(self.project, "shorts")["id"]
         self.project.update_script(self.script, {"text": "## Hook\nYour bill went up.\nVisual: text | Up\n## Why\nThe tariff changed.\nSay: The tariff changed in October.\nVisual: text | Why\n## End\nVisual: end | Bye | Go"})
 
     def tearDown(self):

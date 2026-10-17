@@ -20,7 +20,7 @@ Channel defaults (`studio.py publishing --channel C --file -`): `privacy`, `cate
 
 ## Write the post details
 
-"Write the post details for the script …" means: write them, don't publish. Read the script and its story notes, then save with `studio.py publish-details --script S --file -`:
+"Write the post details for the script …" means: write them, don't publish. Read the script and its fact sheet (`facts.md`), then save with `studio.py publish-details --script S --file -`:
 
 ```json
 {"title": "UPI Lite की limit अब ₹5,000: क्या बदला?",
@@ -35,7 +35,7 @@ Channel defaults (`studio.py publishing --channel C --file -`): `privacy`, `cate
 - **hashtags**: 3–5 specific ones; **tags** (YouTube search): a few phrases people search for.
 - Optional: `privacy`, `publish_at` (YouTube only: an ISO time; it uploads private and goes public then), `synthetic` (the platform's "altered or synthetic" label; a narrated explainer usually doesn't need it, but say so if the visuals show realistic people or events that didn't happen), `made_for_kids`, `category`, `captions`, `thumbnail`.
 
-Don't add sources, photo credits, or the hashtags to the text yourself: when it posts, the studio appends the story's source links (YouTube), the photo credits the licences require, and the hashtags. Use the same language rules as the script.
+Don't add sources, photo credits, or the hashtags to the text yourself: when it posts, the studio appends the script's source links (YouTube), the photo credits the licences require, and the hashtags. Use the same language rules as the script.
 
 ## Publish
 

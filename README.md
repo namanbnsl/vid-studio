@@ -15,13 +15,13 @@ Then ask your agent: *"Use vid-studio to set up my project."* It works with any 
 
 ## Research
 
-A project follows a subject: say, plumbing products or Indian tech news. You give it **topics** and the **sources** it must check. On each run, your agent checks every source and searches the web, and brings back short **findings**, each linked to the pages it came from. Pick the findings worth a video and turn them into a **story**; your agent researches it once, in depth, for every script that follows. Research can run on a schedule.
+A project follows a subject: say, plumbing products or Indian tech news. You give it **topics** and the **sources** it must check. On each run, your agent checks every source and searches the web, and brings back short **findings**, each linked to the pages it came from. Research can run on a schedule. Alongside the news, **ideas** are evergreen videos people are already looking for: your agent reads what they ask and search (Google's autocomplete questions and daily trends, Wikipedia reading) and suggests a few of its own.
 
 ![Findings in a research project](docs/readme/research.jpg)
 
 ## Write
 
-A story becomes one **script** per channel, written in that channel's language (English, Hindi or Hinglish) and voice. Scripts are written as beats: what's said, and what's shown on screen (a number, a chart, a comparison, a quote, a photo). Your agent finds openly licensed photos for the beats about real things (credited on screen), drafts several hooks, and scores its own draft; you comment on any passage for it to fix. Production keeps every script on one board, from draft to published.
+Send findings or an idea to production and each becomes one **script** per channel, linked to what it was made from. Before writing, your agent opens the pages behind the findings and writes a short **fact sheet**; the script says nothing that isn't on it. Scripts are written in that channel's language (English, Hindi or Hinglish) and voice, as beats: what's said, and what's shown on screen (a number, a chart, a comparison, a quote, a photo). Your agent finds openly licensed photos for the beats about real things (credited on screen), drafts several hooks, and scores its own draft; you comment on any passage for it to fix. Production keeps every script on one board, from draft to published.
 
 ![The production board](docs/readme/production.jpg)
 
@@ -46,7 +46,7 @@ Connect a channel to its YouTube channel, Instagram professional account or TikT
   <img alt="Research, then Production, then Channels" src="docs/readme/flow-light.svg" width="976">
 </picture>
 
-Research stays reusable: one story can become an English Short, a Hinglish Reel and a Hindi WhatsApp post. Your agent does the thinking work (research, stories, scripts, revisions), and the studio shows you the results as soon as they land. Where a step needs your agent, the studio has a button that copies the prompt.
+Research stays reusable: the same findings can become an English Short, a Hinglish Reel and a Hindi WhatsApp post. Your agent does the thinking work (research, ideas, fact sheets, scripts, revisions), and the studio shows you the results as soon as they land. Where a step needs your agent, the studio has a button that copies the prompt.
 
 The workspace is plain JSON and Markdown in `~/vid-studio` (or `$VID_STUDIO_HOME`), one folder per project, so it's easy to read, back up or edit by hand. API keys and account tokens are kept in `.secrets.json` in that folder, readable only by you.
 
@@ -61,7 +61,7 @@ The workspace is plain JSON and Markdown in `~/vid-studio` (or `$VID_STUDIO_HOME
 ```
 skills/vid-studio/
   SKILL.md               entry point for your agent
-  references/            setup, research, stories, writing, script craft, directing, scenes,
+  references/            setup, research, ideas, fact sheets, writing, script craft, directing, scenes,
                          images, look, narration, publishing, schedules
   scripts/studio.py      command line and local web server
   scripts/narration.py   text-to-speech providers and your own recordings
@@ -77,7 +77,7 @@ skills/vid-studio/
 ```sh
 python3 dev.py demo              # a throwaway studio with sample data, opened in your browser
 python3 dev.py sandbox --seed    # a test project at ../vid-studio-sandbox, with the skill linked
-python3 dev.py try setup         # run Claude Code headlessly in the sandbox (setup, research, story, draft, status)
+python3 dev.py try setup         # run Claude Code headlessly in the sandbox (setup, research, ideas, draft, status)
 python3 dev.py reset --yes       # wipe the sandbox's studio data
 python3 -m unittest discover tests
 node --test tests/test_ui.js tests/test_engine.js

@@ -9,7 +9,7 @@ Value: a mechanism (returns earn returns), a rule of thumb for a fixed positive 
 Numbers: every rupee figure is arithmetic on ₹1,00,000 compounded yearly: 1.12^n at the example rate (1.12^5 = 1.76, 1.12^20 = 9.65, 1.12^30 = 29.96), 1.08^n for the lower-rate check (1.08^20 = 4.66, 1.08^30 = 10.06). Neither rate is a promise, and the script says so.
 Screen: every scene shows a number, a mechanism, or a label the VO doesn't say word for word; one `text` scene only, for the caveat. Each chart says what it measures and in what unit.
 Photos: city at night behind the hook, a hand on a phone for "you open the app". Both CC BY 2.0 from Flickr (via Open Images), credited on screen. The files ship in `assets/scenes/samples/` (see its CREDITS.md).
-Sources: [1] Investor.gov, "Small Savings Add Up to Big Money", https://www.investor.gov/introduction-investing/investing-basics/save-and-invest/small-savings-add-big-money. [2] Rule of 72 approximation, compared with log(2) / log(1.12) = 6.12 years. [3] Worked calculation in the story notes (₹1,00,000 × 1.12^n). [4] Investor.gov Compound Interest Calculator, https://www.investor.gov/financial-tools-calculators/calculators/compound-interest-calculator.
+Sources: [1] Investor.gov, "Small Savings Add Up to Big Money", https://www.investor.gov/introduction-investing/investing-basics/save-and-invest/small-savings-add-big-money. [2] Rule of 72 approximation, compared with log(2) / log(1.12) = 6.12 years. [3] Worked calculation in the fact sheet (₹1,00,000 × 1.12^n). [4] Investor.gov Compound Interest Calculator, https://www.investor.gov/financial-tools-calculators/calculators/compound-interest-calculator.
 -->
 
 # The last ten years do most of the work

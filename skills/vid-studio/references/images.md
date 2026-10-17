@@ -18,7 +18,7 @@ Image: media/sensor-tap.jpg | Photo: BPE innovationas / Wikimedia Commons, CC BY
 
 Two to four photos in a 60-second script is usually right; `studio.py scenes` warns when a video of 30 seconds or more has none. Use them for beats about **real, specific things**: a product, a place, a building, an institution, a screen in an app, a document, a person's role ("a plumber fitting a CPVC pipe").
 
-**Put people in the frame.** Hands on a phone, a shopkeeper at a counter, a vegetable market, a street, a family at home: photos of people and everyday places are what make a video feel made by people. Use them for the moment the story turns on (story.md's "The moment"): the call, the counter, salary day. They're illustrative, so never imply that the people shown are the people in the story, and never use a photo of an identifiable person for a beat about wrongdoing.
+**Put people in the frame.** Hands on a phone, a shopkeeper at a counter, a vegetable market, a street, a family at home: photos of people and everyday places are what make a video feel made by people. Use them for the real things the findings are about: the product, the counter, the screen. They're illustrative, so never imply that the people shown are the people in the findings, and never use a photo of an identifiable person for a beat about wrongdoing.
 
 Leave out beats that are about numbers or mechanisms alone; the scene is stronger there.
 
@@ -26,7 +26,7 @@ Leave out beats that are about numbers or mechanisms alone; the scene is stronge
 
 Work down this list for each beat and stop at the first that gives you a good, honest picture.
 
-1. **The user's own images.** If the story notes or the user point at photos they own (product shots, screenshots), use those.
+1. **The user's own images.** If the fact sheet or the user point at photos they own (product shots, screenshots), use those.
 2. **A real, openly licensed photo.** Search with `studio.py images "query" --orientation tall --preview /tmp/vid-images` (use `wide` for 16:9 channels). It searches Wikimedia Commons and Openverse for photos you can use commercially and modify (CC0, public domain, CC BY, CC BY-SA), and saves small previews. **Look at the previews before choosing.** Query with concrete nouns ("sensor tap bathroom sink", "Reserve Bank of India building Mumbai"), not ideas ("saving water"). Prefer photos at least 1080 px on the short side.
 3. **An image you generate**, if an image-generation tool is available in the current agent session. Save the file and add it like any other. If no such tool is available, use a licensed photo or a scene without a photo.
 4. **No photo.** A good scene without a photo beats a wrong or fake-looking one.
@@ -46,10 +46,10 @@ studio.py media --script ID --add ./generated/kitchen-tap.png --name kitchen-tap
 Generated images are for **generic, illustrative scenes**: a kitchen tap running, a hand holding a phone, a stack of coins, a city street at dusk. Write the prompt like a photo brief: subject, setting, light, lens, vertical 9:16 (or the channel's aspect), no text in the image.
 
 Never generate:
-- **Real, identifiable people** (a minister, a CEO, a creator), or anyone presented as a real person in the story.
+- **Real, identifiable people** (a minister, a CEO, a creator), or anyone presented as a real person in the findings.
 - **Real products, brands, logos, or packaging** ("a Jaquar tap", "the PhonePe app"). A generated version is a fake product shot; use a real photo or none.
 - **Documents, screenshots, charts, or anything that looks like evidence** (a circular, a bank SMS, a news page).
-- **Events from the story** ("the factory fire", "the launch event").
+- **Events from the findings** ("the factory fire", "the launch event").
 
 Credit generated images as `AI-generated illustration` so the video never passes one off as a photograph.
 

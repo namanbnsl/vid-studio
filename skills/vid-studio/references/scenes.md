@@ -49,11 +49,11 @@ Fields are separated by `|`, in this order. Trailing fields are optional. Number
 | `bars` | title \| Label: value \| Label: value … | 2–6 values to compare as a bar chart. A unit every value shares (`lakh`, `crore`, `km`) is shown once at the top of the chart |
 | `compare` | title \| Label: value \| Label: value | Before/after, this vs that (exactly two). The **second** item is the subject (the after, the new thing, the claim) and takes the accent. Two numbers draw bars (with tiles, the difference between them, like `2.4×` or `+38%`, becomes the headline, with the two values as rows below); two short phrases draw two panels |
 | `list` | title \| item \| item … | 2–5 short points, steps, or reasons |
-| `quote` | quote \| source | A real quote from a source in the notes |
+| `quote` | quote \| source | A real quote from a source on the fact sheet |
 | `timeline` | title \| date: label \| date: label … | 2–5 dated events in order |
 | `text` | text | A punchline or key sentence, big on screen |
 | `image` | description \| path \| credit | A photo or screenshot as the whole scene; the description says what it shows (it's the brief while the image is missing, and the alt text after). A photo too small to fill the screen runs across the top instead of being blown up |
-| `message` | sender \| line \| line … | The call, text or notification the story turns on, as chat bubbles on a phone card (1–4 lines). Lines starting `you:` are the viewer's replies, on the right. Label a reconstruction with `Text: Example` and a real message with its `Source:` |
+| `message` | sender \| line \| line … | A real message a source printed (an official SMS, a published notification), as chat bubbles on a phone card (1–4 lines), with its `Source:`. Lines starting `you:` sit on the right. Never a reconstruction or an invented chat |
 | `end` | title \| call to action | The last beat |
 
 Example `Visual:` lines:
@@ -73,7 +73,7 @@ Keep on-screen words few: titles under 6 words, labels under 4, list items under
 Every scene sits on one grid, and fills it. A thin progress line runs across the top, one rounded segment per beat, with a folio at its end (`03 / 08`). A `Text:` overlay (a small accent eyebrow; on a photo card it sits on the photo's corner) and a chart's title share a header row pinned under it, in the same place in every scene. Below it, the scene sits on the same left edge (`cards.style`: glass by default shows no tiles, except a frosted pane over a full-screen photo; solid puts a chart, each list point and each compare phrase on a flat tile; flat is the editorial layout). A list's points arrive across the beat and the earlier ones step back as each new one lands. Two phrases in a compare are joined by a small arrow from the first to the second. Other scenes are type: a stat's number is the hero of the frame, a quote is big type under a large opening mark, a timeline sets its dates as display type on a rail that draws through them (the last date in the accent), a message is a chat screen with the sender's initial and name centred above the bubbles, and the end card is a centred finale whose call to action is an accent text link (a button with solid tiles). A stat, a punchline, a quote or the end card is centred in the space; charts, lists and timelines fill it. Captions sit in their own band, centred, with the spoken word highlighted, and the `Source:` line and photo credit are one line of small print on the bottom edge of the safe area. Holds are still, and headings keep one size across scenes, so write titles that fit in two lines rather than relying on the player to shrink them. `bars` with short labels (up to 12 characters, like years) draw columns; longer labels draw horizontal rows.
 
 `studio.py scenes` warns about what makes a video look or sound generated: the same headline on screen twice, more than two `text` scenes, bars without numbers, a compare mixing a number with a phrase, chart values with no unit, an unlabelled message, no photos in a video of 30 seconds or more, and in the voiceover the phrases, invented characters, fake anecdotes, reframes, fragment chains and flat rhythm in script-craft.md. Fix every warning.
-The examples above demonstrate syntax. Replace their figures and placeholder quote with evidence from the story's notes.
+The examples above demonstrate syntax. Replace their figures and placeholder quote with evidence from the script's fact sheet.
 
 ## Scene JSON
 

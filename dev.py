@@ -33,7 +33,7 @@ PROMPTS = {
               "for homeowners and dealers, in Hinglish, timezone Asia/Kolkata. Don't ask me anything: choose 4 topics and "
               "about 6 sources yourself, add the sources as suggestions, and open the studio."),
     "research": "Use the vid-studio skill to research now for the project \"{project}\".",
-    "story": "Use the vid-studio skill to research the story \"{story_title}\" ({story}) in the project \"{project}\".",
+    "ideas": "Use the vid-studio skill to get video ideas for the project \"{project}\".",
     "draft": "Use the vid-studio skill to write the script \"{script_title}\" ({script}) in the project \"{project}\".",
     "status": "Use the vid-studio skill: what's new in the project \"{project}\"?",
 }
@@ -83,8 +83,28 @@ Visual: end | सबसे ज़्यादा चलने वाले न�
 """
 
 
+SENSOR_FACTS = """## The point
+Jaquar's touchless taps now start at ₹6,500; the company says they use about half the water, which nobody has tested independently. [1]
+
+## Facts
+- Jaquar's touchless range starts at ₹6,500. [1]
+- The tap runs while hands are under it and stops when they move away. [1]
+- Jaquar says the range uses about 50% less water. [1]
+
+## Numbers
+- ₹6,500: starting price [1]
+- 50%: water saving, Jaquar's own claim [1]
+
+## Not known yet
+No independent test of the 50% figure is published.
+
+## Sources
+[1] Jaquar, Sensor faucets, https://www.jaquar.com/news/sensor
+"""
+
+
 def seed(home: Path) -> None:
-    """Two projects with topics, sources, a finished run, findings, stories, and scripts on three channels."""
+    """Two projects with topics, sources, a finished run, findings, ideas, and scripts on three channels."""
     (home / "projects").mkdir(parents=True, exist_ok=True)
     shutil.copyfile(SKILL / "assets" / "README.md", home / "README.md")
 
@@ -115,21 +135,9 @@ def seed(home: Path) -> None:
     pipe.mark_checked(run["id"], run["sources"], "sample check")
     pipe.finish_run(run["id"])
     sensor = next(f for f in pipe.findings() if "Jaquar" in f["title"])
-    story = pipe.create_story("Sensor taps: पैसा बचेगा या नहीं?", [sensor["id"]])
-    pipe.update_story(story["id"], {
-        "notes": ("## Angle\nA touchless tap promises to halve water use. Worth it for a homeowner? Only where a tap runs a lot, "
-                  "and the 50% is the maker's own number.\n\n"
-                  "## The people\n- Homeowners and families who leave the tap running while brushing or washing dishes (typical, not a case).\n"
-                  "- Jaquar, which makes the claim [1].\n\n"
-                  "## The moment\nBrushing teeth in the morning with the tap running.\n\n"
-                  "## What happened / how it works\n- Jaquar's touchless range starts at **₹6,500**. [1]\n"
-                  "- The tap runs while hands are under it and stops when they move away. [1]\n\n"
-                  "## Numbers worth showing\n- ₹6,500: starting price [1]\n- 50%: water saving, the maker's own claim, untested [1]\n\n"
-                  "## Tension and caveats\nNo independent test of the 50% figure yet.\n\n"
-                  "## Pictures to find\n- A tap running into a sink\n- A kitchen sink with a tap\n\n"
-                  "## Sources\n[1] Jaquar, Sensor faucets, https://www.jaquar.com/news/sensor\n")})
-    script = pipe.create_script(story["id"], "pipe-gyaan")
+    script = pipe.create_script("pipe-gyaan", [sensor["id"]], title="Sensor taps: पैसा बचेगा या नहीं?")
     pipe.update_script(script["id"], {"stage": "ready", "text": SENSOR_SCRIPT})
+    pipe.path("scripts", script["id"], "facts.md").write_text(SENSOR_FACTS, encoding="utf-8")
     samples = SKILL / "assets" / "scenes" / "samples"
     for name, credit, page in [("faucet", "Photo: Michael Coté / Flickr, CC BY 2.0", "https://www.flickr.com/photos/cote/3023528357"),
                                ("kitchen-sink", "Photo: Chalon Handmade / Flickr, CC BY 2.0", "https://www.flickr.com/photos/chalonuk/6207329924/")]:
@@ -138,15 +146,20 @@ def seed(home: Path) -> None:
         {"hook": "Jaquar के नए sensor नल ₹6,500 से शुरू होते हैं, और company कहती है कि इनसे आधा पानी बचता है.", "angle": "Price vs claimed savings", "why": "Number first, claim second: the gap is the open loop.", "chosen": True},
         {"hook": "आपका नल रोज़ कितना पानी बहा देता है? ये वाला कहता है, आधा कम.", "angle": "Your daily waste", "why": "Makes it about the viewer, but the answer isn't sourced yet."},
         {"hook": "Touchless नल hospital के लिए बने थे. अब घर आ रहे हैं.", "angle": "Hospital tech goes home", "why": "Story hook; weaker stakes for a homeowner."}])
-    pipe.save_review(script["id"], {"scores": {"hook": 8, "clarity": 9, "retention": 7, "specificity": 8, "voice": 8, "human": 8, "natural": 8, "value": 8, "accuracy": 8},
-                                    "summary": "Opens on the morning brush, a moment every viewer knows; the 50% is clearly Jaquar's own claim. Retention dips before the payback.",
-                                    "notes": ["Human: the brushing moment carries the hook, and 'सच कहूँ तो… खटकता है' gives the persona a view the evidence earns.",
+    pipe.save_review(script["id"], {"scores": {"hook": 8, "clarity": 9, "retention": 7, "specificity": 8, "voice": 8, "focus": 9, "natural": 8, "value": 8, "accuracy": 8},
+                                    "summary": "Price and claim up front; the 50% is clearly Jaquar's own figure. Retention dips before the payback.",
+                                    "notes": ["Focus: every beat is on the Jaquar finding; 'सच कहूँ तो… खटकता है' gives the persona a view the evidence earns.",
                                               "Retention: 'The price' beat is a list of facts with no new question; add the payback math to give it a turn."]})
     pipe.add_comment(script["id"], "Can we name a real test, or show the payback math?", "किसी independent lab ने अभी तक इसे test नहीं किया")
-    post = pipe.create_script(story["id"], "pipe-gyaan-whatsapp")
+    post = pipe.create_script("pipe-gyaan-whatsapp", [sensor["id"]], title="Sensor taps: पैसा बचेगा या नहीं?")
+    pipe.path("scripts", post["id"], "facts.md").write_text(SENSOR_FACTS, encoding="utf-8")
     pipe.update_script(post["id"], {"text": "*Sensor taps: पैसा बचेगा?*\n\nJaquar के नए sensor faucets ₹6,500 से शुरू। [1]\n\nhttps://www.jaquar.com/news/sensor\n",
                                     "stage": "published", "published_url": "https://whatsapp.com/channel/example"})
-    pipe.create_story("Water tank को साफ़ कैसे रखें", topic_ids=["water-tanks"])
+    pipe.add_ideas([
+        {"title": "How often should you clean a water tank?", "pitch": "People search for it every summer. What the cleaning interval depends on, and the signs a tank is overdue.",
+         "topics": ["Water tanks"], "signal": {"kind": "autocomplete", "detail": "\"how often water tank cleaning\" suggested for \"how water tanks\""}},
+        {"title": "CPVC or PVC for hot water lines?", "pitch": "The question plumbers get most when a geyser goes in. What each pipe is rated for, and where it matters.",
+         "topics": ["PVC pipes"], "signal": {"kind": "agent", "detail": "Suggested: a recurring choice for homeowners fitting a geyser"}}])
 
     folder = studio.create_project(home, "Explained in 90s", "Indian tech and money news, explained in 90 seconds.")
     news = studio.Studio(folder, home)
@@ -158,8 +171,7 @@ def seed(home: Path) -> None:
                                    "sources": [{"url": "https://support.google.com/pay/india/answer/13327133?hl=en-IN", "publisher": "Google Pay Help"}]}])
     news.mark_checked(run["id"], run["sources"], "demo fixture, not a live research run")
     news.finish_run(run["id"])
-    upi = news.create_story("UPI Lite: PIN-free payments, explained", [news.findings()[0]["id"]])
-    news.create_script(upi["id"], "explained-in-90s")
+    news.create_script("explained-in-90s", [news.findings()[0]["id"]], title="UPI Lite: PIN-free payments, explained")
 
 
 # ---------------------------------------------------------------- commands
@@ -217,14 +229,12 @@ def cmd_try(args) -> None:
         if "{project}" in PROMPTS[prompt] and not project:
             raise SystemExit("No project yet. Run `try setup` first, or `sandbox --seed`.")
         picked = {}
-        for kind in ("story", "script"):
-            if "{" + kind + "}" in PROMPTS[prompt]:
-                folder = studio.find_project(home, project)
-                items = getattr(studio.Studio(folder, home), kind.replace("story", "storie") + "s")()
-                if not items:
-                    raise SystemExit(f"No {kind.replace('story', 'storie')}s in that project yet.")
-                picked = {kind: items[0]["id"], kind + "_title": items[0]["title"]}
-        prompt = PROMPTS[prompt].format(project=project, **{"story": "", "story_title": "", "script": "", "script_title": ""} | picked)
+        if "{script}" in PROMPTS[prompt]:
+            items = studio.Studio(studio.find_project(home, project), home).scripts()
+            if not items:
+                raise SystemExit("No scripts in that project yet.")
+            picked = {"script": items[0]["id"], "script_title": items[0]["title"]}
+        prompt = PROMPTS[prompt].format(project=project, **{"script": "", "script_title": ""} | picked)
     env = {**os.environ, "VID_STUDIO_HOME": str(home)}
     if args.agent == "claude":
         command = ["claude", "-p", prompt, "--permission-mode", "acceptEdits",

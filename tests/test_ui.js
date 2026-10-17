@@ -56,8 +56,8 @@ test('format and Ask drafts survive remote refreshes and channels list never reo
 test('pending detail requests cannot repaint after leaving the route', async () => {
   const h = harness(); let release;
   h.context.get = () => new Promise(resolve => { release = resolve; });
-  h.run('api = get; location.hash = "#/research/p/stories/s"; pending = renderEditor("story", "s"); location.hash = "#/research/p/findings";');
-  release({ id: 's', notes: '', title: 'Old page' }); await h.context.pending;
+  h.run('api = get; location.hash = "#/production/p/s"; pending = renderEditor("script", "s"); location.hash = "#/research/p/findings";');
+  release({ id: 's', text: '', title: 'Old page', channel: 'a' }); await h.context.pending;
   assert.equal(h.run('editor'), null);
   assert.equal(h.nodes.get('app').innerHTML, '');
 });
@@ -175,15 +175,16 @@ test('Production starts with zero projects and offers independent channel onboar
   h.run('actions["open-channels"]()'); assert.equal(h.context.location.hash, '#/channels');
 });
 
-test('all-project board distinguishes duplicate script IDs and links their source project, story, and channel', () => {
+test('all-project board distinguishes duplicate script IDs and links their source project, material, and channel', () => {
   const h = harness();
-  h.context.globalState = { projects: [{id:'one',name:'One'},{id:'two',name:'Two'}], channels: [{id:'a',name:'A',language:'English'}], stories: [{id:'source',project:'one',title:'Source One'},{id:'source',project:'two',title:'Source Two'}], scripts: [{id:'same',project:'one',project_name:'One',story:'source',channel:'a',title:'Draft One',stage:'script'},{id:'same',project:'two',project_name:'Two',story:'source',channel:'a',title:'Draft Two',stage:'script'}] };
+  h.context.globalState = { projects: [{id:'one',name:'One'},{id:'two',name:'Two'}], channels: [{id:'a',name:'A',language:'English'}], scripts: [{id:'same',project:'one',project_name:'One',findings:['f1'],idea:null,origin:'Finding One',channel:'a',title:'Draft One',stage:'script'},{id:'same',project:'two',project_name:'Two',findings:[],idea:'i1',origin:'Idea Two',channel:'a',title:'Draft Two',stage:'script'}] };
   h.run('GLOBAL = globalState; S = null; PROJECT = null; location.hash = "#/production"; render();');
   const board = h.nodes.get('app').innerHTML;
   for (const project of ['one', 'two']) {
     assert.ok(board.includes(`href="#/production/${project}/same"`)); assert.ok(board.includes(`data-project="${project}"`));
-    assert.ok(board.includes(`href="#/research/${project}/stories/source"`));
   }
+  assert.ok(board.includes('href="#/research/one/findings" title="Made from">← Finding One'));
+  assert.ok(board.includes('href="#/research/two/ideas" title="Made from">← Idea Two'));
   assert.ok(board.includes('href="#/channels/a"'));
   h.run('actions["filter-production-project"]("", {value:"two"})');
   assert.ok(!h.nodes.get('app').innerHTML.includes('Draft One')); assert.ok(h.nodes.get('app').innerHTML.includes('Draft Two'));
@@ -206,37 +207,39 @@ test('duplicate script IDs mutate only the project selected by their canonical p
   await h.run('saveDoc()'); assert.deepEqual(puts, ['p/two/scripts/same']);
 });
 
-test('source-story, channel-look, and story-to-script links cross the independent sections coherently', () => {
+test('script header, facts tab, and channel-look links cross the independent sections coherently', () => {
   const h = harness();
-  h.context.projectState = {stories:[{id:'source',title:'Research story'}],scripts:[{id:'draft',story:'source',channel:'a',stage:'script'}],topics:[],channels:[{id:'a',name:'A',kind:'video'}]};
-  h.run('S = projectState; editor = {kind:"script",data:{id:"draft",story:"source",channel:"a"},design:{aspect:"9:16"},voice:{},sideTab:"preview"};');
-  assert.match(h.run('scriptHeader()'), /href="#\/research\/p\/stories\/source"/);
+  h.context.projectState = {findings:[{id:'f1',title:'Rate cut',summary:'RBI cut rates.',topics:[],sources:[{url:'https://rbi.org.in/x',publisher:'RBI'}]}],ideas:[{id:'i1',title:'Why EMIs lag',pitch:'p',signal:{kind:'autocomplete',detail:'why emi'}}],scripts:[],topics:[],channels:[{id:'a',name:'A',kind:'video'}]};
+  h.run('S = projectState; editor = {kind:"script",data:{id:"draft",findings:["f1"],idea:null,facts:"",channel:"a"},design:{aspect:"9:16"},voice:{},sideTab:"facts"};');
+  assert.match(h.run('scriptHeader()'), /href="#\/research\/p\/findings">1 finding/);
   assert.match(h.run('scriptHeader()'), /href="#\/channels\/a"/);
   assert.match(h.run('lookLink()'), /href="#\/channels\/a\/look"/);
-  h.run('editor = {kind:"story",data:{id:"source",topics:[],findings:[]}};');
-  assert.match(h.run('storySide()'), /href="#\/production\/p\/draft"/);
+  const facts = h.run('factsTab()');
+  assert.match(facts, /Rate cut/); assert.match(facts, /https:\/\/rbi.org.in\/x/); assert.match(facts, /Not yet/);
+  assert.ok(!facts.includes('data-action="detach"'));  // the last finding can't be detached
+  h.run('editor.data = {id:"draft",findings:[],idea:"i1",facts:"## Facts\\n- x [1]",channel:"a"};');
+  assert.match(h.run('scriptHeader()'), /href="#\/research\/p\/ideas">Why EMIs lag/);
+  assert.match(h.run('factsTab()'), /Why EMIs lag/); assert.ok(!h.run('factsTab()').includes('Not yet'));
 });
 
-test('sending a story saves research notes first and keeps its originating project in the draft prompt', async () => {
+test('sending findings to production links them to each script and keeps the originating project in the draft prompt', async () => {
   const h = harness(), calls = [], prompts = [];
-  h.context.globalState = {projects:[{id:'p',name:'Original project'},{id:'other',name:'Other project'}],channels:[{id:'a',name:'A'}],scripts:[],stories:[],default_workspace:true};
-  h.context.projectState = {settings:{},findings:[],channels:h.context.globalState.channels,scripts:[],stories:[],default_workspace:true};
+  h.context.globalState = {projects:[{id:'p',name:'Original project'},{id:'other',name:'Other project'}],channels:[{id:'a',name:'A'}],scripts:[],default_workspace:true};
+  h.context.projectState = {settings:{},findings:[{id:'f1',title:'Rate cut',topics:[],sources:[]}],channels:h.context.globalState.channels,scripts:[],default_workspace:true};
   h.context.write = async (method,path,body) => {
     calls.push([method,path,structuredClone(body)]);
-    if (method === 'PUT') return { ...body, id:'source', version:'saved' };
-    if (method === 'POST') return { id:'created',story:'source',channel:'a' };
+    if (method === 'POST') return { id:'created', findings:body.findings, channel:'a' };
     return h.context.projectState;
   };
   h.context.capture = (title,prompt) => prompts.push(prompt);
-  h.run('GLOBAL = globalState; PROJECTS = globalState.projects; S = projectState; api = write; renderEditor = () => {}; openDialog = options => { captured = options; }; showPrompt = capture; editor = {kind:"story",dirty:true,data:{id:"source",title:"Story",notes:"New research evidence",version:"one"}};');
-  await h.run('actions["send-to-production"]()');
-  assert.equal(calls[0][1], 'p/p/stories/source'); assert.equal(calls[0][2].notes, 'New research evidence');
-  assert.equal(h.run('editor.dirty'), false);
-  await h.run('captured.onSubmit({querySelectorAll:() => [{value:"a"}]})');
-  assert.ok(calls.some(([method,path]) => method === 'POST' && path === 'p/p/scripts'));
-  assert.equal(h.context.location.hash, '#/production');
+  h.run('GLOBAL = globalState; PROJECTS = globalState.projects; S = projectState; api = write; openDialog = options => { captured = options; }; showPrompt = capture; selected = new Set(["f1"]);');
+  h.run('actions["findings-to-production"]()');
+  await h.run('captured.onSubmit({title:{value:"Rate cut, explained"}, querySelectorAll:() => [{value:"a"}]})');
+  const post = calls.find(([method,path]) => method === 'POST' && path === 'p/p/scripts');
+  assert.deepEqual(post[2], {findings:['f1'], channel:'a', title:'Rate cut, explained'});
+  assert.equal(h.context.location.hash, '#/production'); assert.equal(h.run('selected.size'), 0);
   h.run('PROJECT = "other";'); await h.flush();
-  assert.equal(prompts.length, 1); assert.match(prompts[0], /project "Original project"/); assert.ok(!prompts[0].includes('Other project'));
+  assert.equal(prompts.length, 1); assert.match(prompts[0], /project "Original project"/); assert.match(prompts[0], /created/); assert.ok(!prompts[0].includes('Other project'));
 });
 
 test('overlapping production-owner navigation ignores the previous project state response', async () => {
@@ -255,13 +258,16 @@ test('overlapping production-owner navigation ignores the previous project state
   assert.equal(h.run('PROJECT'), 'two'); assert.equal(h.run('S.settings.name'), 'Two');
 });
 
-test('a story-save conflict blocks sending its unsaved notes to production', async () => {
-  const h = harness(), calls = [];
-  h.context.rejectSave = async (method,path) => {calls.push(path); const error = new Error('Changed by agent'); error.status = 409; throw error;};
-  h.run('api = rejectSave; renderEditor = () => {}; opened = false; openDialog = () => {opened = true;}; editor = {kind:"story",dirty:true,data:{id:"source",title:"Story",notes:"Unsaved evidence",version:"one"}};');
-  await h.run('actions["send-to-production"]()');
-  assert.deepEqual(calls, ['p/p/stories/source']); assert.equal(h.run('opened'), false);
-  assert.equal(h.run('editor.data.notes'), 'Unsaved evidence'); assert.equal(h.run('editor.dirty'), true);
+test('the Ideas tab lists ideas with their signal and sends one to production', () => {
+  const h = harness();
+  h.context.state = { settings: { name: 'Project', description: '' }, runs: [], sources: [], findings: [], topics: [], scripts: [], channels: [{id:'a',name:'A'}],
+    ideas: [{id:'i1',title:'Why <b>EMIs</b> lag',pitch:'Rate cuts reach EMIs late.',topics:[],signal:{kind:'wikipedia',detail:'EMI, 900/day',url:'https://en.wikipedia.org/wiki/EMI'},created:''}] };
+  h.run('S = state; GLOBAL = {channels: state.channels}; location.hash = "#/research/p/ideas"; render();');
+  const app = h.nodes.get('app').innerHTML;
+  assert.match(app, /Wikipedia pageviews: <a href="https:\/\/en.wikipedia.org\/wiki\/EMI"/); assert.ok(!app.includes('<b>EMIs'));
+  assert.match(app, /data-action="idea-to-production" data-id="i1"/);
+  h.run('openDialog = options => { captured = options; }; actions["idea-to-production"]("i1");');
+  assert.match(h.run('captured.body'), /value="Why &lt;b&gt;EMIs&lt;\/b&gt; lag"/);
 });
 
 test('an invalid production owner never falls back to a valid project with the same script ID', async () => {

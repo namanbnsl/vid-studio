@@ -16,6 +16,7 @@ from pathlib import Path
 sys.path.insert(0, str(Path(__file__).resolve().parents[1] / "skills" / "vid-studio" / "scripts"))
 import render  # noqa: E402
 import studio  # noqa: E402
+from support import idea_script  # noqa: E402
 
 
 @unittest.skipIf(os.name == "nt", "DevTools uses POSIX pipes")
@@ -49,7 +50,7 @@ class RenderTest(unittest.TestCase):
             studio.main(["--workspace", str(home), "new-project", "--name", "Render"])
             studio.add_channel(home, {"name": "Shorts", "language": "English"})
             project = studio.Studio(home / "projects" / "render", home)
-            script = project.create_script(project.create_story("Render")["id"], "shorts")
+            script = idea_script(project, "shorts", "Render")
             image = base64.b64decode("iVBORw0KGgoAAAANSUhEUgAAAAEAAAABCAQAAAC1HAwCAAAAC0lEQVR42mP8/x8AAwMCAO+a3ioAAAAASUVORK5CYII=")
             media = project.add_media(script["id"], image, "test.png", "Test illustration")
             text = f"## Hook\nTwo seconds.\nVisual: stat | 42% | Share\nImage: {media['path']} | Test illustration\nDuration: 2\n## End\nVisual: end | Bye | Follow\nDuration: 1.5"

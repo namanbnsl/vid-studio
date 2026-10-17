@@ -18,10 +18,12 @@ import os
 import re
 import shutil
 import signal
+import socket
 import subprocess
 import sys
 import threading
 import time
+import urllib.error
 import urllib.parse
 import urllib.request
 import xml.etree.ElementTree as ET
@@ -45,6 +47,12 @@ FIRST_RUN_LOOKBACK = dt.timedelta(days=7)
 RUN_OVERLAP = dt.timedelta(hours=6)
 MAX_FINDING_TITLE = 110
 MAX_FINDING_SUMMARY = 240
+MAX_IDEA_PITCH = 280
+# Where an idea came from: what the audience asks or searches, or the agent's own suggestion.
+IDEA_SIGNALS = {"people-also-ask": "People also ask", "autocomplete": "Google autocomplete", "trends": "Google Trends",
+                "wikipedia": "Wikipedia pageviews", "agent": "Suggested by your agent"}
+SCRIPT_DEFAULTS = {"findings": [], "idea": None, "stage": "script", "published_url": ""}
+REVIEW_SCORES = ["hook", "clarity", "retention", "specificity", "voice", "focus", "natural", "value", "accuracy"]
 STAGES = ["script", "ready", "published"]
 
 DEFAULT_PRESET = "bold-explainer"
@@ -381,12 +389,10 @@ class Studio:
         for finding in findings["findings"]:
             finding["topics"] = [t for t in finding.get("topics", []) if t != topic_id]
         save(self.path("findings.json"), findings)
-        for story_id in self.story_ids():
-            meta_path = self.path("stories", story_id, "story.json")
-            meta = load(meta_path)
-            if topic_id in meta.get("topics", []):
-                meta["topics"] = [t for t in meta["topics"] if t != topic_id]
-                save(meta_path, meta)
+        ideas = load(self.path("ideas.json"), {"ideas": []})
+        for idea in ideas["ideas"]:
+            idea["topics"] = [t for t in idea.get("topics", []) if t != topic_id]
+        save(self.path("ideas.json"), ideas)
 
     # sources: "approved" ones are checked on every run; "suggested" ones wait for the user
 
@@ -572,64 +578,69 @@ class Studio:
         save(self.path("findings.json"), data)
         return finding
 
-    # stories (research): an angle built from findings (news), topics (explainers), or both, with research notes
+    # ideas: evergreen video ideas from audience signals (what people ask and search), not from research runs
 
-    def story_ids(self) -> list[str]:
-        return sorted(p.parent.name for p in self.path("stories").glob("*/story.json"))
+    def ideas(self) -> list[dict]:
+        return sorted(load(self.path("ideas.json"), {"ideas": []})["ideas"], key=lambda i: i.get("created", ""), reverse=True)
 
-    def story(self, story_id: str) -> dict:
-        folder = self.path("stories", story_id)
-        if not re.fullmatch(r"[a-z0-9-]+", story_id or "") or not (folder / "story.json").is_file():
-            raise KeyError(f"Unknown story: {story_id}")
-        meta = {"findings": [], "topics": []} | load(folder / "story.json")
-        notes = (folder / "notes.md").read_text(encoding="utf-8") if (folder / "notes.md").is_file() else ""
-        version = hashlib.sha1(json.dumps([meta, notes], sort_keys=True).encode()).hexdigest()[:16]
-        return {**meta, "notes": notes, "version": version}
+    def add_ideas(self, items: list) -> tuple[list[str], list[str]]:
+        if not isinstance(items, list):
+            raise ValueError("Expected a JSON list of ideas")
+        topics = self.topics()
+        by_name = {t["name"].lower(): t["id"] for t in topics} | {t["id"]: t["id"] for t in topics}
+        data = load(self.path("ideas.json"), {"ideas": []})
+        known = {title_key(i["title"]) or i["title"].casefold() for i in data["ideas"]}
+        added, skipped = [], []
+        for number, item in enumerate(items, 1):
+            label = f"Idea {number}"
+            if not isinstance(item, dict):
+                raise ValueError(f"{label}: must be a JSON object")
+            check_keys(item, {"title", "pitch", "topics", "signal"}, label)
+            title = clean_text(str(item.get("title") or ""))
+            if not title:
+                raise ValueError(f"{label}: needs a title")
+            if len(title) > MAX_FINDING_TITLE:
+                raise ValueError(f"{label}: title is longer than {MAX_FINDING_TITLE} characters")
+            pitch = str(item.get("pitch") or "").strip()
+            if not pitch or len(pitch) > MAX_IDEA_PITCH:
+                raise ValueError(f"{label}: needs a pitch of at most {MAX_IDEA_PITCH} characters: the one question the video answers")
+            topic_ids = []
+            for topic in item.get("topics") or []:
+                if str(topic).lower() not in by_name:
+                    raise ValueError(f"{label}: unknown topic {topic!r}; topics are {', '.join(t['name'] for t in topics)}")
+                topic_ids.append(by_name[str(topic).lower()])
+            signal = item.get("signal")
+            check_keys(signal, {"kind", "detail", "url"}, f"{label}.signal")
+            if signal.get("kind") not in IDEA_SIGNALS:
+                raise ValueError(f"{label}.signal.kind must be one of: {', '.join(IDEA_SIGNALS)}")
+            detail = clean_text(str(signal.get("detail") or ""))
+            if not detail or len(detail) > 200:
+                raise ValueError(f"{label}.signal.detail must say what you saw, in at most 200 characters")
+            url = normalize_url(str(signal["url"])) if signal.get("url") else ""
+            key = title_key(title) or title.casefold()
+            if key in known:
+                skipped.append(title)
+                continue
+            known.add(key)
+            idea = {"id": unique_id("i-" + hashlib.sha1(key.encode()).hexdigest()[:10], {i["id"] for i in data["ideas"]}),
+                    "title": title, "pitch": pitch, "topics": list(dict.fromkeys(topic_ids)),
+                    "signal": {"kind": signal["kind"], "detail": detail, "url": url}, "created": now()}
+            data["ideas"].append(idea)
+            added.append(idea["id"])
+        save(self.path("ideas.json"), data)
+        return added, skipped
 
-    def stories(self) -> list[dict]:
-        listed = []
-        for story_id in self.story_ids():
-            item = self.story(story_id)
-            listed.append({key: item[key] for key in ("id", "title", "findings", "topics", "created", "updated", "version")}
-                          | {"researched": bool(item["notes"].strip())})
-        return sorted(listed, key=lambda s: s.get("updated", ""), reverse=True)
+    def set_idea_dismissed(self, idea_id: str, dismissed: bool) -> dict:
+        data = load(self.path("ideas.json"), {"ideas": []})
+        idea = self._find(data["ideas"], idea_id, "idea")
+        if dismissed:
+            idea["dismissed_at"] = now()
+        else:
+            idea.pop("dismissed_at", None)
+        save(self.path("ideas.json"), data)
+        return idea
 
-    def create_story(self, title: str, finding_ids: list[str] | None = None, topic_ids: list[str] | None = None) -> dict:
-        title = (title or "").strip() or "Untitled story"
-        finding_ids, topic_ids = self._check_findings(finding_ids or []), self._check_topics(topic_ids or [])
-        story_id = unique_id(dt.date.today().isoformat() + "-" + slugify(title, 40), set(self.story_ids()))
-        folder = self.path("stories", story_id)
-        folder.mkdir(parents=True)
-        save(folder / "story.json", {"id": story_id, "title": title, "findings": finding_ids, "topics": topic_ids,
-                                     "created": now(), "updated": now()})
-        (folder / "notes.md").write_text("", encoding="utf-8")
-        return self.story(story_id)
-
-    def update_story(self, story_id: str, changes: dict, version: str | None = None) -> dict:
-        current = self.story(story_id)
-        if version is not None and version != current["version"]:
-            raise RuntimeError("This story changed since you opened it (probably your agent wrote notes). Reload to see it.")
-        folder = self.path("stories", story_id)
-        meta = {"findings": [], "topics": []} | load(folder / "story.json")
-        if "title" in changes:
-            meta["title"] = str(changes["title"]).strip() or "Untitled story"
-        if "findings" in changes:
-            meta["findings"] = self._check_findings(changes["findings"])
-        if "add_findings" in changes:
-            meta["findings"] = list(dict.fromkeys(meta["findings"] + self._check_findings(changes["add_findings"])))
-        if "topics" in changes:
-            meta["topics"] = self._check_topics(changes["topics"])
-        if "notes" in changes:
-            write_text(folder / "notes.md", str(changes["notes"]))
-        meta["updated"] = now()
-        save(folder / "story.json", meta)
-        return self.story(story_id)
-
-    def delete_story(self, story_id: str) -> None:
-        self.story(story_id)
-        self._trash("stories", story_id)
-
-    # scripts (production): one per story and channel; the text follows the channel's language and format
+    # scripts (production): one per channel, made from findings (news) or an idea (an evergreen question)
 
     def script_ids(self) -> list[str]:
         return sorted(p.parent.name for p in self.path("scripts").glob("*/script.json"))
@@ -638,14 +649,15 @@ class Studio:
         folder = self.path("scripts", script_id)
         if not re.fullmatch(r"[a-z0-9-]+", script_id or "") or not (folder / "script.json").is_file():
             raise KeyError(f"Unknown script: {script_id}")
-        meta = {"stage": "script", "published_url": ""} | load(folder / "script.json")
+        meta = SCRIPT_DEFAULTS | load(folder / "script.json")
         text = (folder / "script.md").read_text(encoding="utf-8") if (folder / "script.md").is_file() else ""
+        facts = (folder / "facts.md").read_text(encoding="utf-8") if (folder / "facts.md").is_file() else ""
         # Comments are not part of the version, so adding or resolving one never looks like a conflicting edit.
         version = hashlib.sha1(json.dumps([meta, text], sort_keys=True).encode()).hexdigest()[:16]
         channel = find_channel(self.root, meta["channel"])
         scenes = parse_scenes(text, channel_voice(self.root, channel["id"])["words_per_minute"]) if channel["kind"] == "video" else []
         voiceover = self.narration_status(script_id, scenes, channel) if channel["kind"] == "video" else None
-        return {**meta, "text": text, "comments": self.comments(script_id, text), "version": version,
+        return {**meta, "text": text, "facts": facts, "comments": self.comments(script_id, text), "version": version,
                 "scenes": scenes, "duration": total_duration(scenes), "media": self.media(script_id), "narration": voiceover,
                 "video": self.video_status(script_id, scenes, channel) if channel["kind"] == "video" else None,
                 "angles": load(folder / "angles.json", {"angles": []})["angles"],
@@ -656,26 +668,39 @@ class Studio:
         listed = []
         for script_id in self.script_ids():
             item = self.script(script_id)
-            listed.append({key: item[key] for key in ("id", "title", "story", "channel", "stage", "published_url", "created", "updated", "version", "duration")}
-                          | {"drafted": bool(item["text"].strip()), "open_comments": sum(1 for c in item["comments"] if not c.get("resolved_at")),
+            listed.append({key: item[key] for key in ("id", "title", "findings", "idea", "channel", "stage", "published_url", "created", "updated", "version", "duration")}
+                          | {"drafted": bool(item["text"].strip()), "researched": bool(item["facts"].strip()),
+                             "open_comments": sum(1 for c in item["comments"] if not c.get("resolved_at")),
                              "video": item["video"] and {k: item["video"][k] for k in ("status", "ready", "stale")},
                              "narration": item["narration"] and {k: item["narration"][k] for k in ("provider", "status", "done", "missing")},
                              "publish": item["publish"] and {k: item["publish"][k] for k in ("platform", "status", "url", "stats")}})
         return sorted(listed, key=lambda s: s.get("updated", ""), reverse=True)
 
-    def create_script(self, story_id: str, channel_id: str, title: str = "") -> dict:
-        story, channel = self.story(story_id), find_channel(self.root, channel_id)
+    def create_script(self, channel_id: str, finding_ids: list[str] | None = None, idea_id: str | None = None, title: str = "") -> dict:
+        """A script for one channel, made from the findings it reports (news) or the idea it answers."""
+        channel = find_channel(self.root, channel_id)
         channel_folder(self.root, channel["id"])
-        if any(s["story"] == story_id and s["channel"] == channel["id"] for s in self.scripts()):
-            raise ValueError(f"The story already has a script for {channel['name']}")
-        title = (title or "").strip() or story["title"]
-        script_id = unique_id(slugify(story_id, 48) + "-" + channel["id"], set(self.script_ids()))
+        finding_ids, idea = self._check_findings(finding_ids or []), self._check_idea(idea_id)
+        if not finding_ids and not idea:
+            raise ValueError("A script is made from findings or an idea; link at least one")
+        same = [s for s in self.scripts() if s["channel"] == channel["id"] and set(s["findings"]) == set(finding_ids) and s["idea"] == (idea or {}).get("id")]
+        if same:
+            raise ValueError(f"{channel['name']} already has a script from {'this idea' if idea else 'these findings'}: {same[0]['id']}")
+        title = (title or "").strip() or (idea["title"] if idea else next(f["title"] for f in self.findings() if f["id"] == finding_ids[0]))
+        script_id = unique_id(dt.date.today().isoformat() + "-" + slugify(title, 40) + "-" + channel["id"], set(self.script_ids()))
         folder = self.path("scripts", script_id)
         folder.mkdir(parents=True)
-        save(folder / "script.json", {"id": script_id, "title": title, "story": story_id, "channel": channel["id"],
-                                      "stage": "script", "published_url": "", "created": now(), "updated": now()})
+        save(folder / "script.json", {"id": script_id, "title": title, "findings": finding_ids, "idea": idea["id"] if idea else None,
+                                      "channel": channel["id"], "stage": "script", "published_url": "", "created": now(), "updated": now()})
         (folder / "script.md").write_text("", encoding="utf-8")
         return self.script(script_id)
+
+    def script_material(self, script_id: str) -> dict:
+        """What a script is made from: its findings (with their pages) and its idea, as the writer needs them."""
+        script = self.script(script_id)
+        findings = {f["id"]: f for f in self.findings()}
+        idea = next((i for i in self.ideas() if i["id"] == script["idea"]), None)
+        return {"findings": [findings[f] for f in script["findings"] if f in findings], "idea": idea}
 
     def update_script(self, script_id: str, changes: dict, version: str | None = None) -> dict:
         current = self.script(script_id)
@@ -692,9 +717,13 @@ class Studio:
             if angles is not None:
                 save(folder / "angles.json", {"angles": angles})
             return self.script(script_id)
-        meta = {"stage": "script", "published_url": ""} | load(folder / "script.json")
+        meta = SCRIPT_DEFAULTS | load(folder / "script.json")
         if "title" in changes:
             meta["title"] = str(changes["title"]).strip() or "Untitled script"
+        if "findings" in changes:
+            meta["findings"] = self._check_findings(changes["findings"])
+            if not meta["findings"] and not meta["idea"]:
+                raise ValueError("Keep at least one finding: the script is made from them")
         if "stage" in changes:
             if changes["stage"] not in STAGES:
                 raise ValueError(f"Stage must be one of: {', '.join(STAGES)}")
@@ -740,7 +769,7 @@ class Studio:
         self.script(script_id)
         check_keys(review, {"scores", "summary", "notes", "at"}, "review")
         scores = review.get("scores")
-        keys = {"hook", "clarity", "retention", "specificity", "voice", "human", "natural", "value", "accuracy"}
+        keys = set(REVIEW_SCORES)
         check_keys(scores, keys, "review.scores")
         for key in sorted(keys):
             check_number(scores.get(key), f"review.scores.{key}", 1, 10, integer=True)
@@ -988,7 +1017,7 @@ class Studio:
         defaults = channel_publishing(self.root, channel["id"])["defaults"] if channel["kind"] == "video" else {}
         details = pub.clean_meta({**{k: v for k, v in defaults.items() if k in pub.DEFAULT_META}, **saved})
         details["title"] = details["title"] or script["title"][:100]
-        return details | {"sources": self.story_sources(script["story"]), "credits": self.used_credits(script)}
+        return details | {"sources": self.script_sources(script_id), "credits": self.used_credits(script)}
 
     def save_publish_details(self, script_id: str, details: dict) -> dict:
         self.script(script_id)
@@ -998,14 +1027,11 @@ class Studio:
         save(self.path("scripts", script_id, "publish.json"), {k: cleaned[k] for k in saved | details})
         return self.publish_details(script_id)
 
-    def story_sources(self, story_id: str) -> list[str]:
-        """Source URLs from the story notes' Sources section, for the description."""
-        try:
-            notes = self.story(story_id)["notes"]
-        except KeyError:
-            return []
-        section = re.split(r"(?im)^#+\s*sources\s*$", notes)
+    def script_sources(self, script_id: str) -> list[str]:
+        """Source URLs for the description: the fact sheet's Sources section, then the linked findings' pages."""
+        section = re.split(r"(?im)^#+\s*sources\s*$", self.script(script_id)["facts"])
         urls = re.findall(r"https?://[^\s)>\]]+", section[-1] if len(section) > 1 else "")
+        urls += [s["url"] for f in self.script_material(script_id)["findings"] for s in f["sources"]]
         return list(dict.fromkeys(u.rstrip(".,;") for u in urls))[:10]
 
     def used_credits(self, script: dict) -> list[str]:
@@ -1236,7 +1262,7 @@ class Studio:
         runs = self.runs()
         return {"workspace": str(self.root), "default_workspace": self.root == workspace_path(None) and not os.environ.get("VID_STUDIO_HOME"),
                 "project": self.ws.name, "settings": self.settings(), "topics": self.topics(), "sources": self.sources(),
-                "findings": self.findings(), "runs": runs[-20:], "stories": self.stories(), "scripts": self.scripts(),
+                "findings": self.findings(), "ideas": self.ideas(), "runs": runs[-20:], "scripts": self.scripts(),
                 "channels": channels(self.root)}
 
     # helpers
@@ -1260,13 +1286,10 @@ class Studio:
             raise ValueError(f"Unknown findings: {', '.join(unknown)}")
         return list(dict.fromkeys(finding_ids))
 
-    def _check_topics(self, topic_ids) -> list[str]:
-        known = {t["id"] for t in self.topics()}
-        topic_ids = [str(t) for t in topic_ids or []]
-        unknown = [t for t in topic_ids if t not in known]
-        if unknown:
-            raise ValueError(f"Unknown topics: {', '.join(unknown)}")
-        return list(dict.fromkeys(topic_ids))
+    def _check_idea(self, idea_id) -> dict | None:
+        if not idea_id:
+            return None
+        return self._find(self.ideas(), str(idea_id), "idea")
 
 
 def beat_seconds(audio_seconds: float, pause: float) -> float:
@@ -1775,6 +1798,7 @@ MACHINE_PHRASES = [
 # First-person stories are only true if the channel's persona lived them (script-craft.md §3).
 ANECDOTE_PHRASES = ["my friend", "my uncle", "my aunt", "my cousin", "my neighbour", "my neighbor", "i remember when",
                     "when i was", "i tried this", "मेरे दोस्त", "मेरे एक दोस्त", "मेरे चाचा", "मेरे मामा", "मेरी दोस्त"]
+QUOTED = re.compile(r"[\"“”‘][^\"“”]{0,200}?(?:\s\S+){2}[^\"“”]*?[\"“”’]")  # three or more words in quote marks
 NOT_X_ITS_Y = re.compile(r"\b(?:it|this|that)(?:'s| is| isn't) not\b[^.?!]{0,40}[.,;—–-]\s*(?:it|this|that)(?:'s| is)\b|"
                          r"\b(?:it|this|that) isn't\b[^.?!]{0,40}[.;—–-]\s*(?:it|this|that)(?:'s| is)\b")
 
@@ -1794,6 +1818,10 @@ def voice_warnings(scene: dict) -> list[str]:
     if told:
         warnings.append(f"{scene['beat']}: \"{told[0]}\" is a personal story; keep it only if it really happened to the persona, "
                         "otherwise use a sourced case or \"say you…\"")
+    quoted = QUOTED.search(spoken)
+    if quoted and not scene.get("source"):
+        warnings.append(f"{scene['beat']}: quoted words ({clean_text(quoted[0], 50)}) with no Source: line; quote only what a source "
+                        "printed, word for word, and never write dialogue for the viewer or a made-up caller")
     if NOT_X_ITS_Y.search(low):
         warnings.append(f"{scene['beat']}: a \"not X, it's Y\" reframe; just say what it is and why it matters")
     if spoken.count("—") >= 2:
@@ -1859,8 +1887,9 @@ def scene_warnings(scenes: list[dict]) -> list[str]:
             long = [x for x in items if word_count(x) > 6]
             if long:
                 warnings.append(f"{scene['beat']}: list items over 6 words (\"{clean_text(long[0], 40)}\"); keep each to 2–5 words")
-        if kind == "message" and not scene["text"].strip() and not scene.get("source"):
-            warnings.append(f"{scene['beat']}: label the message: \"Text: Example\" for a reconstruction, or a Source: line for a real one")
+        if kind == "message" and not scene.get("source"):
+            warnings.append(f"{scene['beat']}: a message scene shows a real message from a source; add its Source: line, "
+                            "or show the fact another way (never an invented chat or call)")
     sentences = [x for scene in scenes for x in re.split(r"(?<=[.!?।])\s+", spoken_text(scene["vo"])) if word_count(x)]
     if len(sentences) >= 8:
         lengths = [word_count(x) for x in sentences]
@@ -1996,6 +2025,7 @@ def projects_overview(root: Path) -> list[dict]:
         listed.append({"id": folder.name, "name": settings.get("name") or folder.name,
                        "description": settings.get("description", ""),
                        "findings": sum(1 for f in studio.findings() if not f.get("dismissed_at")),
+                       "ideas": sum(1 for i in studio.ideas() if not i.get("dismissed_at")),
                        "suggested_sources": sum(1 for x in studio.sources() if x["status"] == "suggested")})
     return listed
 
@@ -2018,20 +2048,20 @@ def channel_looks(root: Path) -> dict:
 def production_overview(root: Path) -> dict:
     """Production spans all research projects; IDs remain scoped to their owner."""
     projects = projects_overview(root)
-    scripts, stories = [], []
+    scripts = []
     for project in projects:
         studio = Studio(root / "projects" / project["id"], root)
-        origin = {"project": project["id"], "project_name": project["name"]}
-        project_stories = studio.stories()
-        titles = {story["id"]: story["title"] for story in project_stories}
-        stories.extend(story | origin for story in project_stories)
-        scripts.extend(script | origin | {"story_title": titles.get(script["story"], "")}
-                       for script in studio.scripts())
+        findings = {f["id"]: f["title"] for f in studio.findings()}
+        ideas = {i["id"]: i["title"] for i in studio.ideas()}
+        for script in studio.scripts():
+            linked = [findings[f] for f in script["findings"] if f in findings]
+            origin = (ideas.get(script["idea"], "") if script["idea"] else
+                      (linked[0] + (f" + {len(linked) - 1} more" if len(linked) > 1 else "")) if linked else "")
+            scripts.append(script | {"project": project["id"], "project_name": project["name"], "origin": origin})
     return {"workspace": str(root),
             "default_workspace": root == workspace_path(None) and not os.environ.get("VID_STUDIO_HOME"),
             "projects": projects, "channels": channels(root), "looks": channel_looks(root),
-            "scripts": sorted(scripts, key=lambda script: script.get("updated", ""), reverse=True),
-            "stories": stories}
+            "scripts": sorted(scripts, key=lambda script: script.get("updated", ""), reverse=True)}
 
 
 def find_project(root: Path, value: str | None) -> Path:
@@ -2057,8 +2087,7 @@ def fill_templates(folder: Path) -> None:
         target = folder / source.name
         if source.is_file() and not target.exists():
             shutil.copyfile(source, target)
-    for kind in ("stories", "scripts"):
-        (folder / kind).mkdir(parents=True, exist_ok=True)
+    (folder / "scripts").mkdir(parents=True, exist_ok=True)
 
 
 def create_project(root: Path, name: str, description: str = "") -> Path:
@@ -2121,7 +2150,7 @@ def cmd_status(root: Path, args) -> None:
         print(f"UI: {(running_server(root) or {}).get('url') or 'not running (studio.py serve --background)'}")
         return
     studio = Studio(ws, root)
-    settings, topics, sources, stories, scripts = studio.settings(), studio.topics(), studio.sources(), studio.stories(), studio.scripts()
+    settings, topics, sources, scripts = studio.settings(), studio.topics(), studio.sources(), studio.scripts()
     runs = studio.runs()
     last = next((r for r in reversed(runs) if r.get("status") in ("completed", "failed")), None)
     others = [c["name"] for c in projects_overview(root) if c["id"] != ws.name]
@@ -2135,17 +2164,17 @@ def cmd_status(root: Path, args) -> None:
           + (f"{last['finished']} ({last['status']}, {last.get('findings', 0)} findings)" if last else "never"))
     print(f"Schedule: {describe_schedule(settings.get('schedule', {}))}"
           + (f" ({settings['timezone']})" if settings.get("timezone") and settings.get("schedule", {}).get("times") else ""))
-    print("Stories:" + ("" if stories else " none"))
-    for story in stories:
-        links = [f"{len(story['findings'])} findings"] + [f"topic {t}" for t in story["topics"]]
-        print(f"  {story['id']} · {story['title']} · {', '.join(links)} · {'researched' if story['researched'] else 'not researched'}")
+    ideas = [i for i in studio.ideas() if not i.get("dismissed_at")]
+    print(f"Ideas: {len(ideas)}" + (f" (latest: {ideas[0]['title']})" if ideas else ""))
     names = {c["id"]: c["name"] for c in channels(root)}
     print("Scripts:" + ("" if scripts else " none"))
     for script in scripts:
         state = (script["stage"] if script["drafted"] else "not drafted") + (f", {script['open_comments']} open comment{'s' * (script['open_comments'] != 1)}" if script["open_comments"] else "")
         if find_channel(root, script["channel"])["kind"] == "video":
             state += f" · {script['duration']:.1f}s"
-        print(f"  {script['id']} · {script['title']} · for {names.get(script['channel'], script['channel'])} · story {script['story']} · {state}")
+        made_from = f"idea {script['idea']}" if script["idea"] else f"{len(script['findings'])} finding{'s' * (len(script['findings']) != 1)}"
+        state += "" if script["researched"] else " · no fact sheet yet"
+        print(f"  {script['id']} · {script['title']} · for {names.get(script['channel'], script['channel'])} · from {made_from} · {state}")
     server = running_server(root)
     print(f"UI: {server['url'] + '#/' + ws.name if server else 'not running (studio.py serve --background)'}")
     hints = []
@@ -2267,14 +2296,121 @@ def cmd_finish_run(ws: Path, args) -> None:
           + (f", {run['suggested_sources']} sources suggested" if run.get("suggested_sources") else ""))
 
 
-def cmd_new_story(ws: Path, args) -> None:
-    story = Studio(ws).create_story(args.title, args.finding or [], args.topic or [])
-    print(f"Story: {ws / 'stories' / story['id']}")
-
-
 def cmd_new_script(ws: Path, args) -> None:
-    script = Studio(ws).create_script(args.story, args.channel, args.title or "")
-    print(f"Script: {ws / 'scripts' / script['id']}")
+    script = Studio(ws).create_script(args.channel, args.finding or [], args.idea, args.title or "")
+    print(f"Script {script['id']}: {ws / 'scripts' / script['id']}")
+
+
+def cmd_material(ws: Path, args) -> None:
+    """What a script is made from, so the writer researches exactly that."""
+    studio = Studio(ws)
+    script, material = studio.script(args.script), studio.script_material(args.script)
+    print(f"{script['title']} ({script['id']})")
+    for finding in material["findings"]:
+        print(f"\nFinding {finding['id']}: {finding['title']}\n  {finding.get('summary', '')}")
+        for source in finding["sources"]:
+            print(f"  - {source['url']}" + (f" ({source['publisher']}{', ' + source['published'] if source.get('published') else ''})" if source.get("publisher") else ""))
+    idea = material["idea"]
+    if idea:
+        print(f"\nIdea {idea['id']}: {idea['title']}\n  {idea['pitch']}\n  Signal: {IDEA_SIGNALS[idea['signal']['kind']]}: {idea['signal']['detail']}"
+              + (f" ({idea['signal']['url']})" if idea["signal"].get("url") else ""))
+    facts = studio.path("scripts", args.script, "facts.md")
+    print(f"\nFact sheet: {facts}" + ("" if script["facts"].strip() else " (empty: research it first, references/facts.md)"))
+
+
+WIKIMEDIA_AGENT = "vid-studio/1.0 (https://github.com/namanbnsl/vid-studio)"  # Wikimedia asks for a descriptive agent
+QUESTION_WORDS = ["how", "why", "what", "is", "can", "should", "which"]
+TIMEZONE_COUNTRIES = {"Asia/Kolkata": "IN", "Asia/Calcutta": "IN", "Europe/London": "GB", "Asia/Singapore": "SG", "Asia/Dubai": "AE",
+                      "Australia/Sydney": "AU", "Asia/Karachi": "PK", "Asia/Dhaka": "BD", "Asia/Kathmandu": "NP", "America/Toronto": "CA"}
+
+
+def fetch_json(url: str, user_agent: str = USER_AGENT, retries: int = 2):
+    request = urllib.request.Request(url, headers={"User-Agent": user_agent, "Accept": "application/json"})
+    for attempt in range(retries + 1):
+        try:
+            with urllib.request.urlopen(request, timeout=20) as response:
+                return json.loads(decode(response.read(), response.headers.get("Content-Type", "")))
+        except urllib.error.HTTPError as error:  # rate limits and hiccups: wait a moment and ask again
+            if error.code not in (429, 500, 502, 503, 504) or attempt == retries:
+                raise
+            time.sleep(1.5 * (attempt + 1))
+
+
+def autocomplete_questions(query: str, country: str) -> list[str]:
+    """What people type about a subject, from Google's suggestions for question openers ("why upi…")."""
+    found = []
+    for opener in QUESTION_WORDS:
+        params = {"client": "firefox", "hl": "en", "gl": country.lower(), "ie": "utf-8", "oe": "utf-8", "q": f"{opener} {query}"}
+        found += fetch_json("https://suggestqueries.google.com/complete/search?" + urllib.parse.urlencode(params))[1]
+    return list(dict.fromkeys(q for q in found if q.casefold() != query.casefold()))
+
+
+def wikipedia_interest(query: str, wiki: str) -> list[dict]:
+    """Wikipedia articles about a subject, with daily views this week against the seven weeks before."""
+    params = {"action": "query", "format": "json", "generator": "search", "gsrsearch": query, "gsrlimit": "8", "prop": "pageprops"}
+    pages = fetch_json(f"https://{wiki}.wikipedia.org/w/api.php?" + urllib.parse.urlencode(params), WIKIMEDIA_AGENT).get("query", {}).get("pages", {})
+    end = dt.date.today() - dt.timedelta(days=1)
+    start = end - dt.timedelta(days=55)
+    rows, missed = [], 0
+    for page in sorted(pages.values(), key=lambda p: p.get("index", 0)):
+        if "disambiguation" in (page.get("pageprops") or {}):
+            continue
+        title = page["title"].replace(" ", "_")
+        try:
+            items = fetch_json(f"https://wikimedia.org/api/rest_v1/metrics/pageviews/per-article/{wiki}.wikipedia/all-access/user/"
+                               f"{urllib.parse.quote(title, safe='')}/daily/{start:%Y%m%d}/{end:%Y%m%d}", WIKIMEDIA_AGENT)["items"]
+        except Exception:
+            missed += 1
+            continue
+        views = [item["views"] for item in items]
+        if len(views) < 14:
+            continue
+        recent, before = sum(views[-7:]) / 7, sum(views[:-7]) / len(views[:-7])
+        rows.append({"title": page["title"], "per_day": round(recent), "change": recent / before if before else 0,
+                     "url": f"https://{wiki}.wikipedia.org/wiki/{urllib.parse.quote(title)}"})
+    if missed and not rows:
+        raise RuntimeError(f"pageviews didn't load for {missed} articles; try again in a minute")
+    return sorted(rows, key=lambda r: r["per_day"], reverse=True)
+
+
+def cmd_idea_signals(ws: Path, args) -> None:
+    """Print the raw audience signals; the agent turns the relevant ones into ideas."""
+    studio = Studio(ws)
+    queries = args.query or [t["name"] for t in studio.topics()]
+    if not queries:
+        raise ValueError("Add a topic first, or pass --query")
+    country = (args.geo or TIMEZONE_COUNTRIES.get(studio.settings().get("timezone", ""), "US")).upper()
+    wanted = set(args.only or ["autocomplete", "trends", "wikipedia"])
+    if "autocomplete" in wanted:
+        print(f"## Google autocomplete: questions people type ({country})")
+        for query in queries:
+            try:
+                questions = autocomplete_questions(query, country)
+                print(f"\n{query}:\n" + ("\n".join(f"- {q}" for q in questions[:40]) or "- (nothing)"))
+            except Exception as error:
+                print(f"\n{query}: failed ({type(error).__name__}: {error})")
+    if "trends" in wanted:
+        print(f"\n## Google Trends: searches rising today ({country}); most won't be about your topics")
+        try:
+            for item in parse_feed(fetch(f"https://trends.google.com/trending/rss?geo={country}")[0]):
+                print(f"- {item['title']} · {item['summary'] or 'no volume'} · {item['url']}")
+        except Exception as error:
+            print(f"failed ({type(error).__name__}: {error})")
+    if "wikipedia" in wanted:
+        print(f"\n## Wikipedia ({args.wiki}): what people read about each subject; ×N compares this week with the seven before")
+        for query in queries:
+            try:
+                rows = wikipedia_interest(query, args.wiki)
+                print(f"\n{query}:\n" + ("\n".join(f"- {r['title']} · {r['per_day']:,}/day · ×{r['change']:.1f} · {r['url']}" for r in rows) or "- (no articles)"))
+            except Exception as error:
+                print(f"\n{query}: failed ({type(error).__name__}: {error})")
+    print("\nGoogle's \"People also ask\" box isn't available here; read it with your own web search if it shows one.")
+    print('Next: save the ideas worth a video with `studio.py add-ideas -` (references/ideas.md)')
+
+
+def cmd_add_ideas(ws: Path, args) -> None:
+    added, skipped = Studio(ws).add_ideas(read_json_file(args.file))
+    print(f"Added {len(added)} ideas" + (f"; skipped {len(skipped)} already in the list: {', '.join(skipped)}" if skipped else ""))
 
 
 def cmd_channels(root: Path, args) -> None:
@@ -2685,15 +2821,65 @@ def cmd_resolve(ws: Path, args) -> None:
 
 # ---------------------------------------------------------------- web UI server
 
+LOCAL = urllib.request.build_opener(urllib.request.ProxyHandler({}))  # macOS hands urllib the system proxy; never use it for our server
+
+
 def running_server(ws: Path) -> dict | None:
     info = load(ws / ".cache" / "server.json", {})
-    if not info.get("url"):
+    if not info.get("port"):
         return None
+    # Ask 127.0.0.1 directly: "localhost" may resolve to ::1 first, where another app can be listening.
     try:
-        with urllib.request.urlopen(info["url"] + "api/health", timeout=2) as response:
+        with LOCAL.open(f"http://127.0.0.1:{info['port']}/api/health", timeout=2) as response:
             return info if response.read().decode() == str(ws) else None
     except Exception:
         return None
+
+
+def code_stamp() -> str:
+    """Changes whenever the helper's code does, so a server started before an update can be told apart."""
+    files = sorted(Path(__file__).resolve().parent.glob("*.py"))
+    return hashlib.sha1("".join(f"{f.name}:{f.stat().st_mtime_ns}" for f in files).encode()).hexdigest()[:12]
+
+
+def port_taken(port: int) -> bool:
+    """Whether anything answers on this port over IPv4 or IPv6 loopback. On macOS a server bound to all
+    addresses doesn't stop us binding 127.0.0.1 too, and the browser would then reach one or the other."""
+    for family, address in ((socket.AF_INET, "127.0.0.1"), (socket.AF_INET6, "::1")):
+        try:
+            with socket.socket(family, socket.SOCK_STREAM) as probe:
+                probe.settimeout(0.3)
+                if probe.connect_ex((address, port)) == 0:
+                    return True
+        except OSError:
+            pass
+    return False
+
+
+class StudioServer(ThreadingHTTPServer):
+    daemon_threads = True
+    allow_reuse_address = sys.platform not in ("darwin", "win32")  # BSD's SO_REUSEADDR lets two servers share a port
+
+
+class StudioServer6(StudioServer):
+    address_family = socket.AF_INET6
+
+
+def bind_server(handler, first_port: int) -> list[ThreadingHTTPServer]:
+    """The studio on 127.0.0.1 and, where IPv6 works, on ::1 at the same port, so localhost reaches it either way."""
+    for port in range(first_port, first_port + 20):
+        if port_taken(port):
+            continue
+        try:
+            servers = [StudioServer(("127.0.0.1", port), handler)]
+        except OSError:
+            continue
+        try:
+            servers.append(StudioServer6(("::1", port), handler))
+        except OSError:
+            pass  # no IPv6 loopback: browsers fall back to 127.0.0.1
+        return servers
+    raise SystemExit(f"No free port between {first_port} and {first_port + 19}; pass --port to choose another range")
 
 
 class Raw:
@@ -3047,16 +3233,8 @@ def make_handler(ws: Path):
                     return studio.delete_source(item) or {"ok": True}
             if resource == "findings" and method == "PUT" and item and "dismissed" in body:
                 return studio.set_dismissed(item, bool(body["dismissed"]))
-            if resource == "stories":
-                if method == "GET" and item:
-                    return studio.story(item)
-                if method == "POST":
-                    return studio.create_story(body.get("title", ""), body.get("findings", []), body.get("topics", []))
-                if method == "PUT" and item:
-                    version = body.pop("version", None)
-                    return studio.update_story(item, body, version)
-                if method == "DELETE" and item:
-                    return studio.delete_story(item) or {"ok": True}
+            if resource == "ideas" and method == "PUT" and item and "dismissed" in body:
+                return studio.set_idea_dismissed(item, bool(body["dismissed"]))
             if resource == "scripts" and item and len(parts) == 3 and parts[2] in ("publish", "publish-details", "stats"):
                 if parts[2] == "publish-details" and method == "GET":
                     return studio.publish_details(item)
@@ -3126,7 +3304,7 @@ def make_handler(ws: Path):
                 if method == "GET" and item:
                     return studio.script(item)
                 if method == "POST":
-                    return studio.create_script(body.get("story", ""), body.get("channel", ""), body.get("title", ""))
+                    return studio.create_script(body.get("channel", ""), body.get("findings") or [], body.get("idea"), body.get("title", ""))
                 if method == "PUT" and item:
                     version = body.pop("version", None)
                     return studio.update_script(item, body, version)
@@ -3160,15 +3338,28 @@ def cmd_serve(ws: Path, args) -> None:
             print("No server running")
         info_path.unlink(missing_ok=True)
         return
+    if server_info and server_info.get("code") != code_stamp():
+        # Started before the studio was updated: its API no longer matches the UI it serves. Replace it.
+        os.kill(server_info["pid"], signal.SIGTERM)
+        for _ in range(50):
+            if not running_server(ws):
+                break
+            time.sleep(0.1)
+        args.port = server_info.get("port") or args.port
+        server_info = None
+        print("Restarted the studio server: it was running older code")
     if server_info:
         print(f"Studio: {server_info['url']}")
         return
     if args.background:
         detach = {"creationflags": 0x00000008} if os.name == "nt" else {"start_new_session": True}
-        process = subprocess.Popen(
-            [sys.executable, str(Path(__file__).resolve()), "--workspace", str(ws), "serve", "--port", str(args.port)],
-            stdin=subprocess.DEVNULL, stdout=subprocess.DEVNULL, stderr=subprocess.DEVNULL, **detach)
-        for _ in range(60):
+        log_path = ws / ".cache" / "server.log"
+        log_path.parent.mkdir(parents=True, exist_ok=True)
+        with log_path.open("w", encoding="utf-8") as log:
+            process = subprocess.Popen(
+                [sys.executable, str(Path(__file__).resolve()), "--workspace", str(ws), "serve", "--port", str(args.port)],
+                stdin=subprocess.DEVNULL, stdout=log, stderr=log, **detach)
+        for _ in range(200):  # a first start on macOS (Gatekeeper, cold imports) can take several seconds
             time.sleep(0.1)
             server_info = running_server(ws)
             if server_info:
@@ -3176,25 +3367,23 @@ def cmd_serve(ws: Path, args) -> None:
                 return
             if process.poll() is not None:
                 break
-        raise SystemExit("The studio server did not start. Run `studio.py serve` in the foreground to see why.")
+        detail = log_path.read_text(encoding="utf-8", errors="replace").strip().splitlines()[-1:] if log_path.exists() else []
+        raise SystemExit("The studio server did not start" + (f": {detail[0]}" if detail else "") + f". See {log_path}, or run `studio.py serve` in the foreground.")
 
-    for port in range(args.port, args.port + 20):
-        try:
-            server = ThreadingHTTPServer(("127.0.0.1", port), make_handler(ws))
-            break
-        except OSError:
-            continue
-    else:
-        raise SystemExit(f"No free port between {args.port} and {args.port + 19}")
-    url = f"http://localhost:{server.server_port}/"
-    save(info_path, {"pid": os.getpid(), "port": server.server_port, "url": url, "started": now()})
+    servers = bind_server(make_handler(ws), args.port)
+    port = servers[0].server_port
+    url = f"http://localhost:{port}/"
+    save(info_path, {"pid": os.getpid(), "port": port, "url": url, "started": now(), "code": code_stamp()})
     print(f"Studio: {url} (Ctrl+C to stop)", flush=True)
+    for extra in servers[1:]:
+        threading.Thread(target=extra.serve_forever, daemon=True).start()
     try:
-        server.serve_forever()
+        servers[0].serve_forever()
     except KeyboardInterrupt:
         pass
     finally:
-        server.server_close()
+        for server in servers:
+            server.server_close()
         if load(info_path, {}).get("pid") == os.getpid():
             info_path.unlink(missing_ok=True)
 
@@ -3270,15 +3459,23 @@ def main(argv=None) -> None:
     sub.add_argument("--note")
     sub.add_argument("--failed", metavar="REASON")
 
-    sub = command("new-story", cmd_new_story, "Create a story, optionally with findings or topics attached")
-    sub.add_argument("--title", required=True)
-    sub.add_argument("--finding", action="append", help="Finding ID; repeatable")
-    sub.add_argument("--topic", action="append", help="Topic ID, for explainers; repeatable")
-
-    sub = command("new-script", cmd_new_script, "Send a story to production: a script for one channel")
-    sub.add_argument("--story", required=True, help="Story ID")
+    sub = command("new-script", cmd_new_script, "Send findings or an idea to production: a script for one channel")
     sub.add_argument("--channel", required=True, help="Channel ID or name")
-    sub.add_argument("--title", help="Defaults to the story's title")
+    sub.add_argument("--finding", action="append", help="Finding ID the script reports; repeatable")
+    sub.add_argument("--idea", help="Idea ID the script answers")
+    sub.add_argument("--title", help="Defaults to the idea's or first finding's title")
+
+    sub = command("material", cmd_material, "Show what a script is made from: its findings and their pages, or its idea")
+    sub.add_argument("--script", required=True)
+
+    sub = command("idea-signals", cmd_idea_signals, "What the audience asks and searches: Google autocomplete questions, Google Trends, Wikipedia pageviews")
+    sub.add_argument("--query", action="append", help="A subject to look up; repeatable (default: every topic's name)")
+    sub.add_argument("--geo", help="Country code for Google (default: from the project's timezone, else US)")
+    sub.add_argument("--wiki", default="en", help="Wikipedia language (default: en)")
+    sub.add_argument("--only", choices=["autocomplete", "trends", "wikipedia"], action="append", help="Only these signals; repeatable")
+
+    sub = command("add-ideas", cmd_add_ideas, "Save ideas from a JSON file (or - for stdin)")
+    sub.add_argument("file")
 
     command("channels", cmd_channels, "List channels (shared by every project)")
     sub = command("add-channel", cmd_add_channel, "Add a channel: where scripts get published")

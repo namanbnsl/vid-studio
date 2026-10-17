@@ -17,6 +17,7 @@ sys.path.insert(0, str(Path(__file__).resolve().parents[1] / "skills" / "vid-stu
 import narration as tts  # noqa: E402
 import publish as pub  # noqa: E402
 import studio  # noqa: E402
+from support import idea_script  # noqa: E402
 
 
 class FakePlatforms:
@@ -168,12 +169,11 @@ class PublishFlowTest(unittest.TestCase):
         studio.add_channel(self.home, {"name": "Tok", "platform": "TikTok"})
         studio.add_channel(self.home, {"name": "WA", "kind": "post"})
         self.project = studio.Studio(self.home / "projects" / "pub", self.home)
-        story = self.project.create_story("UPI Lite")["id"]
-        self.project.update_story(story, {"notes": "## Angle\nx\n\n## Sources\n[1] NPCI, circular, https://www.npci.org.in/c1.\n[2] RBI, https://rbi.org.in/x\n"})
         self.text = "## Hook\nUPI Lite की limit बढ़ी.\nVisual: stat | ₹5,000 | Limit\nImage: media/a.jpg | Photo: A / Flickr, CC BY 2.0\n## End\nVisual: end | Bye | Follow"
         self.scripts = {}
         for channel in ("shorts", "reels", "tok"):
-            sid = self.project.create_script(story, channel)["id"]
+            sid = idea_script(self.project, channel, "UPI Lite")["id"]
+            self.project.path("scripts", sid, "facts.md").write_text("## Facts\n- x [1]\n\n## Sources\n[1] NPCI, circular, https://www.npci.org.in/c1.\n[2] RBI, https://rbi.org.in/x\n")
             self.project.update_script(sid, {"text": self.text})
             self.render(sid)
             self.scripts[channel] = sid
@@ -225,7 +225,7 @@ class PublishFlowTest(unittest.TestCase):
         self.assertEqual(upload["data"], self.project.path("scripts", sid, "render", "video.mp4").read_bytes())
         snippet, state = upload["meta"]["snippet"], upload["meta"]["status"]
         self.assertEqual((snippet["title"], snippet["categoryId"], snippet["defaultAudioLanguage"], snippet["tags"]), ("UPI Lite की नई limit", "27", "hi", ["upi lite"]))
-        self.assertIn("https://www.npci.org.in/c1", snippet["description"])  # sources from the story notes
+        self.assertIn("https://www.npci.org.in/c1", snippet["description"])  # sources from the fact sheet
         self.assertIn("Photo: A / Flickr, CC BY 2.0", snippet["description"])  # CC BY credit
         self.assertTrue(snippet["description"].endswith("#upi"))
         self.assertEqual((state["privacyStatus"], state["publishAt"], state["selfDeclaredMadeForKids"]), ("private", "2026-10-20T13:00:00Z", False))
@@ -247,7 +247,7 @@ class PublishFlowTest(unittest.TestCase):
         (self.project.path("scripts", sid, "render", "video.mp4")).unlink()
         with self.assertRaisesRegex(RuntimeError, "Render the video first"):
             self.project.publish_script(sid)
-        post = self.project.create_script(self.project.scripts()[0]["story"], "wa")["id"]
+        post = idea_script(self.project, "wa", "UPI Lite")["id"]
         with self.assertRaisesRegex(ValueError, "shared by hand"):
             self.project.publish_script(post)
         self.assertIsNone(self.project.script(post)["publish"])

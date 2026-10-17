@@ -16,7 +16,7 @@ Pause the video on any frame. A viewer should be able to say what it shows in on
 | turns a belief around | `compare` with phrases | `compare \| What the caller says \| They say: money comes in \| Really: money goes out` |
 | walks through steps or reasons | `list` | 3 items, 2 to 5 words each |
 | needs dates | `timeline` | 3 or 4 dates; the last is where the story is now |
-| hinges on a message or call | `message` | the real words, 2 or 3 lines, one reply at most |
+| shows a real message a source printed | `message` | its words, 2 or 3 lines, with its `Source:` |
 | needs the viewer to see a real thing | `image` | a photo where the thing fills the frame |
 | quotes an authority | `quote` | the exact words, under 25, with who said it |
 | states the rule | `text` | one sentence with one emphasised phrase |
@@ -41,7 +41,7 @@ The `stat` scene sets its number as large as the frame allows and rolls the digi
 - **One emphasis per scene.** Wrap the phrase that matters in `*asterisks*` in a `text` scene ("8% is an assumption, *not a promise*"). It takes the accent. Two emphasised phrases cancel each other out.
 - **List items are parallel and short:** same grammatical shape, 2 to 5 words, no full stops. "Debit on salary day / Keep going in bad years / Raise it with your pay". Three is the best number. The points arrive one at a time and the earlier ones step back, so each item must make sense alone.
 - **Timeline dates are short** ("Age 25", "Oct 2026", "2019") and the labels are under 5 words. The last date takes the accent, so end on the date the story is about.
-- **`Text:` labels are rare.** They show as a small accent line above the scene, or on a photo's corner. Use one only to name what the viewer is looking at ("Worked example", "Example message", "Jaquar's claim") or to flag that something is illustrative. Most beats need none; a label on every beat is noise.
+- **`Text:` labels are rare.** They show as a small accent line above the scene, or on a photo's corner. Use one only to name what the viewer is looking at ("Worked example", "Jaquar's claim") or to flag that something is illustrative. Most beats need none; a label on every beat is noise.
 - **End titles are 3 to 6 words, and the call to action is one plain sentence** ("Follow for one money calculation a week"). With the default look it shows as an accent text link, so it should read as an invitation, not a slogan.
 
 ## Choose photos that suit a frame
@@ -68,7 +68,7 @@ A shape that works for a 60-second explainer:
 2. `image`, or a scene with an `Image:` line: the moment, with a person in it
 3. `list` or `timeline`: the mechanism
 4. `bars` or `compare`: the evidence
-5. `quote`: an authority, if the notes have one
+5. `quote`: an authority, if the fact sheet has one
 6. `text`: the rule, with one emphasised phrase
 7. `end`
 

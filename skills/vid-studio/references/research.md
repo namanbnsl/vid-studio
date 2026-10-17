@@ -20,7 +20,7 @@ Read the feed the way the audience would. A rate change, a launch or a circular 
   "sources": [{"url": "https://…", "title": "Article title", "publisher": "Reuters", "published": "2026-10-08"}]}]
 ```
 
-   - Keep findings short: a headline (110 characters at most) and a one-sentence summary (240 at most). The helper rejects longer ones. Detail belongs in stories.
+   - Keep findings short: a headline (110 characters at most) and a one-sentence summary (240 at most). The helper rejects longer ones. Detail belongs in a script's fact sheet.
    - **Write them like a person telling a colleague,** not like a press release. Name who's affected and how: "Jaquar's sensor taps now start at ₹6,500; the 50% water saving is the company's own figure" beats "Jaquar unveils innovative touchless faucet range". No adjectives the source didn't earn (innovative, major, game-changing).
    - Write titles and summaries in English, whatever language the channels use. Only scripts use it.
    - Every finding needs at least one topic and at least one page you opened. Prefer original pages, such as the regulator, the company, or the dataset.
